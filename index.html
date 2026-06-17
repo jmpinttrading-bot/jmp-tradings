@@ -43,6 +43,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-shrink: 0; /* Prevents the logo block from being compressed */
         }
 
         header .logo-img {
@@ -60,6 +61,7 @@
             font-weight: 700;
             letter-spacing: 0.5px;
             color: #fff;
+            white-space: nowrap; /* Forces text to stay on a single line */
         }
 
         header .nav-container {
@@ -102,6 +104,7 @@
             align-items: center;
             gap: 6px;
             box-shadow: 0 2px 8px rgba(244, 211, 94, 0.3);
+            white-space: nowrap;
         }
 
         .login-btn:hover {
@@ -274,7 +277,7 @@
         .product-grid-track {
             display: flex;
             gap: 30px;
-            transition: transform 0.4s ease-out;
+            transition: transform 0.1s linear; /* Smooth linear steps for continuous motion */
             will-change: transform;
         }
 
@@ -434,6 +437,10 @@
                 flex-direction: column;
                 padding: 15px;
                 gap: 15px;
+            }
+            header .logo-text {
+                white-space: normal;
+                text-align: center;
             }
             header .nav-container {
                 flex-direction: column;
@@ -618,44 +625,76 @@
 
         let isDragging = false;
         let startX;
-        let scrollLeftOffset = 0;
         let currentTranslate = 0;
         let prevTranslate = 0;
+        let autoPlayInterval;
 
-        // Click Arrow Function Controls
         const getMaxScroll = () => container.clientWidth - track.scrollWidth;
 
+        // --- Manual Arrow Controls ---
         nextBtn.addEventListener('click', () => {
-            let step = container.clientWidth * 0.5;
+            let step = container.clientWidth * 0.4;
             currentTranslate = Math.max(prevTranslate - step, getMaxScroll());
             prevTranslate = currentTranslate;
-            track.style.transform = `translateX(${currentTranslate}px)`;
+            applyTranslate(true);
         });
 
         prevBtn.addEventListener('click', () => {
-            let step = container.clientWidth * 0.5;
+            let step = container.clientWidth * 0.4;
             currentTranslate = Math.min(prevTranslate + step, 0);
             prevTranslate = currentTranslate;
-            track.style.transform = `translateX(${currentTranslate}px)`;
+            applyTranslate(true);
         });
 
-        // Mouse Drag / Touchpad Swipe Logic Engines
+        // --- Automatic Sliding Engine (Left to Right continuous crawl) ---
+        function startAutoPlay() {
+            autoPlayInterval = setInterval(() => {
+                if (isDragging) return;
+                
+                // Gradually decrement the position to push the slider to the right
+                currentTranslate -= 1.2; 
+                
+                const maxScroll = getMaxScroll();
+                
+                // Infinite loop jump back once it reaches the end bounds
+                if (currentTranslate <= maxScroll) {
+                    currentTranslate = 0; 
+                }
+                
+                applyTranslate(false); // Linear movement requires removal of transitions
+                prevTranslate = currentTranslate;
+            }, 30);
+        }
+
+        function stopAutoPlay() {
+            clearInterval(autoPlayInterval);
+        }
+
+        function applyTranslate(withTransition = true) {
+            track.style.transition = withTransition ? 'transform 0.4s ease-out' : 'none';
+            track.style.transform = `translateX(${currentTranslate}px)`;
+        }
+
+        // --- Interaction Pause / Resume Handlers ---
+        container.addEventListener('mouseenter', stopAutoPlay);
+        container.addEventListener('mouseleave', startAutoPlay);
+
+        // --- Mouse Drag Logic Engines ---
         container.addEventListener('mousedown', (e) => {
             isDragging = true;
             startX = e.pageX - currentTranslate;
-            track.style.transition = 'none';
+            stopAutoPlay();
         });
 
         window.addEventListener('mouseup', () => {
             if (!isDragging) return;
             isDragging = false;
-            track.style.transition = 'transform 0.4s ease-out';
-            // Snap Boundaries
             if (currentTranslate > 0) currentTranslate = 0;
             const maxScroll = getMaxScroll();
             if (currentTranslate < maxScroll) currentTranslate = maxScroll;
             prevTranslate = currentTranslate;
-            track.style.transform = `translateX(${currentTranslate}px)`;
+            applyTranslate(true);
+            startAutoPlay();
         });
 
         container.addEventListener('mousemove', (e) => {
@@ -663,32 +702,35 @@
             e.preventDefault();
             const x = e.pageX;
             currentTranslate = x - startX;
-            track.style.transform = `translateX(${currentTranslate}px)`;
+            applyTranslate(false);
         });
 
-        // Mobile / Laptop Trackpad Native Touch events integration
+        // --- Touchpad Swiping / Touch Interfaces ---
         container.addEventListener('touchstart', (e) => {
             isDragging = true;
             startX = e.touches[0].pageX - currentTranslate;
-            track.style.transition = 'none';
+            stopAutoPlay();
         }, {passive: true});
 
         container.addEventListener('touchend', () => {
             isDragging = false;
-            track.style.transition = 'transform 0.4s ease-out';
             if (currentTranslate > 0) currentTranslate = 0;
             const maxScroll = getMaxScroll();
             if (currentTranslate < maxScroll) currentTranslate = maxScroll;
             prevTranslate = currentTranslate;
-            track.style.transform = `translateX(${currentTranslate}px)`;
+            applyTranslate(true);
+            startAutoPlay();
         });
 
         container.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
             const x = e.touches[0].pageX;
             currentTranslate = x - startX;
-            track.style.transform = `translateX(${currentTranslate}px)`;
+            applyTranslate(false);
         }, {passive: true});
+
+        // Initialize Automatic Slider Flow Lifecycle
+        startAutoPlay();
     </script>
 </body>
 </html>
