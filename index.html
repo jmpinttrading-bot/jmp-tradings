@@ -21,6 +21,7 @@
             color: #223344;
             line-height: 1.6;
             background-color: #f4f8fb;
+            overflow-x: hidden;
         }
 
         /* Navigation Header */
@@ -55,7 +56,7 @@
         }
 
         header .logo-text {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 700;
             letter-spacing: 0.5px;
             color: #fff;
@@ -246,19 +247,35 @@
             margin-bottom: 5px;
         }
 
-        /* Products Grid Section */
+        /* Interactive Slide Show Carousel Styles */
         .products {
             background-color: #f0f4f8;
+            position: relative;
         }
 
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 35px;
-            margin-top: 45px;
+        .slider-wrapper {
             max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
+            margin: 45px auto 0;
+            position: relative;
+            padding: 0 40px;
+        }
+
+        .product-slider-container {
+            overflow: hidden;
+            cursor: grab;
+            user-select: none;
+            border-radius: 12px;
+        }
+
+        .product-slider-container:active {
+            cursor: grabbing;
+        }
+
+        .product-grid-track {
+            display: flex;
+            gap: 30px;
+            transition: transform 0.4s ease-out;
+            will-change: transform;
         }
 
         .product-card {
@@ -266,13 +283,10 @@
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-            transition: transform 0.3s, box-shadow 0.3s;
             border: 1px solid #e1e8ed;
-        }
-
-        .product-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 25px rgba(0,0,0,0.12);
+            flex: 0 0 calc(33.333% - 20px); /* 3 cards visible on desktop */
+            min-width: 300px;
+            pointer-events: none; /* Avoid card dragging interference */
         }
 
         .product-img {
@@ -298,6 +312,37 @@
             font-size: 0.95rem;
             line-height: 1.6;
         }
+
+        /* Carousel Nav Arrows */
+        .slider-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #0b2545;
+            color: #fff;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            z-index: 10;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .slider-arrow:hover {
+            background-color: #ee964b;
+        }
+
+        .slider-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .arrow-left { left: -5px; }
+        .arrow-right { right: -5px; }
 
         /* Contact Section (For Customer Inquiries Only) */
         .contact {
@@ -416,6 +461,15 @@
                 text-align: center;
                 gap: 30px;
             }
+            .slider-wrapper {
+                padding: 0 10px;
+            }
+            .product-card {
+                flex: 0 0 100%; /* Show 1 card on mobile view screen elements */
+            }
+            .slider-arrow {
+                display: none; /* rely on swiping on small view screens */
+            }
             .contact-container {
                 padding: 25px;
             }
@@ -427,14 +481,14 @@
     <header>
         <div class="logo-container">
             <img class="logo-img" src="logo.png" alt="JMP International Logo">
-            <span class="logo-text">JMP INTERNATIONAL</span>
+            <span class="logo-text">JMP INTERNATIONAL FISH TRADING</span>
         </div>
         <div class="nav-container">
             <nav>
                 <a href="#home">Home</a>
                 <a href="#about">About</a>
                 <a href="#products">Products</a>
-                <a href="#contact">Customer Inquiry</a>
+                <a href="#contact">Inquiry Desk</a>
             </nav>
             <a href="login.html" class="login-btn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
@@ -446,7 +500,7 @@
     <div class="hero" id="home">
         <h1>JMP INTERNATIONAL FISH TRADING</h1>
         <p>Premium Frozen Seafood Goods. Sourced globally, flash-frozen at peak freshness, and delivered with absolute cold-chain integrity.</p>
-        <a href="#contact" class="btn">Submit Import Inquiry</a>
+        <a href="#contact" class="btn">Submit Product Inquiry</a>
     </div>
 
     <section class="about" id="about">
@@ -479,37 +533,57 @@
 
     <section class="products" id="products">
         <h2>Our Frozen Inventory</h2>
-        <div class="product-grid">
-            
-            <div class="product-card">
-                <div class="product-img" style="background-image: url('https://images.unsplash.com/photo-1534604973900-c43ab4c2e0ab?auto=format&fit=crop&w=500&q=80');"></div>
-                <div class="product-info">
-                    <h3>Frozen Pelagic Fish</h3>
-                    <p>High-quality blast-frozen Tuna, Whole Mackerel, and Skipjack. Available in various size classifications tailored to global processing plants and canning facilities.</p>
+        
+        <div class="slider-wrapper">
+            <button class="slider-arrow arrow-left" id="prevSlide">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button class="slider-arrow arrow-right" id="nextSlide">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+
+            <div class="product-slider-container" id="sliderContainer">
+                <div class="product-grid-track" id="sliderTrack">
+                    
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('https://images.unsplash.com/photo-1534604973900-c43ab4c2e0ab?auto=format&fit=crop&w=500&q=80');"></div>
+                        <div class="product-info">
+                            <h3>Frozen Pelagic Fish</h3>
+                            <p>High-quality blast-frozen Tuna, Whole Mackerel, and Skipjack. Available in various size classifications tailored to global processing plants and canning facilities.</p>
+                        </div>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('https://images.unsplash.com/photo-1559742811-82410b51c4c4?auto=format&fit=crop&w=500&q=80');"></div>
+                        <div class="product-info">
+                            <h3>Frozen Crustaceans & Prawns</h3>
+                            <p>Premium Head-On Shell-On (HOSO) and Headless (HLSO) frozen shrimp, prawns, and crabs, frozen instantly to retain natural sweetness and structural density.</p>
+                        </div>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('https://images.unsplash.com/photo-1534080391025-0967c9e1a416?auto=format&fit=crop&w=500&q=80');"></div>
+                        <div class="product-info">
+                            <h3>Frozen Whitefish & Fillets</h3>
+                            <p>Perfectly preserved Red Snapper, Grouper, and customized whitefish block fillets. Processed and blast-frozen under strict hazard analysis controls.</p>
+                        </div>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=500&q=80');"></div>
+                        <div class="product-info">
+                            <h3>Premium Salmon Blocks</h3>
+                            <p>Flash-frozen Atlantic salmon portions and deep-skin fillets optimized for processing pipelines, wholesale cold distribution networks, and premium dynamic retail packing format options.</p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-
-            <div class="product-card">
-                <div class="product-img" style="background-image: url('https://images.unsplash.com/photo-1559742811-82410b51c4c4?auto=format&fit=crop&w=500&q=80');"></div>
-                <div class="product-info">
-                    <h3>Frozen Crustaceans & Prawns</h3>
-                    <p>Premium Head-On Shell-On (HOSO) and Headless (HLSO) frozen shrimp, prawns, and crabs, frozen instantly to retain natural sweetness and structural density.</p>
-                </div>
-            </div>
-
-            <div class="product-card">
-                <div class="product-img" style="background-image: url('https://images.unsplash.com/photo-1534080391025-0967c9e1a416?auto=format&fit=crop&w=500&q=80');"></div>
-                <div class="product-info">
-                    <h3>Frozen Whitefish & Fillets</h3>
-                    <p>Perfectly preserved Red Snapper, Grouper, and customized whitefish block fillets. Processed and blast-frozen under strict hazard analysis controls.</p>
-                </div>
-            </div>
-
         </div>
     </section>
 
     <section class="contact" id="contact">
-        <h2>International Import Inquiries</h2>
+        <h2>Product Inquiries</h2>
         <p class="subtitle">Connect with our trading desk for container-load pricing, freight logistics options, and specifications sheet requests.</p>
         
         <div class="contact-container">
@@ -526,7 +600,7 @@
                     <label for="message">Frozen Inventory Tonnage Requirements</label>
                     <textarea id="message" name="message" rows="5" required placeholder="Specify preferred fish species, packing formats (e.g., IQF, block-frozen), target metric tonnage, and destination port..."></textarea>
                 </div>
-                <button type="submit">Submit Wholesale Inquiry</button>
+                <button type="submit">Submit Product Inquiry</button>
             </form>
         </div>
     </section>
@@ -536,5 +610,85 @@
         <small>Global Cold-Chain Distribution. Premium Frozen Seafood Goods. Est. 2022</small>
     </footer>
 
+    <script>
+        const container = document.getElementById('sliderContainer');
+        const track = document.getElementById('sliderTrack');
+        const prevBtn = document.getElementById('prevSlide');
+        const nextBtn = document.getElementById('nextSlide');
+
+        let isDragging = false;
+        let startX;
+        let scrollLeftOffset = 0;
+        let currentTranslate = 0;
+        let prevTranslate = 0;
+
+        // Click Arrow Function Controls
+        const getMaxScroll = () => container.clientWidth - track.scrollWidth;
+
+        nextBtn.addEventListener('click', () => {
+            let step = container.clientWidth * 0.5;
+            currentTranslate = Math.max(prevTranslate - step, getMaxScroll());
+            prevTranslate = currentTranslate;
+            track.style.transform = `translateX(${currentTranslate}px)`;
+        });
+
+        prevBtn.addEventListener('click', () => {
+            let step = container.clientWidth * 0.5;
+            currentTranslate = Math.min(prevTranslate + step, 0);
+            prevTranslate = currentTranslate;
+            track.style.transform = `translateX(${currentTranslate}px)`;
+        });
+
+        // Mouse Drag / Touchpad Swipe Logic Engines
+        container.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.pageX - currentTranslate;
+            track.style.transition = 'none';
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (!isDragging) return;
+            isDragging = false;
+            track.style.transition = 'transform 0.4s ease-out';
+            // Snap Boundaries
+            if (currentTranslate > 0) currentTranslate = 0;
+            const maxScroll = getMaxScroll();
+            if (currentTranslate < maxScroll) currentTranslate = maxScroll;
+            prevTranslate = currentTranslate;
+            track.style.transform = `translateX(${currentTranslate}px)`;
+        });
+
+        container.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX;
+            currentTranslate = x - startX;
+            track.style.transform = `translateX(${currentTranslate}px)`;
+        });
+
+        // Mobile / Laptop Trackpad Native Touch events integration
+        container.addEventListener('touchstart', (e) => {
+            isDragging = true;
+            startX = e.touches[0].pageX - currentTranslate;
+            track.style.transition = 'none';
+        }, {passive: true});
+
+        container.addEventListener('touchend', () => {
+            isDragging = false;
+            track.style.transition = 'transform 0.4s ease-out';
+            if (currentTranslate > 0) currentTranslate = 0;
+            const maxScroll = getMaxScroll();
+            if (currentTranslate < maxScroll) currentTranslate = maxScroll;
+            prevTranslate = currentTranslate;
+            track.style.transform = `translateX(${currentTranslate}px)`;
+        });
+
+        container.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const x = e.touches[0].pageX;
+            currentTranslate = x - startX;
+            track.style.transform = `translateX(${currentTranslate}px)`;
+        }, {passive: true});
+    </script>
 </body>
 </html>
