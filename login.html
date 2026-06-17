@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JMP System Login | Internal Corporate Platform</title>
+    <style>
+        /* Global Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(rgba(11, 37, 69, 0.9), rgba(11, 37, 69, 0.95)), 
+                        url('https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1600&q=80') no-repeat center center/cover;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Login Card Frame */
+        .login-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 440px;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+            text-align: left;
+        }
+
+        /* Branding Block inside form */
+        .brand-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .brand-logo {
+            height: 65px;
+            width: 65px;
+            object-fit: contain;
+            background: #f4f8fb;
+            border-radius: 50%;
+            padding: 4px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .brand-header h2 {
+            color: #0b2545; /* Brand Deep Navy */
+            font-size: 1.45rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-header p {
+            font-size: 0.85rem;
+            color: #ee964b; /* System Accent Amber */
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-top: 4px;
+        }
+
+        /* Input Controls */
+        .form-group {
+            margin-bottom: 22px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #334155;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            color: #1e293b;
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #0b2545;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(11, 37, 69, 0.15);
+        }
+
+        /* Password Wrapper for Show/Hide Button */
+        .password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-wrapper input {
+            padding-right: 50px; /* Leave space for button */
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .toggle-password:hover {
+            color: #0b2545;
+        }
+
+        /* Action Buttons */
+        .submit-btn {
+            background-color: #0b2545;
+            color: #ffffff;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+            box-shadow: 0 4px 12px rgba(11, 37, 69, 0.2);
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            background-color: #133a6f;
+        }
+
+        /* Auxiliary Utilities link */
+        .utilities {
+            margin-top: 25px;
+            text-align: center;
+            border-top: 1px solid #edf2f7;
+            padding-top: 20px;
+        }
+
+        .back-home {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+
+        .back-home:hover {
+            color: #ee964b;
+        }
+
+        /* Error Modal Alert Notification Setup */
+        .error-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 37, 69, 0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .error-modal-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .error-modal {
+            background: #ffffff;
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.2s ease;
+            border-top: 5px solid #d9534f; /* Alert red indicator line */
+        }
+
+        .error-modal-overlay.visible .error-modal {
+            transform: scale(1);
+        }
+
+        .error-icon {
+            color: #d9534f;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .error-modal h3 {
+            color: #0b2545;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+
+        .error-modal p {
+            color: #4a5568;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 22px;
+        }
+
+        .close-alert-btn {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            font-weight: 700;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .close-alert-btn:hover {
+            background-color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="brand-header">
+            <img class="brand-logo" src="logo.png" alt="JMP Logo">
+            <h2>JMP International Platform</h2>
+            <p>Internal Employee System Access</p>
+        </div>
+
+        <form onsubmit="handlePlatformLogin(event)">
+            <div class="form-group">
+                <label for="employeeUsername">Employee Username</label>
+                <input type="text" id="employeeUsername" required autocomplete="username" placeholder="e.g., jsmith2026">
+            </div>
+
+            <div class="form-group">
+                <label for="employeePassword">Secure Token / Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="employeePassword" required autocomplete="current-password" placeholder="••••••••">
+                    <button type="button" class="toggle-password" id="togglePassBtn" onclick="togglePasswordVisibility()">SHOW</button>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Verify & Enter System</button>
+        </form>
+
+        <div class="utilities">
+            <a href="index.html" class="back-home">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Return to Public Website
+            </a>
+        </div>
+    </div>
+
+    <div class="error-modal-overlay" id="errorAlertModal">
+        <div class="error-modal">
+            <div class="error-icon">⚠️</div>
+            <h3 id="errorTitle">Invalid Username Format</h3>
+            <p id="errorMessage">Something went wrong with your input entry configuration layout.</p>
+            <button class="close-alert-btn" onclick="closeErrorModal()">Acknowledge</button>
+        </div>
+    </div>
+
+    <script>
+        // Password Show/Hide Toggle Control Engine
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('employeePassword');
+            const toggleBtn = document.getElementById('togglePassBtn');
+            
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggleBtn.textContent = 'HIDE';
+            } else {
+                passInput.type = 'password';
+                toggleBtn.textContent = 'SHOW';
+            }
+        }
+
+        // Custom Modal Control Handlers
+        function openErrorModal(title, message) {
+            document.getElementById('errorTitle').textContent = title;
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorAlertModal').classList.add('visible');
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorAlertModal').classList.remove('visible');
+            document.getElementById('employeeUsername').focus();
+        }
+
+        // Advanced Username Checking Validation Script Engine
+        function handlePlatformLogin(event) {
+            event.preventDefault();
+            
+            const usernameInput = document.getElementById('employeeUsername').value.trim();
+            
+            // 1. Accidentally typed as email validation check
+            if (usernameInput.includes('@')) {
+                openErrorModal(
+                    "Email Detected", 
+                    "Please enter your assigned System Username only, not your email address account string."
+                );
+                return;
+            }
+
+            // 2. Symbols Validation Check (Allows only alphanumeric characters, underscores, or dashes)
+            const validUsernamePattern = /^[a-zA-Z0-9._-]+$/;
+            if (!validUsernamePattern.test(usernameInput)) {
+                openErrorModal(
+                    "Special Symbols Detected", 
+                    "Usernames must only contain letters, numbers, periods, dashes, or underscores. Please remove special characters."
+                );
+                return;
+            }
+
+            // If entry rules pass completely, move forward with database processing mockup
+            alert("Connecting to JMP Corporate Security Framework Layer... \n\nHandshake successful! Welcome, " + usernameInput + ".");
+        }
+    </script>
+
+</body>
+</html>
