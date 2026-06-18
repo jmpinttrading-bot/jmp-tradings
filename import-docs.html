@@ -30,25 +30,27 @@
         .form-group input[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
         .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
 
-        /* Dynamic Visual Alert Banners for Active Overwrite Blocks */
         .live-lock-banner { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
 
         .submit-btn { background: #ee964b; color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s; }
         .submit-btn:hover { opacity: 0.9; }
         .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
+        .directory-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; gap: 10px; }
+        .year-btn { background: #0f172a; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+
         .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .search-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
         
-        .month-folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; margin-bottom: 25px; }
-        .folder-node { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
+        .month-folder-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
+        .folder-node { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 5px; text-align: center; cursor: pointer; transition: 0.2s; font-size: 0.8rem; font-weight: 600; }
         .folder-node:hover, .folder-node.active { background: #0f172a; color: white; border-color: #0f172a; }
-        .folder-node .icon { font-size: 1.5rem; display: block; margin-bottom: 3px; }
+        .folder-node .icon { font-size: 1.2rem; display: block; margin-bottom: 2px; }
         
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         .status-badge.pending { background: #fef3c7; color: #b45309; }
         .status-badge.incomplete { background: #fee2e2; color: #991b1b; }
-        .status-badge.approval { background: #e0f2fe; color: #0369a1; }
+        .status-badge.for-approval { background: #e0f2fe; color: #0369a1; }
         .status-badge.completed { background: #d1fae5; color: #065f46; }
 
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -56,14 +58,16 @@
         .item-list-table th { background: #f8fafc; color: #64748b; }
         
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
-        .action-link-btn.approve { background: #22c55e; margin-left: 5px; }
 
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; padding: 20px; }
         .viewer-card { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; }
-        .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         .viewer-body { flex: 1; background: #f1f5f9; border-radius: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 15px; }
         .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; }
-        .close-viewer-btn { background: #d9534f; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        .viewer-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
+        .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .approve-action-btn { background: #22c55e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
 
         @media (max-width: 850px) {
             body { flex-direction: column; }
@@ -130,10 +134,21 @@
 
             <div class="panel-card">
                 <h3>Monthly Directories & Consolidated Logs</h3>
+                
+                <div class="directory-controls">
+                    <div class="form-group" style="margin-bottom:0; flex:1;">
+                        <select id="directoryYearSelect" onchange="buildMonthlyFolders(); fetchDocuments();">
+                            </select>
+                    </div>
+                    <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
+                </div>
+
                 <div class="search-container">
                     <input type="text" id="docSearchBox" class="search-box" placeholder="Search by exact SPSIC Number sequence..." oninput="fetchDocuments()">
                 </div>
+                
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
+                
                 <div style="overflow-x: auto;">
                     <table class="item-list-table">
                         <thead>
@@ -157,9 +172,12 @@
         <div class="viewer-card">
             <div class="viewer-header">
                 <h2 id="viewerTitleDisplay">Compiled View Panel</h2>
-                <button class="close-viewer-btn" onclick="closeViewer()">Dismiss Viewer</button>
             </div>
             <div class="viewer-body" id="viewerTargetBody"></div>
+            <div class="viewer-footer">
+                <button id="modalApproveActionBtn" class="approve-action-btn" onclick="approveCurrentDocument()">Approve Documents</button>
+                <button class="close-viewer-btn" onclick="closeViewer()">Dismiss Viewer</button>
+            </div>
         </div>
     </div>
 
@@ -168,38 +186,86 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        let selectedFolderMonth = "";
+        let selectedFolderMonth = ""; 
+        let availableYears = [2026, 2027]; 
         const STORAGE_BUCKET_NAME = "shipment-documents";
         let localFetchedRecord = null;
         
         let currentUserSession = null;
+        let currentUserRole = "Employee";
         let activeTrackingSpsic = null;
         let presenceHeartbeatInterval = null;
+        let activeInspectingRecordId = null;
+
+        const monthsLabels = [
+            { text: "Jan", value: "01" }, { text: "Feb", value: "02" },
+            { text: "Mar", value: "03" }, { text: "Apr", value: "04" },
+            { text: "May", value: "05" }, { text: "Jun", value: "06" },
+            { text: "Jul", value: "07" }, { text: "Aug", value: "08" },
+            { text: "Sep", value: "09" }, { text: "Oct", value: "10" },
+            { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
+        ];
 
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             currentUserSession = user;
 
-            // Route dynamic sidebar link correctly depending on who opened the file
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-            if (profile && profile.role !== 'Admin') {
-                document.getElementById('backToDashboardBtn').href = "employee-dashboard.html";
-                document.getElementById('backToDashboardBtn').textContent = "Employee Profile";
+            if (profile) {
+                currentUserRole = profile.role;
+                if (profile.role !== 'Admin') {
+                    document.getElementById('backToDashboardBtn').href = "employee-dashboard.html";
+                    document.getElementById('backToDashboardBtn').textContent = "Employee Profile";
+                }
             }
 
             const today = new Date();
+            if (!availableYears.includes(today.getFullYear())) {
+                availableYears.push(today.getFullYear());
+                availableYears.sort((a, b) => a - b);
+            }
+
+            initYearSelectOptions(today.getFullYear());
             document.getElementById('spsicTargetMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
             
             buildMonthlyFolders();
             fetchDocuments();
             evaluateUploadSequenceLocks();
-
-            // Fire up real-time listener subscription loop
             setupLockDatabaseListener();
         }
 
-        // Monitors global locks dynamically
+        function initYearSelectOptions(defaultYear) {
+            const select = document.getElementById('directoryYearSelect');
+            select.innerHTML = "";
+            availableYears.forEach(yr => {
+                const opt = document.createElement('option');
+                opt.value = yr;
+                opt.textContent = `${yr} Directory Folder`;
+                if (yr === defaultYear) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function addNewYearFolder() {
+            const newYear = prompt("Enter custom year directory to provision (e.g., 2028):");
+            if (!newYear) return;
+            const parsedYear = parseInt(newYear.trim());
+            if (isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+                alert("Invalid directory year configuration parameters provided.");
+                return;
+            }
+            if (availableYears.includes(parsedYear)) {
+                alert("Directory folder for this year node already exists.");
+                return;
+            }
+            availableYears.push(parsedYear);
+            availableYears.sort((a, b) => a - b);
+            initYearSelectOptions(parsedYear);
+            buildMonthlyFolders();
+            fetchDocuments();
+        }
+
         function setupLockDatabaseListener() {
             supabaseClient
                 .channel('realtime:active_document_locks')
@@ -224,7 +290,6 @@
             const noteArrival = document.getElementById('noticeArrival');
             const noteImport = document.getElementById('noticeImport');
 
-            // Reset UI states
             lblSpsicDb.style.display = "none";
             lblArrivalDb.style.display = "none";
             lblImportDb.style.display = "none";
@@ -240,31 +305,6 @@
                 return;
             }
 
-            // Check if another account has this file open
-            const { data: activeLock } = await supabaseClient
-                .from('active_document_locks')
-                .select('*')
-                .eq('spsic_number', numInput)
-                .maybeSingle();
-
-            if (activeLock && activeLock.locked_by_id !== currentUserSession.id) {
-                // LOCK DETECTED: block editing inputs completely
-                banner.innerHTML = `🛑 <strong>Access Blocked:</strong> This document package is currently being modified by user <strong>${activeLock.locked_by_email}</strong>. To prevent conflicts, editing is disabled until they close it.`;
-                banner.style.display = "block";
-
-                fSpsic.setAttribute('disabled', 'true');
-                fArrival.setAttribute('disabled', 'true');
-                fImport.setAttribute('disabled', 'true');
-                submitBtn.setAttribute('disabled', 'true');
-                return;
-            }
-
-            // If the slot is clear or owned by us, register/renew your heartbeat lock
-            if (activeTrackingSpsic !== numInput) {
-                startLockHeartbeat(numInput);
-            }
-
-            // Check Database upload state structure records
             const { data } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
@@ -272,6 +312,38 @@
                 .maybeSingle();
             
             localFetchedRecord = data;
+
+            // CRITICAL UPGRADE: Lock modifications entirely if entry is Approved / Completed
+            if (data && data.status === "Completed") {
+                banner.innerHTML = `🔒 <strong>Immutable Records Blocked:</strong> SPSIC Sequence reference is already **Approved & Finalized**. Modification pipeline access is rescinded.`;
+                banner.style.display = "block";
+                fSpsic.setAttribute('disabled', 'true');
+                fArrival.setAttribute('disabled', 'true');
+                fImport.setAttribute('disabled', 'true');
+                submitBtn.setAttribute('disabled', 'true');
+                return;
+            }
+
+            const { data: activeLock } = await supabaseClient
+                .from('active_document_locks')
+                .select('*')
+                .eq('spsic_number', numInput)
+                .maybeSingle();
+
+            if (activeLock && activeLock.locked_by_id !== currentUserSession.id) {
+                banner.innerHTML = `🛑 <strong>Access Blocked:</strong> This document package is currently being modified by user <strong>${activeLock.locked_by_email}</strong>. To prevent conflicts, editing is disabled until they close it.`;
+                banner.style.display = "block";
+                fSpsic.setAttribute('disabled', 'true');
+                fArrival.setAttribute('disabled', 'true');
+                fImport.setAttribute('disabled', 'true');
+                submitBtn.setAttribute('disabled', 'true');
+                return;
+            }
+
+            if (activeTrackingSpsic !== numInput) {
+                startLockHeartbeat(numInput);
+            }
+
             let hasSpsic = fSpsic.files.length > 0;
             let hasArrival = fArrival.files.length > 0;
 
@@ -281,7 +353,6 @@
                 if (data.import_docs_path) { lblImportDb.style.display = "block"; }
             }
 
-            // Enforce sequential upload rules
             if (hasSpsic) {
                 noteArrival.style.display = "none";
             } else {
@@ -297,12 +368,10 @@
             }
         }
 
-        // Heartbeat state mechanisms to maintain live locks
         async function startLockHeartbeat(spsic) {
             clearLockHeartbeat();
             activeTrackingSpsic = spsic;
 
-            // Immediately declare the lock to Supabase
             await supabaseClient.from('active_document_locks').upsert({
                 spsic_number: spsic,
                 locked_by_email: currentUserSession.email,
@@ -310,7 +379,6 @@
                 last_ping_at: new Date().toISOString()
             });
 
-            // Keep renewing the lock every 5 seconds to show you are still active
             presenceHeartbeatInterval = setInterval(async () => {
                 if (activeTrackingSpsic) {
                     await supabaseClient.from('active_document_locks').upsert({
@@ -336,9 +404,10 @@
         function buildMonthlyFolders() {
             const container = document.getElementById('monthFolderContainer');
             container.innerHTML = "";
-            const monthsArray = ["01","02","03","04","05","06","07","08","09","10","11","12"];
-            monthsArray.forEach(m => {
-                const queryStr = `2026-${m}`;
+            const currentYearSelected = document.getElementById('directoryYearSelect').value;
+            
+            monthsLabels.forEach(m => {
+                const queryStr = `${currentYearSelected}-${m.value}`;
                 const folder = document.createElement('div');
                 folder.className = `folder-node ${selectedFolderMonth === queryStr ? 'active' : ''}`;
                 folder.onclick = () => {
@@ -346,17 +415,23 @@
                     buildMonthlyFolders();
                     fetchDocuments();
                 };
-                folder.innerHTML = `<span class="icon">📁</span> 2026-${m}`;
+                folder.innerHTML = `<span class="icon">📁</span> ${m.text}`;
                 container.appendChild(folder);
             });
         }
 
         async function fetchDocuments() {
             const searchVal = document.getElementById('docSearchBox').value.trim();
+            const currentYearSelected = document.getElementById('directoryYearSelect').value;
             let query = supabaseClient.from('imported_shipment_docs').select('*');
 
-            if (searchVal) { query = query.ilike('spsic_number', `%${searchVal}%`); }
-            else if (selectedFolderMonth) { query = query.eq('target_month', selectedFolderMonth); }
+            if (searchVal) { 
+                query = query.ilike('spsic_number', `%${searchVal}%`); 
+            } else if (selectedFolderMonth) { 
+                query = query.eq('target_month', selectedFolderMonth); 
+            } else {
+                query = query.like('target_month', `${currentYearSelected}-%`);
+            }
 
             const { data } = await query.order('created_at', { ascending: false });
             const tbody = document.getElementById('documentLogsTableBody');
@@ -388,13 +463,11 @@
             const fileArrivalEl = document.getElementById('fileArrival').files[0];
             const fileImportEl = document.getElementById('fileImportDocs').files[0];
 
-            // Fallback safely to existing values if a record was previously fetched
             let spsicPath = localFetchedRecord ? localFetchedRecord.spsic_file_path : null;
             let arrivalPath = localFetchedRecord ? localFetchedRecord.arrival_notice_path : null;
             let importPath = localFetchedRecord ? localFetchedRecord.import_docs_path : null;
 
             try {
-                // Execute storage uploads strictly. If any upload fails, execution stops immediately.
                 if (fileSpsicEl) {
                     const name = `SPSIC-${rawNumber}/${monthTarget}_SPSIC_${fileSpsicEl.name}`;
                     const { error: uploadErr } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileSpsicEl, { upsert: true });
@@ -416,13 +489,11 @@
                     importPath = name;
                 }
 
-                // Double-check validation: Do not allow a blank path if this is a first-time submission
                 if (!spsicPath) {
                     alert("Error: Please select a valid SPSIC document file to upload.");
                     return;
                 }
 
-                // Derive operational sequence pipeline status
                 let derivedStatus = "Pending"; 
                 if (spsicPath && !arrivalPath && !importPath) derivedStatus = "Pending";
                 else if (spsicPath && arrivalPath && !importPath) derivedStatus = "Incomplete";
@@ -438,21 +509,24 @@
                     updated_at: new Date().toISOString()
                 };
 
-                // Commit structured records to table
                 const { error: dbError } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number' });
                 if (dbError) throw dbError;
 
                 alert("Records synchronized successfully!");
                 
-                // Clean interface state allocations
                 await clearLockHeartbeat();
-                document.getElementById('uploadEngineForm').reset(); // Sweeps form inputs completely
-                localFetchedRecord = null; // Flush active cache references
+                document.getElementById('uploadEngineForm').reset(); 
+                localFetchedRecord = null; 
                 
-                // Set dynamic folder reference to view newly created document instantly
                 selectedFolderMonth = monthTarget;
-                buildMonthlyFolders();
+                const uploadedYear = monthTarget.split('-')[0];
+                if (!availableYears.includes(parseInt(uploadedYear))) {
+                    availableYears.push(parseInt(uploadedYear));
+                    availableYears.sort((a, b) => a - b);
+                }
+                document.getElementById('directoryYearSelect').value = uploadedYear;
                 
+                buildMonthlyFolders();
                 fetchDocuments();
                 evaluateUploadSequenceLocks();
 
@@ -463,6 +537,7 @@
         }
 
         async function openDocCompiler(recordId) {
+            activeInspectingRecordId = recordId;
             const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
             if(!doc) return;
 
@@ -488,14 +563,45 @@
                 targetBody.appendChild(title);
                 targetBody.appendChild(iframe);
             }
+
+            // Dynamic Modal Control Interface for Admins
+            const approveBtn = document.getElementById('modalApproveActionBtn');
+            if (currentUserRole === 'Admin' && doc.status !== 'Completed') {
+                approveBtn.style.display = "block";
+            } else {
+                approveBtn.style.display = "none";
+            }
+
             document.getElementById('documentViewerOverlay').style.display = 'flex';
+        }
+
+        async function approveCurrentDocument() {
+            if (!activeInspectingRecordId) return;
+            if (!confirm("Are you sure you want to approve this document package? This action will freeze the records from being updated.")) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .update({ status: 'Completed', updated_at: new Date().toISOString() })
+                    .eq('id', activeInspectingRecordId);
+
+                if (error) throw error;
+
+                alert("Document group approved successfully and locked into production records!");
+                closeViewer();
+                fetchDocuments();
+                document.getElementById('spsicRawNumber').value = '';
+                evaluateUploadSequenceLocks();
+            } catch (err) {
+                alert(`Approval transaction failed: ${err.message}`);
+            }
         }
 
         function closeViewer() {
             document.getElementById('documentViewerOverlay').style.display = 'none';
+            activeInspectingRecordId = null;
         }
 
-        // Release lock instantly if the user leaves the tab or browser window closes
         window.addEventListener('beforeunload', () => {
             clearLockHeartbeat();
         });
