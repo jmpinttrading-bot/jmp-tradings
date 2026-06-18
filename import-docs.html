@@ -137,7 +137,7 @@
                     
                     <div class="form-group">
                         <label>3rd Upload: Import Docs File (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
+                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="evaluateUploadSequenceLocks()">
                         <div id="noticeImport" class="lock-notice">⚠️ Locked: Upload 1st and 2nd Files first.</div>
                         <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
@@ -329,16 +329,18 @@
                 return;
             }
 
-            const { data } = await supabaseClient
-                .from('imported_shipment_docs')
-                .select('*')
-                .eq('spsic_number', numInput)
-                .eq('target_month', targetMonthInput)
-                .maybeSingle();
-            
-            localFetchedRecord = data;
+            if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
+                const { data } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .select('*')
+                    .eq('spsic_number', numInput)
+                    .eq('target_month', targetMonthInput)
+                    .maybeSingle();
+                
+                localFetchedRecord = data;
+            }
 
-            if (data && data.status === "Completed") {
+            if (localFetchedRecord && localFetchedRecord.status === "Completed") {
                 const [yr, mn] = targetMonthInput.split('-');
                 const humanizedMonth = monthsLabels.find(m => m.value === mn)?.text || mn;
                 banner.innerHTML = `🔒 <strong>Immutable Records Blocked:</strong> SPSIC reference number is already **Approved & Finalized** for the directory <strong>${humanizedMonth} ${yr}</strong>. Modification access is rescinded.`;
@@ -373,10 +375,10 @@
             let hasSpsic = fSpsic.files.length > 0;
             let hasArrival = fArrival.files.length > 0;
 
-            if (data) {
-                if (data.spsic_file_path) { hasSpsic = true; lblSpsicDb.style.display = "block"; }
-                if (data.arrival_notice_path) { hasArrival = true; lblArrivalDb.style.display = "block"; }
-                if (data.import_docs_path) { lblImportDb.style.display = "block"; }
+            if (localFetchedRecord) {
+                if (localFetchedRecord.spsic_file_path) { hasSpsic = true; lblSpsicDb.style.display = "block"; }
+                if (localFetchedRecord.arrival_notice_path) { hasArrival = true; lblArrivalDb.style.display = "block"; }
+                if (localFetchedRecord.import_docs_path) { lblImportDb.style.display = "block"; }
             }
 
             if (hasSpsic) {
@@ -499,15 +501,10 @@
             });
         }
 
-        /**
-         * CLIENT-SIDE LOSSLESS PDF COMPRESSION ENGINE
-         * Strips unreferenced document components, flattens unused forms, and normalizes
-         * fonts to optimize size without ruining vector readability or high-res printing.
-         */
         async function optimizeAndCompressPdfFile(fileObject) {
-            const MAX_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB Target Boundary
+            const MAX_SIZE_LIMIT = 5 * 1024 * 1024; 
             if (fileObject.type !== "application/pdf" || fileObject.size <= MAX_SIZE_LIMIT) {
-                return fileObject; // Skip optimizing if it's already within limits or a ZIP/Image
+                return fileObject; 
             }
 
             console.log(`Compressing oversized file: ${(fileObject.size / 1024 / 1024).toFixed(2)} MB`);
@@ -517,7 +514,6 @@
                 const sourcePdf = await PDFLib.PDFDocument.load(rawBuffer);
                 const targetPdf = await PDFLib.PDFDocument.create();
 
-                // Re-compile vector map references explicitly page by page to strip ghost metadata chunks
                 const pageIndices = sourcePdf.getPageIndices();
                 const copiedPages = await targetPdf.copyPages(sourcePdf, pageIndices);
                 
@@ -525,7 +521,6 @@
                     targetPdf.addPage(page);
                 });
 
-                // Compress structural arrays natively
                 const optimizedBytes = await targetPdf.save({ 
                     useObjectStreams: true, 
                     addDefaultFonts: false,
@@ -533,11 +528,11 @@
                 });
 
                 const optimizedFile = new File([optimizedBytes], fileObject.name, { type: "application/pdf" });
-                console.log(`Optimization Completed. Optimized Size: ${(optimizedFile.size / 1024 / 1024).toFixed(2)} MB`);
+                console.log(`Optimization Completed. Size: ${(optimizedFile.size / 1024 / 1024).toFixed(2)} MB`);
                 return optimizedFile;
             } catch (err) {
                 console.warn("Internal PDF compaction engine fallback triggered:", err);
-                return fileObject; // Fall back to original file if the PDF structure is encrypted/protected
+                return fileObject; 
             }
         }
 
@@ -555,7 +550,6 @@
             let importPath = localFetchedRecord ? localFetchedRecord.import_docs_path : null;
 
             try {
-                // Intercept data buffers to downscale and normalize if files cross size bounds
                 if (fileSpsicEl) fileSpsicEl = await optimizeAndCompressPdfFile(fileSpsicEl);
                 if (fileArrivalEl) fileArrivalEl = await optimizeAndCompressPdfFile(fileArrivalEl);
                 if (fileImportEl) fileImportEl = await optimizeAndCompressPdfFile(fileImportEl);
@@ -604,11 +598,12 @@
                 const { error: dbError } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
                 if (dbError) throw dbError;
 
+                localFetchedRecord = payload;
                 alert("Records synchronized successfully!");
                 
-                await clearLockHeartbeat();
-                document.getElementById('uploadEngineForm').reset(); 
-                localFetchedRecord = null; 
+                document.getElementById('fileSpsic').value = "";
+                document.getElementById('fileArrival').value = "";
+                document.getElementById('fileImportDocs').value = "";
                 
                 selectedFolderMonth = monthTarget;
                 const uploadedYear = monthTarget.split('-')[0];
@@ -620,7 +615,7 @@
                 
                 buildMonthlyFolders();
                 toggleWorkspaceView();
-                evaluateUploadSequenceLocks();
+                await evaluateUploadSequenceLocks();
 
             } catch (err) {
                 console.error("Pipeline Exception Logged:", err);
@@ -690,7 +685,7 @@
                     if (isAdmin) {
                         zipBlock.innerHTML = `
                             <p style="font-weight: 600; color: #1e293b;">📦 Compressed File Package Archive</p>
-                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Web browsers cannot preview raw ZIP components inline. Use the interface gateway button below to pull down the asset bundle.</p>
+                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Web browsers cannot preview ZIP components inline. Use the interface gateway button below to download the asset bundle.</p>
                             <a href="${publicUrl}" download class="zip-download-btn">Download Archive Payload</a>
                         `;
                     } else {
