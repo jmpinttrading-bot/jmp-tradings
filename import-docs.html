@@ -240,10 +240,12 @@
                 currentUserRole = profile.role.toLowerCase().trim();
                 if (currentUserRole !== 'admin') {
                     document.getElementById('backToDashboardBtn').href = "employee-dashboard.html";
-                    document.getElementById('backToDashboardBtn').textContent = "Employee Profile";
+                    // Modified to change tab label dynamically for employee access groups
+                    document.getElementById('backToDashboardBtn').textContent = "👤 My Account Profile";
                     document.getElementById('adminControlPanelLink').style.display = "none";
                 } else {
-                    // Make Control Panel visible exclusively for administrative sessions
+                    document.getElementById('backToDashboardBtn').href = "admin-dashboard.html";
+                    document.getElementById('backToDashboardBtn').textContent = "Profile Management";
                     document.getElementById('adminControlPanelLink').style.display = "block";
                 }
             }
@@ -294,7 +296,7 @@
         }
 
         function forceRefetchAndEvaluate() {
-            localFetchedRecord = null; // Forces app to ask Supabase for updated record context cleanly
+            localFetchedRecord = null; 
             evaluateUploadSequenceLocks();
         }
 
@@ -314,7 +316,6 @@
             const noteArrival = document.getElementById('noticeArrival');
             const noteImport = document.getElementById('noticeImport');
 
-            // Reset UI States
             lblSpsicDb.style.display = "none";
             lblArrivalDb.style.display = "none";
             lblImportDb.style.display = "none";
@@ -330,7 +331,6 @@
                 return;
             }
 
-            // Fetch remote data safely if cache clear is requested
             if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
                 const { data } = await supabaseClient
                     .from('imported_shipment_docs')
@@ -342,7 +342,6 @@
                 localFetchedRecord = data;
             }
 
-            // Guard Clause: Complete records are locked from further editing
             if (localFetchedRecord && localFetchedRecord.status === "Completed") {
                 const [yr, mn] = targetMonthInput.split('-');
                 const humanizedMonth = monthsLabels.find(m => m.value === mn)?.text || mn;
@@ -355,7 +354,6 @@
                 return;
             }
 
-            // Guard Clause: Concurrent locks by another teammate
             const { data: activeLock } = await supabaseClient
                 .from('active_document_locks')
                 .select('*')
@@ -376,7 +374,6 @@
                 startLockHeartbeat(numInput);
             }
 
-            // --- STRICT DATABASE-DRIVEN STATE PIPELINE ---
             let hasSpsicInDb = false;
             let hasArrivalInDb = false;
 
@@ -394,15 +391,13 @@
                 }
             }
 
-            // If file 1 already exists in the Database, disable its upload selector to prevent accidental overrides
             if (hasSpsicInDb) {
                 fSpsic.setAttribute('disabled', 'true');
             }
 
-            // Rule for 2nd Upload: Unlocks ONLY if 1st file is verified in DB
             if (hasSpsicInDb) {
                 if (hasArrivalInDb) {
-                    fArrival.setAttribute('disabled', 'true'); // lock if already uploaded
+                    fArrival.setAttribute('disabled', 'true'); 
                 } else {
                     fArrival.removeAttribute('disabled');
                 }
@@ -413,7 +408,6 @@
                 noteArrival.style.display = "block";
             }
 
-            // Rule for 3rd Upload: Unlocks ONLY if BOTH 1st and 2nd files are verified in DB
             if (hasSpsicInDb && hasArrivalInDb) {
                 fImport.removeAttribute('disabled');
                 noteImport.style.display = "none";
