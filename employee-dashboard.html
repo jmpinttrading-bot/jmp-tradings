@@ -20,7 +20,7 @@
         .user-badge { background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: 600; }
         
         /* Flex Layout containing the Left Logo and Main Workspace Grid Panels */
-        .dashboard-layout-wrapper { display: flex; gap: 30px; align-items: center; }
+        .dashboard-layout-wrapper { display: flex; gap: 30px; align-items: flex-start; }
 
         /* Transparent container acting as part of the page background layout */
         .logo-display-container {
@@ -41,14 +41,26 @@
             object-fit: contain;
         }
 
-        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; flex: 1; }
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; flex: 1; min-width: 0; }
         .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: fit-content; }
         .card h3 { color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
         
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
-        .btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        /* Functional Data Grid Categorization styles from 201 File system */
+        .section-title { font-size: 0.85rem; font-weight: bold; color: #ee964b; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 10px 0; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9; }
+        .section-title:first-of-type { margin-top: 0; }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
+        .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+        .form-row.full { grid-template-columns: 1fr; }
+
+        .form-group { display: flex; flex-direction: column; margin-bottom: 5px; }
+        .form-group label { font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+        
+        /* Non-editable Locked Fields Visual Architecture Styling */
+        .form-group input[readonly] { background-color: #f1f5f9; color: #64748b; cursor: not-allowed; border-color: #e2e8f0; }
+        
+        .btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
         .btn:hover { background: #133a6f; }
         
         .alert { padding: 10px; margin-bottom: 15px; border-radius: 6px; font-size: 0.9rem; display: none; }
@@ -64,6 +76,7 @@
             .sidebar { width: 100%; min-height: auto; padding: 20px; }
             .main-content { padding: 15px; }
             .grid { grid-template-columns: 1fr; width: 100%; }
+            .form-row, .form-row.triple { grid-template-columns: 1fr; gap: 12px; }
         }
     </style>
 </head>
@@ -92,8 +105,83 @@
 
             <div class="grid">
                 <div class="card">
-                    <h3>Welcome to your JMP Operational Portal</h3>
-                    <p>This is your internal secure environment. Use the account management panel on the right side if you need to rotate your security credentials or update your login passwords.</p>
+                    <h3>My 201 Dossier Master File</h3>
+                    
+                    <div class="section-title">Employment Track Details</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Company ID Number</label>
+                            <input type="text" id="empIdNo" readonly placeholder="Not Assigned">
+                        </div>
+                        <div class="form-group">
+                            <label>Date Hired</label>
+                            <input type="text" id="dateHired" readonly placeholder="YYYY-MM-DD">
+                        </div>
+                    </div>
+
+                    <div class="section-title">Personal Identity Matrix</div>
+                    <div class="form-row triple">
+                        <div class="form-group">
+                            <label>Given Name</label>
+                            <input type="text" id="givenName" readonly placeholder="None">
+                        </div>
+                        <div class="form-group">
+                            <label>Middle Name</label>
+                            <input type="text" id="middleName" readonly placeholder="None">
+                        </div>
+                        <div class="form-group">
+                            <label>Surname</label>
+                            <input type="text" id="surname" readonly placeholder="None">
+                        </div>
+                    </div>
+
+                    <div class="section-title">Contact & Communication Details</div>
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label>Present Residential Address</label>
+                            <input type="text" id="presentAddress" readonly placeholder="No registered permanent residential record on system file">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Employee Contact Number</label>
+                            <input type="text" id="phoneNo" readonly placeholder="None">
+                        </div>
+                    </div>
+
+                    <div class="section-title">Emergency Contingency Contact</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Emergency Contact Person</label>
+                            <input type="text" id="emergencyContactName" readonly placeholder="None">
+                        </div>
+                        <div class="form-group">
+                            <label>Contingency Contact Phone Number</label>
+                            <input type="text" id="emergencyContactPhone" readonly placeholder="None">
+                        </div>
+                    </div>
+
+                    <div class="section-title">Government Documentation Registries</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>SSS Number</label>
+                            <input type="text" id="sssNo" readonly placeholder="00-0000000-0">
+                        </div>
+                        <div class="form-group">
+                            <label>TIN Number</label>
+                            <input type="text" id="tinNo" readonly placeholder="000-000-000-000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Pag-IBIG MID Number</label>
+                            <input type="text" id="pagibigNo" readonly placeholder="0000-0000-0000">
+                        </div>
+                        <div class="form-group">
+                            <label>PhilHealth Identification</label>
+                            <input type="text" id="philhealthNo" readonly placeholder="00-000000000-0">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -132,7 +220,39 @@
             
             currentEmployeeId = user.id;
             document.getElementById('userEmail').textContent = `👤 User: ${user.email.split('@')[0]}`;
+            
+            // Automatically fetch and load the authenticated user's read-only 201 records
+            fetchMy201Dossier();
             setupSessionCrossCheckListener();
+        }
+
+        async function fetchMy201Dossier() {
+            const { data, error } = await supabaseClient
+                .from('employee_201_docs')
+                .select('*')
+                .eq('id', currentEmployeeId)
+                .maybeSingle();
+
+            if (error) {
+                console.error("Error loading profile details:", error.message);
+                return;
+            }
+
+            if (data) {
+                document.getElementById('empIdNo').value = data.emp_id_no || '';
+                document.getElementById('dateHired').value = data.date_hired || '';
+                document.getElementById('givenName').value = data.given_name || '';
+                document.getElementById('middleName').value = data.middle_name || '';
+                document.getElementById('surname').value = data.surname || '';
+                document.getElementById('presentAddress').value = data.present_address || '';
+                document.getElementById('phoneNo').value = data.phone_no || '';
+                document.getElementById('emergencyContactName').value = data.emergency_contact_name || '';
+                document.getElementById('emergencyContactPhone').value = data.emergency_contact_phone || '';
+                document.getElementById('sssNo').value = data.sss_no || '';
+                document.getElementById('tinNo').value = data.tin_no || '';
+                document.getElementById('pagibigNo').value = data.pagibig_no || '';
+                document.getElementById('philhealthNo').value = data.philhealth_no || '';
+            }
         }
 
         function setupSessionCrossCheckListener() {
