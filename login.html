@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en)
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -297,21 +297,15 @@
     </div>
 
     <script>
-        // --- STEP 1: CONFIGURE YOUR SUPABASE CREDENTIALS ---
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
-        
-        // This is used to map usernames into fake backend emails required by Supabase
         const CORPORATE_DOMAIN = "@jmp-corporate.local"; 
 
-        // Initialize Supabase Client securely under an independent namespace
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Password Show/Hide Toggle Control Engine
         function togglePasswordVisibility() {
             const passInput = document.getElementById('employeePassword');
             const toggleBtn = document.getElementById('togglePassBtn');
-            
             if (passInput.type === 'password') {
                 passInput.type = 'text';
                 toggleBtn.textContent = 'HIDE';
@@ -321,7 +315,6 @@
             }
         }
 
-        // Custom Modal Control Handlers
         function openErrorModal(title, message) {
             document.getElementById('errorTitle').textContent = title;
             document.getElementById('errorMessage').textContent = message;
@@ -333,7 +326,6 @@
             document.getElementById('employeeUsername').focus();
         }
 
-        // Authentication Implementation via Supabase
         async function handlePlatformLogin(event) {
             event.preventDefault();
             
@@ -341,50 +333,57 @@
             const passwordInput = document.getElementById('employeePassword').value;
             const submitBtn = document.getElementById('submitBtn');
             
-            // 1. Accidentally typed as email validation check
             if (usernameInput.includes('@')) {
-                openErrorModal(
-                    "Email Detected", 
-                    "Please enter your assigned System Username only, not your email address account string."
-                );
+                openErrorModal("Email Detected", "Please enter your assigned System Username only.");
                 return;
             }
 
-            // 2. Symbols Validation Check
             const validUsernamePattern = /^[a-zA-Z0-9._-]+$/;
             if (!validUsernamePattern.test(usernameInput)) {
-                openErrorModal(
-                    "Special Symbols Detected", 
-                    "Usernames must only contain letters, numbers, periods, dashes, or underscores. Please remove special characters."
-                );
+                openErrorModal("Special Symbols Detected", "Usernames must only contain letters, numbers, periods, dashes, or underscores.");
                 return;
             }
 
-            // Disable button during network call
             submitBtn.disabled = true;
             submitBtn.textContent = "Verifying Credentials...";
 
-            // 3. Map username to a structured backend string for Supabase auth
             const generatedEmail = usernameInput.toLowerCase() + CORPORATE_DOMAIN;
 
             try {
-                // Sign in using Supabase Auth client interface instance
                 const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: generatedEmail,
                     password: passwordInput,
                 });
 
                 if (error) {
-                    // Open modal for incorrect password or non-existent user instances
                     openErrorModal("Access Denied", error.message);
                     submitBtn.disabled = false;
                     submitBtn.textContent = "Verify & Enter System";
                     return;
                 }
 
-                // If authentication succeeds completely, forward user down the system tree
                 if (data.user) {
-                    window.location.href = "dashboard-router.html"; 
+                    // --- REFINED DIRECTION ENGINE ---
+                    // Query the profiles table database directly to intercept the verified row status
+                    const { data: profile, error: profileError } = await supabaseClient
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', data.user.id)
+                        .single();
+
+                    if (profileError || !profile) {
+                        openErrorModal("Profile Missing", "Authenticated successfully, but no system assignment profile found.");
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = "Verify & Enter System";
+                        return;
+                    }
+
+                    // Strict redirect based entirely on database state
+                    if (profile.role === 'Admin') {
+                        window.location.href = "admin-dashboard.html";
+                    } else {
+                        window.location.href = "employee-dashboard.html";
+                    }
                 }
 
             } catch (err) {
@@ -394,6 +393,5 @@
             }
         }
     </script>
-
 </body>
 </html>
