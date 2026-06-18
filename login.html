@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JMP System Login | Internal Corporate Platform</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         /* Global Reset */
         * {
@@ -148,6 +151,11 @@
             background-color: #133a6f;
         }
 
+        .submit-btn:disabled {
+            background-color: #64748b;
+            cursor: not-allowed;
+        }
+
         /* Auxiliary Utilities link */
         .utilities {
             margin-top: 25px;
@@ -268,7 +276,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="submit-btn">Verify & Enter System</button>
+            <button type="submit" id="submitBtn" class="submit-btn">Verify & Enter System</button>
         </form>
 
         <div class="utilities">
@@ -289,6 +297,16 @@
     </div>
 
     <script>
+        // --- STEP 1: CONFIGURE YOUR SUPABASE CREDENTIALS ---
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        
+        // This is used to map usernames into fake backend emails required by Supabase
+        const CORPORATE_DOMAIN = "@jmp-corporate.local"; 
+
+        // Initialize Supabase Client securely under an independent namespace
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         // Password Show/Hide Toggle Control Engine
         function togglePasswordVisibility() {
             const passInput = document.getElementById('employeePassword');
@@ -315,11 +333,13 @@
             document.getElementById('employeeUsername').focus();
         }
 
-        // Advanced Username Checking Validation Script Engine
-        function handlePlatformLogin(event) {
+        // Authentication Implementation via Supabase
+        async function handlePlatformLogin(event) {
             event.preventDefault();
             
             const usernameInput = document.getElementById('employeeUsername').value.trim();
+            const passwordInput = document.getElementById('employeePassword').value;
+            const submitBtn = document.getElementById('submitBtn');
             
             // 1. Accidentally typed as email validation check
             if (usernameInput.includes('@')) {
@@ -330,7 +350,7 @@
                 return;
             }
 
-            // 2. Symbols Validation Check (Allows only alphanumeric characters, underscores, or dashes)
+            // 2. Symbols Validation Check
             const validUsernamePattern = /^[a-zA-Z0-9._-]+$/;
             if (!validUsernamePattern.test(usernameInput)) {
                 openErrorModal(
@@ -340,8 +360,38 @@
                 return;
             }
 
-            // If entry rules pass completely, move forward with database processing mockup
-            alert("Connecting to JMP Corporate Security Framework Layer... \n\nHandshake successful! Welcome, " + usernameInput + ".");
+            // Disable button during network call
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Verifying Credentials...";
+
+            // 3. Map username to a structured backend string for Supabase auth
+            const generatedEmail = usernameInput.toLowerCase() + CORPORATE_DOMAIN;
+
+            try {
+                // Sign in using Supabase Auth client interface instance
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: generatedEmail,
+                    password: passwordInput,
+                });
+
+                if (error) {
+                    // Open modal for incorrect password or non-existent user instances
+                    openErrorModal("Access Denied", error.message);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = "Verify & Enter System";
+                    return;
+                }
+
+                // If authentication succeeds completely, forward user down the system tree
+                if (data.user) {
+                    window.location.href = "dashboard-router.html"; 
+                }
+
+            } catch (err) {
+                openErrorModal("Connection Failed", "Unable to establish contact with the JMP Authentication server.");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Verify & Enter System";
+            }
         }
     </script>
 

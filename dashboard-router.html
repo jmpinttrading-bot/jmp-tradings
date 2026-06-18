@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <p>Verifying access privileges... Please wait.</p>
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function routeUser() {
+            const { data: { user }, error } = await supabase.auth.getUser();
+
+            if (error || !user) {
+                // Not logged in, kick back to login page
+                window.location.href = "login.html";
+                return;
+            }
+
+            // Read the user_role from Supabase User Metadata
+            const userRole = user.user_metadata.role;
+
+            if (userRole === "Admin") {
+                window.location.href = "admin-dashboard.html";
+            } else {
+                window.location.href = "employee-dashboard.html";
+            }
+        }
+        routeUser();
+    </script>
+</body>
+</html>

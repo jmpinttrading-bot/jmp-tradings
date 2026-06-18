@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JMP Employee Workspace</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f4f6f9; color: #333; display: flex; min-height: 100vh; }
+        
+        .sidebar { width: 260px; background-color: #0b2545; color: white; padding: 30px 20px; display: flex; flex-direction: column; }
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #133a6f; padding-bottom: 15px; color: #ee964b; }
+        .sidebar a { color: #cbd5e1; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background-color: #133a6f; color: white; }
+        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        .main-content { flex: 1; padding: 40px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .user-badge { background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: 600; }
+        
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: fit-content; }
+        .card h3 { color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        .btn:hover { background: #133a6f; }
+        
+        .alert { padding: 10px; margin-bottom: 15px; border-radius: 6px; font-size: 0.9rem; display: none; }
+        .alert.success { background: #d1fae5; color: #065f46; }
+        .alert.error { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>JMP Workspace</h2>
+        <a href="#" class="active">👤 My Account Profile</a>
+        <button class="logout-btn" onclick="handleLogout()">Logout System</button>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Employee Terminal</h1>
+            <div class="user-badge" id="userEmail">Loading User...</div>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>Welcome to your JMP Operational Portal</h3>
+                <p>This is your internal secure environment. Use the account management panel on the right side if you need to rotate your security credentials or update your login passwords.</p>
+            </div>
+
+            <div class="card">
+                <h3>Account Security</h3>
+                <form onsubmit="handleChangePassword(event)">
+                    <div class="form-group">
+                        <label>New Secure Password</label>
+                        <input type="password" id="newPassword" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn">Update Account Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function showAlert(msg, type) {
+            const box = document.getElementById('alertBox');
+            box.textContent = msg;
+            box.className = `alert ${type}`;
+            box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 5000);
+        }
+
+        async function initDashboard() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            document.getElementById('userEmail').textContent = `👤 User: ${user.email.split('@')[0]}`;
+        }
+
+        // Change password function for employee accounts
+        async function handleChangePassword(e) {
+            e.preventDefault();
+            const password = document.getElementById('newPassword').value;
+
+            const { data, error } = await supabaseClient.auth.updateUser({ password: password });
+
+            if (error) {
+                showAlert(error.message, "error");
+            } else {
+                showAlert("Your account password has been updated successfully!", "success");
+                document.getElementById('newPassword').value = '';
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
+        }
+        initDashboard();
+    </script>
+</body>
+</html>
