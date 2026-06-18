@@ -94,7 +94,7 @@
             <table class="log-table">
                 <thead>
                     <tr>
-                        <th>User Identity Contact</th>
+                        <th>User Identity Username</th>
                         <th>Assigned Role</th>
                         <th>Profile Management Access</th>
                         <th>Import Doc Management Access</th>
@@ -123,28 +123,30 @@
             if (!user) { window.location.href = "login.html"; return; }
             
             currentAdminId = user.id;
-            document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
             
-            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+            const { data: profile } = await supabaseClient.from('profiles').select('role, username').eq('id', user.id).single();
             if (!profile || profile.role !== 'Admin') {
                 window.location.href = "employee-dashboard.html";
                 return;
             }
             
+            document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
+            
             setupSessionCrossCheckListener();
-            initializePresenceSynchronization(user, profile.role);
+            initializePresenceSynchronization(user, profile.username, profile.role);
             fetchPlatformUserProfiles();
         }
 
-        // Pull active profiles and load toggles mapped directly to table permissions columns
         async function fetchPlatformUserProfiles() {
+            // Modified: Swapped out 'email' field reference to match 'username' instead
             const { data: profiles, error } = await supabaseClient
                 .from('profiles')
-                .select('id, email, role, full_name, profile_access, import_access')
+                .select('id, username, role, profile_access, import_access')
                 .order('role', { ascending: true });
 
             const tbody = document.getElementById('accessManagementTableBody');
             if (error || !profiles || profiles.length === 0) {
+                console.error("Supabase Query Error Context:", error);
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #ef4444; padding: 20px;">Failed to gather structural user profile matrices.</td></tr>`;
                 return;
             }
@@ -153,10 +155,9 @@
 
             profiles.forEach(profile => {
                 const tr = document.createElement('tr');
-                const displayName = profile.email ? profile.email : (profile.full_name || 'Unidentified Node');
+                const displayName = profile.username || 'Unidentified Node';
                 const roleBadge = profile.role === 'Admin' ? `<span class="admin-pill-badge">Admin</span>` : `<span class="employee-badge">Employee</span>`;
                 
-                // Fallback to true if column properties are unassigned (null/undefined)
                 const isProfileAllowed = profile.profile_access !== false; 
                 const isImportAllowed = profile.import_access !== false; 
 
@@ -186,10 +187,7 @@
             });
         }
 
-        // Live boolean toggle switches update rows within public.profiles instantly
         async function updateDatabaseAccessClearance(userId, privilegeColumn, isGranted) {
-            console.log(`Synchronizing Privilege Update [User: ${userId} | Column: ${privilegeColumn} | Status: ${isGranted}]`);
-            
             const updatePayload = {};
             updatePayload[privilegeColumn] = isGranted;
 
@@ -202,12 +200,11 @@
                 console.error("Supabase privilege update conflict:", error.message);
                 alert("Error updating access clearance: " + error.message);
             } else {
-                // Refresh labels instantly without reloading page layout completely
                 fetchPlatformUserProfiles();
             }
         }
 
-        function initializePresenceSynchronization(authenticatedUser, userRole) {
+        function initializePresenceSynchronization(authenticatedUser, usernameString, userRole) {
             realTimePresenceChannel = supabaseClient.channel('jmp-global-presence', {
                 config: { presence: { key: authenticatedUser.id } }
             });
@@ -216,18 +213,12 @@
                 .on('presence', { event: 'sync' }, () => {
                     const activeState = realTimePresenceChannel.presenceState();
                     renderActivePresenceRoster(activeState);
-                })
-                .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-                    console.log('User session mapped online:', key, newPresences);
-                })
-                .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-                    console.log('User session terminated:', key, leftPresences);
                 });
 
             realTimePresenceChannel.subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
                     await realTimePresenceChannel.track({
-                        email: authenticatedUser.email,
+                        username: usernameString || authenticatedUser.email.split('@')[0],
                         role: userRole,
                         online_since: new Date().toISOString()
                     });
@@ -259,13 +250,13 @@
                 const item = document.createElement('li');
                 item.className = "user-presence-item";
                 
-                const cleanEmail = userSessionData.email ? userSessionData.email : "Unknown Node";
+                const cleanName = userSessionData.username ? userSessionData.username : "Unknown Node";
                 const designatedRole = userSessionData.role ? userSessionData.role : "employee";
 
                 item.innerHTML = `
                     <div class="pulse-indicator-dot"></div>
                     <div class="user-meta-info">
-                        <span class="user-email-text">${cleanEmail}</span>
+                        <span class="user-email-text">${cleanName}</span>
                         <span class="user-role-lbl">${designatedRole}</span>
                     </div>
                 `;
