@@ -44,6 +44,21 @@
         .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
+
+        /* Mobile View Configurations for Android Screens */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; min-height: auto; padding: 20px; }
+            .main-content { padding: 20px; width: 100%; }
+            .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .action-bar { width: 100%; }
+            .create-btn { display: block; text-align: center; width: 100%; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { border: 1px solid #cbd5e1; margin-bottom: 10px; border-radius: 6px; padding: 8px; background: white; }
+            td { border: none; position: relative; padding-left: 50%; text-align: right; }
+            td:before { content: attr(data-label); position: absolute; left: 10px; width: 45%; text-align: left; font-weight: bold; color: #64748b; }
+        }
     </style>
 </head>
 <body>
@@ -63,7 +78,10 @@
         <div id="alertBox" class="alert"></div>
 
         <div class="action-bar">
-            <a href="register-employee.html" class="create-btn">➕ Provision New Employee Account</a>
+            <a href="register-employee.html" class="create-btn">
+                <span style="font-size: 1.2rem; line-height: 1; font-weight: 900; margin-right: 4px;">+</span> 
+                Provision New Employee Account
+            </a>
         </div>
 
         <div class="grid">
@@ -125,11 +143,12 @@
             tbody.innerHTML = '';
             
             data.forEach(profile => {
+                const dateString = new Date(profile.created_at).toLocaleDateString();
                 const row = `<tr>
-                    <td><strong>${profile.username}</strong></td>
-                    <td>${profile.role}</td>
-                    <td>${new Date(profile.created_at).toLocaleDateString()}</td>
-                    <td>
+                    <td data-label="System Username"><strong>${profile.username}</strong></td>
+                    <td data-label="Assigned Access Role">${profile.role}</td>
+                    <td data-label="Registration Date">${dateString}</td>
+                    <td data-label="Security Actions">
                         <button class="reset-btn" onclick="triggerPasswordReset('${profile.id}', '${profile.username}')">🔄 Reset Password</button>
                     </td>
                 </tr>`;
@@ -137,19 +156,16 @@
             });
         }
 
-        // Action logic to handle an employee password override request
         async function triggerPasswordReset(userId, username) {
-            const newPassword = prompt(`Enter a new temporary password for [ ${username} ]:`);
+            const newPassword = prompt(`Enter a new temporary password for [ ${username} ] :`);
             if (!newPassword) return; 
             if (newPassword.length < 6) { alert("Password must be at least 6 characters long."); return; }
 
-            // Using Supabase Auth Admin functionality wrapped inside runtime context
             const { data, error } = await supabaseClient.auth.admin.updateUserById(userId, {
                 password: newPassword
             });
 
             if (error) {
-                // If your API Key configuration blocks RPC admin access, notify user
                 if (error.status === 403 || error.message.includes("service_role")) {
                     showAlert("To reset employee accounts from the frontend, please ensure your project dashboard allows user updates, or configure an Edge function.", "error");
                 } else {
