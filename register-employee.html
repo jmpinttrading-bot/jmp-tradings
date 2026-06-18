@@ -18,6 +18,12 @@
         .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; background-color: #f8fafc; }
         .form-group input:focus { outline: none; border-color: #0b2545; background-color: white; }
         
+        /* Password wrapper and toggle button styles matching login.html architecture */
+        .password-wrapper { position: relative; display: flex; align-items: center; }
+        .password-wrapper input { padding-right: 55px; }
+        .toggle-password { position: absolute; right: 15px; background: none; border: none; color: #64748b; font-size: 0.85rem; font-weight: 600; cursor: pointer; user-select: none; transition: color 0.2s; }
+        .toggle-password:hover { color: #0b2545; }
+
         .btn-group { display: flex; gap: 15px; margin-top: 10px; }
         .submit-btn { flex: 2; background-color: #0b2545; color: white; border: none; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; }
         .submit-btn:hover { background-color: #133a6f; }
@@ -45,7 +51,10 @@
 
             <div class="form-group">
                 <label for="newPassword">Initial Secure Password</label>
-                <input type="password" id="newPassword" required placeholder="Minimum 6 characters">
+                <div class="password-wrapper">
+                    <input type="password" id="newPassword" required placeholder="Minimum 6 characters">
+                    <button type="button" class="toggle-password" id="togglePassBtn" onclick="togglePasswordVisibility()">SHOW</button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -76,6 +85,20 @@
             box.style.display = 'block';
         }
 
+        // Core visibility control engine
+        function togglePasswordVisibility() {
+            const passInput = document.getElementById('newPassword');
+            const toggleBtn = document.getElementById('togglePassBtn');
+            
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggleBtn.textContent = 'HIDE';
+            } else {
+                passInput.type = 'password';
+                toggleBtn.textContent = 'SHOW';
+            }
+        }
+
         async function handleCreateEmployee(e) {
             e.preventDefault();
             const username = document.getElementById('newUsername').value.trim().toLowerCase();
@@ -93,7 +116,6 @@
 
             const generatedEmail = username + CORPORATE_DOMAIN;
 
-            // Step A: Build user credential instance in Supabase Auth management system
             const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
                 email: generatedEmail,
                 password: password,
@@ -105,7 +127,6 @@
                 return;
             }
 
-            // Step B: Push baseline telemetry object directly to profiles logging catalog
             if (signUpData.user) {
                 const { error: profileError } = await supabaseClient
                     .from('profiles')
@@ -119,6 +140,12 @@
                     showAlert(`Success! Account "${username}" has been fully initialized.`, "success");
                     document.getElementById('newUsername').value = '';
                     document.getElementById('newPassword').value = '';
+                    
+                    // Reset visibility back to standard hidden format on field clearance
+                    const passInput = document.getElementById('newPassword');
+                    const toggleBtn = document.getElementById('togglePassBtn');
+                    passInput.type = 'password';
+                    toggleBtn.textContent = 'SHOW';
                 }
             }
         }
