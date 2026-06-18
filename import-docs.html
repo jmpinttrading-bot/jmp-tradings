@@ -372,16 +372,22 @@
                 startLockHeartbeat(numInput);
             }
 
-            let hasSpsic = fSpsic.files.length > 0;
+            // --- REVISED CONDITION BLOCK ---
+            let hasSpsic = false;
             let hasArrival = fArrival.files.length > 0;
 
+            if (fSpsic.files.length > 0 || (localFetchedRecord && localFetchedRecord.spsic_file_path !== null)) {
+                hasSpsic = true;
+            }
+
             if (localFetchedRecord) {
-                if (localFetchedRecord.spsic_file_path) { hasSpsic = true; lblSpsicDb.style.display = "block"; }
+                if (localFetchedRecord.spsic_file_path) { lblSpsicDb.style.display = "block"; }
                 if (localFetchedRecord.arrival_notice_path) { hasArrival = true; lblArrivalDb.style.display = "block"; }
                 if (localFetchedRecord.import_docs_path) { lblImportDb.style.display = "block"; }
             }
 
             if (hasSpsic) {
+                fArrival.removeAttribute('disabled');
                 noteArrival.style.display = "none";
             } else {
                 fArrival.setAttribute('disabled', 'true');
@@ -389,6 +395,7 @@
             }
 
             if (hasSpsic && hasArrival) {
+                fImport.removeAttribute('disabled');
                 noteImport.style.display = "none";
             } else {
                 fImport.setAttribute('disabled', 'true');
