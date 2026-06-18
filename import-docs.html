@@ -115,29 +115,29 @@
                 <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
                     <div class="form-group">
                         <label>SPSIC Identification sequence number</label>
-                        <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="evaluateUploadSequenceLocks()">
+                        <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()">
                     </div>
                     <div class="form-group">
                         <label>Target Folder Month</label>
-                        <input type="month" id="spsicTargetMonth" required onchange="evaluateUploadSequenceLocks()">
+                        <input type="month" id="spsicTargetMonth" required onchange="forceRefetchAndEvaluate()">
                     </div>
                     
                     <div class="form-group">
                         <label>1st Upload: SPSIC Document File (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileSpsic" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="evaluateUploadSequenceLocks()">
+                        <input type="file" id="fileSpsic" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
                         <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
                         <label>2nd Upload: Arrival Notice (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileArrival" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="evaluateUploadSequenceLocks()">
+                        <input type="file" id="fileArrival" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
                         <div id="noticeArrival" class="lock-notice">⚠️ Locked: Upload 1st File (SPSIC) first.</div>
                         <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
                         <label>3rd Upload: Import Docs File (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="evaluateUploadSequenceLocks()">
+                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
                         <div id="noticeImport" class="lock-notice">⚠️ Locked: Upload 1st and 2nd Files first.</div>
                         <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
@@ -255,7 +255,6 @@
             buildMonthlyFolders();
             toggleWorkspaceView();
             evaluateUploadSequenceLocks();
-            setupLockDatabaseListener();
         }
 
         function initYearSelectOptions(defaultYear) {
@@ -289,13 +288,9 @@
             fetchDocuments();
         }
 
-        function setupLockDatabaseListener() {
-            supabaseClient
-                .channel('realtime:active_document_locks')
-                .on('postgres_changes', { event: '*', filter: 'table=eq.active_document_locks' }, () => {
-                    evaluateUploadSequenceLocks();
-                })
-                .subscribe();
+        function forceRefetchAndEvaluate() {
+            localFetchedRecord = null; // Forces app to ask Supabase for updated record context cleanly
+            evaluateUploadSequenceLocks();
         }
 
         async function evaluateUploadSequenceLocks() {
@@ -330,7 +325,7 @@
                 return;
             }
 
-            // Fetch remote state context if required
+            // Fetch remote data safely if cache clear is requested
             if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
                 const { data } = await supabaseClient
                     .from('imported_shipment_docs')
@@ -377,7 +372,6 @@
             }
 
             // --- STRICT DATABASE-DRIVEN STATE PIPELINE ---
-            // 1. Establish structural base evaluation flags matching your remote repository constraints
             let hasSpsicInDb = false;
             let hasArrivalInDb = false;
 
@@ -395,9 +389,18 @@
                 }
             }
 
-            // 2. Strict UI unlock behavior: Only look at what exists safely in Supabase
+            // If file 1 already exists in the Database, disable its upload selector to prevent accidental overrides
             if (hasSpsicInDb) {
-                fArrival.removeAttribute('disabled');
+                fSpsic.setAttribute('disabled', 'true');
+            }
+
+            // Rule for 2nd Upload: Unlocks ONLY if 1st file is verified in DB
+            if (hasSpsicInDb) {
+                if (hasArrivalInDb) {
+                    fArrival.setAttribute('disabled', 'true'); // lock if already uploaded
+                } else {
+                    fArrival.removeAttribute('disabled');
+                }
                 noteArrival.style.display = "none";
             } else {
                 fArrival.setAttribute('disabled', 'true');
@@ -405,6 +408,7 @@
                 noteArrival.style.display = "block";
             }
 
+            // Rule for 3rd Upload: Unlocks ONLY if BOTH 1st and 2nd files are verified in DB
             if (hasSpsicInDb && hasArrivalInDb) {
                 fImport.removeAttribute('disabled');
                 noteImport.style.display = "none";
@@ -412,7 +416,6 @@
                 fImport.setAttribute('disabled', 'true');
                 fImport.value = ""; 
                 
-                // Keep the notice block descriptive depending on what historic document step is missing
                 if (!hasSpsicInDb) {
                     noteImport.textContent = "⚠️ Locked: Upload 1st File (SPSIC) first.";
                 } else if (!hasArrivalInDb) {
@@ -564,6 +567,10 @@
 
         async function executeDocumentUpload(e) {
             e.preventDefault();
+            const submitBtn = document.getElementById('submitSyncPipelineBtn');
+            submitBtn.setAttribute('disabled', 'true');
+            submitBtn.textContent = "Processing sync...";
+
             const rawNumber = document.getElementById('spsicRawNumber').value.trim();
             const monthTarget = document.getElementById('spsicTargetMonth').value;
             
@@ -603,6 +610,8 @@
 
                 if (!spsicPath) {
                     alert("Error: Please select a valid SPSIC document file to upload.");
+                    submitBtn.removeAttribute('disabled');
+                    submitBtn.textContent = "Execute Sync Pipeline";
                     return;
                 }
 
@@ -646,6 +655,9 @@
             } catch (err) {
                 console.error("Pipeline Exception Logged:", err);
                 alert(`Pipeline Sync Interrupted:\n${err.message}`);
+            } finally {
+                submitBtn.removeAttribute('disabled');
+                submitBtn.textContent = "Execute Sync Pipeline";
             }
         }
 
@@ -761,7 +773,7 @@
                 closeViewer();
                 fetchDocuments();
                 document.getElementById('spsicRawNumber').value = '';
-                evaluateUploadSequenceLocks();
+                forceRefetchAndEvaluate();
             } catch (err) {
                 alert(`Approval transaction failed: ${err.message}`);
             }
