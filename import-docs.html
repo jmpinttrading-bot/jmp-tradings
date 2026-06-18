@@ -114,7 +114,7 @@
                     </div>
                     <div class="form-group">
                         <label>Target Folder Month</label>
-                        <input type="month" id="spsicTargetMonth" required>
+                        <input type="month" id="spsicTargetMonth" required onchange="evaluateUploadSequenceLocks()">
                     </div>
                     
                     <div class="form-group">
@@ -295,6 +295,7 @@
 
         async function evaluateUploadSequenceLocks() {
             const numInput = document.getElementById('spsicRawNumber').value.trim();
+            const targetMonthInput = document.getElementById('spsicTargetMonth').value;
             const fSpsic = document.getElementById('fileSpsic');
             const fArrival = document.getElementById('fileArrival');
             const fImport = document.getElementById('fileImportDocs');
@@ -323,16 +324,20 @@
                 return;
             }
 
+            // QUERY TUNING: Checks if this exact number is already approved within the targeted folder month row configuration
             const { data } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
                 .eq('spsic_number', numInput)
+                .eq('target_month', targetMonthInput)
                 .maybeSingle();
             
             localFetchedRecord = data;
 
             if (data && data.status === "Completed") {
-                banner.innerHTML = `🔒 <strong>Immutable Records Blocked:</strong> SPSIC Sequence reference is already **Approved & Finalized**. Modification pipeline access is rescinded.`;
+                const [yr, mn] = targetMonthInput.split('-');
+                const humanizedMonth = monthsLabels.find(m => m.value === mn)?.text || mn;
+                banner.innerHTML = `🔒 <strong>Immutable Records Blocked:</strong> SPSIC reference number is already **Approved & Finalized** for the directory <strong>${humanizedMonth} ${yr}</strong>. Modification access is rescinded.`;
                 banner.style.display = "block";
                 fSpsic.setAttribute('disabled', 'true');
                 fArrival.setAttribute('disabled', 'true');
@@ -545,7 +550,8 @@
                     updated_at: new Date().toISOString()
                 };
 
-                const { error: dbError } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number' });
+                // MATCH CONFLICT ADJUSTMENT: Upsert targets composite constraint parameters safely
+                const { error: dbError } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
                 if (dbError) throw dbError;
 
                 alert("Records synchronized successfully!");
@@ -572,7 +578,6 @@
             }
         }
 
-        // Helper function to turn ISO string / Date fields into readable "Month Day, Year" strings
         function formatHumanReadableDate(dateInput) {
             if (!dateInput) return "N/A";
             const dateObj = new Date(dateInput);
@@ -600,11 +605,10 @@
             if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path });
 
             for(let file of filesArray) {
-                let fileUploadDate = doc.updated_at; // Database fallback timestamp
+                let fileUploadDate = doc.updated_at; 
                 
                 try {
-                    // Pull specific object creation timestamp directly from storage metadata fields
-                    const { data: metaData, error: metaErr } = await supabaseClient
+                    const { data: metaData } = await supabaseClient
                         .storage
                         .from(STORAGE_BUCKET_NAME)
                         .getMetadata(file.path);
