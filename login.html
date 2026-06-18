@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en)
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -56,7 +56,7 @@
         }
 
         .brand-header h2 {
-            color: #0b2545; /* Brand Deep Navy */
+            color: #0b2545; 
             font-size: 1.45rem;
             font-weight: 700;
             letter-spacing: 0.5px;
@@ -64,7 +64,7 @@
 
         .brand-header p {
             font-size: 0.85rem;
-            color: #ee964b; /* System Accent Amber */
+            color: #ee964b; 
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1.2px;
@@ -111,7 +111,7 @@
         }
 
         .password-wrapper input {
-            padding-right: 50px; /* Leave space for button */
+            padding-right: 50px; 
         }
 
         .toggle-password {
@@ -211,7 +211,7 @@
             text-align: center;
             transform: scale(0.9);
             transition: transform 0.2s ease;
-            border-top: 5px solid #d9534f; /* Alert red indicator line */
+            border-top: 5px solid #d9534f; 
         }
 
         .error-modal-overlay.visible .error-modal {
@@ -356,29 +356,29 @@
                 });
 
                 if (error) {
-                    openErrorModal("Access Denied", error.message);
+                    openErrorModal("Access Denied", error.message + ` (Attempted email target: ${generatedEmail})`);
                     submitBtn.disabled = false;
                     submitBtn.textContent = "Verify & Enter System";
                     return;
                 }
 
                 if (data.user) {
-                    // --- REFINED DIRECTION ENGINE ---
-                    // Query the profiles table database directly to intercept the verified row status
+                    // Force delay slightly to make sure session registers to local storage cookies reliably
+                    await new Promise(resolve => setTimeout(resolve, 400));
+
                     const { data: profile, error: profileError } = await supabaseClient
                         .from('profiles')
                         .select('role')
                         .eq('id', data.user.id)
-                        .single();
+                        .maybeSingle();
 
                     if (profileError || !profile) {
-                        openErrorModal("Profile Missing", "Authenticated successfully, but no system assignment profile found.");
+                        openErrorModal("Profile Missing", "Access cleared, but no internal profiles record exists for user ID: " + data.user.id);
                         submitBtn.disabled = false;
                         submitBtn.textContent = "Verify & Enter System";
                         return;
                     }
 
-                    // Strict redirect based entirely on database state
                     if (profile.role === 'Admin') {
                         window.location.href = "admin-dashboard.html";
                     } else {
