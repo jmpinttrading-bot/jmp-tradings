@@ -9,23 +9,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; position: relative; }
         
-        /* Subtle Watermark Logo Background */
-        .watermark-bg {
-            position: fixed;
-            left: 280px; /* Aligns right after the sidebar */
-            top: 50%;
-            transform: translateY(-50%);
-            width: 500px;
-            height: 500px;
-            background-image: url('logo.png');
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-            opacity: 0.04; /* Clean, subtle watermark contrast */
-            pointer-events: none; /* Allows users to click elements through it */
-            z-index: 0;
-        }
-
         .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; position: relative; z-index: 10; }
         .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
         .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
@@ -37,7 +20,30 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; margin-bottom: 30px; }
+        /* Flex Layout containing the Left Logo and Main Dashboard Cards Grid */
+        .dashboard-layout-wrapper { display: flex; gap: 30px; align-items: center; margin-bottom: 30px; }
+
+        /* Left Aligned Fully Opaque Center Brand Container */
+        .logo-display-container {
+            width: 260px;
+            height: 260px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            shrink: 0;
+        }
+        .logo-display-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; flex: 1; }
         .card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .card h3 { margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
         
@@ -66,15 +72,16 @@
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
+        @media (max-width: 1200px) {
+            .dashboard-layout-wrapper { flex-direction: column; align-items: stretch; }
+            .logo-display-container { width: 100%; height: 200px; }
+        }
         @media (max-width: 1024px) {
             .grid { grid-template-columns: 1fr; }
-            .watermark-bg { left: 0; width: 100%; opacity: 0.02; }
         }
     </style>
 </head>
 <body>
-
-    <div class="watermark-bg"></div>
 
     <div class="sidebar">
         <h2>JMP Admin HQ</h2>
@@ -91,38 +98,45 @@
 
         <div id="alertBox" class="alert"></div>
 
-        <div class="grid">
-            <div class="card">
-                <h3>Update Admin System Password</h3>
-                <form onsubmit="handleAdminUpdate(event)">
-                    <div class="form-group">
-                        <label>New Administrative Password</label>
-                        <input type="password" id="adminNewPassword" required placeholder="Enter new secure password">
-                    </div>
-                    <button type="submit" class="btn">Update Password</button>
-                </form>
+        <div class="dashboard-layout-wrapper">
+            
+            <div class="logo-display-container">
+                <img src="circle-logo.png" alt="JMP Corporate Brand Identity Logo">
             </div>
 
-            <div class="card">
-                <h3>Update Admin Account Username</h3>
-                <form onsubmit="handleUsernameUpdate(event)">
-                    <div class="form-group">
-                        <label>Current System Username</label>
-                        <input type="text" id="adminCurrentUsername" readonly style="background-color: #f1f5f9; color: #64748b; cursor: not-allowed;">
-                    </div>
-                    <div class="form-group">
-                        <label>New Unique Username</label>
-                        <input type="text" id="adminNewUsername" required placeholder="Enter new unique username">
-                    </div>
-                    <button type="submit" class="btn" style="background: #0f172a; color: white;">Save Username</button>
-                </form>
-            </div>
+            <div class="grid">
+                <div class="card">
+                    <h3>Update Admin System Password</h3>
+                    <form onsubmit="handleAdminUpdate(event)">
+                        <div class="form-group">
+                            <label>New Administrative Password</label>
+                            <input type="password" id="adminNewPassword" required placeholder="Enter new secure password">
+                        </div>
+                        <button type="submit" class="btn">Update Password</button>
+                    </form>
+                </div>
 
-            <div class="card">
-                <h3>Console Navigation functions</h3>
-                <div class="action-container">
-                    <a href="register-employee.html" class="action-btn btn-provision">+ Provision New Employee Account</a>
-                    <a href="employee-201.html" class="action-btn btn-201">📋 Employee 201 File</a>
+                <div class="card">
+                    <h3>Update Admin Account Username</h3>
+                    <form onsubmit="handleUsernameUpdate(event)">
+                        <div class="form-group">
+                            <label>Current System Username</label>
+                            <input type="text" id="adminCurrentUsername" readonly style="background-color: #f1f5f9; color: #64748b; cursor: not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label>New Unique Username</label>
+                            <input type="text" id="adminNewUsername" required placeholder="Enter new unique username">
+                        </div>
+                        <button type="submit" class="btn" style="background: #0f172a; color: white;">Save Username</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Console Navigation functions</h3>
+                    <div class="action-container">
+                        <a href="register-employee.html" class="action-btn btn-provision">+ Provision New Employee Account</a>
+                        <a href="employee-201.html" class="action-btn btn-201">📋 Employee 201 File</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,7 +165,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentAdminId = null;
-        let bypassAuthListener = false; // Prevents loops during logout commands
+        let bypassAuthListener = false;
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -178,26 +192,18 @@
                 document.getElementById('adminCurrentUsername').value = profile.username;
             }
             fetchDirectory();
-
-            // Fire tab tracking loop listener
             setupSessionCrossCheckListener();
         }
 
         function setupSessionCrossCheckListener() {
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (bypassAuthListener) return;
-
-                // Scenario A: A different account logged in via another tab
                 if (session && session.user && session.user.id !== currentAdminId) {
                     bypassAuthListener = true; 
                     alert("Session Conflicted: Another user logged into this browser. Forcing redirect to login...");
-                    
-                    // Flush token completely out of memory and route home
                     await supabaseClient.auth.signOut();
                     window.location.href = "login.html";
                 }
-
-                // Scenario B: Someone executed a logout actions on the second tab
                 if (event === 'SIGNED_OUT') {
                     window.location.href = "login.html";
                 }
@@ -256,7 +262,7 @@
         }
 
         async function handleLogout() {
-            bypassAuthListener = true; // Turn off listener so it doesn't try to fire an alert during normal logouts
+            bypassAuthListener = true;
             await supabaseClient.auth.signOut();
             window.location.href = "login.html";
         }
