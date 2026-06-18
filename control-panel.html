@@ -140,7 +140,6 @@
         async function fetchPlatformUserProfiles() {
             const { data: profiles, error } = await supabaseClient
                 .from('profiles')
-                // Added direct structural selection of permission columns
                 .select('id, email, role, full_name, profile_access, import_access')
                 .order('role', { ascending: true });
 
@@ -187,7 +186,7 @@
             });
         }
 
-        // Live updates update profile rows inside public.profiles
+        // Live boolean toggle switches update rows within public.profiles instantly
         async function updateDatabaseAccessClearance(userId, privilegeColumn, isGranted) {
             console.log(`Synchronizing Privilege Update [User: ${userId} | Column: ${privilegeColumn} | Status: ${isGranted}]`);
             
@@ -203,7 +202,7 @@
                 console.error("Supabase privilege update conflict:", error.message);
                 alert("Error updating access clearance: " + error.message);
             } else {
-                // Refresh labels instantly without reloading page
+                // Refresh labels instantly without reloading page layout completely
                 fetchPlatformUserProfiles();
             }
         }
