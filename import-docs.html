@@ -388,53 +388,77 @@
             const fileArrivalEl = document.getElementById('fileArrival').files[0];
             const fileImportEl = document.getElementById('fileImportDocs').files[0];
 
+            // Fallback safely to existing values if a record was previously fetched
             let spsicPath = localFetchedRecord ? localFetchedRecord.spsic_file_path : null;
             let arrivalPath = localFetchedRecord ? localFetchedRecord.arrival_notice_path : null;
             let importPath = localFetchedRecord ? localFetchedRecord.import_docs_path : null;
 
-            if (fileSpsicEl) {
-                const name = `SPSIC-${rawNumber}/${monthTarget}_SPSIC_${fileSpsicEl.name}`;
-                await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileSpsicEl, { upsert: true });
-                spsicPath = name;
-            }
-            if (fileArrivalEl) {
-                const name = `SPSIC-${rawNumber}/${monthTarget}_ArrivalNotice_${fileArrivalEl.name}`;
-                await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileArrivalEl, { upsert: true });
-                arrivalPath = name;
-            }
-            if (fileImportEl) {
-                const name = `SPSIC-${rawNumber}/${monthTarget}_ImportDocs_${fileImportEl.name}`;
-                await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileImportEl, { upsert: true });
-                importPath = name;
-            }
+            try {
+                // Execute storage uploads strictly. If any upload fails, execution stops immediately.
+                if (fileSpsicEl) {
+                    const name = `SPSIC-${rawNumber}/${monthTarget}_SPSIC_${fileSpsicEl.name}`;
+                    const { error: uploadErr } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileSpsicEl, { upsert: true });
+                    if (uploadErr) throw new Error(`SPSIC Document upload failed: ${uploadErr.message}`);
+                    spsicPath = name;
+                }
+                
+                if (fileArrivalEl) {
+                    const name = `SPSIC-${rawNumber}/${monthTarget}_ArrivalNotice_${fileArrivalEl.name}`;
+                    const { error: uploadErr } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileArrivalEl, { upsert: true });
+                    if (uploadErr) throw new Error(`Arrival Notice upload failed: ${uploadErr.message}`);
+                    arrivalPath = name;
+                }
+                
+                if (fileImportEl) {
+                    const name = `SPSIC-${rawNumber}/${monthTarget}_ImportDocs_${fileImportEl.name}`;
+                    const { error: uploadErr } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileImportEl, { upsert: true });
+                    if (uploadErr) throw new Error(`Import Docs package upload failed: ${uploadErr.message}`);
+                    importPath = name;
+                }
 
-            let derivedStatus = "Pending"; 
-            if (spsicPath && !arrivalPath && !importPath) derivedStatus = "Pending";
-            else if (spsicPath && arrivalPath && !importPath) derivedStatus = "Incomplete";
-            else if (spsicPath && arrivalPath && importPath) derivedStatus = "For Approval";
+                // Double-check validation: Do not allow a blank path if this is a first-time submission
+                if (!spsicPath) {
+                    alert("Error: Please select a valid SPSIC document file to upload.");
+                    return;
+                }
 
-            const payload = {
-                spsic_number: rawNumber,
-                target_month: monthTarget,
-                spsic_file_path: spsicPath,
-                arrival_notice_path: arrivalPath,
-                import_docs_path: importPath,
-                status: derivedStatus,
-                updated_at: new Date().toISOString()
-            };
+                // Derive operational sequence pipeline status
+                let derivedStatus = "Pending"; 
+                if (spsicPath && !arrivalPath && !importPath) derivedStatus = "Pending";
+                else if (spsicPath && arrivalPath && !importPath) derivedStatus = "Incomplete";
+                else if (spsicPath && arrivalPath && importPath) derivedStatus = "For Approval";
 
-            const { error } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number' });
-            if (error) {
-                alert(error.message);
-            } else {
+                const payload = {
+                    spsic_number: rawNumber,
+                    target_month: monthTarget,
+                    spsic_file_path: spsicPath,
+                    arrival_notice_path: arrivalPath,
+                    import_docs_path: importPath,
+                    status: derivedStatus,
+                    updated_at: new Date().toISOString()
+                };
+
+                // Commit structured records to table
+                const { error: dbError } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number' });
+                if (dbError) throw dbError;
+
                 alert("Records synchronized successfully!");
-                await clearLockHeartbeat(); // Clear the lock when finished uploading
-                document.getElementById('spsicRawNumber').value = '';
-                document.getElementById('fileSpsic').value = '';
-                document.getElementById('fileArrival').value = '';
-                document.getElementById('fileImportDocs').value = '';
+                
+                // Clean interface state allocations
+                await clearLockHeartbeat();
+                document.getElementById('uploadEngineForm').reset(); // Sweeps form inputs completely
+                localFetchedRecord = null; // Flush active cache references
+                
+                // Set dynamic folder reference to view newly created document instantly
+                selectedFolderMonth = monthTarget;
+                buildMonthlyFolders();
+                
                 fetchDocuments();
                 evaluateUploadSequenceLocks();
+
+            } catch (err) {
+                console.error("Pipeline Exception Logged:", err);
+                alert(`Pipeline Sync Interrupted:\n${err.message}`);
             }
         }
 
