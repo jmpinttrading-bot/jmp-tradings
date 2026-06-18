@@ -14,17 +14,14 @@
         .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         
-        /* High visibility green action button in sidebar */
-        .sidebar .nav-create-btn { background-color: #22c55e !important; color: white !important; font-weight: bold; margin-top: 15px; text-align: center; border-left: none !important; display: block !important; visibility: visible !important; }
-        .sidebar .nav-create-btn:hover { background-color: #16a34a !important; }
-        
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
         .main-content { flex: 1; padding: 40px; min-width: 0; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        /* Three-Column Grid for forms and utility actions */
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; margin-bottom: 30px; }
         .card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .card h3 { margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
         
@@ -32,8 +29,16 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; }
         .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
         
-        .btn { background: #ee964b; color: #0f172a; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn { background: #ee964b; color: #0f172a; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; text-align: center; display: block; text-decoration: none; }
         .btn:hover { opacity: 0.9; }
+
+        /* Navigation action-specific styles */
+        .action-container { display: flex; flex-direction: column; gap: 15px; }
+        .action-btn { font-size: 0.95rem; padding: 14px; text-align: center; border-radius: 6px; font-weight: 700; text-decoration: none; transition: background 0.2s; }
+        .btn-provision { background-color: #22c55e; color: white; border: 1px solid #16a34a; }
+        .btn-provision:hover { background-color: #16a34a; }
+        .btn-201 { background-color: #3b82f6; color: white; border: 1px solid #2563eb; }
+        .btn-201:hover { background-color: #2563eb; }
         
         table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 10px; }
         th, td { padding: 14px; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; }
@@ -46,13 +51,16 @@
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; min-height: auto; padding: 20px; }
             .logout-btn { margin-top: 15px; width: 100%; }
             .main-content { padding: 15px; width: 100%; }
             .header { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .grid { grid-template-columns: 1fr; gap: 20px; }
             
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { position: absolute; top: -9999px; left: -9999px; }
@@ -66,10 +74,7 @@
 
     <div class="sidebar">
         <h2>JMP Admin HQ</h2>
-        <a href="#" class="active">Directory List</a>
-        
-        <a href="register-employee.html" class="nav-create-btn">+ Provision New Employee</a>
-        
+        <a href="#" class="active">Profile Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
     </div>
 
@@ -83,6 +88,7 @@
         <div id="alertBox" class="alert"></div>
 
         <div class="grid">
+            <!-- Left Form: Password Form -->
             <div class="card">
                 <h3>Update Admin System Password</h3>
                 <form onsubmit="handleAdminUpdate(event)">
@@ -94,6 +100,7 @@
                 </form>
             </div>
 
+            <!-- Middle Form: Username Form -->
             <div class="card">
                 <h3>Update Admin Account Username</h3>
                 <form onsubmit="handleUsernameUpdate(event)">
@@ -107,6 +114,15 @@
                     </div>
                     <button type="submit" class="btn" style="background: #0f172a; color: white;">Save Username</button>
                 </form>
+            </div>
+
+            <!-- Right Card: System Operational Controls -->
+            <div class="card">
+                <h3>Console Navigation functions</h3>
+                <div class="action-container">
+                    <a href="register-employee.html" class="action-btn btn-provision">+ Provision New Employee Account</a>
+                    <a href="employee-201.html" class="action-btn btn-201">📋 Employee 201 File</a>
+                </div>
             </div>
         </div>
 
@@ -151,11 +167,9 @@
             currentAdminId = user.id;
             document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
             
-            // Validate against the database profiles table directly
             const { data: profile } = await supabaseClient.from('profiles').select('username, role').eq('id', user.id).single();
             
             if (!profile || profile.role !== 'Admin') {
-                // If database says you aren't an admin, show warning instead of breaking the layout
                 showAlert("Warning: Your profile role is not set to 'Admin' in Supabase.", "error");
             }
             
