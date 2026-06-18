@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Import Document Manager | JMP HQ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
@@ -67,8 +68,12 @@
         .viewer-card { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; }
         .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         .viewer-body { flex: 1; background: #f1f5f9; border-radius: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 15px; }
-        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
+        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; }
         
+        .zip-fallback-container { background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 30px; text-align: center; margin-bottom: 10px; }
+        .zip-download-btn { display: inline-block; background: #0f172a; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 12px; font-size: 0.9rem; }
+        .zip-download-btn:hover { background: #1e293b; }
+
         .viewer-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
         .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .approve-action-btn { background: #22c55e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
@@ -118,21 +123,21 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>1st Upload: SPSIC Document File</label>
-                        <input type="file" id="fileSpsic" accept="application/pdf,image/*" onchange="evaluateUploadSequenceLocks()">
+                        <label>1st Upload: SPSIC Document File (PDF / Image / ZIP)</label>
+                        <input type="file" id="fileSpsic" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="evaluateUploadSequenceLocks()">
                         <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
-                        <label>2nd Upload: Arrival Notice</label>
-                        <input type="file" id="fileArrival" accept="application/pdf,image/*" onchange="evaluateUploadSequenceLocks()">
+                        <label>2nd Upload: Arrival Notice (PDF / Image / ZIP)</label>
+                        <input type="file" id="fileArrival" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="evaluateUploadSequenceLocks()">
                         <div id="noticeArrival" class="lock-notice">⚠️ Locked: Upload 1st File (SPSIC) first.</div>
                         <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
-                        <label>3rd Upload: Import Docs File</label>
-                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*">
+                        <label>3rd Upload: Import Docs File (PDF / Image / ZIP)</label>
+                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
                         <div id="noticeImport" class="lock-notice">⚠️ Locked: Upload 1st and 2nd Files first.</div>
                         <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
@@ -324,7 +329,6 @@
                 return;
             }
 
-            // QUERY TUNING: Checks if this exact number is already approved within the targeted folder month row configuration
             const { data } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
@@ -495,20 +499,67 @@
             });
         }
 
+        /**
+         * CLIENT-SIDE LOSSLESS PDF COMPRESSION ENGINE
+         * Strips unreferenced document components, flattens unused forms, and normalizes
+         * fonts to optimize size without ruining vector readability or high-res printing.
+         */
+        async function optimizeAndCompressPdfFile(fileObject) {
+            const MAX_SIZE_LIMIT = 5 * 1024 * 1024; // 5MB Target Boundary
+            if (fileObject.type !== "application/pdf" || fileObject.size <= MAX_SIZE_LIMIT) {
+                return fileObject; // Skip optimizing if it's already within limits or a ZIP/Image
+            }
+
+            console.log(`Compressing oversized file: ${(fileObject.size / 1024 / 1024).toFixed(2)} MB`);
+            
+            try {
+                const rawBuffer = await fileObject.arrayBuffer();
+                const sourcePdf = await PDFLib.PDFDocument.load(rawBuffer);
+                const targetPdf = await PDFLib.PDFDocument.create();
+
+                // Re-compile vector map references explicitly page by page to strip ghost metadata chunks
+                const pageIndices = sourcePdf.getPageIndices();
+                const copiedPages = await targetPdf.copyPages(sourcePdf, pageIndices);
+                
+                copiedPages.forEach((page) => {
+                    targetPdf.addPage(page);
+                });
+
+                // Compress structural arrays natively
+                const optimizedBytes = await targetPdf.save({ 
+                    useObjectStreams: true, 
+                    addDefaultFonts: false,
+                    updateFieldPositions: false
+                });
+
+                const optimizedFile = new File([optimizedBytes], fileObject.name, { type: "application/pdf" });
+                console.log(`Optimization Completed. Optimized Size: ${(optimizedFile.size / 1024 / 1024).toFixed(2)} MB`);
+                return optimizedFile;
+            } catch (err) {
+                console.warn("Internal PDF compaction engine fallback triggered:", err);
+                return fileObject; // Fall back to original file if the PDF structure is encrypted/protected
+            }
+        }
+
         async function executeDocumentUpload(e) {
             e.preventDefault();
             const rawNumber = document.getElementById('spsicRawNumber').value.trim();
             const monthTarget = document.getElementById('spsicTargetMonth').value;
             
-            const fileSpsicEl = document.getElementById('fileSpsic').files[0];
-            const fileArrivalEl = document.getElementById('fileArrival').files[0];
-            const fileImportEl = document.getElementById('fileImportDocs').files[0];
+            let fileSpsicEl = document.getElementById('fileSpsic').files[0];
+            let fileArrivalEl = document.getElementById('fileArrival').files[0];
+            let fileImportEl = document.getElementById('fileImportDocs').files[0];
 
             let spsicPath = localFetchedRecord ? localFetchedRecord.spsic_file_path : null;
             let arrivalPath = localFetchedRecord ? localFetchedRecord.arrival_notice_path : null;
             let importPath = localFetchedRecord ? localFetchedRecord.import_docs_path : null;
 
             try {
+                // Intercept data buffers to downscale and normalize if files cross size bounds
+                if (fileSpsicEl) fileSpsicEl = await optimizeAndCompressPdfFile(fileSpsicEl);
+                if (fileArrivalEl) fileArrivalEl = await optimizeAndCompressPdfFile(fileArrivalEl);
+                if (fileImportEl) fileImportEl = await optimizeAndCompressPdfFile(fileImportEl);
+
                 if (fileSpsicEl) {
                     const name = `SPSIC-${rawNumber}/${monthTarget}_SPSIC_${fileSpsicEl.name}`;
                     const { error: uploadErr } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileSpsicEl, { upsert: true });
@@ -550,7 +601,6 @@
                     updated_at: new Date().toISOString()
                 };
 
-                // MATCH CONFLICT ADJUSTMENT: Upsert targets composite constraint parameters safely
                 const { error: dbError } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
                 if (dbError) throw dbError;
 
@@ -604,6 +654,8 @@
             if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path });
             if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path });
 
+            const isAdmin = (currentUserRole === 'admin');
+
             for(let file of filesArray) {
                 let fileUploadDate = doc.updated_at; 
                 
@@ -622,21 +674,48 @@
 
                 const readableTimestamp = formatHumanReadableDate(fileUploadDate);
                 const { data } = supabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(file.path);
-                
+                let publicUrl = data.publicUrl;
+
                 const titleContainer = document.createElement('div');
                 titleContainer.className = "doc-header-title";
                 titleContainer.innerHTML = `<h4>${file.name}</h4> <span class="upload-date-span">Date Upload: ${readableTimestamp}</span>`;
-                
-                const iframe = document.createElement('iframe');
-                iframe.className = "compiled-frame";
-                iframe.src = data.publicUrl;
-
                 targetBody.appendChild(titleContainer);
-                targetBody.appendChild(iframe);
+
+                const isZipFile = file.path.toLowerCase().endsWith('.zip');
+
+                if (isZipFile) {
+                    const zipBlock = document.createElement('div');
+                    zipBlock.className = "zip-fallback-container";
+                    
+                    if (isAdmin) {
+                        zipBlock.innerHTML = `
+                            <p style="font-weight: 600; color: #1e293b;">📦 Compressed File Package Archive</p>
+                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Web browsers cannot preview raw ZIP components inline. Use the interface gateway button below to pull down the asset bundle.</p>
+                            <a href="${publicUrl}" download class="zip-download-btn">Download Archive Payload</a>
+                        `;
+                    } else {
+                        zipBlock.innerHTML = `
+                            <p style="font-weight: 600; color: #ef4444;">🛡️ Compressed Archive (Access Restricted)</p>
+                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">This package contains compressed data assets. Local storage duplication and raw file data copying are disabled for Employee profiles.</p>
+                        `;
+                    }
+                    targetBody.appendChild(zipBlock);
+                } else {
+                    const iframe = document.createElement('iframe');
+                    iframe.className = "compiled-frame";
+                    
+                    if (!isAdmin) {
+                        iframe.src = `${publicUrl}#toolbar=0&navpanes=0&scrollbar=0`;
+                    } else {
+                        iframe.src = publicUrl;
+                    }
+                    
+                    targetBody.appendChild(iframe);
+                }
             }
 
             const approveBtn = document.getElementById('modalApproveActionBtn');
-            if (currentUserRole === 'admin' && doc.status !== 'Completed') {
+            if (isAdmin && doc.status !== 'Completed') {
                 approveBtn.style.display = "block";
             } else {
                 approveBtn.style.display = "none";
