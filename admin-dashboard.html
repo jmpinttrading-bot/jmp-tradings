@@ -61,7 +61,6 @@
     <div class="sidebar">
         <h2>JMP Admin HQ</h2>
         <a href="#" class="active">Profile Management</a>
-        <!-- Side Nav Element added here -->
         <a href="import-docs.html">📦 Import Doc File Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
     </div>
@@ -106,7 +105,6 @@
                 <div class="action-container">
                     <a href="register-employee.html" class="action-btn btn-provision">+ Provision New Employee Account</a>
                     <a href="employee-201.html" class="action-btn btn-201">📋 Employee 201 File</a>
-                    <!-- Direct Navigation function Button Added matching position constraints -->
                     <a href="import-docs.html" class="action-btn btn-import-doc">📦 Import Doc File Console</a>
                 </div>
             </div>
@@ -136,6 +134,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentAdminId = null;
+        let bypassAuthListener = false; // Prevents loops during logout commands
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -156,11 +155,36 @@
             const { data: profile } = await supabaseClient.from('profiles').select('username, role').eq('id', user.id).single();
             if (!profile || profile.role !== 'Admin') {
                 window.location.href = "employee-dashboard.html";
+                return;
             }
             if (profile) {
                 document.getElementById('adminCurrentUsername').value = profile.username;
             }
             fetchDirectory();
+
+            // Fire tab tracking loop listener
+            setupSessionCrossCheckListener();
+        }
+
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (bypassAuthListener) return;
+
+                // Scenario A: A different account logged in via another tab
+                if (session && session.user && session.user.id !== currentAdminId) {
+                    bypassAuthListener = true; 
+                    alert("Session Conflicted: Another user logged into this browser. Forcing redirect to login...");
+                    
+                    // Flush token completely out of memory and route home
+                    await supabaseClient.auth.signOut();
+                    window.location.href = "login.html";
+                }
+
+                // Scenario B: Someone executed a logout actions on the second tab
+                if (event === 'SIGNED_OUT') {
+                    window.location.href = "login.html";
+                }
+            });
         }
 
         async function fetchDirectory() {
@@ -215,6 +239,7 @@
         }
 
         async function handleLogout() {
+            bypassAuthListener = true; // Turn off listener so it doesn't try to fire an alert during normal logouts
             await supabaseClient.auth.signOut();
             window.location.href = "login.html";
         }

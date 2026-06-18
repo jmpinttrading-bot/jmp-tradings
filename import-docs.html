@@ -18,7 +18,6 @@
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
         
-        /* Fixed layout scaling grid system */
         .panel-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: start; }
         .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .panel-card h3 { color: #0f172a; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9; }
@@ -28,17 +27,19 @@
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
         .form-group input[type="file"] { background: #f8fafc; padding: 6px; cursor: pointer; }
         
-        /* Disabled Input Treatments */
         .form-group input[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
         .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
 
+        /* Dynamic Visual Alert Banners for Active Overwrite Blocks */
+        .live-lock-banner { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
+
         .submit-btn { background: #ee964b; color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s; }
         .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
         .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .search-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
         
-        /* Grid spacing optimization */
         .month-folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; margin-bottom: 25px; }
         .folder-node { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; transition: 0.2s; font-size: 0.85rem; }
         .folder-node:hover, .folder-node.active { background: #0f172a; color: white; border-color: #0f172a; }
@@ -64,7 +65,6 @@
         .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; }
         .close-viewer-btn { background: #d9534f; color: white; padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-        /* Mobile Resolution Optimization Fix for 1000017380.png Layout */
         @media (max-width: 850px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; min-height: auto; padding: 20px; }
@@ -78,21 +78,23 @@
 
     <div class="sidebar">
         <h2>JMP Admin HQ</h2>
-        <a href="admin-dashboard.html">Profile Management</a>
+        <a href="admin-dashboard.html" id="backToDashboardBtn">Profile Management</a>
         <a href="#" class="active">📦 Import Doc File Management</a>
     </div>
 
     <div class="main-content">
         <div class="header-panel">
             <h1>Shipment Importation Documentation Hub</h1>
-            <p>Process, search, review state loops, and view complete compiled document groups under validation requirements.</p>
+            <p>Process, search, review state loops, and view complete compiled document groups safely.</p>
         </div>
 
         <div class="panel-grid">
-            <!-- Left Side Panel: Document Upload Wizard -->
             <div class="panel-card">
                 <h3>Document Upload Engine</h3>
-                <form onsubmit="executeDocumentUpload(event)">
+                
+                <div class="live-lock-banner" id="lockStatusBanner"></div>
+
+                <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
                     <div class="form-group">
                         <label>SPSIC Identification sequence number</label>
                         <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="evaluateUploadSequenceLocks()">
@@ -102,14 +104,12 @@
                         <input type="month" id="spsicTargetMonth" required>
                     </div>
                     
-                    <!-- File Slot 1 -->
                     <div class="form-group">
                         <label>1st Upload: SPSIC Document File</label>
                         <input type="file" id="fileSpsic" accept="application/pdf,image/*" onchange="evaluateUploadSequenceLocks()">
                         <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
-                    <!-- File Slot 2 -->
                     <div class="form-group">
                         <label>2nd Upload: Arrival Notice</label>
                         <input type="file" id="fileArrival" accept="application/pdf,image/*" onchange="evaluateUploadSequenceLocks()">
@@ -117,7 +117,6 @@
                         <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
-                    <!-- File Slot 3 -->
                     <div class="form-group">
                         <label>3rd Upload: Import Docs File</label>
                         <input type="file" id="fileImportDocs" accept="application/pdf,image/*">
@@ -125,20 +124,16 @@
                         <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
-                    <button type="submit" class="submit-btn">Execute Sync Pipeline</button>
+                    <button type="submit" id="submitSyncPipelineBtn" class="submit-btn">Execute Sync Pipeline</button>
                 </form>
             </div>
 
-            <!-- Right Side Panel: Directory Viewer Grid -->
             <div class="panel-card">
                 <h3>Monthly Directories & Consolidated Logs</h3>
-                
                 <div class="search-container">
                     <input type="text" id="docSearchBox" class="search-box" placeholder="Search by exact SPSIC Number sequence..." oninput="fetchDocuments()">
                 </div>
-
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
-
                 <div style="overflow-x: auto;">
                     <table class="item-list-table">
                         <thead>
@@ -158,7 +153,6 @@
         </div>
     </div>
 
-    <!-- View Panel Overlay -->
     <div class="viewer-overlay" id="documentViewerOverlay">
         <div class="viewer-card">
             <div class="viewer-header">
@@ -177,24 +171,51 @@
         let selectedFolderMonth = "";
         const STORAGE_BUCKET_NAME = "shipment-documents";
         let localFetchedRecord = null;
+        
+        let currentUserSession = null;
+        let activeTrackingSpsic = null;
+        let presenceHeartbeatInterval = null;
 
         async function initModule() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            currentUserSession = user;
+
+            // Route dynamic sidebar link correctly depending on who opened the file
+            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+            if (profile && profile.role !== 'Admin') {
+                document.getElementById('backToDashboardBtn').href = "employee-dashboard.html";
+                document.getElementById('backToDashboardBtn').textContent = "Employee Profile";
+            }
+
             const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            document.getElementById('spsicTargetMonth').value = `${year}-${month}`;
+            document.getElementById('spsicTargetMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
             
             buildMonthlyFolders();
             fetchDocuments();
             evaluateUploadSequenceLocks();
+
+            // Fire up real-time listener subscription loop
+            setupLockDatabaseListener();
         }
 
-        // Sequential Form Access Logic Controller
+        // Monitors global locks dynamically
+        function setupLockDatabaseListener() {
+            supabaseClient
+                .channel('realtime:active_document_locks')
+                .on('postgres_changes', { event: '*', filter: 'table=eq.active_document_locks' }, () => {
+                    evaluateUploadSequenceLocks();
+                })
+                .subscribe();
+        }
+
         async function evaluateUploadSequenceLocks() {
             const numInput = document.getElementById('spsicRawNumber').value.trim();
             const fSpsic = document.getElementById('fileSpsic');
             const fArrival = document.getElementById('fileArrival');
             const fImport = document.getElementById('fileImportDocs');
+            const submitBtn = document.getElementById('submitSyncPipelineBtn');
+            const banner = document.getElementById('lockStatusBanner');
 
             const lblSpsicDb = document.getElementById('statusSpsicUploaded');
             const lblArrivalDb = document.getElementById('statusArrivalUploaded');
@@ -203,47 +224,72 @@
             const noteArrival = document.getElementById('noticeArrival');
             const noteImport = document.getElementById('noticeImport');
 
-            // Reset labels instantly
+            // Reset UI states
             lblSpsicDb.style.display = "none";
             lblArrivalDb.style.display = "none";
             lblImportDb.style.display = "none";
+            banner.style.display = "none";
+            
+            fSpsic.removeAttribute('disabled');
+            fArrival.removeAttribute('disabled');
+            fImport.removeAttribute('disabled');
+            submitBtn.removeAttribute('disabled');
 
-            let hasSpsic = false;
-            let hasArrival = false;
-
-            if (numInput) {
-                const { data } = await supabaseClient
-                    .from('imported_shipment_docs')
-                    .select('*')
-                    .eq('spsic_number', numInput)
-                    .maybeSingle();
-                
-                localFetchedRecord = data;
-                if (data) {
-                    if (data.spsic_file_path) { hasSpsic = true; lblSpsicDb.style.display = "block"; }
-                    if (data.arrival_notice_path) { hasArrival = true; lblArrivalDb.style.display = "block"; }
-                    if (data.import_docs_path) { lblImportDb.style.display = "block"; }
-                }
-            } else {
-                localFetchedRecord = null;
+            if (!numInput) {
+                clearLockHeartbeat();
+                return;
             }
 
-            // Check runtime file selections manually
-            if (fSpsic.files.length > 0) hasSpsic = true;
-            if (fArrival.files.length > 0) hasArrival = true;
+            // Check if another account has this file open
+            const { data: activeLock } = await supabaseClient
+                .from('active_document_locks')
+                .select('*')
+                .eq('spsic_number', numInput)
+                .maybeSingle();
 
-            // 2nd Step Lock Logic
+            if (activeLock && activeLock.locked_by_id !== currentUserSession.id) {
+                // LOCK DETECTED: block editing inputs completely
+                banner.innerHTML = `🛑 <strong>Access Blocked:</strong> This document package is currently being modified by user <strong>${activeLock.locked_by_email}</strong>. To prevent conflicts, editing is disabled until they close it.`;
+                banner.style.display = "block";
+
+                fSpsic.setAttribute('disabled', 'true');
+                fArrival.setAttribute('disabled', 'true');
+                fImport.setAttribute('disabled', 'true');
+                submitBtn.setAttribute('disabled', 'true');
+                return;
+            }
+
+            // If the slot is clear or owned by us, register/renew your heartbeat lock
+            if (activeTrackingSpsic !== numInput) {
+                startLockHeartbeat(numInput);
+            }
+
+            // Check Database upload state structure records
+            const { data } = await supabaseClient
+                .from('imported_shipment_docs')
+                .select('*')
+                .eq('spsic_number', numInput)
+                .maybeSingle();
+            
+            localFetchedRecord = data;
+            let hasSpsic = fSpsic.files.length > 0;
+            let hasArrival = fArrival.files.length > 0;
+
+            if (data) {
+                if (data.spsic_file_path) { hasSpsic = true; lblSpsicDb.style.display = "block"; }
+                if (data.arrival_notice_path) { hasArrival = true; lblArrivalDb.style.display = "block"; }
+                if (data.import_docs_path) { lblImportDb.style.display = "block"; }
+            }
+
+            // Enforce sequential upload rules
             if (hasSpsic) {
-                fArrival.removeAttribute('disabled');
                 noteArrival.style.display = "none";
             } else {
                 fArrival.setAttribute('disabled', 'true');
                 noteArrival.style.display = "block";
             }
 
-            // 3rd Step Lock Logic
             if (hasSpsic && hasArrival) {
-                fImport.removeAttribute('disabled');
                 noteImport.style.display = "none";
             } else {
                 fImport.setAttribute('disabled', 'true');
@@ -251,14 +297,48 @@
             }
         }
 
+        // Heartbeat state mechanisms to maintain live locks
+        async function startLockHeartbeat(spsic) {
+            clearLockHeartbeat();
+            activeTrackingSpsic = spsic;
+
+            // Immediately declare the lock to Supabase
+            await supabaseClient.from('active_document_locks').upsert({
+                spsic_number: spsic,
+                locked_by_email: currentUserSession.email,
+                locked_by_id: currentUserSession.id,
+                last_ping_at: new Date().toISOString()
+            });
+
+            // Keep renewing the lock every 5 seconds to show you are still active
+            presenceHeartbeatInterval = setInterval(async () => {
+                if (activeTrackingSpsic) {
+                    await supabaseClient.from('active_document_locks').upsert({
+                        spsic_number: activeTrackingSpsic,
+                        locked_by_email: currentUserSession.email,
+                        locked_by_id: currentUserSession.id,
+                        last_ping_at: new Date().toISOString()
+                    });
+                }
+            }, 5000);
+        }
+
+        async function clearLockHeartbeat() {
+            if (activeTrackingSpsic) {
+                await supabaseClient.from('active_document_locks').delete().eq('spsic_number', activeTrackingSpsic).eq('locked_by_id', currentUserSession.id);
+            }
+            if (presenceHeartbeatInterval) {
+                clearInterval(presenceHeartbeatInterval);
+            }
+            activeTrackingSpsic = null;
+        }
+
         function buildMonthlyFolders() {
             const container = document.getElementById('monthFolderContainer');
             container.innerHTML = "";
             const monthsArray = ["01","02","03","04","05","06","07","08","09","10","11","12"];
-            const activeYear = "2026"; 
-
             monthsArray.forEach(m => {
-                const queryStr = `${activeYear}-${m}`;
+                const queryStr = `2026-${m}`;
                 const folder = document.createElement('div');
                 folder.className = `folder-node ${selectedFolderMonth === queryStr ? 'active' : ''}`;
                 folder.onclick = () => {
@@ -266,7 +346,7 @@
                     buildMonthlyFolders();
                     fetchDocuments();
                 };
-                folder.innerHTML = `<span class="icon">📁</span> ${activeYear}-${m}`;
+                folder.innerHTML = `<span class="icon">📁</span> 2026-${m}`;
                 container.appendChild(folder);
             });
         }
@@ -275,35 +355,25 @@
             const searchVal = document.getElementById('docSearchBox').value.trim();
             let query = supabaseClient.from('imported_shipment_docs').select('*');
 
-            if (searchVal) {
-                query = query.ilike('spsic_number', `%${searchVal}%`);
-            } else if (selectedFolderMonth) {
-                query = query.eq('target_month', selectedFolderMonth);
-            }
+            if (searchVal) { query = query.ilike('spsic_number', `%${searchVal}%`); }
+            else if (selectedFolderMonth) { query = query.eq('target_month', selectedFolderMonth); }
 
-            const { data, error } = await query.order('created_at', { ascending: false });
+            const { data } = await query.order('created_at', { ascending: false });
             const tbody = document.getElementById('documentLogsTableBody');
             tbody.innerHTML = "";
 
-            if (error || !data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No documents found.</td></tr>`;
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No matching entry points.</td></tr>`;
                 return;
             }
 
             data.forEach(doc => {
-                let badgeClass = doc.status.toLowerCase().replace(" ", "-");
-                if(doc.status === 'For Approval') badgeClass = 'approval';
-                
-                let actionControls = `<button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button>`;
-                if(doc.status === 'For Approval') {
-                    actionControls += `<button class="action-link-btn approve" onclick="approveDocument('${doc.id}')">Approve</button>`;
-                }
-
+                const badgeClass = doc.status.toLowerCase().replace(" ", "-");
                 const row = `<tr>
                     <td><strong>SPSIC-${doc.spsic_number}</strong></td>
                     <td>${doc.target_month}</td>
                     <td><span class="status-badge ${badgeClass}">${doc.status}</span></td>
-                    <td>${actionControls}</td>
+                    <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
@@ -317,8 +387,6 @@
             const fileSpsicEl = document.getElementById('fileSpsic').files[0];
             const fileArrivalEl = document.getElementById('fileArrival').files[0];
             const fileImportEl = document.getElementById('fileImportDocs').files[0];
-
-            if(!rawNumber) return alert("Please type a reference number.");
 
             let spsicPath = localFetchedRecord ? localFetchedRecord.spsic_file_path : null;
             let arrivalPath = localFetchedRecord ? localFetchedRecord.arrival_notice_path : null;
@@ -341,13 +409,9 @@
             }
 
             let derivedStatus = "Pending"; 
-            if (spsicPath && !arrivalPath && !importPath) {
-                derivedStatus = "Pending";
-            } else if (spsicPath && arrivalPath && !importPath) {
-                derivedStatus = "Incomplete";
-            } else if (spsicPath && arrivalPath && importPath) {
-                derivedStatus = (localFetchedRecord && localFetchedRecord.status === 'Completed') ? 'Completed' : 'For Approval';
-            }
+            if (spsicPath && !arrivalPath && !importPath) derivedStatus = "Pending";
+            else if (spsicPath && arrivalPath && !importPath) derivedStatus = "Incomplete";
+            else if (spsicPath && arrivalPath && importPath) derivedStatus = "For Approval";
 
             const payload = {
                 spsic_number: rawNumber,
@@ -361,9 +425,10 @@
 
             const { error } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number' });
             if (error) {
-                alert(`Error executing upload: ${error.message}`);
+                alert(error.message);
             } else {
-                alert(`Records synchronized! Status: ${derivedStatus}`);
+                alert("Records synchronized successfully!");
+                await clearLockHeartbeat(); // Clear the lock when finished uploading
                 document.getElementById('spsicRawNumber').value = '';
                 document.getElementById('fileSpsic').value = '';
                 document.getElementById('fileArrival').value = '';
@@ -373,17 +438,11 @@
             }
         }
 
-        async function approveDocument(id) {
-            const { error } = await supabaseClient.from('imported_shipment_docs').update({ status: 'Completed' }).eq('id', id);
-            if(error) alert(error.message);
-            else { alert("Document approved and marked as Completed."); fetchDocuments(); }
-        }
-
         async function openDocCompiler(recordId) {
-            const { data: doc, error } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
-            if(error || !doc) return alert("Failed to open documents.");
+            const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
+            if(!doc) return;
 
-            document.getElementById('viewerTitleDisplay').textContent = `Manifest Viewer: SPSIC-${doc.spsic_number} (${doc.status})`;
+            document.getElementById('viewerTitleDisplay').textContent = `Manifest Viewer: SPSIC-${doc.spsic_number}`;
             const targetBody = document.getElementById('viewerTargetBody');
             targetBody.innerHTML = "";
 
@@ -392,28 +451,18 @@
             if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path });
             if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path });
 
-            if(filesArray.length === 0) {
-                targetBody.innerHTML = "<p>No physical documentation tracks uploaded yet.</p>";
-            } else {
-                if(doc.status === 'Completed') {
-                    targetBody.innerHTML = `<h3 style="color:#065f46; text-align:center; background:#d1fae5; padding:10px; border-radius:6px; margin-bottom: 15px;">
-                        🔒 Consolidated Document Compilation (Verified File Group)
-                    </h3>`;
-                }
+            for(let file of filesArray) {
+                const { data } = supabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(file.path);
+                const title = document.createElement('h4');
+                title.style.margin = "15px 0 5px 0";
+                title.textContent = file.name;
+                
+                const iframe = document.createElement('iframe');
+                iframe.className = "compiled-frame";
+                iframe.src = data.publicUrl;
 
-                for(let file of filesArray) {
-                    const { data } = supabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(file.path);
-                    const fileTitle = document.createElement('h4');
-                    fileTitle.style.margin = "15px 0 5px 0";
-                    fileTitle.textContent = file.name;
-                    
-                    const iframe = document.createElement('iframe');
-                    iframe.className = "compiled-frame";
-                    iframe.src = data.publicUrl;
-
-                    targetBody.appendChild(fileTitle);
-                    targetBody.appendChild(iframe);
-                }
+                targetBody.appendChild(title);
+                targetBody.appendChild(iframe);
             }
             document.getElementById('documentViewerOverlay').style.display = 'flex';
         }
@@ -421,6 +470,11 @@
         function closeViewer() {
             document.getElementById('documentViewerOverlay').style.display = 'none';
         }
+
+        // Release lock instantly if the user leaves the tab or browser window closes
+        window.addEventListener('beforeunload', () => {
+            clearLockHeartbeat();
+        });
 
         initModule();
     </script>

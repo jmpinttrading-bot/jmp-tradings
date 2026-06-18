@@ -79,9 +79,11 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        // Fixed: The broken whitespace gap inside this token has been removed cleanly.
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentEmployeeId = null;
+        let bypassAuthListener = false; // Intercepts loop processing on manual actions
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -94,7 +96,33 @@
         async function initDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
+            
+            currentEmployeeId = user.id;
             document.getElementById('userEmail').textContent = `👤 User: ${user.email.split('@')[0]}`;
+
+            // Initialize Cross-Tab Check Event Listeners
+            setupSessionCrossCheckListener();
+        }
+
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (bypassAuthListener) return;
+
+                // Scenario A: A different account (like the Admin) signs in on another tab
+                if (session && session.user && session.user.id !== currentEmployeeId) {
+                    bypassAuthListener = true;
+                    alert("Session Conflicted: Another user logged into this browser. Forcing redirect to login...");
+                    
+                    // Terminate tokens and dump browser routing home safely
+                    await supabaseClient.auth.signOut();
+                    window.location.href = "login.html";
+                }
+
+                // Scenario B: Someone clicked manual logout actions inside the alternate workspace window
+                if (event === 'SIGNED_OUT') {
+                    window.location.href = "login.html";
+                }
+            });
         }
 
         async function handleChangePassword(e) {
@@ -111,6 +139,7 @@
         }
 
         async function handleLogout() {
+            bypassAuthListener = true; // Block auth loop during manual logouts
             await supabaseClient.auth.signOut();
             window.location.href = "login.html";
         }
