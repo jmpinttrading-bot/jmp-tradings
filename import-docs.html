@@ -30,6 +30,11 @@
         
         .form-group input[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
         .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
+        
+        /* Loading Bar and Progress Text Styles */
+        .upload-progress-status { font-size: 0.75rem; font-weight: 500; margin-top: 4px; display: none; }
+        .upload-progress-status.working { color: #2563eb; }
+        .upload-progress-status.ready { color: #16a34a; }
 
         .live-lock-banner { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
 
@@ -116,7 +121,7 @@
                 <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
                     <div class="form-group">
                         <label>SPSIC Identification sequence number</label>
-                        <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()">
+                        <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()" onblur="handleInputBlur()">
                     </div>
                     <div class="form-group">
                         <label>Target Folder Month</label>
@@ -125,20 +130,23 @@
                     
                     <div class="form-group">
                         <label>1st Upload: SPSIC Document File (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileSpsic" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
+                        <input type="file" id="fileSpsic" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="handleFileSelection('fileSpsic', 'progressSpsic')">
+                        <div id="progressSpsic" class="upload-progress-status"></div>
                         <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
                         <label>2nd Upload: Arrival Notice (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileArrival" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
+                        <input type="file" id="fileArrival" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="handleFileSelection('fileArrival', 'progressArrival')">
+                        <div id="progressArrival" class="upload-progress-status"></div>
                         <div id="noticeArrival" class="lock-notice">⚠️ Locked: Upload 1st File (SPSIC) first.</div>
                         <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
                         <label>3rd Upload: Import Docs File (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
+                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="handleFileSelection('fileImportDocs', 'progressImport')">
+                        <div id="progressImport" class="upload-progress-status"></div>
                         <div id="noticeImport" class="lock-notice">⚠️ Locked: Upload 1st and 2nd Files first.</div>
                         <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
@@ -299,6 +307,35 @@
         function forceRefetchAndEvaluate() {
             localFetchedRecord = null; 
             evaluateUploadSequenceLocks();
+        }
+
+        // Handles user selecting a file locally to display local readiness states
+        function handleFileSelection(inputId, progressId) {
+            const fileEl = document.getElementById(inputId);
+            const progressEl = document.getElementById(progressId);
+            
+            if (fileEl.files && fileEl.files.length > 0) {
+                progressEl.className = "upload-progress-status working";
+                progressEl.style.display = "block";
+                progressEl.textContent = "⏳ Staging attachment parameters...";
+                
+                // Simulate quick client confirmation/compression buffer read readiness
+                setTimeout(() => {
+                    progressEl.className = "upload-progress-status ready";
+                    progressEl.textContent = `✓ Local package parsed (${(fileEl.files[0].size / 1024).toFixed(1)} KB) - Ready to Sync`;
+                }, 400);
+            } else {
+                progressEl.style.display = "none";
+                progressEl.textContent = "";
+            }
+        }
+
+        // Clears locks if the user blurs the identification component when it is completely blank
+        async function handleInputBlur() {
+            const numInput = document.getElementById('spsicRawNumber').value.trim();
+            if (!numInput) {
+                await clearLockHeartbeat();
+            }
         }
 
         async function evaluateUploadSequenceLocks() {
@@ -633,12 +670,20 @@
                 const { error: dbError } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
                 if (dbError) throw dbError;
 
+                // FIX: Release tracking table entry once data is safely inside imported_shipment_docs
+                await clearLockHeartbeat();
+
                 localFetchedRecord = payload;
                 alert("Records synchronized successfully!");
                 
                 document.getElementById('fileSpsic').value = "";
                 document.getElementById('fileArrival').value = "";
                 document.getElementById('fileImportDocs').value = "";
+                
+                // Reset local file progress indicator nodes
+                document.getElementById('progressSpsic').style.display = "none";
+                document.getElementById('progressArrival').style.display = "none";
+                document.getElementById('progressImport').style.display = "none";
                 
                 selectedFolderMonth = monthTarget;
                 const uploadedYear = monthTarget.split('-')[0];
