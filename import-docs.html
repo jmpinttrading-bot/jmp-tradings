@@ -95,7 +95,7 @@
 <body>
 
     <div class="sidebar">
-        <h2>JMP Admin HQ</h2>
+        <h2 id="sidebarPanelHeading">JMP Admin HQ</h2>
         <a href="admin-dashboard.html" id="backToDashboardBtn">Profile Management</a>
         <a href="control-panel.html" id="adminControlPanelLink" style="display: none;">🎛️ Control Panel</a>
         <a href="#" class="active">📄 Import Doc File Management</a>
@@ -239,11 +239,12 @@
             if (profile && profile.role) {
                 currentUserRole = profile.role.toLowerCase().trim();
                 if (currentUserRole !== 'admin') {
+                    document.getElementById('sidebarPanelHeading').textContent = "JMP Employee";
                     document.getElementById('backToDashboardBtn').href = "employee-dashboard.html";
-                    // Modified to change tab label dynamically for employee access groups
                     document.getElementById('backToDashboardBtn').textContent = "👤 My Account Profile";
                     document.getElementById('adminControlPanelLink').style.display = "none";
                 } else {
+                    document.getElementById('sidebarPanelHeading').textContent = "JMP Admin HQ";
                     document.getElementById('backToDashboardBtn').href = "admin-dashboard.html";
                     document.getElementById('backToDashboardBtn').textContent = "Profile Management";
                     document.getElementById('adminControlPanelLink').style.display = "block";
