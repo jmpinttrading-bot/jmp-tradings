@@ -97,6 +97,7 @@
     <div class="sidebar">
         <h2>JMP Admin HQ</h2>
         <a href="admin-dashboard.html" id="backToDashboardBtn">Profile Management</a>
+        <a href="control-panel.html" id="adminControlPanelLink" style="display: none;">🎛️ Control Panel</a>
         <a href="#" class="active">📄 Import Doc File Management</a>
     </div>
 
@@ -240,6 +241,10 @@
                 if (currentUserRole !== 'admin') {
                     document.getElementById('backToDashboardBtn').href = "employee-dashboard.html";
                     document.getElementById('backToDashboardBtn').textContent = "Employee Profile";
+                    document.getElementById('adminControlPanelLink').style.display = "none";
+                } else {
+                    // Make Control Panel visible exclusively for administrative sessions
+                    document.getElementById('adminControlPanelLink').style.display = "block";
                 }
             }
 
