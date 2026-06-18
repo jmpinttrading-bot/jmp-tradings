@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provision New Account | JMP</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #0b2545; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        
+        .form-card { background: white; width: 100%; max-width: 480px; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .form-card h2 { color: #0f172a; margin-bottom: 8px; font-size: 1.6rem; }
+        .form-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #334155; font-size: 0.9rem; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 1rem; background-color: #f8fafc; }
+        .form-group input:focus { outline: none; border-color: #0b2545; background-color: white; }
+        
+        .btn-group { display: flex; gap: 15px; margin-top: 10px; }
+        .submit-btn { flex: 2; background-color: #0b2545; color: white; border: none; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .submit-btn:hover { background-color: #133a6f; }
+        .cancel-btn { flex: 1; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 14px; border-radius: 6px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; font-size: 1rem; }
+        .cancel-btn:hover { background-color: #e2e8f0; }
+
+        .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
+        .alert.success { background: #d1fae5; color: #065f46; }
+        .alert.error { background: #fee2e2; color: #991b1b; }
+    </style>
+</head>
+<body>
+
+    <div class="form-card">
+        <h2>Provision Account</h2>
+        <p>Register a new system username and initial access key sequence.</p>
+
+        <div id="alertBox" class="alert"></div>
+
+        <form onsubmit="handleCreateEmployee(event)">
+            <div class="form-group">
+                <label for="newUsername">Employee Username</label>
+                <input type="text" id="newUsername" required placeholder="e.g., amiller2026" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label for="newPassword">Initial Secure Password</label>
+                <input type="password" id="newPassword" required placeholder="Minimum 6 characters">
+            </div>
+
+            <div class="form-group">
+                <label for="newRole">System Account Authorization Role</label>
+                <select id="newRole">
+                    <option value="Employee">Standard Employee</option>
+                    <option value="Admin">System Administrator</option>
+                </select>
+            </div>
+
+            <div class="btn-group">
+                <a href="admin-dashboard.html" class="cancel-btn">Back</a>
+                <button type="submit" class="submit-btn">Create User Account</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const CORPORATE_DOMAIN = "@jmp-corporate.local";
+
+        function showAlert(msg, type) {
+            const box = document.getElementById('alertBox');
+            box.textContent = msg;
+            box.className = `alert ${type}`;
+            box.style.display = 'block';
+        }
+
+        async function handleCreateEmployee(e) {
+            e.preventDefault();
+            const username = document.getElementById('newUsername').value.trim().toLowerCase();
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newRole').value;
+
+            if (username.includes('@') || username.includes(' ')) {
+                showAlert("Usernames cannot contain spaces or symbols.", "error");
+                return;
+            }
+            if (password.length < 6) {
+                showAlert("Passwords must contain at least 6 characters.", "error");
+                return;
+            }
+
+            const generatedEmail = username + CORPORATE_DOMAIN;
+
+            // Step A: Build user credential instance in Supabase Auth management system
+            const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({
+                email: generatedEmail,
+                password: password,
+                options: { data: { role: role } }
+            });
+
+            if (signUpError) {
+                showAlert(signUpError.message, "error");
+                return;
+            }
+
+            // Step B: Push baseline telemetry object directly to profiles logging catalog
+            if (signUpData.user) {
+                const { error: profileError } = await supabaseClient
+                    .from('profiles')
+                    .insert([
+                        { id: signUpData.user.id, username: username, role: role }
+                    ]);
+
+                if (profileError) {
+                    showAlert(`Account compiled but database reference synchronization failed: ${profileError.message}`, "error");
+                } else {
+                    showAlert(`Success! Account "${username}" has been fully initialized.`, "success");
+                    document.getElementById('newUsername').value = '';
+                    document.getElementById('newPassword').value = '';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
