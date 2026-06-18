@@ -314,6 +314,7 @@
             const noteArrival = document.getElementById('noticeArrival');
             const noteImport = document.getElementById('noticeImport');
 
+            // Reset UI States
             lblSpsicDb.style.display = "none";
             lblArrivalDb.style.display = "none";
             lblImportDb.style.display = "none";
@@ -329,6 +330,7 @@
                 return;
             }
 
+            // Fetch remote state context if required
             if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
                 const { data } = await supabaseClient
                     .from('imported_shipment_docs')
@@ -340,6 +342,7 @@
                 localFetchedRecord = data;
             }
 
+            // Guard Clause: Complete records are locked from further editing
             if (localFetchedRecord && localFetchedRecord.status === "Completed") {
                 const [yr, mn] = targetMonthInput.split('-');
                 const humanizedMonth = monthsLabels.find(m => m.value === mn)?.text || mn;
@@ -352,6 +355,7 @@
                 return;
             }
 
+            // Guard Clause: Concurrent locks by another teammate
             const { data: activeLock } = await supabaseClient
                 .from('active_document_locks')
                 .select('*')
@@ -372,25 +376,33 @@
                 startLockHeartbeat(numInput);
             }
 
-            // --- REVISED CONDITION BLOCK ---
-            let hasSpsic = false;
+            // --- FIXED LOGICAL STATE PIPELINE ---
+            // 1. Establish base conditions from local file inputs
+            let hasSpsic = fSpsic.files.length > 0;
             let hasArrival = fArrival.files.length > 0;
 
-            if (fSpsic.files.length > 0 || (localFetchedRecord && localFetchedRecord.spsic_file_path !== null)) {
-                hasSpsic = true;
-            }
-
+            // 2. Safely layer in the historical Database states using logical OR (||)
             if (localFetchedRecord) {
-                if (localFetchedRecord.spsic_file_path) { lblSpsicDb.style.display = "block"; }
-                if (localFetchedRecord.arrival_notice_path) { hasArrival = true; lblArrivalDb.style.display = "block"; }
-                if (localFetchedRecord.import_docs_path) { lblImportDb.style.display = "block"; }
+                if (localFetchedRecord.spsic_file_path) { 
+                    hasSpsic = true; 
+                    lblSpsicDb.style.display = "block"; 
+                }
+                if (localFetchedRecord.arrival_notice_path) { 
+                    hasArrival = true; 
+                    lblArrivalDb.style.display = "block"; 
+                }
+                if (localFetchedRecord.import_docs_path) { 
+                    lblImportDb.style.display = "block"; 
+                }
             }
 
+            // 3. Apply conditional view rules accurately based on the layered evaluations
             if (hasSpsic) {
                 fArrival.removeAttribute('disabled');
                 noteArrival.style.display = "none";
             } else {
                 fArrival.setAttribute('disabled', 'true');
+                fArrival.value = ""; // Clear file picker value if locked out mid-session
                 noteArrival.style.display = "block";
             }
 
@@ -399,6 +411,7 @@
                 noteImport.style.display = "none";
             } else {
                 fImport.setAttribute('disabled', 'true');
+                fImport.value = ""; // Clear file picker value if locked out mid-session
                 noteImport.style.display = "block";
             }
         }
