@@ -376,19 +376,18 @@
                 startLockHeartbeat(numInput);
             }
 
-            // --- FIXED LOGICAL STATE PIPELINE ---
-            // 1. Establish base conditions from local file inputs
-            let hasSpsic = fSpsic.files.length > 0;
-            let hasArrival = fArrival.files.length > 0;
+            // --- STRICT DATABASE-DRIVEN STATE PIPELINE ---
+            // 1. Establish structural base evaluation flags matching your remote repository constraints
+            let hasSpsicInDb = false;
+            let hasArrivalInDb = false;
 
-            // 2. Safely layer in the historical Database states using logical OR (||)
             if (localFetchedRecord) {
                 if (localFetchedRecord.spsic_file_path) { 
-                    hasSpsic = true; 
+                    hasSpsicInDb = true; 
                     lblSpsicDb.style.display = "block"; 
                 }
                 if (localFetchedRecord.arrival_notice_path) { 
-                    hasArrival = true; 
+                    hasArrivalInDb = true; 
                     lblArrivalDb.style.display = "block"; 
                 }
                 if (localFetchedRecord.import_docs_path) { 
@@ -396,22 +395,29 @@
                 }
             }
 
-            // 3. Apply conditional view rules accurately based on the layered evaluations
-            if (hasSpsic) {
+            // 2. Strict UI unlock behavior: Only look at what exists safely in Supabase
+            if (hasSpsicInDb) {
                 fArrival.removeAttribute('disabled');
                 noteArrival.style.display = "none";
             } else {
                 fArrival.setAttribute('disabled', 'true');
-                fArrival.value = ""; // Clear file picker value if locked out mid-session
+                fArrival.value = ""; 
                 noteArrival.style.display = "block";
             }
 
-            if (hasSpsic && hasArrival) {
+            if (hasSpsicInDb && hasArrivalInDb) {
                 fImport.removeAttribute('disabled');
                 noteImport.style.display = "none";
             } else {
                 fImport.setAttribute('disabled', 'true');
-                fImport.value = ""; // Clear file picker value if locked out mid-session
+                fImport.value = ""; 
+                
+                // Keep the notice block descriptive depending on what historic document step is missing
+                if (!hasSpsicInDb) {
+                    noteImport.textContent = "⚠️ Locked: Upload 1st File (SPSIC) first.";
+                } else if (!hasArrivalInDb) {
+                    noteImport.textContent = "⚠️ Locked: Upload 2nd File (Arrival Notice) first.";
+                }
                 noteImport.style.display = "block";
             }
         }
