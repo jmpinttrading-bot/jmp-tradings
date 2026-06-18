@@ -9,13 +9,13 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f4f6f9; color: #333; display: flex; min-height: 100vh; }
         
-        .sidebar { width: 260px; background-color: #0b2545; color: white; padding: 30px 20px; display: flex; flex-direction: column; }
+        .sidebar { width: 260px; background-color: #0b2545; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
         .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #133a6f; padding-bottom: 15px; color: #ee964b; }
         .sidebar a { color: #cbd5e1; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background-color: #133a6f; color: white; }
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        .main-content { flex: 1; padding: 40px; }
+        .main-content { flex: 1; padding: 40px; min-width: 0; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .user-badge { background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: 600; }
         
@@ -32,6 +32,13 @@
         .alert { padding: 10px; margin-bottom: 15px; border-radius: 6px; font-size: 0.9rem; display: none; }
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
+
+        @media (max-width: 850px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; min-height: auto; padding: 20px; }
+            .main-content { padding: 15px; }
+            .grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -39,6 +46,7 @@
     <div class="sidebar">
         <h2>JMP Workspace</h2>
         <a href="#" class="active">👤 My Account Profile</a>
+        <a href="import-docs.html">📦 Import Doc File Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout System</button>
     </div>
 
@@ -71,7 +79,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3IDE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         function showAlert(msg, type) {
@@ -88,11 +96,9 @@
             document.getElementById('userEmail').textContent = `👤 User: ${user.email.split('@')[0]}`;
         }
 
-        // Change password function for employee accounts
         async function handleChangePassword(e) {
             e.preventDefault();
             const password = document.getElementById('newPassword').value;
-
             const { data, error } = await supabaseClient.auth.updateUser({ password: password });
 
             if (error) {
