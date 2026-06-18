@@ -19,7 +19,29 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .user-badge { background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: 600; }
         
-        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        /* Flex Layout containing the Left Logo and Main Workspace Grid Panels */
+        .dashboard-layout-wrapper { display: flex; gap: 30px; align-items: center; }
+
+        /* Transparent container acting as part of the page background layout */
+        .logo-display-container {
+            width: 340px;
+            height: 340px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            shrink: 0;
+        }
+        .logo-display-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; flex: 1; }
         .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: fit-content; }
         .card h3 { color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
         
@@ -33,11 +55,15 @@
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
+        @media (max-width: 1200px) {
+            .dashboard-layout-wrapper { flex-direction: column; align-items: center; }
+            .logo-display-container { width: 260px; height: 260px; }
+        }
         @media (max-width: 850px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; min-height: auto; padding: 20px; }
             .main-content { padding: 15px; }
-            .grid { grid-template-columns: 1fr; }
+            .grid { grid-template-columns: 1fr; width: 100%; }
         }
     </style>
 </head>
@@ -58,21 +84,28 @@
 
         <div id="alertBox" class="alert"></div>
 
-        <div class="grid">
-            <div class="card">
-                <h3>Welcome to your JMP Operational Portal</h3>
-                <p>This is your internal secure environment. Use the account management panel on the right side if you need to rotate your security credentials or update your login passwords.</p>
+        <div class="dashboard-layout-wrapper">
+            
+            <div class="logo-display-container">
+                <img src="circle-logo.png" alt="JMP Corporate Brand Identity Logo">
             </div>
 
-            <div class="card">
-                <h3>Account Security</h3>
-                <form onsubmit="handleChangePassword(event)">
-                    <div class="form-group">
-                        <label>New Secure Password</label>
-                        <input type="password" id="newPassword" required placeholder="••••••••">
-                    </div>
-                    <button type="submit" class="btn">Update Account Password</button>
-                </form>
+            <div class="grid">
+                <div class="card">
+                    <h3>Welcome to your JMP Operational Portal</h3>
+                    <p>This is your internal secure environment. Use the account management panel on the right side if you need to rotate your security credentials or update your login passwords.</p>
+                </div>
+
+                <div class="card">
+                    <h3>Account Security</h3>
+                    <form onsubmit="handleChangePassword(event)">
+                        <div class="form-group">
+                            <label>New Secure Password</label>
+                            <input type="password" id="newPassword" required placeholder="••••••••">
+                        </div>
+                        <button type="submit" class="btn">Update Account Password</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -83,7 +116,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentEmployeeId = null;
-        let bypassAuthListener = false; // Intercepts loop processing on manual actions
+        let bypassAuthListener = false;
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -99,26 +132,18 @@
             
             currentEmployeeId = user.id;
             document.getElementById('userEmail').textContent = `👤 User: ${user.email.split('@')[0]}`;
-
-            // Initialize Cross-Tab Check Event Listeners
             setupSessionCrossCheckListener();
         }
 
         function setupSessionCrossCheckListener() {
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (bypassAuthListener) return;
-
-                // Scenario A: A different account (like the Admin) signs in on another tab
                 if (session && session.user && session.user.id !== currentEmployeeId) {
                     bypassAuthListener = true;
                     alert("Session Conflicted: Another user logged into this browser. Forcing redirect to login...");
-                    
-                    // Terminate tokens and dump browser routing home safely
                     await supabaseClient.auth.signOut();
                     window.location.href = "login.html";
                 }
-
-                // Scenario B: Someone clicked manual logout actions inside the alternate workspace window
                 if (event === 'SIGNED_OUT') {
                     window.location.href = "login.html";
                 }
@@ -139,7 +164,7 @@
         }
 
         async function handleLogout() {
-            bypassAuthListener = true; // Block auth loop during manual logouts
+            bypassAuthListener = true;
             await supabaseClient.auth.signOut();
             window.location.href = "login.html";
         }
