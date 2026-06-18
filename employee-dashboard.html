@@ -85,7 +85,7 @@
     <div class="sidebar">
         <h2>JMP Workspace</h2>
         <a href="#" class="active">👤 My Account Profile</a>
-        <a href="import-docs.html">📦 Import Doc File Management</a>
+        <a href="import-docs.html">📄 Import Doc File Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout System</button>
     </div>
 
@@ -221,7 +221,6 @@
             currentEmployeeId = user.id;
             document.getElementById('userEmail').textContent = `👤 User: ${user.email.split('@')[0]}`;
             
-            // Automatically fetch and load the authenticated user's read-only 201 records
             fetchMy201Dossier();
             setupSessionCrossCheckListener();
         }
