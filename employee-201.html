@@ -33,22 +33,35 @@
         
         .empty-state { text-align: center; padding: 50px; color: #64748b; }
 
-        /* Modal overlay architecture wrapper layouts */
+        /* Advanced Wide Scrollable Modal UI architecture */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
-        .modal-card { background: white; width: 100%; max-width: 550px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); padding: 35px; border-top: 6px solid #ee964b; position: relative; }
-        .modal-card h2 { font-size: 1.4rem; color: #0f172a; margin-bottom: 5px; }
-        .modal-card subtitle { font-size: 0.85rem; color: #64748b; display: block; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .modal-card { background: white; width: 100%; max-width: 750px; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); padding: 35px; border-top: 6px solid #ee964b; position: relative; display: flex; flex-direction: column; }
+        .modal-card h2 { font-size: 1.4rem; color: #0f172a; margin-bottom: 2px; }
+        .modal-card subtitle { font-size: 0.85rem; color: #64748b; display: block; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .modal-body { overflow-y: auto; padding-right: 10px; margin-bottom: 20px; }
+        
+        /* Functional Data Grid Categorization styles */
+        .section-title { font-size: 0.9rem; font-weight: bold; color: #ee964b; text-transform: uppercase; letter-spacing: 0.5px; margin: 15px 0 10px 0; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9; }
+        .section-title:first-of-type { margin-top: 0; }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
+        .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+        .form-row.full { grid-template-columns: 1fr; }
+        
         .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 6px; }
-        .form-group input { padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; background-color: #f8fafc; }
+        .form-group label { font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; }
+        .form-group input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background-color: #f8fafc; }
         .form-group input:focus { outline: none; border-color: #0f172a; background-color: white; }
 
-        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 15px; shrink: 0; }
         .btn-close { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-save { background: #ee964b; color: #0f172a; border: none; padding: 10px 22px; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-save:hover { opacity: 0.9; }
+
+        @media(max-width: 640px) {
+            .form-row, .form-row.triple { grid-template-columns: 1fr; gap: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -75,9 +88,64 @@
             <h2 id="modalEmployeeTitle">Employee Folder</h2>
             <subtitle id="modalEmployeeSub">Dossier File Reference</subtitle>
             
-            <form onsubmit="saveGovernmentDocs(event)">
+            <form onsubmit="saveGovernmentDocs(event)" class="modal-body">
                 <input type="hidden" id="targetProfileId">
                 
+                <div class="section-title">Employment Track Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Company ID Number</label>
+                        <input type="text" id="empIdNo" placeholder="e.g., JMP-2026-045">
+                    </div>
+                    <div class="form-group">
+                        <label>Date Hired</label>
+                        <input type="date" id="dateHired">
+                    </div>
+                </div>
+
+                <div class="section-title">Personal Identity Matrix</div>
+                <div class="form-row triple">
+                    <div class="form-group">
+                        <label>Given Name</label>
+                        <input type="text" id="givenName" placeholder="First Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Middle Name</label>
+                        <input type="text" id="middleName" placeholder="Middle Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Surname</label>
+                        <input type="text" id="surname" placeholder="Last Name">
+                    </div>
+                </div>
+
+                <div class="section-title">Contact & Communication Details</div>
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label>Present Residential Address</label>
+                        <input type="text" id="presentAddress" placeholder="Complete Street Address, City, Province">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Employee Contact Number</label>
+                        <input type="text" id="phoneNo" placeholder="e.g., +63 917 123 4567">
+                    </div>
+                </div>
+
+                <div class="section-title">Emergency Contingency Contact</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Emergency Contact Person</label>
+                        <input type="text" id="emergencyContactName" placeholder="Full Legal Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Contingency Contact Phone Number</label>
+                        <input type="text" id="emergencyContactPhone" placeholder="Mobile / Telephone number">
+                    </div>
+                </div>
+
+                <div class="section-title">Government Documentation Registries</div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>SSS Number</label>
@@ -88,7 +156,6 @@
                         <input type="text" id="tinNo" placeholder="000-000-000-000">
                     </div>
                 </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label>Pag-IBIG MID Number</label>
@@ -164,17 +231,14 @@
             renderCards(filtered);
         }
 
-        // Pulls dynamic record metrics asynchronously straight from the new table
         async function inspectFile(profileId, username) {
             document.getElementById('targetProfileId').value = profileId;
             document.getElementById('modalEmployeeTitle').textContent = `Dossier: ${username}`;
             document.getElementById('modalEmployeeSub').textContent = `System Identifier: ${profileId}`;
 
-            // Reset input values to pristine state before filling them
-            document.getElementById('sssNo').value = '';
-            document.getElementById('tinNo').value = '';
-            document.getElementById('pagibigNo').value = '';
-            document.getElementById('philhealthNo').value = '';
+            // Reset all structural form elements to clear prior selections
+            const inputs = document.querySelectorAll('#dossierModal form input:not([type="hidden"])');
+            inputs.forEach(input => input.value = '');
 
             const { data, error } = await supabaseClient
                 .from('employee_201_docs')
@@ -183,6 +247,15 @@
                 .maybeSingle();
 
             if (data) {
+                document.getElementById('empIdNo').value = data.emp_id_no || '';
+                document.getElementById('dateHired').value = data.date_hired || '';
+                document.getElementById('givenName').value = data.given_name || '';
+                document.getElementById('middleName').value = data.middle_name || '';
+                document.getElementById('surname').value = data.surname || '';
+                document.getElementById('presentAddress').value = data.present_address || '';
+                document.getElementById('phoneNo').value = data.phone_no || '';
+                document.getElementById('emergencyContactName').value = data.emergency_contact_name || '';
+                document.getElementById('emergencyContactPhone').value = data.emergency_contact_phone || '';
                 document.getElementById('sssNo').value = data.sss_no || '';
                 document.getElementById('tinNo').value = data.tin_no || '';
                 document.getElementById('pagibigNo').value = data.pagibig_no || '';
@@ -196,13 +269,21 @@
             document.getElementById('dossierModal').style.display = 'none';
         }
 
-        // Performs an upsert operation directly to create or update existing data fields
         async function saveGovernmentDocs(event) {
             event.preventDefault();
             const profileId = document.getElementById('targetProfileId').value;
             
             const payload = {
                 id: profileId,
+                emp_id_no: document.getElementById('empIdNo').value.trim(),
+                date_hired: document.getElementById('dateHired').value,
+                given_name: document.getElementById('givenName').value.trim(),
+                middle_name: document.getElementById('middleName').value.trim(),
+                surname: document.getElementById('surname').value.trim(),
+                present_address: document.getElementById('presentAddress').value.trim(),
+                phone_no: document.getElementById('phoneNo').value.trim(),
+                emergency_contact_name: document.getElementById('emergencyContactName').value.trim(),
+                emergency_contact_phone: document.getElementById('emergencyContactPhone').value.trim(),
                 sss_no: document.getElementById('sssNo').value.trim(),
                 tin_no: document.getElementById('tinNo').value.trim(),
                 pagibig_no: document.getElementById('pagibigNo').value.trim(),
@@ -215,9 +296,9 @@
                 .upsert(payload, { onConflict: 'id' });
 
             if (error) {
-                alert(`Error saving document record updates: ${error.message}`);
+                alert(`Error saving comprehensive dossier record: ${error.message}`);
             } else {
-                alert('Government documentation credentials synchronized successfully!');
+                alert('Employee 201 Dossier Master File saved and synchronized successfully!');
                 closeDossierModal();
             }
         }
