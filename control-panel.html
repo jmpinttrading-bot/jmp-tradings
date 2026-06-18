@@ -19,7 +19,7 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
-        /* Relocated Online Roster Layout Header styling */
+        /* Online Roster Layout Header styling */
         .online-users-panel { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 30px; display: flex; flex-direction: column; gap: 15px; }
         .online-users-panel .roster-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
         .online-users-panel h3 { color: #0f172a; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
@@ -33,15 +33,26 @@
         .user-role-lbl { font-size: 0.75rem; color: #64748b; background: #e2e8f0; padding: 2px 8px; border-radius: 10px; text-transform: capitalize; }
         .pulse-indicator-dot { height: 8px; width: 8px; background-color: #22c55e; border-radius: 50%; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); animation: pulseTrackingEffect 1.8s infinite; }
 
+        /* User Access Account Section Blocks */
         .control-block { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .control-block h3 { margin-bottom: 15px; color: #0f172a; font-size: 1.25rem; }
-        .control-block p { color: #64748b; font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5; }
+        .control-block h3 { margin-bottom: 5px; color: #0f172a; font-size: 1.25rem; }
+        .control-block p { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5; }
         
         .log-table { width: 100%; border-collapse: collapse; text-align: left; margin-top: 15px; }
-        .log-table th, .log-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
-        .log-table th { background-color: #f8fafc; color: #64748b; }
-        .status-pill { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-        .status-pill.active { background: #d1fae5; color: #065f46; }
+        .log-table th, .log-table td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; vertical-align: middle; }
+        .log-table th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
+        
+        .employee-badge { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; }
+        .admin-pill-badge { background: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; }
+
+        /* Clean Switch Toggle Input Elements */
+        .toggle-switch-container { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #475569; }
+        .switch-input-element { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch-input-element input { opacity: 0; width: 0; height: 0; }
+        .slider-rail { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
+        .slider-rail:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider-rail { background-color: #22c55e; }
+        input:checked + .slider-rail:before { transform: translateX(18px); }
 
         @keyframes pulseTrackingEffect {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
@@ -69,7 +80,7 @@
         <div class="online-users-panel">
             <div class="roster-header">
                 <h3>Online Infrastructure Session Roster</h3>
-                <span class="live-count-badge" id="rosterCountBadge">0 Live</span>
+                <span class="live-count-badge" id="rosterCountBadge">0 Live Users</span>
             </div>
             <ul class="user-presence-list" id="activePresenceTrackerList">
                 <li style="text-align: center; color: #94a3b8; padding: 10px; width: 100%; font-size: 0.85rem;">Listening for session broadcasts...</li>
@@ -77,32 +88,21 @@
         </div>
 
         <div class="control-block">
-            <h3>Operational Core Monitoring</h3>
-            <p>Review systemic infrastructure profiles mapped and synchronized in active memory segments across the Supabase storage relational scheme.</p>
+            <h3>User Access Account</h3>
+            <p>Control routing permission parameters for employee workspace dashboard environments. Modifications sync instantly to user data records.</p>
             
             <table class="log-table">
                 <thead>
                     <tr>
-                        <th>Infrastructure Task</th>
-                        <th>Target Table Mapping</th>
-                        <th>Connection Status</th>
+                        <th>User Identity Contact</th>
+                        <th>Assigned Role</th>
+                        <th>Profile Management Access</th>
+                        <th>Import Doc Management Access</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="accessManagementTableBody">
                     <tr>
-                        <td><strong>Authentication Nodes</strong></td>
-                        <td><code>auth.users</code></td>
-                        <td><span class="status-pill active">Connected</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Access Authorization</strong></td>
-                        <td><code>public.profiles</code></td>
-                        <td><span class="status-pill active">Connected</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Dossier Registries</strong></td>
-                        <td><code>public.employee_201_docs</code></td>
-                        <td><span class="status-pill active">Connected</span></td>
+                        <td colspan="4" style="text-align: center; color: #94a3b8; padding: 30px;">Loading profile matrices from secure segment...</td>
                     </tr>
                 </tbody>
             </table>
@@ -133,6 +133,79 @@
             
             setupSessionCrossCheckListener();
             initializePresenceSynchronization(user, profile.role);
+            fetchPlatformUserProfiles();
+        }
+
+        // Pull active profiles and load toggles mapped directly to table permissions columns
+        async function fetchPlatformUserProfiles() {
+            const { data: profiles, error } = await supabaseClient
+                .from('profiles')
+                // Added direct structural selection of permission columns
+                .select('id, email, role, full_name, profile_access, import_access')
+                .order('role', { ascending: true });
+
+            const tbody = document.getElementById('accessManagementTableBody');
+            if (error || !profiles || profiles.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #ef4444; padding: 20px;">Failed to gather structural user profile matrices.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+
+            profiles.forEach(profile => {
+                const tr = document.createElement('tr');
+                const displayName = profile.email ? profile.email : (profile.full_name || 'Unidentified Node');
+                const roleBadge = profile.role === 'Admin' ? `<span class="admin-pill-badge">Admin</span>` : `<span class="employee-badge">Employee</span>`;
+                
+                // Fallback to true if column properties are unassigned (null/undefined)
+                const isProfileAllowed = profile.profile_access !== false; 
+                const isImportAllowed = profile.import_access !== false; 
+
+                tr.innerHTML = `
+                    <td><strong>${displayName}</strong></td>
+                    <td>${roleBadge}</td>
+                    <td>
+                        <div class="toggle-switch-container">
+                            <label class="switch-input-element">
+                                <input type="checkbox" ${isProfileAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'profile_access', this.checked)">
+                                <span class="slider-rail"></span>
+                            </label>
+                            <span>${profile.role === 'Admin' ? 'Locked (ON)' : (isProfileAllowed ? 'Allowed' : 'Restricted')}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="toggle-switch-container">
+                            <label class="switch-input-element">
+                                <input type="checkbox" ${isImportAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'import_access', this.checked)">
+                                <span class="slider-rail"></span>
+                            </label>
+                            <span>${profile.role === 'Admin' ? 'Locked (ON)' : (isImportAllowed ? 'Allowed' : 'Restricted')}</span>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Live updates update profile rows inside public.profiles
+        async function updateDatabaseAccessClearance(userId, privilegeColumn, isGranted) {
+            console.log(`Synchronizing Privilege Update [User: ${userId} | Column: ${privilegeColumn} | Status: ${isGranted}]`);
+            
+            const updatePayload = {};
+            updatePayload[privilegeColumn] = isGranted;
+
+            const { error } = await supabaseClient
+                .from('profiles')
+                .update(updatePayload)
+                .eq('id', userId);
+
+            if (error) {
+                console.error("Supabase privilege update conflict:", error.message);
+                alert("Error updating access clearance: " + error.message);
+            } else {
+                // Refresh labels instantly without reloading page
+                fetchPlatformUserProfiles();
+            }
         }
 
         function initializePresenceSynchronization(authenticatedUser, userRole) {
@@ -168,7 +241,6 @@
             listContainer.innerHTML = "";
             
             let consolidatedUsers = [];
-
             for (const id in presenceState) {
                 const elements = presenceState[id];
                 if (elements && elements.length > 0) {
