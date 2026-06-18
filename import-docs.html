@@ -31,7 +31,6 @@
         .form-group input[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
         .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
         
-        /* Loading Bar and Progress Text Styles */
         .upload-progress-status { font-size: 0.75rem; font-weight: 500; margin-top: 4px; display: none; }
         .upload-progress-status.working { color: #2563eb; }
         .upload-progress-status.ready { color: #16a34a; }
@@ -306,10 +305,14 @@
 
         function forceRefetchAndEvaluate() {
             localFetchedRecord = null; 
+            
+            document.getElementById('progressSpsic').style.display = "none";
+            document.getElementById('progressArrival').style.display = "none";
+            document.getElementById('progressImport').style.display = "none";
+            
             evaluateUploadSequenceLocks();
         }
 
-        // Handles user selecting a file locally to display local readiness states
         function handleFileSelection(inputId, progressId) {
             const fileEl = document.getElementById(inputId);
             const progressEl = document.getElementById(progressId);
@@ -319,7 +322,6 @@
                 progressEl.style.display = "block";
                 progressEl.textContent = "⏳ Staging attachment parameters...";
                 
-                // Simulate quick client confirmation/compression buffer read readiness
                 setTimeout(() => {
                     progressEl.className = "upload-progress-status ready";
                     progressEl.textContent = `✓ Local package parsed (${(fileEl.files[0].size / 1024).toFixed(1)} KB) - Ready to Sync`;
@@ -330,7 +332,6 @@
             }
         }
 
-        // Clears locks if the user blurs the identification component when it is completely blank
         async function handleInputBlur() {
             const numInput = document.getElementById('spsicRawNumber').value.trim();
             if (!numInput) {
@@ -667,10 +668,17 @@
                     updated_at: new Date().toISOString()
                 };
 
-                const { error: dbError } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
+                if (localFetchedRecord && localFetchedRecord.id) {
+                    payload.id = localFetchedRecord.id;
+                }
+
+                // FIXED: Explicitly added onConflict matching parameter to prevent unique constraint failures
+                const { error: dbError } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .upsert(payload, { onConflict: 'spsic_number,target_month' });
+                    
                 if (dbError) throw dbError;
 
-                // FIX: Release tracking table entry once data is safely inside imported_shipment_docs
                 await clearLockHeartbeat();
 
                 localFetchedRecord = payload;
@@ -680,7 +688,6 @@
                 document.getElementById('fileArrival').value = "";
                 document.getElementById('fileImportDocs').value = "";
                 
-                // Reset local file progress indicator nodes
                 document.getElementById('progressSpsic').style.display = "none";
                 document.getElementById('progressArrival').style.display = "none";
                 document.getElementById('progressImport').style.display = "none";
