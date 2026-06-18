@@ -14,7 +14,6 @@
         .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         
-        /* New prominent sidebar action button styling */
         .sidebar .nav-create-btn { background-color: #22c55e; color: white; font-weight: bold; margin-top: 10px; text-align: center; border-left: none !important; }
         .sidebar .nav-create-btn:hover { background-color: #16a34a; color: white; }
         
@@ -24,7 +23,8 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
-        .grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 30px; }
+        /* Updated Grid to support dual configuration profiles side-by-side */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
         .card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .card h3 { margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
         
@@ -46,13 +46,13 @@
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
-        /* Responsive UI Optimization Engine for Mobile Android Displays */
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; min-height: auto; padding: 20px; }
             .logout-btn { margin-top: 15px; width: 100%; }
             .main-content { padding: 15px; width: 100%; }
             .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .grid { grid-template-columns: 1fr; gap: 20px; }
             
             table, thead, tbody, th, td, tr { display: block; }
             thead tr { position: absolute; top: -9999px; left: -9999px; }
@@ -67,9 +67,7 @@
     <div class="sidebar">
         <h2>JMP Admin HQ</h2>
         <a href="#" class="active">Directory List</a>
-        
         <a href="register-employee.html" class="nav-create-btn">+ New Account Form</a>
-        
         <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
     </div>
 
@@ -91,6 +89,21 @@
                         <input type="password" id="adminNewPassword" required placeholder="Enter new secure password">
                     </div>
                     <button type="submit" class="btn">Update Password</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Update Admin Account Username</h3>
+                <form onsubmit="handleUsernameUpdate(event)">
+                    <div class="form-group">
+                        <label>Current System Username</label>
+                        <input type="text" id="adminCurrentUsername" readonly style="background-color: #f1f5f9; color: #64748b; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group">
+                        <label>New Unique Username</label>
+                        <input type="text" id="adminNewUsername" required placeholder="Enter new unique username">
+                    </div>
+                    <button type="submit" class="btn" style="background: #0f172a; color: white;">Save Username</button>
                 </form>
             </div>
         </div>
@@ -117,6 +130,8 @@
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentAdminId = null; // Track authenticated runtime primary key identification references
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -130,7 +145,16 @@
         async function initAdmin() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user || user.user_metadata.role !== 'Admin') { window.location.href = "login.html"; return; }
+            
+            currentAdminId = user.id;
             document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
+            
+            // Sync current username text field value directly out of table instance
+            const { data: profile } = await supabaseClient.from('profiles').select('username').eq('id', user.id).single();
+            if (profile) {
+                document.getElementById('adminCurrentUsername').value = profile.username;
+            }
+            
             fetchDirectory();
         }
 
@@ -152,6 +176,32 @@
                 </tr>`;
                 tbody.innerHTML += row;
             });
+        }
+
+        // Logic function processing administrative record updates inside Public profiles mapping layout 
+        async function handleUsernameUpdate(e) {
+            e.preventDefault();
+            const newUsername = document.getElementById('adminNewUsername').value.trim();
+            
+            if (!newUsername) return;
+
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .update({ username: newUsername })
+                .eq('id', currentAdminId);
+
+            if (error) {
+                if (error.message.includes("unique")) {
+                    showAlert("Username is already taken by another employee record.", "error");
+                } else {
+                    showAlert(error.message, "error");
+                }
+            } else {
+                showAlert("Your administrative username has been successfully updated!", "success");
+                document.getElementById('adminCurrentUsername').value = newUsername;
+                document.getElementById('adminNewUsername').value = '';
+                fetchDirectory(); // Instantly update dashboard data views
+            }
         }
 
         async function triggerPasswordReset(userId, username) {
