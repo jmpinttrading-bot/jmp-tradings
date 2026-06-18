@@ -67,13 +67,16 @@
         .viewer-card { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; }
         .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         .viewer-body { flex: 1; background: #f1f5f9; border-radius: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 15px; }
-        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; }
         
         .viewer-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
         .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .approve-action-btn { background: #22c55e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
 
         .empty-placeholder { text-align: center; color: #64748b; padding: 30px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
+
+        .doc-header-title { font-size: 1rem; color: #0f172a; margin: 15px 0 5px 0; display: flex; justify-content: space-between; align-items: center; }
+        .upload-date-span { font-size: 0.85rem; color: #64748b; font-weight: normal; background: #e2e8f0; padding: 2px 8px; border-radius: 4px; }
 
         @media (max-width: 850px) {
             body { flex-direction: column; }
@@ -444,12 +447,10 @@
                 placeholder.style.display = "none";
                 wrapper.classList.add('active');
                 
-                // Humanize heading title display
                 const [year, monthNum] = selectedFolderMonth.split('-');
                 const matchedMonth = monthsLabels.find(m => m.value === monthNum);
                 titleDisplay.innerHTML = `📂 Workspace Directory: <strong>${matchedMonth ? matchedMonth.text : monthNum} ${year}</strong>`;
                 
-                // Clear previous search and update table contents
                 document.getElementById('docSearchBox').value = "";
                 fetchDocuments();
             } else {
@@ -571,6 +572,19 @@
             }
         }
 
+        // Helper function to turn ISO string / Date fields into readable "Month Day, Year" strings
+        function formatHumanReadableDate(dateInput) {
+            if (!dateInput) return "N/A";
+            const dateObj = new Date(dateInput);
+            if (isNaN(dateObj.getTime())) return "N/A";
+            
+            return dateObj.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
         async function openDocCompiler(recordId) {
             activeInspectingRecordId = recordId;
             const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
@@ -586,16 +600,34 @@
             if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path });
 
             for(let file of filesArray) {
+                let fileUploadDate = doc.updated_at; // Database fallback timestamp
+                
+                try {
+                    // Pull specific object creation timestamp directly from storage metadata fields
+                    const { data: metaData, error: metaErr } = await supabaseClient
+                        .storage
+                        .from(STORAGE_BUCKET_NAME)
+                        .getMetadata(file.path);
+                        
+                    if (metaData && metaData.created_at) {
+                        fileUploadDate = metaData.created_at;
+                    }
+                } catch(e) {
+                    console.warn("Could not retrieve precise storage object creation metadata:", e);
+                }
+
+                const readableTimestamp = formatHumanReadableDate(fileUploadDate);
                 const { data } = supabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(file.path);
-                const title = document.createElement('h4');
-                title.style.margin = "15px 0 5px 0";
-                title.textContent = file.name;
+                
+                const titleContainer = document.createElement('div');
+                titleContainer.className = "doc-header-title";
+                titleContainer.innerHTML = `<h4>${file.name}</h4> <span class="upload-date-span">Date Upload: ${readableTimestamp}</span>`;
                 
                 const iframe = document.createElement('iframe');
                 iframe.className = "compiled-frame";
                 iframe.src = data.publicUrl;
 
-                targetBody.appendChild(title);
+                targetBody.appendChild(titleContainer);
                 targetBody.appendChild(iframe);
             }
 
