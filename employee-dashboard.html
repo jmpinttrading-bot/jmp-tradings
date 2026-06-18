@@ -63,6 +63,12 @@
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
+        /* Inline Block Banner Area when initial workspace loads locked out */
+        .roadblock-panel { display: none; background: white; padding: 40px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; max-width: 600px; margin: 40px auto; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .roadblock-panel .icon { font-size: 3.5rem; margin-bottom: 15px; color: #ef4444; display: inline-block; }
+        .roadblock-panel h2 { color: #0b2545; font-size: 1.5rem; margin-bottom: 12px; }
+        .roadblock-panel p { color: #64748b; line-height: 1.6; font-size: 1rem; }
+
         /* Access Blocker Warning Popup Modal Design */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
@@ -109,7 +115,13 @@
 
         <div id="alertBox" class="alert"></div>
 
-        <div class="dashboard-layout-wrapper">
+        <div class="roadblock-panel" id="profileRoadblockView">
+            <span class="icon">🛑</span>
+            <h2>Profile Access Restricted</h2>
+            <p>Your authorization parameters to access your dossier master records have been suspended. If this is an error, contact your operations center administrator.</p>
+        </div>
+
+        <div class="dashboard-layout-wrapper" id="profileDossierWorkspaceWrapper">
             
             <div class="logo-display-container">
                 <img src="circle-logo.png" alt="JMP Corporate Brand Identity Logo">
@@ -227,7 +239,6 @@
         let currentEmployeeId = null;
         let bypassAuthListener = false;
         
-        // Runtime container holding permission data columns from profiles
         let permissionsMatrix = {
             profile_access: true,
             import_access: true
@@ -246,36 +257,45 @@
             if (!user) { window.location.href = "login.html"; return; }
             
             currentEmployeeId = user.id;
-            document.getElementById('userEmail').textContent = `👤 User: ${user.email.split('@')[0]}`;
             
-            // Step 1: Query permissions row before parsing view dossier sheets
-            await fetchEmployeeSystemPermissions();
-            fetchMy201Dossier();
+            // Query permissions row and extract custom 'username' directly
+            await fetchEmployeeSystemPermissions(user);
             setupSessionCrossCheckListener();
         }
 
-        // Queries permissions status parameters mapped directly from public.profiles columns
-        async function fetchEmployeeSystemPermissions() {
+        async function fetchEmployeeSystemPermissions(authUser) {
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
-                .select('role, profile_access, import_access')
+                .select('username, role, profile_access, import_access')
                 .eq('id', currentEmployeeId)
                 .maybeSingle();
 
             if (error) {
                 console.error("Failed to gather identity permissions columns:", error.message);
+                document.getElementById('userEmail').textContent = `👤 User: ${authUser.email.split('@')[0]}`;
                 return;
             }
 
             if (profile) {
-                // If the user role is Admin, bypass restrictions completely. Otherwise, fall back to true unless explicitly set to false.
+                document.getElementById('userEmail').textContent = `👤 User: ${profile.username || authUser.email.split('@')[0]}`;
+                
                 const isAdminUser = profile.role === 'Admin';
                 permissionsMatrix.profile_access = isAdminUser || profile.profile_access !== false;
                 permissionsMatrix.import_access = isAdminUser || profile.import_access !== false;
+
+                // Evaluate Profile clearance bounds instantly upon page initial loading
+                if (!permissionsMatrix.profile_access) {
+                    document.getElementById('profileDossierWorkspaceWrapper').style.display = 'none';
+                    document.getElementById('profileRoadblockView').style.display = 'block';
+                } else {
+                    fetchMy201Dossier();
+                }
+            } else {
+                document.getElementById('userEmail').textContent = `👤 User: ${authUser.email.split('@')[0]}`;
+                fetchMy201Dossier();
             }
         }
 
-        // Intercept validation check to run when any visible navigation anchor link gets clicked
         function verifyNavigationPrivilege(moduleName, destinationUrl) {
             let isAccessPermitted = true;
 
@@ -288,6 +308,10 @@
             if (isAccessPermitted) {
                 if (destinationUrl !== '#') {
                     window.location.href = destinationUrl;
+                } else {
+                    // Clicking on "My Account Profile" when inside the profile page context re-reveals content cleanly if allowed
+                    document.getElementById('profileRoadblockView').style.display = 'none';
+                    document.getElementById('profileDossierWorkspaceWrapper').style.display = 'flex';
                 }
             } else {
                 openRestrictionModal(moduleName);
