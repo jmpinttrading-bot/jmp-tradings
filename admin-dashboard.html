@@ -7,16 +7,33 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; position: relative; }
         
-        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
+        /* Subtle Watermark Logo Background */
+        .watermark-bg {
+            position: fixed;
+            left: 280px; /* Aligns right after the sidebar */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 500px;
+            height: 500px;
+            background-image: url('circle-logo.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            opacity: 0.04; /* Clean, subtle watermark contrast */
+            pointer-events: none; /* Allows users to click elements through it */
+            z-index: 0;
+        }
+
+        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; position: relative; z-index: 10; }
         .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
         .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        .main-content { flex: 1; padding: 40px; min-width: 0; }
+        .main-content { flex: 1; padding: 40px; min-width: 0; position: relative; z-index: 5; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
@@ -51,10 +68,13 @@
 
         @media (max-width: 1024px) {
             .grid { grid-template-columns: 1fr; }
+            .watermark-bg { left: 0; width: 100%; opacity: 0.02; }
         }
     </style>
 </head>
 <body>
+
+    <div class="watermark-bg"></div>
 
     <div class="sidebar">
         <h2>JMP Admin HQ</h2>
