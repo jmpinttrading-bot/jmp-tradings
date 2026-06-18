@@ -9,18 +9,19 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
         
-        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; }
+        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
         .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
         .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        .main-content { flex: 1; padding: 40px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; }
+        .main-content { flex: 1; padding: 40px; min-width: 0; }
+        .header { display: flex; flex-direction: column; gap: 20px; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
-        .action-bar { margin-bottom: 25px; display: flex; gap: 15px; }
-        .create-btn { background-color: #22c55e; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.2); transition: background 0.2s; }
+        .action-bar { width: 100%; display: block; clear: both; }
+        .create-btn { background-color: #22c55e; color: white; text-decoration: none; padding: 14px 24px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center; box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.3); transition: background 0.2s; border: none; min-width: 250px; }
         .create-btn:hover { background-color: #16a34a; }
         
         .grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-bottom: 30px; }
@@ -44,6 +45,23 @@
         .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
+
+        /* Responsive Breakpoint Engine optimized for Local Android Document Viewers */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; min-height: auto; padding: 20px; }
+            .logout-btn { margin-top: 15px; width: 100%; }
+            .main-content { padding: 15px; width: 100%; }
+            .header-top { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .create-btn { display: block; width: 100%; padding: 16px; font-size: 1.05rem; }
+            
+            /* Responsive Table Framework Conversion */
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { border: 1px solid #cbd5e1; margin-bottom: 12px; border-radius: 6px; padding: 10px; background: white; }
+            td { border: none; position: relative; padding-left: 50%; text-align: right; min-height: 40px; }
+            td:before { content: attr(data-label); position: absolute; left: 10px; width: 45%; text-align: left; font-weight: bold; color: #64748b; }
+        }
     </style>
 </head>
 <body>
@@ -55,16 +73,20 @@
     </div>
 
     <div class="main-content">
+        
         <div class="header">
-            <h1>Root Administrator Console</h1>
-            <div class="admin-badge" id="adminEmail">Admin System</div>
+            <div class="header-top">
+                <h1>Root Administrator Console</h1>
+                <div class="admin-badge" id="adminEmail">Admin System</div>
+            </div>
+            <div class="action-bar">
+                <a href="register-employee.html" class="create-btn">
+                    + Provision New Employee Account
+                </a>
+            </div>
         </div>
 
         <div id="alertBox" class="alert"></div>
-
-        <div class="action-bar">
-            <a href="register-employee.html" class="create-btn">➕ Provision New Employee Account</a>
-        </div>
 
         <div class="grid">
             <div class="card">
@@ -125,11 +147,12 @@
             tbody.innerHTML = '';
             
             data.forEach(profile => {
+                const dateString = new Date(profile.created_at).toLocaleDateString();
                 const row = `<tr>
-                    <td><strong>${profile.username}</strong></td>
-                    <td>${profile.role}</td>
-                    <td>${new Date(profile.created_at).toLocaleDateString()}</td>
-                    <td>
+                    <td data-label="System Username"><strong>${profile.username}</strong></td>
+                    <td data-label="Assigned Access Role">${profile.role}</td>
+                    <td data-label="Registration Date">${dateString}</td>
+                    <td data-label="Security Actions">
                         <button class="reset-btn" onclick="triggerPasswordReset('${profile.id}', '${profile.username}')">🔄 Reset Password</button>
                     </td>
                 </tr>`;
@@ -137,19 +160,16 @@
             });
         }
 
-        // Action logic to handle an employee password override request
         async function triggerPasswordReset(userId, username) {
-            const newPassword = prompt(`Enter a new temporary password for [ ${username} ]:`);
+            const newPassword = prompt(`Enter a new temporary password for [ ${username} ] :`);
             if (!newPassword) return; 
             if (newPassword.length < 6) { alert("Password must be at least 6 characters long."); return; }
 
-            // Using Supabase Auth Admin functionality wrapped inside runtime context
             const { data, error } = await supabaseClient.auth.admin.updateUserById(userId, {
                 password: newPassword
             });
 
             if (error) {
-                // If your API Key configuration blocks RPC admin access, notify user
                 if (error.status === 403 || error.message.includes("service_role")) {
                     showAlert("To reset employee accounts from the frontend, please ensure your project dashboard allows user updates, or configure an Edge function.", "error");
                 } else {
