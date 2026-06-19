@@ -257,7 +257,7 @@
 
         /* Section: Core Competencies / Logistics Strengths */
         .strengths {
-            background-color: #f4f8fb; /* Matches background instead of flashing harsh white */
+            background-color: #f4f8fb; 
             border-top: 1px solid #e2e8f0;
         }
         .strengths-grid {
@@ -268,7 +268,7 @@
             margin: 45px auto 0;
         }
         .strength-card {
-            background: rgba(11, 37, 69, 0.03); /* Removed solid white background */
+            background: rgba(11, 37, 69, 0.03); 
             padding: 30px 20px;
             border-radius: 8px;
             border: 1px solid #cbd5e1;
@@ -319,6 +319,7 @@
         .products {
             background-color: #f0f4f8;
             position: relative;
+            padding-bottom: 40px;
         }
 
         .slider-wrapper {
@@ -350,7 +351,7 @@
             background: #fff;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            box-shadow: 0 6px 18 rgba(0,0,0,0.06);
             border: 1px solid #e1e8ed;
             flex: 0 0 calc(33.333% - 20px); 
             min-width: 300px;
@@ -411,6 +412,102 @@
 
         .arrow-left { left: -5px; }
         .arrow-right { right: -5px; }
+
+        /* Testimonials Section Styles */
+        .testimonials {
+            background-color: #fff;
+            border-top: 1px solid #e2e8f0;
+            padding: 80px 0 70px;
+        }
+
+        .testimonials-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Added side gradient masks to make edges blend beautifully within the boundary box */
+        .testimonials-container::before,
+        .testimonials-container::after {
+            content: "";
+            height: 100%;
+            width: 80px;
+            position: absolute;
+            top: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .testimonials-container::before {
+            left: 40px;
+            background: linear-gradient(to right, #fff, transparent);
+        }
+        .testimonials-container::after {
+            right: 40px;
+            background: linear-gradient(to left, #fff, transparent);
+        }
+
+        .marquee-wrapper {
+            display: flex;
+            width: max-content;
+        }
+
+        .marquee-track {
+            display: flex;
+            gap: 25px;
+            padding: 20px 12px;
+            animation: marqueeScroll 45s linear infinite;
+        }
+
+        /* Pauses movement when user hovers over a testimonial box */
+        .marquee-wrapper:hover .marquee-track {
+            animation-play-state: paused;
+        }
+
+        .testimonial-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 25px;
+            width: 320px;
+            text-align: left;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .testimonial-card p {
+            font-size: 0.95rem;
+            color: #4a5568;
+            font-style: italic;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .testimonial-author {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .testimonial-author span.name {
+            font-weight: 700;
+            color: #0b2545;
+            font-size: 0.95rem;
+        }
+
+        .testimonial-author span.company {
+            font-size: 0.8rem;
+            color: #ee964b;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        @keyframes marqueeScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(calc(-100% - 25px)); }
+        }
 
         /* Section: FAQ Accordion Component */
         .faq {
@@ -640,6 +737,11 @@
             .contact-container {
                 padding: 25px;
             }
+            .testimonials-container {
+                padding: 0 15px;
+            }
+            .testimonials-container::before { left: 15px; }
+            .testimonials-container::after { right: 15px; }
         }
     </style>
 </head>
@@ -785,6 +887,158 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="testimonials" id="testimonials">
+        <h2 style="margin-bottom: 35px;">What Our Partners Say</h2>
+        <div class="testimonials-container">
+            <div class="marquee-wrapper">
+                <div class="marquee-track">
+                    <div class="testimonial-card">
+                        <p>"The cold chain consistency is unmatched. Our salmon shipments arrive with absolutely zero micro-crystallization tissue breakdown."</p>
+                        <div class="testimonial-author">
+                            <span class="name">David Lim</span>
+                            <span class="company">Seafood Logistics Director, Apex Foods</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"JMP International has been our primary source for Golden Pomfret. Volume scalability is exceptional even during tough off-seasons."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Maria Santos</span>
+                            <span class="company">Procurement Head, Hyatt Catering Group</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Their adherence to BFAR and FDA legalities takes the compliance headache completely off our hands. Highly professional firm."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Jonathan Vance</span>
+                            <span class="company">Compliance Officer, Global Maritime Imports</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"The Tuna Saku bars and portion cuts match exact weight specs perfectly. Minimizes processing waste in our kitchens significantly."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Chef Kenji Sato</span>
+                            <span class="company">Executive Chef, Izakaya Hospitality</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"We purchase by the plastic bundle format monthly. Sizing counts are strictly uniform, and tracking numbers are always real-time."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Elena Rostova</span>
+                            <span class="company">Supply Chain Manager, Nord Seafoods Wholesale</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Their traditional preserved items, especially the Dried Moonfish, have been huge hits across our supermarket branches."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Arthur Cruz</span>
+                            <span class="company">Category Merchant, Central Mart Plus</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Dynamic wholesale sourcing at its best. JMP accommodates immediate last-minute changes to freight container allocations seamlessly."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Sarah Jenkins</span>
+                            <span class="company">Operations Chief, Horizon Distribution</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"The texture density of their block-frozen peeled shrimp holds up remarkably well under fast high-heat cooking environments."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Marcus Aurelio</span>
+                            <span class="company">Culinary Director, Fiesta Ocean Bistro</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Reliable, punctual, and safe tracking protocols. Working with JMP since 2023 has completely stabilized our frozen inventory pipeline."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Linus Tan</span>
+                            <span class="company">Managing Director, Vanguard Cold Storage</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Their dynamic distribution networks solve the core logistical variables cleanly. Pricing transparency is unmatched."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Rebecca Torres</span>
+                            <span class="company">Lead Buyer, Island Grand Resorts</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="marquee-track" aria-hidden="true">
+                    <div class="testimonial-card">
+                        <p>"The cold chain consistency is unmatched. Our salmon shipments arrive with absolutely zero micro-crystallization tissue breakdown."</p>
+                        <div class="testimonial-author">
+                            <span class="name">David Lim</span>
+                            <span class="company">Seafood Logistics Director, Apex Foods</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"JMP International has been our primary source for Golden Pomfret. Volume scalability is exceptional even during tough off-seasons."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Maria Santos</span>
+                            <span class="company">Procurement Head, Hyatt Catering Group</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Their adherence to BFAR and FDA legalities takes the compliance headache completely off our hands. Highly professional firm."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Jonathan Vance</span>
+                            <span class="company">Compliance Officer, Global Maritime Imports</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"The Tuna Saku bars and portion cuts match exact weight specs perfectly. Minimizes processing waste in our kitchens significantly."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Chef Kenji Sato</span>
+                            <span class="company">Executive Chef, Izakaya Hospitality</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"We purchase by the plastic bundle format monthly. Sizing counts are strictly uniform, and tracking numbers are always real-time."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Elena Rostova</span>
+                            <span class="company">Supply Chain Manager, Nord Seafoods Wholesale</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Their traditional preserved items, especially the Dried Moonfish, have been huge hits across our supermarket branches."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Arthur Cruz</span>
+                            <span class="company">Category Merchant, Central Mart Plus</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Dynamic wholesale sourcing at its best. JMP accommodates immediate last-minute changes to freight container allocations seamlessly."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Sarah Jenkins</span>
+                            <span class="company">Operations Chief, Horizon Distribution</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"The texture density of their block-frozen peeled shrimp holds up remarkably well under fast high-heat cooking environments."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Marcus Aurelio</span>
+                            <span class="company">Culinary Director, Fiesta Ocean Bistro</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Reliable, punctual, and safe tracking protocols. Working with JMP since 2023 has completely stabilized our frozen inventory pipeline."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Linus Tan</span>
+                            <span class="company">Managing Director, Vanguard Cold Storage</span>
+                        </div>
+                    </div>
+                    <div class="testimonial-card">
+                        <p>"Their dynamic distribution networks solve the core logistical variables cleanly. Pricing transparency is unmatched."</p>
+                        <div class="testimonial-author">
+                            <span class="name">Rebecca Torres</span>
+                            <span class="company">Lead Buyer, Island Grand Resorts</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
