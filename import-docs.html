@@ -178,6 +178,26 @@
                 </form>
             </div>
 
+            <div class="panel-card" id="globalUncompletedLogsWrapper">
+                <h3>Documentation Log Data Table (Action Required)</h3>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
+                <div style="overflow-x: auto;">
+                    <table class="item-list-table">
+                        <thead>
+                            <tr>
+                                <th>SPSIC Ref</th>
+                                <th>Target Period</th>
+                                <th>Current Status</th>
+                                <th>Control Interfaces</th>
+                            </tr>
+                        </thead>
+                        <tbody id="globalUncompletedLogsTableBody">
+                            <tr><td colspan="4" style="text-align:center; color:#64748b;">Loading actionable logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="panel-card">
                 <h3>Monthly Directories & Consolidated Logs</h3>
                 
@@ -197,7 +217,7 @@
             </div>
 
             <div class="folder-workspace" id="folderWorkspaceWrapper">
-                <div class="workspace-title" id="workspaceTitleDisplay">📁 Folder Context</div>
+                <div class="workspace-title" id="workspaceTitleDisplay">📂 Folder Context</div>
 
                 <div class="search-container">
                     <input type="text" id="docSearchBox" class="search-box" placeholder="Search entries in this folder by exact SPSIC Number sequence..." oninput="fetchDocuments()">
@@ -362,6 +382,7 @@
             buildMonthlyFolders();
             toggleWorkspaceView();
             evaluateUploadSequenceLocks();
+            fetchDocuments();
         }
 
         function initYearSelectOptions(defaultYear) {
@@ -617,7 +638,7 @@
                 
                 const [year, monthNum] = selectedFolderMonth.split('-');
                 const matchedMonth = monthsLabels.find(m => m.value === monthNum);
-                titleDisplay.innerHTML = `📂 Workspace Directory: <strong>${matchedMonth ? matchedMonth.text : monthNum} ${year}</strong>`;
+                titleDisplay.innerHTML = `📂 Workspace Directory: <strong>${matchedMonth ? matchedMonth.text : monthNum} ${year}</strong> (Completed Archives Only)`;
                 
                 document.getElementById('docSearchBox').value = "";
                 fetchDocuments();
@@ -628,10 +649,42 @@
         }
 
         async function fetchDocuments() {
+            // 1. Fetch data for the standalone top Actionable Table (Pending, Incomplete, For Approval)
+            try {
+                const { data: actionableData, error: actErr } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .select('*')
+                    .in('status', ['Pending', 'Incomplete', 'For Approval'])
+                    .order('updated_at', { ascending: false });
+
+                const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
+                globalTbody.innerHTML = "";
+
+                if (actErr) throw actErr;
+
+                if (!actionableData || actionableData.length === 0) {
+                    globalTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No items currently require structural verification configurations.</td></tr>`;
+                } else {
+                    actionableData.forEach(doc => {
+                        const badgeClass = doc.status.toLowerCase().replace(" ", "-");
+                        const row = `<tr>
+                            <td><strong>SPSIC-${doc.spsic_number}</strong></td>
+                            <td>${doc.target_month}</td>
+                            <td><span class="status-badge ${badgeClass}">${doc.status}</span></td>
+                            <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
+                        </tr>`;
+                        globalTbody.innerHTML += row;
+                    });
+                }
+            } catch (err) {
+                console.error("Error reading uncompleted queue items:", err);
+            }
+
+            // 2. Fetch data for the structural Workspace directory (Completed items inside folder selection)
             if (!selectedFolderMonth) return;
             
             const searchVal = document.getElementById('docSearchBox').value.trim();
-            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth);
+            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed');
 
             if (searchVal) { 
                 query = query.ilike('spsic_number', `%${searchVal}%`); 
@@ -642,7 +695,7 @@
             tbody.innerHTML = "";
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No verification records found matching this directory path.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No compiled 'Completed' archive entries found matching this directory folder path.</td></tr>`;
                 return;
             }
 
@@ -791,6 +844,7 @@
                 buildMonthlyFolders();
                 toggleWorkspaceView();
                 await evaluateUploadSequenceLocks();
+                fetchDocuments();
 
             } catch (err) {
                 console.error("Pipeline Exception Logged:", err);
