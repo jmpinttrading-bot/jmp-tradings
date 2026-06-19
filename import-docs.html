@@ -52,7 +52,7 @@
         .folder-node:hover, .folder-node.active { background: #0f172a; color: white; border-color: #0f172a; }
         .folder-node .icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
         
-        .folder-workspace { background: #ffffff; border: 1px dashed #cbd5e1; padding: 20px; border-radius: 8px; margin-top: 15px; display: none; }
+        .folder-workspace { background: #ffffff; border: 1px dashed #cbd5e1; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; }
         .folder-workspace.active { display: block; border-style: solid; }
         .workspace-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
 
@@ -181,12 +181,6 @@
             <div class="panel-card">
                 <h3>Monthly Directories & Consolidated Logs</h3>
                 
-                <div class="month-folder-grid" id="monthFolderContainer"></div>
-                
-                <div id="emptyDirectoryPlaceholder" class="empty-placeholder">
-                    📁 Select a monthly archive folder above to review parameters, search documents, and access local storage records.
-                </div>
-
                 <div class="folder-workspace" id="folderWorkspaceWrapper">
                     <div class="workspace-title" id="workspaceTitleDisplay">📁 Folder Context</div>
                     
@@ -219,6 +213,11 @@
                     </div>
                 </div>
 
+                <div class="month-folder-grid" id="monthFolderContainer"></div>
+                
+                <div id="emptyDirectoryPlaceholder" class="empty-placeholder">
+                    📁 Select a monthly archive folder above to review parameters, search documents, and access local storage records.
+                </div>
             </div>
         </div>
     </div>
@@ -892,8 +891,9 @@
                 }
             }
 
+            // Strictly show the button ONLY if the user is admin AND the status is exactly 'For Approval'
             const approveBtn = document.getElementById('modalApproveActionBtn');
-            if (isAdmin && doc.status !== 'Completed') {
+            if (isAdmin && doc.status === 'For Approval') {
                 approveBtn.style.display = "block";
             } else {
                 approveBtn.style.display = "none";
