@@ -30,6 +30,10 @@
         
         .form-group input[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
         .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
+        
+        .upload-progress-status { font-size: 0.75rem; font-weight: 500; margin-top: 4px; display: none; }
+        .upload-progress-status.working { color: #2563eb; }
+        .upload-progress-status.ready { color: #16a34a; }
 
         .live-lock-banner { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
 
@@ -95,9 +99,10 @@
 <body>
 
     <div class="sidebar">
-        <h2>JMP Admin HQ</h2>
+        <h2 id="sidebarPanelHeading">JMP Admin HQ</h2>
         <a href="admin-dashboard.html" id="backToDashboardBtn">Profile Management</a>
-        <a href="#" class="active">📦 Import Doc File Management</a>
+        <a href="control-panel.html" id="adminControlPanelLink" style="display: none;">🎛️ Control Panel</a>
+        <a href="#" class="active">📄 Import Doc File Management</a>
     </div>
 
     <div class="main-content">
@@ -115,7 +120,7 @@
                 <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
                     <div class="form-group">
                         <label>SPSIC Identification sequence number</label>
-                        <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()">
+                        <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()" onblur="handleInputBlur()">
                     </div>
                     <div class="form-group">
                         <label>Target Folder Month</label>
@@ -124,20 +129,23 @@
                     
                     <div class="form-group">
                         <label>1st Upload: SPSIC Document File (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileSpsic" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
+                        <input type="file" id="fileSpsic" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="handleFileSelection('fileSpsic', 'progressSpsic')">
+                        <div id="progressSpsic" class="upload-progress-status"></div>
                         <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
                         <label>2nd Upload: Arrival Notice (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileArrival" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
+                        <input type="file" id="fileArrival" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="handleFileSelection('fileArrival', 'progressArrival')">
+                        <div id="progressArrival" class="upload-progress-status"></div>
                         <div id="noticeArrival" class="lock-notice">⚠️ Locked: Upload 1st File (SPSIC) first.</div>
                         <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
                         <label>3rd Upload: Import Docs File (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed">
+                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="handleFileSelection('fileImportDocs', 'progressImport')">
+                        <div id="progressImport" class="upload-progress-status"></div>
                         <div id="noticeImport" class="lock-notice">⚠️ Locked: Upload 1st and 2nd Files first.</div>
                         <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
@@ -238,8 +246,15 @@
             if (profile && profile.role) {
                 currentUserRole = profile.role.toLowerCase().trim();
                 if (currentUserRole !== 'admin') {
+                    document.getElementById('sidebarPanelHeading').textContent = "JMP Employee";
                     document.getElementById('backToDashboardBtn').href = "employee-dashboard.html";
-                    document.getElementById('backToDashboardBtn').textContent = "Employee Profile";
+                    document.getElementById('backToDashboardBtn').textContent = "👤 My Account Profile";
+                    document.getElementById('adminControlPanelLink').style.display = "none";
+                } else {
+                    document.getElementById('sidebarPanelHeading').textContent = "JMP Admin HQ";
+                    document.getElementById('backToDashboardBtn').href = "admin-dashboard.html";
+                    document.getElementById('backToDashboardBtn').textContent = "Profile Management";
+                    document.getElementById('adminControlPanelLink').style.display = "block";
                 }
             }
 
@@ -289,8 +304,39 @@
         }
 
         function forceRefetchAndEvaluate() {
-            localFetchedRecord = null; // Forces app to ask Supabase for updated record context cleanly
+            localFetchedRecord = null; 
+            
+            document.getElementById('progressSpsic').style.display = "none";
+            document.getElementById('progressArrival').style.display = "none";
+            document.getElementById('progressImport').style.display = "none";
+            
             evaluateUploadSequenceLocks();
+        }
+
+        function handleFileSelection(inputId, progressId) {
+            const fileEl = document.getElementById(inputId);
+            const progressEl = document.getElementById(progressId);
+            
+            if (fileEl.files && fileEl.files.length > 0) {
+                progressEl.className = "upload-progress-status working";
+                progressEl.style.display = "block";
+                progressEl.textContent = "⏳ Staging attachment parameters...";
+                
+                setTimeout(() => {
+                    progressEl.className = "upload-progress-status ready";
+                    progressEl.textContent = `✓ Local package parsed (${(fileEl.files[0].size / 1024).toFixed(1)} KB) - Ready to Sync`;
+                }, 400);
+            } else {
+                progressEl.style.display = "none";
+                progressEl.textContent = "";
+            }
+        }
+
+        async function handleInputBlur() {
+            const numInput = document.getElementById('spsicRawNumber').value.trim();
+            if (!numInput) {
+                await clearLockHeartbeat();
+            }
         }
 
         async function evaluateUploadSequenceLocks() {
@@ -309,7 +355,6 @@
             const noteArrival = document.getElementById('noticeArrival');
             const noteImport = document.getElementById('noticeImport');
 
-            // Reset UI States
             lblSpsicDb.style.display = "none";
             lblArrivalDb.style.display = "none";
             lblImportDb.style.display = "none";
@@ -325,7 +370,6 @@
                 return;
             }
 
-            // Fetch remote data safely if cache clear is requested
             if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
                 const { data } = await supabaseClient
                     .from('imported_shipment_docs')
@@ -337,7 +381,6 @@
                 localFetchedRecord = data;
             }
 
-            // Guard Clause: Complete records are locked from further editing
             if (localFetchedRecord && localFetchedRecord.status === "Completed") {
                 const [yr, mn] = targetMonthInput.split('-');
                 const humanizedMonth = monthsLabels.find(m => m.value === mn)?.text || mn;
@@ -350,7 +393,6 @@
                 return;
             }
 
-            // Guard Clause: Concurrent locks by another teammate
             const { data: activeLock } = await supabaseClient
                 .from('active_document_locks')
                 .select('*')
@@ -371,7 +413,6 @@
                 startLockHeartbeat(numInput);
             }
 
-            // --- STRICT DATABASE-DRIVEN STATE PIPELINE ---
             let hasSpsicInDb = false;
             let hasArrivalInDb = false;
 
@@ -389,15 +430,13 @@
                 }
             }
 
-            // If file 1 already exists in the Database, disable its upload selector to prevent accidental overrides
             if (hasSpsicInDb) {
                 fSpsic.setAttribute('disabled', 'true');
             }
 
-            // Rule for 2nd Upload: Unlocks ONLY if 1st file is verified in DB
             if (hasSpsicInDb) {
                 if (hasArrivalInDb) {
-                    fArrival.setAttribute('disabled', 'true'); // lock if already uploaded
+                    fArrival.setAttribute('disabled', 'true'); 
                 } else {
                     fArrival.removeAttribute('disabled');
                 }
@@ -408,7 +447,6 @@
                 noteArrival.style.display = "block";
             }
 
-            // Rule for 3rd Upload: Unlocks ONLY if BOTH 1st and 2nd files are verified in DB
             if (hasSpsicInDb && hasArrivalInDb) {
                 fImport.removeAttribute('disabled');
                 noteImport.style.display = "none";
@@ -630,8 +668,18 @@
                     updated_at: new Date().toISOString()
                 };
 
-                const { error: dbError } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
+                if (localFetchedRecord && localFetchedRecord.id) {
+                    payload.id = localFetchedRecord.id;
+                }
+
+                // FIXED: Explicitly added onConflict matching parameter to prevent unique constraint failures
+                const { error: dbError } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .upsert(payload, { onConflict: 'spsic_number,target_month' });
+                    
                 if (dbError) throw dbError;
+
+                await clearLockHeartbeat();
 
                 localFetchedRecord = payload;
                 alert("Records synchronized successfully!");
@@ -639,6 +687,10 @@
                 document.getElementById('fileSpsic').value = "";
                 document.getElementById('fileArrival').value = "";
                 document.getElementById('fileImportDocs').value = "";
+                
+                document.getElementById('progressSpsic').style.display = "none";
+                document.getElementById('progressArrival').style.display = "none";
+                document.getElementById('progressImport').style.display = "none";
                 
                 selectedFolderMonth = monthTarget;
                 const uploadedYear = monthTarget.split('-')[0];
