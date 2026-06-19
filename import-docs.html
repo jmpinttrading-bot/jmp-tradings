@@ -35,8 +35,6 @@
         .upload-progress-status.working { color: #2563eb; }
         .upload-progress-status.ready { color: #16a34a; }
 
-        .live-lock-banner { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
-
         .submit-btn { background: #ee964b; color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s; }
         .submit-btn:hover { opacity: 0.9; }
         .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
@@ -111,13 +109,11 @@
         <div class="panel-grid">
             <div class="panel-card">
                 <h3>Document Upload Engine</h3>
-                
-                <div class="live-lock-banner" id="lockStatusBanner"></div>
 
                 <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
                     <div class="form-group">
                         <label>SPSIC Identification sequence number</label>
-                        <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()" onblur="handleInputBlur()">
+                        <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()">
                     </div>
                     <div class="form-group">
                         <label>Target Folder Month</label>
@@ -222,8 +218,6 @@
         let currentUserSession = null;
         let currentUserRole = "employee"; 
         let currentUserDisplayName = "Unknown User";
-        let activeTrackingSpsic = null;
-        let presenceHeartbeatInterval = null;
         let activeInspectingRecordId = null;
 
         const monthsLabels = [
@@ -333,13 +327,6 @@
             }
         }
 
-        async function handleInputBlur() {
-            const numInput = document.getElementById('spsicRawNumber').value.trim();
-            if (!numInput) {
-                await clearLockHeartbeat();
-            }
-        }
-
         async function evaluateUploadSequenceLocks() {
             const numInput = document.getElementById('spsicRawNumber').value.trim();
             const targetMonthInput = document.getElementById('spsicTargetMonth').value;
@@ -347,7 +334,6 @@
             const fArrival = document.getElementById('fileArrival');
             const fImport = document.getElementById('fileImportDocs');
             const submitBtn = document.getElementById('submitSyncPipelineBtn');
-            const banner = document.getElementById('lockStatusBanner');
 
             const lblSpsicDb = document.getElementById('statusSpsicUploaded');
             const lblArrivalDb = document.getElementById('statusArrivalUploaded');
@@ -359,7 +345,6 @@
             lblSpsicDb.style.display = "none";
             lblArrivalDb.style.display = "none";
             lblImportDb.style.display = "none";
-            banner.style.display = "none";
             
             fSpsic.removeAttribute('disabled');
             fArrival.removeAttribute('disabled');
@@ -367,7 +352,6 @@
             submitBtn.removeAttribute('disabled');
 
             if (!numInput) {
-                clearLockHeartbeat();
                 return;
             }
 
@@ -383,35 +367,11 @@
             }
 
             if (localFetchedRecord && localFetchedRecord.status === "Completed") {
-                const [yr, mn] = targetMonthInput.split('-');
-                const humanizedMonth = monthsLabels.find(m => m.value === mn)?.text || mn;
-                banner.innerHTML = `🔒 <strong>Immutable Records Blocked:</strong> SPSIC reference number is already **Approved & Finalized** for the directory <strong>${humanizedMonth} ${yr}</strong>. Modification access is rescinded.`;
-                banner.style.display = "block";
                 fSpsic.setAttribute('disabled', 'true');
                 fArrival.setAttribute('disabled', 'true');
                 fImport.setAttribute('disabled', 'true');
                 submitBtn.setAttribute('disabled', 'true');
                 return;
-            }
-
-            const { data: activeLock } = await supabaseClient
-                .from('active_document_locks')
-                .select('*')
-                .eq('spsic_number', numInput)
-                .maybeSingle();
-
-            if (activeLock && activeLock.locked_by_id !== currentUserSession.id) {
-                banner.innerHTML = `🛑 <strong>Access Blocked:</strong> This document package is currently being modified by user <strong>${activeLock.locked_by_email}</strong>. To prevent conflicts, editing is disabled until they close it.`;
-                banner.style.display = "block";
-                fSpsic.setAttribute('disabled', 'true');
-                fArrival.setAttribute('disabled', 'true');
-                fImport.setAttribute('disabled', 'true');
-                submitBtn.setAttribute('disabled', 'true');
-                return;
-            }
-
-            if (activeTrackingSpsic !== numInput) {
-                startLockHeartbeat(numInput);
             }
 
             let hasSpsicInDb = false;
@@ -462,39 +422,6 @@
                 }
                 noteImport.style.display = "block";
             }
-        }
-
-        async function startLockHeartbeat(spsic) {
-            clearLockHeartbeat();
-            activeTrackingSpsic = spsic;
-
-            await supabaseClient.from('active_document_locks').upsert({
-                spsic_number: spsic,
-                locked_by_email: currentUserSession.email,
-                locked_by_id: currentUserSession.id,
-                last_ping_at: new Date().toISOString()
-            });
-
-            presenceHeartbeatInterval = setInterval(async () => {
-                if (activeTrackingSpsic) {
-                    await supabaseClient.from('active_document_locks').upsert({
-                        spsic_number: activeTrackingSpsic,
-                        locked_by_email: currentUserSession.email,
-                        locked_by_id: currentUserSession.id,
-                        last_ping_at: new Date().toISOString()
-                    });
-                }
-            }, 5000);
-        }
-
-        async function clearLockHeartbeat() {
-            if (activeTrackingSpsic) {
-                await supabaseClient.from('active_document_locks').delete().eq('spsic_number', activeTrackingSpsic).eq('locked_by_id', currentUserSession.id);
-            }
-            if (presenceHeartbeatInterval) {
-                clearInterval(presenceHeartbeatInterval);
-            }
-            activeTrackingSpsic = null;
         }
 
         function buildMonthlyFolders() {
@@ -679,7 +606,6 @@
                     updated_at: new Date().toISOString()
                 };
 
-                // PRE-WRITE CHECK PATTERN: Instead of .upsert(), check for an existing unique row match
                 const { data: existingRecord, error: checkError } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('id')
@@ -691,7 +617,6 @@
 
                 let dbError;
                 if (existingRecord) {
-                    // Update targeted record directly via its ID
                     const { error: updateError } = await supabaseClient
                         .from('imported_shipment_docs')
                         .update(payload)
@@ -700,7 +625,6 @@
                     dbError = updateError;
                     payload.id = existingRecord.id; 
                 } else {
-                    // Safe execution of a fresh row insert
                     const { data: insertedData, error: insertError } = await supabaseClient
                         .from('imported_shipment_docs')
                         .insert(payload)
@@ -712,8 +636,6 @@
                 }
                     
                 if (dbError) throw dbError;
-
-                await clearLockHeartbeat();
 
                 localFetchedRecord = payload;
                 alert("Records synchronized successfully!");
@@ -853,10 +775,6 @@
             document.getElementById('documentViewerOverlay').style.display = 'none';
             activeInspectingRecordId = null;
         }
-
-        window.addEventListener('beforeunload', () => {
-            clearLockHeartbeat();
-        });
 
         initModule();
     </script>
