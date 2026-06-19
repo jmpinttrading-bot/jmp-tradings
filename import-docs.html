@@ -87,6 +87,30 @@
         .doc-header-title { font-size: 1rem; color: #0f172a; margin: 15px 0 5px 0; display: flex; justify-content: space-between; align-items: center; }
         .upload-date-span { font-size: 0.85rem; color: #64748b; font-weight: normal; background: #e2e8f0; padding: 2px 8px; border-radius: 4px; }
 
+        /* Sleek Modern Dialog Popup Notification Styles */
+        .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); transition: opacity 0.2s ease; }
+        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow: hidden; animation: alertPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+        .system-alert-header { padding: 20px 24px 10px; display: flex; align-items: center; gap: 12px; }
+        .system-alert-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; shrink: 0; }
+        .system-alert-icon.success { background: #d1fae5; color: #065f46; }
+        .system-alert-icon.error { background: #fee2e2; color: #991b1b; }
+        .system-alert-icon.confirm { background: #e0f2fe; color: #0369a1; }
+        .system-alert-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
+        .system-alert-content { padding: 10px 24px 24px; color: #475569; font-size: 0.95rem; line-height: 1.5; }
+        .system-alert-actions { padding: 12px 24px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px; }
+        .alert-btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s ease; }
+        .alert-btn-primary { background: #0f172a; color: white; }
+        .alert-btn-primary:hover { background: #1e293b; }
+        .alert-btn-danger { background: #dc2626; color: white; }
+        .alert-btn-danger:hover { background: #b91c1c; }
+        .alert-btn-secondary { background: #e2e8f0; color: #475569; }
+        .alert-btn-secondary:hover { background: #cbd5e1; }
+
+        @keyframes alertPopIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
         @media (max-width: 850px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; min-height: auto; padding: 20px; }
@@ -212,6 +236,21 @@
         </div>
     </div>
 
+    <div class="system-alert-overlay" id="systemAlertOverlay">
+        <div class="system-alert-card">
+            <div class="system-alert-header">
+                <div class="system-alert-icon" id="systemAlertIcon">✓</div>
+                <div class="system-alert-title" id="systemAlertTitle">Notification Window</div>
+            </div>
+            <div class="system-alert-content" id="systemAlertContent">
+                Execution status telemetry readout frame.
+            </div>
+            <div class="system-alert-actions" id="systemAlertActions">
+                <button class="alert-btn alert-btn-primary" onclick="closeSystemModal()">Acknowledge</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -236,6 +275,60 @@
             { text: "Sep", value: "09" }, { text: "Oct", value: "10" },
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
+
+        /* Sleek Modern Modal Modal Route System Orchestrator */
+        function showSystemModal(options = {}) {
+            const type = options.type || 'success'; 
+            const title = options.title || 'Notification';
+            const message = options.message || '';
+            const onConfirm = options.onConfirm || null;
+
+            const overlay = document.getElementById('systemAlertOverlay');
+            const iconEl = document.getElementById('systemAlertIcon');
+            const titleEl = document.getElementById('systemAlertTitle');
+            const contentEl = document.getElementById('systemAlertContent');
+            const actionsEl = document.getElementById('systemAlertActions');
+
+            titleEl.textContent = title;
+            contentEl.textContent = message;
+            
+            iconEl.className = `system-alert-icon ${type}`;
+            if (type === 'success') iconEl.textContent = '✓';
+            else if (type === 'error') iconEl.textContent = '✕';
+            else if (type === 'confirm') iconEl.textContent = '❓';
+
+            actionsEl.innerHTML = '';
+
+            if (type === 'confirm') {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'alert-btn alert-btn-secondary';
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.onclick = () => { closeSystemModal(); };
+                
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'alert-btn alert-btn-danger';
+                confirmBtn.textContent = 'Proceed Action';
+                confirmBtn.onclick = () => {
+                    closeSystemModal();
+                    if (onConfirm) onConfirm();
+                };
+                
+                actionsEl.appendChild(cancelBtn);
+                actionsEl.appendChild(confirmBtn);
+            } else {
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'alert-btn alert-btn-primary';
+                closeBtn.textContent = 'Dismiss';
+                closeBtn.onclick = () => { closeSystemModal(); };
+                actionsEl.appendChild(closeBtn);
+            }
+
+            overlay.style.display = 'flex';
+        }
+
+        function closeSystemModal() {
+            document.getElementById('systemAlertOverlay').style.display = 'none';
+        }
 
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -289,11 +382,11 @@
             if (!newYear) return;
             const parsedYear = parseInt(newYear.trim());
             if (isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
-                alert("Invalid directory year configuration parameters provided.");
+                showSystemModal({ type: 'error', title: 'Invalid Configuration', message: 'Invalid directory year configuration parameters provided.' });
                 return;
             }
             if (availableYears.includes(parsedYear)) {
-                alert("Directory folder for this year node already exists.");
+                showSystemModal({ type: 'error', title: 'Conflict Detected', message: 'Directory folder for this year node already exists.' });
                 return;
             }
             availableYears.push(parsedYear);
@@ -647,7 +740,7 @@
                 }
 
                 if (!spsicPath) {
-                    alert("Error: Please select a valid SPSIC document file to upload.");
+                    showSystemModal({ type: 'error', title: 'File Target Missing', message: 'Please select a valid SPSIC document file to execute upload synchronization.' });
                     submitBtn.removeAttribute('disabled');
                     submitBtn.textContent = "Execute Sync Pipeline";
                     return;
@@ -672,7 +765,6 @@
                     payload.id = localFetchedRecord.id;
                 }
 
-                // EXPLICIT SYSTEM COMPOSITE COLUMN CONFLICT MATCH
                 const { error: dbError } = await supabaseClient
                     .from('imported_shipment_docs')
                     .upsert(payload, { onConflict: 'spsic_number,target_month' });
@@ -682,7 +774,8 @@
                 await clearLockHeartbeat();
 
                 localFetchedRecord = payload;
-                alert("Records synchronized successfully!");
+                
+                showSystemModal({ type: 'success', title: 'Pipeline Sync Successful', message: `Manifest profile parameters for SPSIC-${rawNumber} have been saved.` });
                 
                 document.getElementById('fileSpsic').value = "";
                 document.getElementById('fileArrival').value = "";
@@ -706,7 +799,7 @@
 
             } catch (err) {
                 console.error("Pipeline Exception Logged:", err);
-                alert(`Pipeline Sync Interrupted:\n${err.message}`);
+                showSystemModal({ type: 'error', title: 'Sync Interrupted', message: err.message });
             } finally {
                 submitBtn.removeAttribute('disabled');
                 submitBtn.textContent = "Execute Sync Pipeline";
@@ -811,24 +904,30 @@
 
         async function approveCurrentDocument() {
             if (!activeInspectingRecordId) return;
-            if (!confirm("Are you sure you want to approve this document package? This action will freeze the records from being updated.")) return;
+            
+            showSystemModal({
+                type: 'confirm',
+                title: 'Confirm Authorization Approval',
+                message: 'Are you sure you want to approve this document package? This action freezes all associated parameters from future modification.',
+                onConfirm: async () => {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('imported_shipment_docs')
+                            .update({ status: 'Completed', updated_at: new Date().toISOString() })
+                            .eq('id', activeInspectingRecordId);
 
-            try {
-                const { error } = await supabaseClient
-                    .from('imported_shipment_docs')
-                    .update({ status: 'Completed', updated_at: new Date().toISOString() })
-                    .eq('id', activeInspectingRecordId);
+                        if (error) throw error;
 
-                if (error) throw error;
-
-                alert("Document group approved successfully and locked into production records!");
-                closeViewer();
-                fetchDocuments();
-                document.getElementById('spsicRawNumber').value = '';
-                forceRefetchAndEvaluate();
-            } catch (err) {
-                alert(`Approval transaction failed: ${err.message}`);
-            }
+                        showSystemModal({ type: 'success', title: 'Package Approved', message: 'Document group approved successfully and locked into production records!' });
+                        closeViewer();
+                        fetchDocuments();
+                        document.getElementById('spsicRawNumber').value = '';
+                        forceRefetchAndEvaluate();
+                    } catch (err) {
+                        showSystemModal({ type: 'error', title: 'Transaction Failed', message: `Approval transaction failed: ${err.message}` });
+                    }
+                }
+            });
         }
 
         function closeViewer() {
