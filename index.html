@@ -461,6 +461,12 @@
             padding: 20px 0;
             margin-right: 25px; /* Aligns seamless track loop spacing */
             animation: marqueeScroll 45s linear infinite;
+            
+            /* FIX IMPLEMENTED HERE: Disables text-selection freeze behavior on clicking/dragging */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         /* Pauses movement when user hovers over a testimonial box */
