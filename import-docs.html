@@ -52,8 +52,8 @@
         .folder-node:hover, .folder-node.active { background: #0f172a; color: white; border-color: #0f172a; }
         .folder-node .icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
         
-        .folder-workspace { background: #ffffff; border: 1px dashed #cbd5e1; padding: 20px; border-radius: 8px; margin-bottom: 20px; display: none; }
-        .folder-workspace.active { display: block; border-style: solid; }
+        .folder-workspace { background: #ffffff; border: 1px solid #cbd5e1; padding: 25px; border-radius: 8px; margin-bottom: 30px; display: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .folder-workspace.active { display: block; }
         .workspace-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
 
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
@@ -82,7 +82,7 @@
         .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .approve-action-btn { background: #22c55e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
 
-        .empty-placeholder { text-align: center; color: #64748b; padding: 30px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.95rem; }
+        .empty-placeholder { text-align: center; color: #64748b; padding: 30px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.95rem; margin-top: 10px; }
 
         .doc-header-title { font-size: 1rem; color: #0f172a; margin: 15px 0 5px 0; display: flex; justify-content: space-between; align-items: center; }
         .upload-date-span { font-size: 0.85rem; color: #64748b; font-weight: normal; background: #e2e8f0; padding: 2px 8px; border-radius: 4px; }
@@ -181,36 +181,12 @@
             <div class="panel-card">
                 <h3>Monthly Directories & Consolidated Logs</h3>
                 
-                <div class="folder-workspace" id="folderWorkspaceWrapper">
-                    <div class="workspace-title" id="workspaceTitleDisplay">📁 Folder Context</div>
-                    
-                    <div class="directory-controls" style="margin-bottom: 15px;">
-                        <div class="form-group" style="margin-bottom:0; flex:1;">
-                            <select id="directoryYearSelect" onchange="buildMonthlyFolders(); fetchDocuments();">
-                            </select>
-                        </div>
-                        <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
+                <div class="directory-controls" style="margin-bottom: 15px;">
+                    <div class="form-group" style="margin-bottom:0; flex:1;">
+                        <select id="directoryYearSelect" onchange="buildMonthlyFolders(); fetchDocuments();">
+                        </select>
                     </div>
-
-                    <div class="search-container">
-                        <input type="text" id="docSearchBox" class="search-box" placeholder="Search entries in this folder by exact SPSIC Number sequence..." oninput="fetchDocuments()">
-                    </div>
-
-                    <div style="overflow-x: auto;">
-                        <table class="item-list-table">
-                            <thead>
-                                <tr>
-                                    <th>SPSIC Ref</th>
-                                    <th>Month</th>
-                                    <th>Current Status</th>
-                                    <th>Control Interfaces</th>
-                                </tr>
-                            </thead>
-                            <tbody id="documentLogsTableBody">
-                                <tr><td colspan="4" style="text-align:center; color:#64748b;">Initializing items...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
                 </div>
 
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
@@ -219,6 +195,31 @@
                     📁 Select a monthly archive folder above to review parameters, search documents, and access local storage records.
                 </div>
             </div>
+
+            <div class="folder-workspace" id="folderWorkspaceWrapper">
+                <div class="workspace-title" id="workspaceTitleDisplay">📁 Folder Context</div>
+
+                <div class="search-container">
+                    <input type="text" id="docSearchBox" class="search-box" placeholder="Search entries in this folder by exact SPSIC Number sequence..." oninput="fetchDocuments()">
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="item-list-table">
+                        <thead>
+                            <tr>
+                                <th>SPSIC Ref</th>
+                                <th>Month</th>
+                                <th>Current Status</th>
+                                <th>Control Interfaces</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documentLogsTableBody">
+                            <tr><td colspan="4" style="text-align:center; color:#64748b;">Initializing items...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -275,7 +276,6 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
-        /* Sleek Modern Modal Modal Route System Orchestrator */
         function showSystemModal(options = {}) {
             const type = options.type || 'success'; 
             const title = options.title || 'Notification';
@@ -397,11 +397,9 @@
 
         function forceRefetchAndEvaluate() {
             localFetchedRecord = null; 
-            
             document.getElementById('progressSpsic').style.display = "none";
             document.getElementById('progressArrival').style.display = "none";
             document.getElementById('progressImport').style.display = "none";
-            
             evaluateUploadSequenceLocks();
         }
 
@@ -687,7 +685,6 @@
                 });
 
                 const optimizedFile = new File([optimizedBytes], fileObject.name, { type: "application/pdf" });
-                console.log(`Optimization Completed. Size: ${(optimizedFile.size / 1024 / 1024).toFixed(2)} MB`);
                 return optimizedFile;
             } catch (err) {
                 console.warn("Internal PDF compaction engine fallback triggered:", err);
@@ -771,7 +768,6 @@
                 if (dbError) throw dbError;
 
                 await clearLockHeartbeat();
-
                 localFetchedRecord = payload;
                 
                 showSystemModal({ type: 'success', title: 'Pipeline Sync Successful', message: `Manifest profile parameters for SPSIC-${rawNumber} have been saved.` });
@@ -891,7 +887,6 @@
                 }
             }
 
-            // Strictly show the button ONLY if the user is admin AND the status is exactly 'For Approval'
             const approveBtn = document.getElementById('modalApproveActionBtn');
             if (isAdmin && doc.status === 'For Approval') {
                 approveBtn.style.display = "block";
