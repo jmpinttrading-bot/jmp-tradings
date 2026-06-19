@@ -46,7 +46,6 @@
         .year-btn { background: #0f172a; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
         .download-year-btn { background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.2s; }
         .download-year-btn:hover { background: #1d4ed8; }
-        .download-year-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
         .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .search-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
@@ -85,6 +84,8 @@
         .viewer-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
         .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .approve-action-btn { background: #22c55e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
+        .download-action-btn { background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .download-action-btn:hover { background: #1d4ed8; }
 
         .empty-placeholder { text-align: center; color: #64748b; padding: 30px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.95rem; margin-top: 10px; }
 
@@ -208,7 +209,7 @@
                 
                 <div class="directory-controls">
                     <div class="form-group" style="margin-bottom:0; flex:1;">
-                        <select id="directoryYearSelect" onchange="buildMonthlyFolders(); fetchDocuments();">
+                        <select id="directoryYearSelect" onchange="buildMonthlyFolders(); toggleWorkspaceView();">
                         </select>
                     </div>
                     <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
@@ -256,6 +257,7 @@
             </div>
             <div class="viewer-body" id="viewerTargetBody"></div>
             <div class="viewer-footer">
+                <button id="modalDownloadActionBtn" class="download-action-btn" onclick="downloadCurrentDocumentPackage()">📥 Download Document Package</button>
                 <button id="modalApproveActionBtn" class="approve-action-btn" onclick="approveCurrentDocument()">Approve Documents</button>
                 <button class="close-viewer-btn" onclick="closeViewer()">Dismiss Viewer</button>
             </div>
@@ -686,7 +688,7 @@
                 console.error("Error reading uncompleted queue items:", err);
             }
 
-            // 2. Fetch data for the structural Workspace directory (Completed items inside folder selection)
+            // 2. Fetch data for the structural Workspace directory (STRICTLY 'Completed' status items inside folder selection)
             if (!selectedFolderMonth) return;
             
             const searchVal = document.getElementById('docSearchBox').value.trim();
@@ -923,8 +925,7 @@
                     if (isAdmin) {
                         zipBlock.innerHTML = `
                             <p style="font-weight: 600; color: #1e293b;">📦 Compressed File Package Archive</p>
-                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Web browsers cannot preview ZIP components inline. Use the interface gateway button below to download the asset bundle.</p>
-                            <a href="${publicUrl}" download class="zip-download-btn">Download Archive Payload</a>
+                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Web browsers cannot preview ZIP components inline. Use the panel action controls to securely batch down historical bundles.</p>
                         `;
                     } else {
                         zipBlock.innerHTML = `
@@ -955,6 +956,79 @@
             }
 
             document.getElementById('documentViewerOverlay').style.display = 'flex';
+        }
+
+        async function downloadCurrentDocumentPackage() {
+            if (currentUserRole !== 'admin') {
+                showSystemModal({
+                    type: 'error',
+                    title: 'Access Revoked',
+                    message: 'Access Denied: Your employee security role configuration parameters do not authorize local binary extractions or documentation file downloads.'
+                });
+                return;
+            }
+
+            if (!activeInspectingRecordId) return;
+
+            const dlBtn = document.getElementById('modalDownloadActionBtn');
+            dlBtn.setAttribute('disabled', 'true');
+            dlBtn.textContent = "⏳ Packing files...";
+
+            try {
+                const { data: record, error } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .select('*')
+                    .eq('id', activeInspectingRecordId)
+                    .single();
+
+                if (error || !record) throw new Error("Could not parse shipment files roster data.");
+
+                const zip = new JSZip();
+                const folder = zip.folder(`SPSIC-${record.spsic_number}_Manifest`);
+                let addedFiles = 0;
+
+                const pathsList = [
+                    { field: 'SPSIC_Doc', path: record.spsic_file_path },
+                    { field: 'Arrival_Notice', path: record.arrival_notice_path },
+                    { field: 'Import_Docs', path: record.import_docs_path }
+                ];
+
+                for (let file of pathsList) {
+                    if (file.path) {
+                        try {
+                            const { data: blob, error: sErr } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).download(file.path);
+                            if (sErr) throw sErr;
+                            const ext = file.path.split('.').pop() || 'bin';
+                            folder.file(`${file.field}.${ext}`, blob);
+                            addedFiles++;
+                        } catch (e) {
+                            console.warn("Skipping unresolved block component:", file.path, e);
+                        }
+                    }
+                }
+
+                if (addedFiles === 0) {
+                    showSystemModal({ type: 'error', title: 'Download Aborted', message: 'No valid underlying storage objects available for local file extraction.' });
+                    return;
+                }
+
+                const content = await zip.generateAsync({ type: "blob" });
+                const anchorUrl = window.URL.createObjectURL(content);
+                const tempAnchor = document.createElement('a');
+                tempAnchor.href = anchorUrl;
+                tempAnchor.download = `SPSIC-${record.spsic_number}_Compiled_Package.zip`;
+                document.body.appendChild(tempAnchor);
+                tempAnchor.click();
+
+                window.URL.revokeObjectURL(anchorUrl);
+                document.body.removeChild(tempAnchor);
+
+            } catch (err) {
+                showSystemModal({ type: 'error', title: 'Extraction Error', message: err.message });
+            } finally {
+                dlBtn.removeAttribute('disabled');
+                dlBtn.textContent = "📥 Download Document Package";
+            }
         }
 
         async function approveCurrentDocument() {
@@ -990,10 +1064,16 @@
             activeInspectingRecordId = null;
         }
 
-        /* Compiles and extracts files from all 12 months for the selected directory year,
-           preserving structures cleanly: [Year Directory]/[Month Folder]/[SPSIC Entry]/[Attached Files]
-        */
         async function downloadEntireYearDirectory() {
+            if (currentUserRole !== 'admin') {
+                showSystemModal({
+                    type: 'error',
+                    title: 'Access Revoked',
+                    message: 'Access Denied: Your employee security role configuration parameters do not authorize local binary extractions or documentation file downloads.'
+                });
+                return;
+            }
+
             const currentYearSelected = document.getElementById('directoryYearSelect').value;
             const btn = document.getElementById('downloadYearArchiveBtn');
             
@@ -1001,7 +1081,6 @@
             btn.textContent = "⏳ Fetching Metadata...";
 
             try {
-                // Fetch all database entries targeted inside months of the active folder year range
                 const startMonthRange = `${currentYearSelected}-01`;
                 const endMonthRange = `${currentYearSelected}-12`;
                 
@@ -1023,13 +1102,11 @@
                 const baseYearFolder = zip.folder(`${currentYearSelected} Directory Folder`);
                 let compiledFilesCount = 0;
 
-                // Process each document manifest matching the targeted year query structure
                 for (let record of records) {
                     const monthStringValue = record.target_month.split('-')[1];
                     const matchedMonthLabelObj = monthsLabels.find(m => m.value === monthStringValue);
                     const folderMonthHumanReadableName = matchedMonthLabelObj ? `${matchedMonthLabelObj.text} - ${monthStringValue}` : monthStringValue;
                     
-                    // Create monthly subfolders and spsic nodes inside the ZIP architecture tree
                     const monthFolderNode = baseYearFolder.folder(folderMonthHumanReadableName);
                     const spsicFolderNode = monthFolderNode.folder(`SPSIC-${record.spsic_number}`);
 
@@ -1047,7 +1124,6 @@
 
                             if (storageErr) throw storageErr;
 
-                            // Extract exact file extension or fallback cleanly
                             const fileExtension = attachment.path.split('.').pop() || 'bin';
                             const cleanOutputFileName = `${attachment.field}.${fileExtension}`;
                             
@@ -1067,7 +1143,6 @@
                 btn.textContent = "⚡ Generating Zip...";
                 const generatedZipContentBlob = await zip.generateAsync({ type: "blob" });
                 
-                // Trigger localized virtual browser package file container download stream
                 const tempDownloadAnchorUrl = window.URL.createObjectURL(generatedZipContentBlob);
                 const clickBridgeElement = document.createElement('a');
                 clickBridgeElement.href = tempDownloadAnchorUrl;
@@ -1075,7 +1150,6 @@
                 document.body.appendChild(clickBridgeElement);
                 clickBridgeElement.click();
                 
-                // Cleanup thread parameters securely
                 window.URL.revokeObjectURL(tempDownloadAnchorUrl);
                 document.body.removeChild(clickBridgeElement);
 
