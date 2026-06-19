@@ -679,13 +679,37 @@
                     updated_at: new Date().toISOString()
                 };
 
-                if (localFetchedRecord && localFetchedRecord.id) {
-                    payload.id = localFetchedRecord.id;
-                }
-
-                const { error: dbError } = await supabaseClient
+                // PRE-WRITE CHECK PATTERN: Instead of .upsert(), check for an existing unique row match
+                const { data: existingRecord, error: checkError } = await supabaseClient
                     .from('imported_shipment_docs')
-                    .upsert(payload, { onConflict: 'spsic_number,target_month' });
+                    .select('id')
+                    .eq('spsic_number', rawNumber)
+                    .eq('target_month', monthTarget)
+                    .maybeSingle();
+
+                if (checkError) throw checkError;
+
+                let dbError;
+                if (existingRecord) {
+                    // Update targeted record directly via its ID
+                    const { error: updateError } = await supabaseClient
+                        .from('imported_shipment_docs')
+                        .update(payload)
+                        .eq('id', existingRecord.id);
+                    
+                    dbError = updateError;
+                    payload.id = existingRecord.id; 
+                } else {
+                    // Safe execution of a fresh row insert
+                    const { data: insertedData, error: insertError } = await supabaseClient
+                        .from('imported_shipment_docs')
+                        .insert(payload)
+                        .select('id')
+                        .single();
+                    
+                    dbError = insertError;
+                    if (insertedData) payload.id = insertedData.id;
+                }
                     
                 if (dbError) throw dbError;
 
