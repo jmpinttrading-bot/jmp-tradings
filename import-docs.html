@@ -544,15 +544,68 @@
             let fileArrivalEl = document.getElementById('fileArrival').files[0];
             let fileImportEl = document.getElementById('fileImportDocs').files[0];
 
-            let spsicPath = localFetchedRecord ? localFetchedRecord.spsic_file_path : null;
-            let arrivalPath = localFetchedRecord ? localFetchedRecord.arrival_notice_path : null;
-            let importPath = localFetchedRecord ? localFetchedRecord.import_docs_path : null;
-
-            let uploaderSpsic = localFetchedRecord ? localFetchedRecord.spsic_uploaded_by : null;
-            let uploaderArrival = localFetchedRecord ? localFetchedRecord.arrival_notice_uploaded_by : null;
-            let uploaderImport = localFetchedRecord ? localFetchedRecord.import_docs_uploaded_by : null;
-
             try {
+                // 1. GATEKEEPER CHECK: Run verification query first
+                const { data: existingRecord, error: checkError } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .select('*')
+                    .eq('spsic_number', rawNumber)
+                    .eq('target_month', monthTarget)
+                    .maybeSingle();
+
+                if (checkError) throw checkError;
+
+                let workingRecordId = null;
+                let spsicPath = existingRecord ? existingRecord.spsic_file_path : null;
+                let arrivalPath = existingRecord ? existingRecord.arrival_notice_path : null;
+                let importPath = existingRecord ? existingRecord.import_docs_path : null;
+
+                let uploaderSpsic = existingRecord ? existingRecord.spsic_uploaded_by : null;
+                let uploaderArrival = existingRecord ? existingRecord.arrival_notice_uploaded_by : null;
+                let uploaderImport = existingRecord ? existingRecord.import_docs_uploaded_by : null;
+
+                // If no record exists, verify an initial document was chosen
+                if (!existingRecord && !fileSpsicEl) {
+                    alert("Error: Please attach the 1st Upload (SPSIC Document File) to initialize this entry.");
+                    submitBtn.removeAttribute('disabled');
+                    submitBtn.textContent = "Execute Sync Pipeline";
+                    return;
+                }
+
+                if (existingRecord) {
+                    // Check if it's already an explicit conflict request for a brand new submission
+                    if (!fileSpsicEl && !fileArrivalEl && !fileImportEl) {
+                        alert("This entry already exists");
+                        submitBtn.removeAttribute('disabled');
+                        submitBtn.textContent = "Execute Sync Pipeline";
+                        return;
+                    }
+                    workingRecordId = existingRecord.id;
+                } else {
+                    // Reserve the database slot first to block duplicates immediately
+                    const { data: newRow, error: insertError } = await supabaseClient
+                        .from('imported_shipment_docs')
+                        .insert({
+                            spsic_number: rawNumber,
+                            target_month: monthTarget,
+                            status: 'Pending',
+                            updated_at: new Date().toISOString()
+                        })
+                        .select('id')
+                        .single();
+
+                    if (insertError) {
+                        if (insertError.code === '23505') {
+                            alert("This entry already exists");
+                        } else {
+                            throw insertError;
+                        }
+                        return;
+                    }
+                    workingRecordId = newRow.id;
+                }
+
+                // 2. CLOUD BUCKET STORAGE UPLOAD ENGINE
                 if (fileSpsicEl) fileSpsicEl = await optimizeAndCompressPdfFile(fileSpsicEl);
                 if (fileArrivalEl) fileArrivalEl = await optimizeAndCompressPdfFile(fileArrivalEl);
                 if (fileImportEl) fileImportEl = await optimizeAndCompressPdfFile(fileImportEl);
@@ -581,21 +634,13 @@
                     uploaderImport = currentUserDisplayName;
                 }
 
-                if (!spsicPath) {
-                    alert("Error: Please select a valid SPSIC document file to upload.");
-                    submitBtn.removeAttribute('disabled');
-                    submitBtn.textContent = "Execute Sync Pipeline";
-                    return;
-                }
-
+                // 3. FINAL COMPILING RECORD UPDATE
                 let derivedStatus = "Pending"; 
                 if (spsicPath && !arrivalPath && !importPath) derivedStatus = "Pending";
                 else if (spsicPath && arrivalPath && !importPath) derivedStatus = "Incomplete";
                 else if (spsicPath && arrivalPath && importPath) derivedStatus = "For Approval";
 
-                const payload = {
-                    spsic_number: rawNumber,
-                    target_month: monthTarget,
+                const finalPayload = {
                     spsic_file_path: spsicPath,
                     arrival_notice_path: arrivalPath,
                     import_docs_path: importPath,
@@ -606,38 +651,14 @@
                     updated_at: new Date().toISOString()
                 };
 
-                const { data: existingRecord, error: checkError } = await supabaseClient
+                const { error: finalUpdateError } = await supabaseClient
                     .from('imported_shipment_docs')
-                    .select('id')
-                    .eq('spsic_number', rawNumber)
-                    .eq('target_month', monthTarget)
-                    .maybeSingle();
+                    .update(finalPayload)
+                    .eq('id', workingRecordId);
 
-                if (checkError) throw checkError;
+                if (finalUpdateError) throw finalUpdateError;
 
-                let dbError;
-                if (existingRecord) {
-                    const { error: updateError } = await supabaseClient
-                        .from('imported_shipment_docs')
-                        .update(payload)
-                        .eq('id', existingRecord.id);
-                    
-                    dbError = updateError;
-                    payload.id = existingRecord.id; 
-                } else {
-                    const { data: insertedData, error: insertError } = await supabaseClient
-                        .from('imported_shipment_docs')
-                        .insert(payload)
-                        .select('id')
-                        .single();
-                    
-                    dbError = insertError;
-                    if (insertedData) payload.id = insertedData.id;
-                }
-                    
-                if (dbError) throw dbError;
-
-                localFetchedRecord = payload;
+                localFetchedRecord = { id: workingRecordId, spsic_number: rawNumber, target_month: monthTarget, ...finalPayload };
                 alert("Records synchronized successfully!");
                 
                 document.getElementById('fileSpsic').value = "";
