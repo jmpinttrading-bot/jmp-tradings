@@ -6,6 +6,7 @@
     <title>Import Document Manager | JMP HQ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
@@ -43,6 +44,9 @@
 
         .directory-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; }
         .year-btn { background: #0f172a; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .download-year-btn { background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .download-year-btn:hover { background: #1d4ed8; }
+        .download-year-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
         .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .search-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
@@ -117,6 +121,7 @@
             .main-content { padding: 15px; }
             .panel-grid { grid-template-columns: 1fr; }
             .month-folder-grid { grid-template-columns: repeat(3, 1fr); }
+            .directory-controls { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -201,12 +206,13 @@
             <div class="panel-card">
                 <h3>Monthly Directories & Consolidated Logs</h3>
                 
-                <div class="directory-controls" style="margin-bottom: 15px;">
+                <div class="directory-controls">
                     <div class="form-group" style="margin-bottom:0; flex:1;">
                         <select id="directoryYearSelect" onchange="buildMonthlyFolders(); fetchDocuments();">
                         </select>
                     </div>
                     <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
+                    <button class="download-year-btn" id="downloadYearArchiveBtn" onclick="downloadEntireYearDirectory()">📥 Download Year Package</button>
                 </div>
 
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
@@ -982,6 +988,106 @@
         function closeViewer() {
             document.getElementById('documentViewerOverlay').style.display = 'none';
             activeInspectingRecordId = null;
+        }
+
+        /* Compiles and extracts files from all 12 months for the selected directory year,
+           preserving structures cleanly: [Year Directory]/[Month Folder]/[SPSIC Entry]/[Attached Files]
+        */
+        async function downloadEntireYearDirectory() {
+            const currentYearSelected = document.getElementById('directoryYearSelect').value;
+            const btn = document.getElementById('downloadYearArchiveBtn');
+            
+            btn.setAttribute('disabled', 'true');
+            btn.textContent = "⏳ Fetching Metadata...";
+
+            try {
+                // Fetch all database entries targeted inside months of the active folder year range
+                const startMonthRange = `${currentYearSelected}-01`;
+                const endMonthRange = `${currentYearSelected}-12`;
+                
+                const { data: records, error } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .select('*')
+                    .gte('target_month', startMonthRange)
+                    .lte('target_month', endMonthRange);
+
+                if (error) throw error;
+
+                if (!records || records.length === 0) {
+                    showSystemModal({ type: 'error', title: 'Empty Archive', message: `No uploaded document clusters found globally inside the ${currentYearSelected} directory.` });
+                    return;
+                }
+
+                btn.textContent = "📦 Compiling Package...";
+                const zip = new JSZip();
+                const baseYearFolder = zip.folder(`${currentYearSelected} Directory Folder`);
+                let compiledFilesCount = 0;
+
+                // Process each document manifest matching the targeted year query structure
+                for (let record of records) {
+                    const monthStringValue = record.target_month.split('-')[1];
+                    const matchedMonthLabelObj = monthsLabels.find(m => m.value === monthStringValue);
+                    const folderMonthHumanReadableName = matchedMonthLabelObj ? `${matchedMonthLabelObj.text} - ${monthStringValue}` : monthStringValue;
+                    
+                    // Create monthly subfolders and spsic nodes inside the ZIP architecture tree
+                    const monthFolderNode = baseYearFolder.folder(folderMonthHumanReadableName);
+                    const spsicFolderNode = monthFolderNode.folder(`SPSIC-${record.spsic_number}`);
+
+                    const attachmentsToPull = [];
+                    if (record.spsic_file_path) attachmentsToPull.push({ field: 'SPSIC_Doc', path: record.spsic_file_path });
+                    if (record.arrival_notice_path) attachmentsToPull.push({ field: 'Arrival_Notice', path: record.arrival_notice_path });
+                    if (record.import_docs_path) attachmentsToPull.push({ field: 'Import_Docs', path: record.import_docs_path });
+
+                    for (let attachment of attachmentsToPull) {
+                        try {
+                            const { data: blob, error: storageErr } = await supabaseClient
+                                .storage
+                                .from(STORAGE_BUCKET_NAME)
+                                .download(attachment.path);
+
+                            if (storageErr) throw storageErr;
+
+                            // Extract exact file extension or fallback cleanly
+                            const fileExtension = attachment.path.split('.').pop() || 'bin';
+                            const cleanOutputFileName = `${attachment.field}.${fileExtension}`;
+                            
+                            spsicFolderNode.file(cleanOutputFileName, blob);
+                            compiledFilesCount++;
+                        } catch (storagePullErr) {
+                            console.warn(`Could not pull file reference component at path: ${attachment.path}`, storagePullErr);
+                        }
+                    }
+                }
+
+                if (compiledFilesCount === 0) {
+                    showSystemModal({ type: 'error', title: 'Compilation Aborted', message: 'The database points to records, but the files could not be extracted from the storage bucket.' });
+                    return;
+                }
+
+                btn.textContent = "⚡ Generating Zip...";
+                const generatedZipContentBlob = await zip.generateAsync({ type: "blob" });
+                
+                // Trigger localized virtual browser package file container download stream
+                const tempDownloadAnchorUrl = window.URL.createObjectURL(generatedZipContentBlob);
+                const clickBridgeElement = document.createElement('a');
+                clickBridgeElement.href = tempDownloadAnchorUrl;
+                clickBridgeElement.download = `${currentYearSelected}_Directory_Complete_Archive.zip`;
+                document.body.appendChild(clickBridgeElement);
+                clickBridgeElement.click();
+                
+                // Cleanup thread parameters securely
+                window.URL.revokeObjectURL(tempDownloadAnchorUrl);
+                document.body.removeChild(clickBridgeElement);
+
+                showSystemModal({ type: 'success', title: 'Directory Extracted', message: `Successfully structured all available active entries for ${currentYearSelected} into a single download container.` });
+
+            } catch (err) {
+                console.error("Directory extraction stream compilation exception caught: ", err);
+                showSystemModal({ type: 'error', title: 'Extraction Error', message: err.message });
+            } finally {
+                btn.removeAttribute('disabled');
+                btn.textContent = "📥 Download Year Package";
+            }
         }
 
         window.addEventListener('beforeunload', () => {
