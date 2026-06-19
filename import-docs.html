@@ -19,7 +19,6 @@
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
         
-        /* UPDATED: Changed from '1fr 2fr' to '1fr' to stack elements vertically */
         .panel-grid { display: grid; grid-template-columns: 1fr; gap: 30px; align-items: start; }
         .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .panel-card h3 { color: #0f172a; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9; }
@@ -673,7 +672,7 @@
                     payload.id = localFetchedRecord.id;
                 }
 
-                // FIXED: Explicitly added onConflict matching parameter to prevent unique constraint failures
+                // EXPLICIT SYSTEM COMPOSITE COLUMN CONFLICT MATCH
                 const { error: dbError } = await supabaseClient
                     .from('imported_shipment_docs')
                     .upsert(payload, { onConflict: 'spsic_number,target_month' });
