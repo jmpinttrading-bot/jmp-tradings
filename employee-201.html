@@ -84,10 +84,13 @@
         .btn-alert-dismiss { background: #1e2235; color: white; border: none; padding: 8px 20px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .btn-alert-dismiss:hover { background: #111422; }
 
-        @media(max-width: 1024px) {
+        /* Tablet Breakpoint Adjustments */
+        @media(max-width: 900px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; height: auto; padding: 20px; }
+            .sidebar .logout-btn { margin-top: 15px; }
         }
+        /* Mobile Breakpoint Adjustments */
         @media(max-width: 640px) {
             .form-row, .form-row.triple, .form-row.quad { grid-template-columns: 1fr; gap: 12px; }
             .header-panel { flex-direction: column; align-items: flex-start; gap: 15px; }
