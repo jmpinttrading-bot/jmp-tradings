@@ -23,10 +23,13 @@
         
         /* Layout Actions Section */
         .dashboard-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
-        .report-controls { background: white; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+        .report-controls { background: white; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .report-title-area { flex: 1; min-width: 250px; }
         .report-title-area h3 { color: #0f172a; font-size: 1.1rem; }
         .report-title-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
-        .time-filter-select { padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; font-weight: 600; background-color: white; color: #1e293b; cursor: pointer; min-width: 160px; outline: none; }
+        
+        .controls-selectors-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .time-filter-select { padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; font-weight: 600; background-color: white; color: #1e293b; cursor: pointer; min-width: 150px; outline: none; }
         .time-filter-select:focus { border-color: #ee964b; }
         
         .register-trigger-btn { background: #ee964b; color: #0f172a; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -49,11 +52,11 @@
         .logistics-route-btn { background: #1e293b; color: white; border: none; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
         .logistics-route-btn:hover { background: #ee964b; color: #0f172a; }
 
-        /* Analytics Chart Section Grid Structure */
-        .analytics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 5px; }
-        .chart-card { background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
-        .chart-card h3 { font-size: 1rem; margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .chart-container { position: relative; width: 100%; height: 240px; }
+        /* Analytics Unified Single Chart Structure */
+        .analytics-full-width-container { width: 100%; margin-top: 5px; }
+        .chart-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
+        .chart-card h3 { font-size: 1.1rem; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .chart-container { position: relative; width: 100%; height: 380px; }
 
         .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
         .alert.success { background: #d1fae5; color: #065f46; }
@@ -79,13 +82,11 @@
         .restriction-btn:hover { background-color: #0f172a; }
 
         /* Responsive handling for smaller screens/tablets */
-        @media (max-width: 1024px) {
-            .analytics-grid { grid-template-columns: 1fr; }
-        }
         @media (max-width: 768px) {
             .logistics-grid { grid-template-columns: 1fr; }
             .report-controls { flex-direction: column; align-items: flex-start; }
-            .time-filter-select { width: 100%; }
+            .controls-selectors-group { width: 100%; }
+            .time-filter-select { flex: 1; }
         }
     </style>
 </head>
@@ -160,39 +161,32 @@
                     <h3>Master Stock Volume Metric Ledger</h3>
                     <p>Aggregated timeline visual chart metrics per assigned cold storage allocation vault</p>
                 </div>
-                <select id="timeFilterSelect" class="time-filter-select" onchange="updateAnalyticsTimelineCharts()">
-                    <option value="weekly">📅 Weekly View</option>
-                    <option value="monthly" selected>📅 Monthly View</option>
-                </select>
+                <div class="controls-selectors-group">
+                    <select id="storageFilterSelect" class="time-filter-select" onchange="updateAnalyticsTimelineCharts()">
+                        <option value="vvs">🏬 VVS Cold Storage</option>
+                        <option value="hightower">🏬 Hightower Storage</option>
+                        <option value="eisberg">🏬 Eisberg Logistics</option>
+                        <option value="crystal">🏬 Crystal Cold Storage</option>
+                    </select>
+                    <select id="timeFilterSelect" class="time-filter-select" onchange="updateAnalyticsTimelineCharts()">
+                        <option value="weekly">📅 Weekly View</option>
+                        <option value="monthly" selected>📅 Monthly View</option>
+                    </select>
+                </div>
             </div>
             <button class="register-trigger-btn" onclick="handleRegisterTrigger()" style="width: 100%; max-width: 290px; justify-content: center;">
                 <span>➕</span> Register New Product Item
             </button>
         </div>
 
-        <div class="analytics-grid">
+        <div class="analytics-full-width-container">
             <div class="chart-card">
-                <h3>VVS Cold Storage <span id="vvsCurrentTotal" style="color:#ee964b; font-size:0.9rem;">0 Cases</span></h3>
+                <h3>
+                    <span id="chartFacilityHeaderName">VVS Cold Storage & Processing Plant Corp.</span> 
+                    <span id="masterCurrentStockTotalLabel" style="color:#ee964b; font-size:1rem; font-weight: 700;">0 Cases Active</span>
+                </h3>
                 <div class="chart-container">
-                    <canvas id="vvsChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-card">
-                <h3>Hightower Storage <span id="hightowerCurrentTotal" style="color:#ee964b; font-size:0.9rem;">0 Cases</span></h3>
-                <div class="chart-container">
-                    <canvas id="hightowerChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-card">
-                <h3>Eisberg Logistics <span id="eisbergCurrentTotal" style="color:#ee964b; font-size:0.9rem;">0 Cases</span></h3>
-                <div class="chart-container">
-                    <canvas id="eisbergChart"></canvas>
-                </div>
-            </div>
-            <div class="chart-card">
-                <h3>Crystal Cold Storage <span id="crystalCurrentTotal" style="color:#ee964b; font-size:0.9rem;">0 Cases</span></h3>
-                <div class="chart-container">
-                    <canvas id="crystalChart"></canvas>
+                    <canvas id="unifiedMasterChart"></canvas>
                 </div>
             </div>
         </div>
@@ -269,8 +263,8 @@
         let masterInventoryCachedData = [];
         let currentUserRole = "Employee"; 
         
-        // Instances tracker dictionary for managing Chartjs canvas updates
-        let storageChartInstances = {};
+        // Single global variable reference to track active Chartjs instances
+        let masterChartInstance = null;
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -319,11 +313,11 @@
             updateAnalyticsTimelineCharts();
         }
 
-        // Calculates current stock sums and injects trend data points across line graphs
+        // Calculates selected stock sums and switches theme sets based on storage selection
         function updateAnalyticsTimelineCharts() {
+            const storageKey = document.getElementById('storageFilterSelect').value;
             const filterMode = document.getElementById('timeFilterSelect').value;
             
-            // Facility identity key strings
             const facilities = {
                 vvs: "VVS Cold Storage and Processing Plant Corp.",
                 hightower: "Hightower Storage and Trading Centre, Inc.",
@@ -331,78 +325,80 @@
                 crystal: "Crystal Cold Storage, Inc."
             };
 
-            // Set up chart timelines labels
+            const selectedFacilityFullName = facilities[storageKey];
+            document.getElementById('chartFacilityHeaderName').textContent = selectedFacilityFullName;
+
+            // Compute current real-time stock quantity sum for selected storage facility
+            const realTimeTotal = masterInventoryCachedData
+                .filter(item => item.storage_facility === selectedFacilityFullName)
+                .reduce((sum, item) => sum + (parseInt(item.stock_quantity) || 0), 0);
+
+            const totalLabelElement = document.getElementById('masterCurrentStockTotalLabel');
+            totalLabelElement.textContent = `${realTimeTotal} Cases Total`;
+
+            // Define thematic layout configurations dynamically matching selected facility color keys
+            let themeColor = '#ee964b'; 
+            let fillGradient = 'rgba(238, 150, 75, 0.05)';
+            
+            if (storageKey === 'hightower') { themeColor = '#38bdf8'; fillGradient = 'rgba(56, 189, 248, 0.05)'; }
+            else if (storageKey === 'eisberg') { themeColor = '#34d399'; fillGradient = 'rgba(52, 211, 153, 0.05)'; }
+            else if (storageKey === 'crystal') { themeColor = '#a78bfa'; fillGradient = 'rgba(167, 139, 250, 0.05)'; }
+            
+            totalLabelElement.style.color = themeColor;
+
+            // Generate labels and historical mock trend trajectories proportional to real-time baselines
             let timelineLabels = [];
+            let historicalTrendPoints = [];
+
             if (filterMode === 'weekly') {
                 timelineLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current Week'];
+                historicalTrendPoints = [
+                    Math.round(realTimeTotal * 0.78), 
+                    Math.round(realTimeTotal * 0.92), 
+                    Math.round(realTimeTotal * 0.85), 
+                    Math.round(realTimeTotal * 0.96), 
+                    realTimeTotal
+                ];
             } else {
                 timelineLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                historicalTrendPoints = [
+                    Math.round(realTimeTotal * 0.45), 
+                    Math.round(realTimeTotal * 0.60), 
+                    Math.round(realTimeTotal * 0.72), 
+                    Math.round(realTimeTotal * 0.85), 
+                    Math.round(realTimeTotal * 0.94), 
+                    realTimeTotal
+                ];
             }
 
-            Object.keys(facilities).forEach(key => {
-                // Compute the current absolute real-time storage case volume sum
-                const realTimeTotal = masterInventoryCachedData
-                    .filter(item => item.storage_facility === facilities[key])
-                    .reduce((sum, item) => sum + (parseInt(item.stock_quantity) || 0), 0);
-
-                document.getElementById(`${key}CurrentTotal`).textContent = `${realTimeTotal} Cases Total`;
-
-                // Calculate historical trend paths proportionally relative to real-time baseline values
-                let historicalTrendPoints = [];
-                if (filterMode === 'weekly') {
-                    historicalTrendPoints = [
-                        Math.round(realTimeTotal * 0.75), 
-                        Math.round(realTimeTotal * 0.90), 
-                        Math.round(realTimeTotal * 0.82), 
-                        Math.round(realTimeTotal * 0.95), 
-                        realTimeTotal
-                    ];
-                } else {
-                    historicalTrendPoints = [
-                        Math.round(realTimeTotal * 0.50), 
-                        Math.round(realTimeTotal * 0.65), 
-                        Math.round(realTimeTotal * 0.70), 
-                        Math.round(realTimeTotal * 0.88), 
-                        Math.round(realTimeTotal * 0.92), 
-                        realTimeTotal
-                    ];
-                }
-
-                renderSpecificLineGraph(key, timelineLabels, historicalTrendPoints);
-            });
+            renderUnifiedMasterGraph(timelineLabels, historicalTrendPoints, themeColor, fillGradient);
         }
 
-        function renderSpecificLineGraph(canvasId, labels, dataPoints) {
-            // Explicitly destroy active chart context configurations if they exist to prevent hover/render flickering leaks
-            if (storageChartInstances[canvasId]) {
-                storageChartInstances[canvasId].destroy();
+        function renderUnifiedMasterGraph(labels, dataPoints, strokeColor, fillColor) {
+            // Destroy active instance layout context to prevent flickering leaks during update routines
+            if (masterChartInstance) {
+                masterChartInstance.destroy();
             }
 
-            const ctx = document.getElementById(`${canvasId}Chart`).getContext('2d');
-            
-            // Build out clean gradients matching your system aesthetic context
-            let lineThemeColor = '#ee964b'; 
-            let fillThemeGradient = 'rgba(238, 150, 75, 0.06)';
-            
-            if(canvasId === 'hightower') { lineThemeColor = '#38bdf8'; fillThemeGradient = 'rgba(56, 189, 248, 0.06)'; }
-            if(canvasId === 'eisberg') { lineThemeColor = '#34d399'; fillThemeGradient = 'rgba(52, 211, 153, 0.06)'; }
-            if(canvasId === 'crystal') { lineThemeColor = '#a78bfa'; fillThemeGradient = 'rgba(167, 139, 250, 0.06)'; }
+            const ctx = document.getElementById('unifiedMasterChart').getContext('2d');
 
-            storageChartInstances[canvasId] = new Chart(ctx, {
+            masterChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Stock Quantity Tracking (Cases)',
+                        label: 'Stock Level Volume (Cases)',
                         data: dataPoints,
-                        borderColor: lineThemeColor,
-                        backgroundColor: fillThemeGradient,
-                        borderWidth: 3,
+                        borderColor: strokeColor,
+                        backgroundColor: fillColor,
+                        borderWidth: 3.5,
                         fill: true,
-                        tension: 0.35,
-                        pointBackgroundColor: lineThemeColor,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
+                        tension: 0.38,
+                        pointBackgroundColor: strokeColor,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 1.5,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
                     }]
                 },
                 options: {
@@ -415,11 +411,11 @@
                         y: {
                             beginAtZero: true,
                             grid: { color: '#f1f5f9' },
-                            ticks: { font: { family: 'Segoe UI', size: 11 }, color: '#64748b' }
+                            ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 }
                         },
                         x: {
                             grid: { display: false },
-                            ticks: { font: { family: 'Segoe UI', size: 11 }, color: '#64748b' }
+                            ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 }
                         }
                     }
                 }
