@@ -47,11 +47,12 @@
         
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
         .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+        .form-row.quad { grid-template-columns: 1fr 1fr 1fr 1fr; } /* Added for structural balance */
         .form-row.full { grid-template-columns: 1fr; }
         
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; }
-        .form-group input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background-color: #f8fafc; }
+        .form-group input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background-color: #f8fafc; width: 100%; }
         .form-group input:focus { outline: none; border-color: #0f172a; background-color: white; }
 
         .modal-actions { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 15px; shrink: 0; }
@@ -60,7 +61,7 @@
         .btn-save:hover { opacity: 0.9; }
 
         @media(max-width: 640px) {
-            .form-row, .form-row.triple { grid-template-columns: 1fr; gap: 12px; }
+            .form-row, .form-row.triple, .form-row.quad { grid-template-columns: 1fr; gap: 12px; }
         }
     </style>
 </head>
@@ -104,8 +105,7 @@
                 </div>
 
                 <div class="section-title">Personal Identity Matrix</div>
-                <div class="form-row triple">
-                    <div class="form-group">
+                <div class="form-row quad"> <div class="form-group">
                         <label>Given Name</label>
                         <input type="text" id="givenName" placeholder="First Name">
                     </div>
@@ -116,6 +116,10 @@
                     <div class="form-group">
                         <label>Surname</label>
                         <input type="text" id="surname" placeholder="Last Name">
+                    </div>
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input type="date" id="dateOfBirth">
                     </div>
                 </div>
 
@@ -252,6 +256,7 @@
                 document.getElementById('givenName').value = data.given_name || '';
                 document.getElementById('middleName').value = data.middle_name || '';
                 document.getElementById('surname').value = data.surname || '';
+                document.getElementById('dateOfBirth').value = data.date_of_birth || ''; // Added fetch mapping
                 document.getElementById('presentAddress').value = data.present_address || '';
                 document.getElementById('phoneNo').value = data.phone_no || '';
                 document.getElementById('emergencyContactName').value = data.emergency_contact_name || '';
@@ -280,6 +285,7 @@
                 given_name: document.getElementById('givenName').value.trim(),
                 middle_name: document.getElementById('middleName').value.trim(),
                 surname: document.getElementById('surname').value.trim(),
+                date_of_birth: document.getElementById('dateOfBirth').value || null, // Added save mapping (falls back to null if blank)
                 present_address: document.getElementById('presentAddress').value.trim(),
                 phone_no: document.getElementById('phoneNo').value.trim(),
                 emergency_contact_name: document.getElementById('emergencyContactName').value.trim(),
