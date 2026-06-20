@@ -16,6 +16,9 @@
         .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         
+        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+        .logout-btn:hover { opacity: 0.9; }
+
         .main-content { flex: 1; padding: 40px; min-width: 0; }
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
@@ -116,9 +119,10 @@
             to { transform: scale(1); opacity: 1; }
         }
 
-        @media (max-width: 850px) {
+        @media (max-width: 900px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; min-height: auto; padding: 20px; }
+            .sidebar .logout-btn { margin-top: 15px; }
             .main-content { padding: 15px; }
             .panel-grid { grid-template-columns: 1fr; }
             .month-folder-grid { grid-template-columns: repeat(3, 1fr); }
@@ -132,7 +136,9 @@
         <h2 id="sidebarPanelHeading">JMP Admin HQ</h2>
         <a href="admin-dashboard.html" id="backToDashboardBtn">Profile Management</a>
         <a href="control-panel.html" id="adminControlPanelLink" style="display: none;">🎛️ Control Panel</a>
+        <a href="employee-201.html" id="adminEmployee201Link" style="display: none;">📋 Employee 201 File</a>
         <a href="#" class="active">📄 Import Doc File Management</a>
+        <button class="logout-btn" id="sidebarLogoutBtn" onclick="handleLogout()">Logout Admin</button>
     </div>
 
     <div class="main-content">
@@ -370,11 +376,15 @@
                     document.getElementById('backToDashboardBtn').href = "employee-dashboard.html";
                     document.getElementById('backToDashboardBtn').textContent = "👤 My Account Profile";
                     document.getElementById('adminControlPanelLink').style.display = "none";
+                    document.getElementById('adminEmployee201Link').style.display = "none";
+                    document.getElementById('sidebarLogoutBtn').textContent = "Logout Employee";
                 } else {
                     document.getElementById('sidebarPanelHeading').textContent = "JMP Admin HQ";
                     document.getElementById('backToDashboardBtn').href = "admin-dashboard.html";
                     document.getElementById('backToDashboardBtn').textContent = "Profile Management";
                     document.getElementById('adminControlPanelLink').style.display = "block";
+                    document.getElementById('adminEmployee201Link').style.display = "block";
+                    document.getElementById('sidebarLogoutBtn').textContent = "Logout Admin";
                 }
             }
 
@@ -657,7 +667,6 @@
         }
 
         async function fetchDocuments() {
-            // 1. Fetch data for the standalone top Actionable Table (Pending, Incomplete, For Approval)
             try {
                 const { data: actionableData, error: actErr } = await supabaseClient
                     .from('imported_shipment_docs')
@@ -688,7 +697,6 @@
                 console.error("Error reading uncompleted queue items:", err);
             }
 
-            // 2. Fetch data for the structural Workspace directory (STRICTLY 'Completed' status items inside folder selection)
             if (!selectedFolderMonth) return;
             
             const searchVal = document.getElementById('docSearchBox').value.trim();
@@ -1162,6 +1170,12 @@
                 btn.removeAttribute('disabled');
                 btn.textContent = "📥 Download Year Package";
             }
+        }
+
+        async function handleLogout() {
+            await clearLockHeartbeat();
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
         }
 
         window.addEventListener('beforeunload', () => {
