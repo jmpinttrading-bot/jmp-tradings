@@ -15,28 +15,27 @@
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        .main-content { flex: 1; padding: 40px; min-width: 0; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
-        /* Facility Selector Tab Row */
-        .facility-selector-container { display: flex; gap: 12px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 5px; }
-        .facility-tab { background: white; border: 1px solid #cbd5e1; color: #334155; padding: 14px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .facility-tab:hover { background: #f1f5f9; border-color: #94a3b8; }
-        .facility-tab.active { background: #0f172a; color: white; border-color: #0f172a; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15); }
+        /* Layout Actions Section */
+        .dashboard-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
+        .search-container { position: relative; flex: 1; max-width: 450px; }
+        .search-input { width: 100%; padding: 12px 16px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 0.95rem; background-color: white; }
+        .register-trigger-btn { background: #ee964b; color: #0f172a; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .register-trigger-btn:hover { opacity: 0.9; }
 
-        .active-facility-banner { background: #e0f2fe; color: #0369a1; padding: 12px 20px; border-radius: 6px; font-weight: 600; margin-bottom: 25px; font-size: 0.95rem; border: 1px solid #bae6fd; }
+        /* Logistics Routing Matrix Cards Grid */
+        .logistics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .logistics-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; }
+        .logistics-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
+        .logistics-card h4 { font-size: 1rem; color: #0f172a; margin-bottom: 12px; line-height: 1.4; }
+        .logistics-route-btn { background: #1e293b; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; margin-top: 10px; }
+        .logistics-route-btn:hover { background: #ee964b; color: #0f172a; }
 
-        .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; margin-bottom: 30px; align-items: flex-start; }
         .card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .card h3 { margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
-        
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #475569; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
-        
-        .btn { background: #ee964b; color: #0f172a; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; text-align: center; font-size: 0.95rem; }
-        .btn:hover { opacity: 0.9; }
         
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th, td { padding: 14px; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; }
@@ -45,6 +44,7 @@
         .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; display: inline-block; }
         .badge.low-stock { background-color: #fee2e2; color: #991b1b; }
         .badge.in-stock { background-color: #d1fae5; color: #065f46; }
+        .facility-tag { background-color: #f1f5f9; color: #475569; font-size: 0.8rem; padding: 3px 8px; border-radius: 4px; font-weight: 600; border: 1px solid #e2e8f0; }
 
         .action-icon-btn { background: transparent; border: none; cursor: pointer; font-size: 1.1rem; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }
         .action-icon-btn.edit:hover { background-color: #e0f2fe; }
@@ -54,9 +54,18 @@
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
-        @media (max-width: 1024px) {
-            .grid { grid-template-columns: 1fr; }
-        }
+        /* Pop-up Overlay Registry Modal Layout */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
+        .modal-content { background: white; width: 100%; max-width: 500px; padding: 30px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); position: relative; animation: slideDown 0.25s ease-out; }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .close-modal-btn { position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8; }
+        .close-modal-btn:hover { color: #475569; }
+
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #475569; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+        .form-submit-btn { background: #ee964b; color: #0f172a; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 0.95rem; margin-top: 10px; }
+        .form-submit-btn:hover { opacity: 0.9; }
     </style>
 </head>
 <body>
@@ -77,75 +86,103 @@
             <div class="admin-badge" id="adminEmail">Admin System</div>
         </div>
 
-        <div class="facility-selector-container">
-            <button class="facility-tab active" onclick="switchFacility('VVS Cold Storage and Processing Plant Corp.', this)">🏢 VVS Cold Storage</button>
-            <button class="facility-tab" onclick="switchFacility('Hightower Storage and Trading Centre, Inc.', this)">🏢 Hightower Centre</button>
-            <button class="facility-tab" onclick="switchFacility('Eisberg Cold Logistics Inc.', this)">🏢 Eisberg Logistics</button>
-            <button class="facility-tab" onclick="switchFacility('Crystal Cold Storage, Inc.', this)">🏢 Crystal Cold Storage</button>
-        </div>
-
-        <div id="activeFacilityBanner" class="active-facility-banner">
-            Currently Viewing Inventory For: <strong>VVS Cold Storage and Processing Plant Corp.</strong>
+        <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
+        <div class="logistics-grid">
+            <div class="logistics-card">
+                <h4>VVS Cold Storage & Processing Plant Corp.</h4>
+                <a href="vvs-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
+            </div>
+            <div class="logistics-card">
+                <h4>Hightower Storage & Trading Centre, Inc.</h4>
+                <a href="hightower-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
+            </div>
+            <div class="logistics-card">
+                <h4>Eisberg Cold Logistics Inc.</h4>
+                <a href="eisberg-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
+            </div>
+            <div class="logistics-card">
+                <h4>Crystal Cold Storage, Inc.</h4>
+                <a href="crystal-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
+            </div>
         </div>
 
         <div id="alertBox" class="alert"></div>
 
-        <div class="grid">
-            <div class="card">
-                <h3 id="formTitle">Register New Stock Item</h3>
-                <form id="inventoryForm" onsubmit="handleFormSubmit(event)">
-                    <input type="hidden" id="itemId">
-                    
-                    <div class="form-group">
-                        <label>Unique Item Code</label>
-                        <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
-                    </div>
-                    <div class="form-group">
-                        <label>Product / Item Name</label>
-                        <input type="text" id="itemName" required placeholder="e.g., Premium White Shrimp (Head-on)">
-                    </div>
-                    <div class="form-group">
-                        <label>Stock Category</label>
-                        <select id="itemCategory">
-                            <option value="Fish">Fish (Whole / Fillet)</option>
-                            <option value="Crustaceans">Crustaceans (Shrimp, Crabs, Lobster)</option>
-                            <option value="Mollusks">Mollusks (Squid, Octopus, Clams)</option>
-                            <option value="Value-Added Seafood">Value-Added / Processed Lines</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Initial Stock Level Quantity (Cases/Boxes)</label>
-                        <input type="number" id="stockQuantity" required min="0" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Unit Valuation Price</label>
-                        <input type="number" id="unitPrice" required min="0" step="0.01" value="0.00">
-                    </div>
-                    <button type="submit" class="btn" id="submitBtn">Save Entry Log</button>
-                    <button type="button" class="btn" id="cancelEditBtn" style="background: #cbd5e1; color: #334155; margin-top: 10px; display: none;" onclick="resetFormState()">Cancel Mutation</button>
-                </form>
+        <div class="dashboard-actions-row">
+            <div class="search-container">
+                <input type="text" id="masterSearch" class="search-input" placeholder="🔍 Search stock code, name or category..." oninput="filterLedgerTable()">
             </div>
+            <button class="register-trigger-btn" onclick="openRegistryModal()">
+                <span>➕</span> Register New Product Item
+            </button>
+        </div>
 
-            <div class="card">
-                <h3>Live Inventory Records Ledger</h3>
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Code</th>
-                                <th>Item Name</th>
-                                <th>Category</th>
-                                <th>Stock</th>
-                                <th>Unit Price</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventoryTableBody">
-                            <tr><td colspan="6">Polling master database recordsets...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+        <div class="card">
+            <h3>Master File Inventory Ledger</h3>
+            <div style="overflow-x: auto; margin-top: 15px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Stock Code</th>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Assigned Storage Facility</th>
+                            <th>Stock (Cases)</th>
+                            <th>Unit Price</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <tr><td colspan="7">Polling master database recordsets...</td></tr>
+                    </tbody>
+                </table>
             </div>
+        </div>
+    </div>
+
+    <div id="registryModal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal-btn" onclick="closeRegistryModal()">&times;</button>
+            <h3 id="formTitle" style="margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Register New Stock Item</h3>
+            <form id="inventoryForm" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" id="itemId">
+                
+                <div class="form-group">
+                    <label>Unique Item Code</label>
+                    <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
+                </div>
+                <div class="form-group">
+                    <label>Product / Item Name</label>
+                    <input type="text" id="itemName" required placeholder="e.g., Premium White Shrimp (Head-on)">
+                </div>
+                <div class="form-group">
+                    <label>Stock Category</label>
+                    <select id="itemCategory">
+                        <option value="Fish">Fish (Whole / Fillet)</option>
+                        <option value="Crustaceans">Crustaceans (Shrimp, Crabs, Lobster)</option>
+                        <option value="Mollusks">Mollusks (Squid, Octopus, Clams)</option>
+                        <option value="Value-Added Seafood">Value-Added / Processed Lines</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Destination Storage Allocation Facility</label>
+                    <select id="storageFacility">
+                        <option value="VVS Cold Storage and Processing Plant Corp.">VVS Cold Storage and Processing Plant Corp.</option>
+                        <option value="Hightower Storage and Trading Centre, Inc.">Hightower Storage and Trading Centre, Inc.</option>
+                        <option value="Eisberg Cold Logistics Inc.">Eisberg Cold Logistics Inc.</option>
+                        <option value="Crystal Cold Storage, Inc.">Crystal Cold Storage, Inc.</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Initial Stock Level Quantity (Cases/Boxes)</label>
+                    <input type="number" id="stockQuantity" required min="0" value="0">
+                </div>
+                <div class="form-group">
+                    <label>Unit Valuation Price</label>
+                    <input type="number" id="unitPrice" required min="0" step="0.01" value="0.00">
+                </div>
+                <button type="submit" class="form-submit-btn" id="submitBtn">Save Entry Log</button>
+            </form>
         </div>
     </div>
 
@@ -156,9 +193,7 @@
         
         let currentAdminId = null;
         let bypassAuthListener = false;
-        
-        // Track the actively selected warehouse context
-        let activeFacility = 'VVS Cold Storage and Processing Plant Corp.';
+        let masterInventoryCachedData = [];
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -181,67 +216,75 @@
                 return;
             }
             
-            fetchInventoryLedger();
+            fetchMasterInventoryLedger();
             setupSessionCrossCheckListener();
         }
 
-        // Switch location view instantly
-        function switchFacility(facilityName, element) {
-            activeFacility = facilityName;
-            
-            // Update UI banner text
-            document.getElementById('activeFacilityBanner').innerHTML = `Currently Viewing Inventory For: <strong>${facilityName}</strong>`;
-            
-            // Handle tab style highlights
-            document.querySelectorAll('.facility-tab').forEach(btn => btn.classList.remove('active'));
-            element.classList.add('active');
-            
-            resetFormState();
-            fetchInventoryLedger();
-        }
-
-        async function fetchInventoryLedger() {
-            const tbody = document.getElementById('inventoryTableBody');
-            tbody.innerHTML = `<tr><td colspan="6">Filtering records for facility...</td></tr>`;
-
-            // Filter row queries down to the active facility scope
+        // Fetch Complete Rows Across All Cold Storage Sites
+        async function fetchMasterInventoryLedger() {
             const { data, error } = await supabaseClient
                 .from('inventory')
                 .select('*')
-                .eq('storage_facility', activeFacility)
                 .order('created_at', { ascending: false });
 
             if (error) {
-                showAlert("Error fetching catalog logs: " + error.message, "error");
+                showAlert("Error fetching master logs: " + error.message, "error");
                 return;
             }
 
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b;">No items recorded in this storage facility yet.</td></tr>`;
+            masterInventoryCachedData = data || [];
+            renderTableRecords(masterInventoryCachedData);
+        }
+
+        function renderTableRecords(itemsList) {
+            const tbody = document.getElementById('inventoryTableBody');
+            if (itemsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">No matching inventory master entries found.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = '';
-            data.forEach(item => {
+            itemsList.forEach(item => {
                 const stockStatusClass = item.stock_quantity <= 5 ? 'low-stock' : 'in-stock';
-                const stockStatusLabel = item.stock_quantity <= 5 ? 'Low Stock' : 'Healthy';
+                const stockStatusLabel = item.stock_quantity <= 5 ? 'Low' : 'Healthy';
                 
+                // Truncate text for UI visibility clean layout
+                let shortFacilityName = item.storage_facility ? item.storage_facility.split(' ')[0] + " Cold Storage" : "Unassigned";
+
                 const row = `<tr>
                     <td><strong>${item.item_code}</strong></td>
                     <td>${item.item_name}</td>
                     <td>${item.category}</td>
+                    <td><span class="facility-tag" title="${item.storage_facility}">${shortFacilityName}</span></td>
                     <td>
                         <strong>${item.stock_quantity}</strong> 
                         <span class="badge ${stockStatusClass}" style="margin-left: 5px;">${stockStatusLabel}</span>
                     </td>
                     <td>$${parseFloat(item.unit_price).toFixed(2)}</td>
                     <td>
-                        <button class="action-icon-btn edit" onclick="populateFormForEdit(${JSON.stringify(item).replace(/"/g, '&quot;')})" title="Edit Item">📝</button>
-                        <button class="action-icon-btn delete" onclick="deleteInventoryItem(${item.id})" title="Delete Item">❌</button>
+                        <button class="action-icon-btn edit" onclick="populateFormForEdit(${JSON.stringify(item).replace(/"/g, '&quot;')})" title="Modify Item">📝</button>
+                        <button class="action-icon-btn delete" onclick="deleteInventoryItem(${item.id})" title="Purge Record">❌</button>
                     </td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
+        }
+
+        // Live Real-time Client-side Filtering Core Loop
+        function filterLedgerTable() {
+            const searchQuery = document.getElementById('masterSearch').value.toLowerCase().trim();
+            if (!searchQuery) {
+                renderTableRecords(masterInventoryCachedData);
+                return;
+            }
+
+            const filtered = masterInventoryCachedData.filter(item => {
+                return (item.item_code && item.item_code.toLowerCase().includes(searchQuery)) ||
+                       (item.item_name && item.item_name.toLowerCase().includes(searchQuery)) ||
+                       (item.category && item.category.toLowerCase().includes(searchQuery)) ||
+                       (item.storage_facility && item.storage_facility.toLowerCase().includes(searchQuery));
+            });
+            renderTableRecords(filtered);
         }
 
         async function handleFormSubmit(e) {
@@ -251,28 +294,39 @@
             const item_code = document.getElementById('itemCode').value.trim();
             const item_name = document.getElementById('itemName').value.trim();
             const category = document.getElementById('itemCategory').value;
+            const storage_facility = document.getElementById('storageFacility').value;
             const stock_quantity = parseInt(document.getElementById('stockQuantity').value);
             const unit_price = parseFloat(document.getElementById('unitPrice').value);
 
-            // Include storage_facility field so updates stay pinned inside the selected container
-            const payload = { item_code, item_name, category, stock_quantity, unit_price, storage_facility: activeFacility };
+            const payload = { item_code, item_name, category, storage_facility, stock_quantity, unit_price };
 
             if (id) {
                 const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
                 if (error) showAlert(error.message, "error");
                 else {
-                    showAlert("Inventory entry updated successfully.", "success");
-                    resetFormState();
+                    showAlert("Master file product layout updated.", "success");
+                    closeRegistryModal();
                 }
             } else {
                 const { error } = await supabaseClient.from('inventory').insert([payload]);
                 if (error) showAlert(error.message, "error");
                 else {
-                    showAlert("New asset entry saved to current storage facility.", "success");
-                    document.getElementById('inventoryForm').reset();
+                    showAlert("New product registered successfully inside the master dataset.", "success");
+                    closeRegistryModal();
                 }
             }
-            fetchInventoryLedger();
+            fetchMasterInventoryLedger();
+        }
+
+        // Modal Component State Machine Operations
+        function openRegistryModal() {
+            resetFormState();
+            document.getElementById('registryModal').style.display = 'flex';
+        }
+
+        function closeRegistryModal() {
+            document.getElementById('registryModal').style.display = 'none';
+            resetFormState();
         }
 
         function populateFormForEdit(item) {
@@ -280,12 +334,13 @@
             document.getElementById('itemCode').value = item.item_code;
             document.getElementById('itemName').value = item.item_name;
             document.getElementById('itemCategory').value = item.category;
+            document.getElementById('storageFacility').value = item.storage_facility || "VVS Cold Storage and Processing Plant Corp.";
             document.getElementById('stockQuantity').value = item.stock_quantity;
             document.getElementById('unitPrice').value = item.unit_price;
 
-            document.getElementById('formTitle').textContent = "Mutate Ledger Entry Target";
-            document.getElementById('submitBtn').textContent = "Apply Structural Updates";
-            document.getElementById('cancelEditBtn').style.display = "block";
+            document.getElementById('formTitle').textContent = "Modify Registered Product Record";
+            document.getElementById('submitBtn').textContent = "Push Record Alterations";
+            document.getElementById('registryModal').style.display = 'flex';
         }
 
         function resetFormState() {
@@ -293,18 +348,16 @@
             document.getElementById('inventoryForm').reset();
             document.getElementById('formTitle').textContent = "Register New Stock Item";
             document.getElementById('submitBtn').textContent = "Save Entry Log";
-            document.getElementById('cancelEditBtn').style.display = "none";
         }
 
         async function deleteInventoryItem(id) {
-            if (!confirm("Are you sure you want to permanently delete this item?")) return;
+            if (!confirm("Are you sure you want to permanently delete this structural inventory profile?")) return;
 
             const { error } = await supabaseClient.from('inventory').delete().eq('id', id);
             if (error) showAlert(error.message, "error");
             else {
-                showAlert("Entry track dropped from data cluster.", "success");
-                if (document.getElementById('itemId').value == id) resetFormState();
-                fetchInventoryLedger();
+                showAlert("Product trace deleted from master files.", "success");
+                fetchMasterInventoryLedger();
             }
         }
 
