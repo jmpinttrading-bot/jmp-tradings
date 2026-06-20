@@ -28,18 +28,19 @@
         .register-trigger-btn:hover { opacity: 0.9; }
 
         /* Logistics Routing Matrix Cards Grid */
-        .logistics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 30px; }
-        .logistics-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; }
+        .logistics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .logistics-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; gap: 15px; }
         .logistics-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
         
+        /* Flex Alignment Housing row grouping Identity details side-by-side */
+        .facility-identity-header { display: flex; align-items: center; gap: 15px; width: 100%; }
+        
         /* Stylized Container Frame Housing for Logos */
-        .facility-logo-container { width: 100%; height: 75px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 12px; overflow: hidden; }
-        .facility-logo-container img { height: 100%; max-width: 100%; object-fit: contain; border-radius: 4px; }
-        /* High-contrast container layer for layouts that thrive on dark mode backgrounds */
-        .facility-logo-container.dark-bg { background-color: #0f172a; padding: 8px; border-radius: 6px; justify-content: center; }
+        .facility-logo-container { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; overflow: hidden; shrink: 0; }
+        .facility-logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 4px; }
 
-        .logistics-card h4 { font-size: 0.95rem; color: #0f172a; margin-bottom: 12px; line-height: 1.4; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
-        .logistics-route-btn { background: #1e293b; color: white; border: none; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; margin-top: 5px; }
+        .logistics-card h4 { font-size: 0.95rem; color: #0f172a; line-height: 1.4; font-weight: 600; flex: 1; margin: 0; }
+        .logistics-route-btn { background: #1e293b; color: white; border: none; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
         .logistics-route-btn:hover { background: #ee964b; color: #0f172a; }
 
         .card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
@@ -104,34 +105,42 @@
         <div class="logistics-grid">
             
             <div class="logistics-card">
-                <div class="facility-logo-container">
-                    <img src="1000017477.png" alt="VVS Logo">
+                <div class="facility-identity-header">
+                    <div class="facility-logo-container">
+                        <img src="1000017477.png" alt="VVS Logo">
+                    </div>
+                    <h4>VVS Cold Storage & Processing Plant Corp.</h4>
                 </div>
-                <h4>VVS Cold Storage & Processing Plant Corp.</h4>
                 <a href="vvs-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             
             <div class="logistics-card">
-                <div class="facility-logo-container">
-                    <img src="1000017474.png" alt="Hightower Logo">
+                <div class="facility-identity-header">
+                    <div class="facility-logo-container">
+                        <img src="1000017474.png" alt="Hightower Logo">
+                    </div>
+                    <h4>Hightower Storage & Trading Centre, Inc.</h4>
                 </div>
-                <h4>Hightower Storage & Trading Centre, Inc.</h4>
                 <a href="hightower-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             
             <div class="logistics-card">
-                <div class="facility-logo-container">
-                    <img src="1000017475.png" alt="Eisberg Logo">
+                <div class="facility-identity-header">
+                    <div class="facility-logo-container">
+                        <img src="1000017475.png" alt="Eisberg Logo">
+                    </div>
+                    <h4>Eisberg Cold Logistics Inc.</h4>
                 </div>
-                <h4>Eisberg Cold Logistics Inc.</h4>
                 <a href="eisberg-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             
             <div class="logistics-card">
-                <div class="facility-logo-container">
-                    <img src="1000017476.png" alt="Crystal Logo">
+                <div class="facility-identity-header">
+                    <div class="facility-logo-container">
+                        <img src="1000017476.png" alt="Crystal Logo">
+                    </div>
+                    <h4>Crystal Cold Storage, Inc.</h4>
                 </div>
-                <h4>Crystal Cold Storage, Inc.</h4>
                 <a href="crystal-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             
