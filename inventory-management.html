@@ -18,6 +18,7 @@
         .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
         /* Layout Actions Section */
         .dashboard-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
@@ -66,24 +67,30 @@
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
         .form-submit-btn { background: #ee964b; color: #0f172a; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 0.95rem; margin-top: 10px; }
         .form-submit-btn:hover { opacity: 0.9; }
+
+        /* Restriction Info Modal Custom Layout Adjustments */
+        .restriction-body { text-align: center; padding: 10px 0; }
+        .restriction-icon { font-size: 3.5rem; color: #ef4444; margin-bottom: 15px; display: block; }
+        .restriction-btn { background-color: #1e293b; color: white; padding: 12px 25px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 20px; width: auto; min-width: 120px; }
+        .restriction-btn:hover { background-color: #0f172a; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
-        <h2>JMP Admin HQ</h2>
-        <a href="admin-dashboard.html">Profile Management</a>
-        <a href="control-panel.html">🎛️ Control Panel</a>
-        <a href="employee-201.html">📋 Employee 201 File</a>
-        <a href="import-docs.html">📄 Import Doc File Management</a>
+        <h2 id="sidebarTitle">JMP System</h2>
+        <a href="admin-dashboard.html" id="profileLink">Profile Management</a>
+        <a href="control-panel.html" id="controlPanelLink">🎛️ Control Panel</a>
+        <a href="employee-201.html" id="employeeLink">📋 Employee 201 File</a>
+        <a href="import-docs.html" id="importLink">📄 Import Doc File Management</a>
         <a href="#" class="active">📦 Inventory Management</a>
-        <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </div>
 
     <div class="main-content">
         <div class="header">
             <h1>Stock & Asset Control Matrix</h1>
-            <div class="admin-badge" id="adminEmail">Admin System</div>
+            <div class="admin-badge" id="adminEmail">Loading Context...</div>
         </div>
 
         <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
@@ -112,7 +119,7 @@
             <div class="search-container">
                 <input type="text" id="masterSearch" class="search-input" placeholder="🔍 Search stock code, name or category..." oninput="filterLedgerTable()">
             </div>
-            <button class="register-trigger-btn" onclick="openRegistryModal()">
+            <button class="register-trigger-btn" onclick="handleRegisterTrigger()">
                 <span>➕</span> Register New Product Item
             </button>
         </div>
@@ -128,12 +135,11 @@
                             <th>Category</th>
                             <th>Assigned Storage Facility</th>
                             <th>Stock (Cases)</th>
-                            <th>Unit Price</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="inventoryTableBody">
-                        <tr><td colspan="7">Polling master database recordsets...</td></tr>
+                        <tr><td colspan="6">Polling master database recordsets...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -186,6 +192,20 @@
         </div>
     </div>
 
+    <div id="restrictionModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 420px;">
+            <button class="close-modal-btn" onclick="closeRestrictionModal()">&times;</button>
+            <div class="restriction-body">
+                <span class="restriction-icon">🔒</span>
+                <h3 style="color: #0f172a; margin-bottom: 10px;">Access Permission Required</h3>
+                <p style="color: #64748b; font-size: 0.95rem; line-height: 1.5;">
+                    Your account type does not have permission to alter structural master records. Please contact your system administrator to request privileges.
+                </p>
+                <button class="restriction-btn" onclick="closeRestrictionModal()">Understood</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -194,6 +214,7 @@
         let currentAdminId = null;
         let bypassAuthListener = false;
         let masterInventoryCachedData = [];
+        let currentUserRole = "Employee"; // Default fallback track
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -208,19 +229,28 @@
             if (!user) { window.location.href = "login.html"; return; }
             
             currentAdminId = user.id;
-            document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
             
+            // Querying role from database profile relation
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-            if (!profile || profile.role !== 'Admin') {
-                window.location.href = "employee-dashboard.html";
-                return;
+            if (profile && profile.role === 'Admin') {
+                currentUserRole = "Admin";
+                document.getElementById('adminEmail').className = "admin-badge";
+                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
+                document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
+            } else {
+                currentUserRole = "Employee";
+                document.getElementById('adminEmail').className = "employee-badge";
+                document.getElementById('adminEmail').textContent = `👤 Staff: ${user.email.split('@')[0]}`;
+                document.getElementById('sidebarTitle').textContent = "JMP Terminal";
+                
+                // Readjust sidebar visibility constraints for staff profiles if necessary
+                if(document.getElementById('controlPanelLink')) document.getElementById('controlPanelLink').style.display = 'none';
             }
             
             fetchMasterInventoryLedger();
             setupSessionCrossCheckListener();
         }
 
-        // Fetch Complete Rows Across All Cold Storage Sites
         async function fetchMasterInventoryLedger() {
             const { data, error } = await supabaseClient
                 .from('inventory')
@@ -239,7 +269,7 @@
         function renderTableRecords(itemsList) {
             const tbody = document.getElementById('inventoryTableBody');
             if (itemsList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b;">No matching inventory master entries found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b;">No matching inventory master entries found.</td></tr>`;
                 return;
             }
 
@@ -248,7 +278,6 @@
                 const stockStatusClass = item.stock_quantity <= 5 ? 'low-stock' : 'in-stock';
                 const stockStatusLabel = item.stock_quantity <= 5 ? 'Low' : 'Healthy';
                 
-                // Truncate text for UI visibility clean layout
                 let shortFacilityName = item.storage_facility ? item.storage_facility.split(' ')[0] + " Cold Storage" : "Unassigned";
 
                 const row = `<tr>
@@ -260,17 +289,15 @@
                         <strong>${item.stock_quantity}</strong> 
                         <span class="badge ${stockStatusClass}" style="margin-left: 5px;">${stockStatusLabel}</span>
                     </td>
-                    <td>$${parseFloat(item.unit_price).toFixed(2)}</td>
                     <td>
-                        <button class="action-icon-btn edit" onclick="populateFormForEdit(${JSON.stringify(item).replace(/"/g, '&quot;')})" title="Modify Item">📝</button>
-                        <button class="action-icon-btn delete" onclick="deleteInventoryItem(${item.id})" title="Purge Record">❌</button>
+                        <button class="action-icon-btn edit" onclick='handleEditTrigger(${JSON.stringify(item).replace(/'/g, "&#39;")})' title="Modify Item">📝</button>
+                        <button class="action-icon-btn delete" onclick="handleDeleteTrigger(${item.id})" title="Purge Record">❌</button>
                     </td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
         }
 
-        // Live Real-time Client-side Filtering Core Loop
         function filterLedgerTable() {
             const searchQuery = document.getElementById('masterSearch').value.toLowerCase().trim();
             if (!searchQuery) {
@@ -287,8 +314,40 @@
             renderTableRecords(filtered);
         }
 
+        // Authentication Gate Checking Loop Pre-triggers
+        function checkAccessPermission() {
+            if (currentUserRole !== "Admin") {
+                document.getElementById('restrictionModal').style.display = 'flex';
+                return false;
+            }
+            return true;
+        }
+
+        function handleRegisterTrigger() {
+            if (checkAccessPermission()) {
+                openRegistryModal();
+            }
+        }
+
+        function handleEditTrigger(item) {
+            if (checkAccessPermission()) {
+                populateFormForEdit(item);
+            }
+        }
+
+        function handleDeleteTrigger(id) {
+            if (checkAccessPermission()) {
+                deleteInventoryItem(id);
+            }
+        }
+
+        function closeRestrictionModal() {
+            document.getElementById('restrictionModal').style.display = 'none';
+        }
+
         async function handleFormSubmit(e) {
             e.preventDefault();
+            if (!checkAccessPermission()) return;
             
             const id = document.getElementById('itemId').value;
             const item_code = document.getElementById('itemCode').value.trim();
@@ -318,7 +377,6 @@
             fetchMasterInventoryLedger();
         }
 
-        // Modal Component State Machine Operations
         function openRegistryModal() {
             resetFormState();
             document.getElementById('registryModal').style.display = 'flex';
