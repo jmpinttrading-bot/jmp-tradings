@@ -15,7 +15,7 @@
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        .main-content { flex: 1; padding: 40px; min-width: 0; }
+        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
@@ -38,16 +38,27 @@
         .control-block h3 { margin-bottom: 5px; color: #0f172a; font-size: 1.25rem; }
         .control-block p { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5; }
         
-        .log-table-wrapper { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .log-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .log-table th, .log-table td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; vertical-align: middle; white-space: nowrap; }
-        .log-table th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
+        /* New Vertical Layout Cards Architecture */
+        .user-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px; }
+        .user-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; }
+        .user-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+        
+        .user-card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
+        .user-card-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
         
         .employee-badge { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; }
         .admin-pill-badge { background: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; }
 
+        .permission-vertical-list { display: flex; flex-direction: column; gap: 12px; }
+        .permission-item { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #f1f5f9; }
+        .permission-label { font-size: 0.85rem; color: #475569; font-weight: 600; }
+
         /* Clean Switch Toggle Input Elements */
-        .toggle-switch-container { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #475569; }
+        .toggle-switch-container { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; }
+        .toggle-switch-container span.allowed { color: #16a34a; }
+        .toggle-switch-container span.restricted { color: #94a3b8; }
+        .toggle-switch-container span.locked { color: #b45309; font-style: italic; }
+        
         .switch-input-element { position: relative; display: inline-block; width: 40px; height: 22px; shrink: 0; }
         .switch-input-element input { opacity: 0; width: 0; height: 0; }
         .slider-rail { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
@@ -94,24 +105,10 @@
             <h3>User Access Account</h3>
             <p>Control routing permission parameters for employee workspace dashboard environments. Modifications sync instantly to user data records.</p>
             
-            <div class="log-table-wrapper">
-                <table class="log-table">
-                    <thead>
-                        <tr>
-                            <th>User Identity Username</th>
-                            <th>Assigned Role</th>
-                            <th>Profile Management Access</th>
-                            <th>Import Doc Management Access</th>
-                            <th>Employee 201 File Access</th>
-                            <th>Inventory Master Action Access</th>
-                        </tr>
-                    </thead>
-                    <tbody id="accessManagementTableBody">
-                        <tr>
-                            <td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">Loading profile matrices from secure segment...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="user-cards-grid" id="accessManagementCardsContainer">
+                <div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 40px;">
+                    Loading profile matrices from secure segment...
+                </div>
             </div>
         </div>
     </div>
@@ -150,17 +147,16 @@
                 .select('id, username, role, profile_access, import_access, employee_201_access, inventory_access')
                 .order('role', { ascending: true });
 
-            const tbody = document.getElementById('accessManagementTableBody');
+            const container = document.getElementById('accessManagementCardsContainer');
             if (error || !profiles || profiles.length === 0) {
                 console.error("Supabase Query Error Context:", error);
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 20px;">Failed to gather structural user profile matrices.</td></tr>`;
+                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 20px;">Failed to gather structural user profile matrices.</div>`;
                 return;
             }
 
-            tbody.innerHTML = "";
+            container.innerHTML = "";
 
             profiles.forEach(profile => {
-                const tr = document.createElement('tr');
                 const displayName = profile.username || 'Unidentified Node';
                 const roleBadge = profile.role === 'Admin' ? `<span class="admin-pill-badge">Admin</span>` : `<span class="employee-badge">Employee</span>`;
                 
@@ -169,47 +165,61 @@
                 const isEmployee201Allowed = profile.employee_201_access !== false; 
                 const isInventoryAllowed = profile.inventory_access !== false;
 
-                tr.innerHTML = `
-                    <td><strong>${displayName}</strong></td>
-                    <td>${roleBadge}</td>
-                    <td>
-                        <div class="toggle-switch-container">
-                            <label class="switch-input-element">
-                                <input type="checkbox" ${isProfileAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'profile_access', this.checked)">
-                                <span class="slider-rail"></span>
-                            </label>
-                            <span>${profile.role === 'Admin' ? 'Locked (ON)' : (isProfileAllowed ? 'Allowed' : 'Restricted')}</span>
+                const card = document.createElement('div');
+                card.className = "user-card";
+
+                card.innerHTML = `
+                    <div class="user-card-header">
+                        <div class="user-card-title" title="${displayName}">${displayName}</div>
+                        ${roleBadge}
+                    </div>
+                    <div class="permission-vertical-list">
+                        <div class="permission-item">
+                            <span class="permission-label">Profile Management</span>
+                            <div class="toggle-switch-container">
+                                <label class="switch-input-element">
+                                    <input type="checkbox" ${isProfileAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'profile_access', this.checked)">
+                                    <span class="slider-rail"></span>
+                                </label>
+                                ${profile.role === 'Admin' ? '<span class="locked">Locked (ON)</span>' : (isProfileAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                            </div>
                         </div>
-                    </td>
-                    <td>
-                        <div class="toggle-switch-container">
-                            <label class="switch-input-element">
-                                <input type="checkbox" ${isImportAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'import_access', this.checked)">
-                                <span class="slider-rail"></span>
-                            </label>
-                            <span>${profile.role === 'Admin' ? 'Locked (ON)' : (isImportAllowed ? 'Allowed' : 'Restricted')}</span>
+
+                        <div class="permission-item">
+                            <span class="permission-label">Import Doc Management</span>
+                            <div class="toggle-switch-container">
+                                <label class="switch-input-element">
+                                    <input type="checkbox" ${isImportAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'import_access', this.checked)">
+                                    <span class="slider-rail"></span>
+                                </label>
+                                ${profile.role === 'Admin' ? '<span class="locked">Locked (ON)</span>' : (isImportAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                            </div>
                         </div>
-                    </td>
-                    <td>
-                        <div class="toggle-switch-container">
-                            <label class="switch-input-element">
-                                <input type="checkbox" ${isEmployee201Allowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'employee_201_access', this.checked)">
-                                <span class="slider-rail"></span>
-                            </label>
-                            <span>${profile.role === 'Admin' ? 'Locked (ON)' : (isEmployee201Allowed ? 'Allowed' : 'Restricted')}</span>
+
+                        <div class="permission-item">
+                            <span class="permission-label">Employee 201 File</span>
+                            <div class="toggle-switch-container">
+                                <label class="switch-input-element">
+                                    <input type="checkbox" ${isEmployee201Allowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'employee_201_access', this.checked)">
+                                    <span class="slider-rail"></span>
+                                </label>
+                                ${profile.role === 'Admin' ? '<span class="locked">Locked (ON)</span>' : (isEmployee201Allowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                            </div>
                         </div>
-                    </td>
-                    <td>
-                        <div class="toggle-switch-container">
-                            <label class="switch-input-element">
-                                <input type="checkbox" ${isInventoryAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inventory_access', this.checked)">
-                                <span class="slider-rail"></span>
-                            </label>
-                            <span>${profile.role === 'Admin' ? 'Locked (ON)' : (isInventoryAllowed ? 'Allowed' : 'Restricted')}</span>
+
+                        <div class="permission-item">
+                            <span class="permission-label">Inventory Master Action</span>
+                            <div class="toggle-switch-container">
+                                <label class="switch-input-element">
+                                    <input type="checkbox" ${isInventoryAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inventory_access', this.checked)">
+                                    <span class="slider-rail"></span>
+                                </label>
+                                ${profile.role === 'Admin' ? '<span class="locked">Locked (ON)</span>' : (isInventoryAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                            </div>
                         </div>
-                    </td>
+                    </div>
                 `;
-                tbody.appendChild(tr);
+                container.appendChild(card);
             });
         }
 
