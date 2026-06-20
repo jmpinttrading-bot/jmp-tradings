@@ -68,6 +68,7 @@
         <a href="admin-dashboard.html">Profile Management</a>
         <a href="#" class="active">🎛️ Control Panel</a>
         <a href="import-docs.html">📄 Import Doc File Management</a>
+        <a href="employee-201.html">📂 Employee 201 File</a>
         <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
     </div>
 
@@ -139,7 +140,7 @@
         }
 
         async function fetchPlatformUserProfiles() {
-            // Updated query payload string parameters to select the new 201 file column target
+            // Selected 'employee_201_access' alongside profile properties to ensure permissions work smoothly
             const { data: profiles, error } = await supabaseClient
                 .from('profiles')
                 .select('id, username, role, profile_access, import_access, employee_201_access')
