@@ -3,164 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VVS Logistics Hub</title>
+    <title>VVS Logistics Ledger - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
         
-        /* Horizontal Header Navigation Bar Layout */
-        .top-navbar { background-color: #0f172a; color: white; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .nav-branding-zone { display: flex; align-items: center; gap: 24px; }
-        .top-navbar h2 { font-size: 1.15rem; color: #ee964b; font-weight: 700; white-space: nowrap; }
+        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
+        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
+        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        .return-link { color: #f8fafc; text-decoration: none; font-weight: 600; font-size: 0.9rem; background-color: #1e293b; padding: 8px 16px; border-radius: 6px; border-left: 3px solid #ee964b; transition: 0.2s; }
-        .return-link:hover { background-color: #334155; }
-        
-        .nav-links-cluster { display: flex; align-items: center; gap: 8px; height: 100%; }
-        .nav-links-cluster a { color: #94a3b8; text-decoration: none; padding: 0 16px; height: 70px; display: flex; align-items: center; font-size: 0.9rem; font-weight: 500; transition: 0.2s; border-bottom: 3px solid transparent; }
-        .nav-links-cluster a:hover { color: white; background-color: #1e293b; }
-        .nav-links-cluster a.active { color: white; background-color: #1e293b; border-bottom-color: #ee964b; font-weight: 600; }
-        
-        /* Core Viewport Container Panels */
-        .main-content { flex: 1; padding: 40px; max-width: 1600px; width: 100%; margin: 0 auto; min-width: 0; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .facility-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; border: 1px solid #bae6fd; }
+        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
-        /* Dashboard Overview Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .stat-card h4 { font-size: 0.85rem; text-transform: uppercase; color: #64748b; margin-bottom: 8px; }
-        .stat-card p { font-size: 1.75rem; font-weight: 700; color: #0f172a; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-weight: 600; font-size: 0.9rem; margin-bottom: 20px; }
+        .back-link:hover { color: #ee964b; }
 
-        /* Logistics Action Forms Panels */
-        .transaction-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
-        @media (max-width: 900px) { .transaction-zone { grid-template-columns: 1fr; } }
-        .action-panel { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .action-panel h3 { margin-bottom: 15px; color: #0f172a; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
+        /* Two-Column Layout */
+        .workspace-grid { display: grid; grid-template-columns: 420px 1fr; gap: 30px; align-items: start; }
         
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; outline: none; }
-        .form-group input:focus, .form-group select:focus { border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238, 150, 75, 0.15); }
+        .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
         
-        .submit-btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: background-color 0.2s; }
-        .btn-inbound { background-color: #16a34a; }
-        .btn-inbound:hover { background-color: #15803d; }
-        .btn-outbound { background-color: #ea580c; }
-        .btn-outbound:hover { background-color: #c2410c; }
+        /* Retained Static Containers for Layout Requirements */
+        .logistics-action-wrapper { display: flex; flex-direction: column; gap: 20px; }
+        .action-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: border-color 0.2s; }
+        .action-box:hover { border-color: #cbd5e1; }
+        .action-box h4 { font-size: 1rem; color: #0f172a; margin-bottom: 6px; font-weight: 600; }
+        .action-box p { font-size: 0.85rem; color: #64748b; margin-bottom: 16px; line-height: 1.4; }
 
-        /* Data Logging Segment Tables */
-        .log-block { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .log-block h3 { margin-bottom: 15px; color: #0f172a; font-size: 1.1rem; }
+        /* Action Form Elements */
+        .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
         
-        .table-wrapper { width: 100%; overflow-x: auto; border-radius: 6px; border: 1px solid #e2e8f0; }
-        .log-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .log-table th, .log-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.88rem; }
-        .log-table th { background-color: #f8fafc; color: #64748b; font-weight: 600; text-transform: uppercase; font-size: 0.78rem; }
+        /* Modal Action Button Layouts */
+        .btn-trigger { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: background 0.2s; display: block; text-align: center; }
+        .btn-trigger.inbound { background: #16a34a; color: white; }
+        .btn-trigger.inbound:hover { background: #15803d; }
+        .btn-trigger.outbound { background: #dc2626; color: white; }
+        .btn-trigger.outbound:hover { background: #b91c1c; }
         
-        .badge { padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; }
-        .badge-inbound { background: #dcfce7; color: #15803d; }
-        .badge-outbound { background: #ffedd5; color: #c2410c; }
+        .btn-modal-submit { background: #ee964b; color: #0f172a; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; flex: 1; }
+        .btn-modal-submit:hover { background: #e0853c; }
+        .btn-modal-cancel { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .btn-modal-cancel:hover { background: #b8c5d6; }
+
+        /* Modal Overlay Configuration */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-window { background: white; border-radius: 12px; width: 460px; max-width: 95%; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); transform: translateY(-15px); transition: transform 0.2s ease; }
+        .modal-overlay.active .modal-window { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .modal-header h3 { font-size: 1.15rem; color: #0f172a; }
+        .modal-close { background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; line-height: 1; }
+        .modal-close:hover { color: #475569; }
+
+        /* Ledger Table Design */
+        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+        .master-table tr:hover td { background-color: #f8fafc; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; }
+        .badge.inbound { background: #d1fae5; color: #065f46; }
+        .badge.outbound { background: #fee2e2; color: #991b1b; }
+
+        .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
+        .alert.success { background: #d1fae5; color: #065f46; }
+        .alert.error { background: #fee2e2; color: #991b1b; }
+
+        .lock-overlay { display: none; text-align: center; padding: 40px 20px; }
+        .lock-icon { font-size: 3.5rem; color: #ef4444; margin-bottom: 15px; display: block; }
+
+        @media (max-width: 1100px) {
+            .workspace-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
-    <nav class="top-navbar">
-        <div class="nav-branding-zone">
-            <h2>JMP Logistics HQ</h2>
-            <a href="inventory-management.html" class="return-link">📦 ⬅ Back to Inventory</a>
-        </div>
-        
-        <div class="nav-links-cluster">
-            <a href="#" class="active">🏢 VVS Logistics</a>
-            <a href="hightower-logistics.html">🏢 Hightower Logistics</a>
-            <a href="eisberg-logistics.html">🏢 Eisberg Logistics</a>
-            <a href="crystal-logistics.html">🏢 Crystal Logistics</a>
-        </div>
-    </nav>
+    <div class="sidebar">
+        <h2 id="sidebarTitle">JMP System</h2>
+        <a href="admin-dashboard.html" id="profileLink">Profile Management</a>
+        <a href="control-panel.html" id="controlPanelLink">🎛️ Control Panel</a>
+        <a href="employee-201.html" id="employeeLink">📋 Employee 201 File</a>
+        <a href="import-docs.html" id="importLink">📄 Import Doc File Management</a>
+        <a href="inventory-management.html" class="active">📦 Inventory Management</a>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
 
     <div class="main-content">
         <div class="header">
-            <h1>VVS Logistics Operations Center</h1>
-            <div class="facility-badge">Primary Hub Node: VVS</div>
+            <h1>VVS Logistics Node</h1>
+            <div class="admin-badge" id="adminEmail">Loading Context...</div>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <h4>Inbound Operations (Total)</h4>
-                <p id="totalInboundCount">0</p>
-            </div>
-            <div class="stat-card">
-                <h4>Outbound Despatches (Total)</h4>
-                <p id="totalOutboundCount">0</p>
-            </div>
-            <div class="stat-card">
-                <h4>Velocity Volumetric Sum</h4>
-                <p id="netFlowIndicator">0</p>
-            </div>
+        <a href="inventory-management.html" class="back-link">⬅️ Back to Stock Dashboard</a>
+        
+        <div id="alertBox" class="alert"></div>
+
+        <div id="permissionBlock" class="card-panel lock-overlay">
+            <span class="lock-icon">🔒</span>
+            <h3 style="border:none; margin:0 0 10px 0;">Access Privileges Required</h3>
+            <p style="color:#64748b; font-size:0.95rem; max-width:500px; margin:0 auto;">
+                Your account type tier does not hold permission configurations to commit logistics ledger actions for this plant.
+            </p>
         </div>
 
-        <div class="transaction-zone">
-            <div class="action-panel">
-                <h3>📥 Process Inbound Consignment</h3>
-                <form id="inboundForm" onsubmit="handleTransaction(event, 'Inbound')">
-                    <div class="form-group">
-                        <label>Item / SKU Identifier</label>
-                        <input type="text" id="inboundItemName" placeholder="e.g. Copper Foil Roll B" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Quantity Unit Metric</label>
-                        <input type="number" id="inboundQuantity" min="1" placeholder="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Manifest Reference Bill Number</label>
-                        <input type="text" id="inboundRef" placeholder="e.g. MAN-VVS-9981" required>
-                    </div>
-                    <button type="submit" class="submit-btn btn-inbound">Commit Inbound Stock Entry</button>
-                </form>
+        <div class="workspace-grid" id="mainWorkspace" style="display: none;">
+            
+            <div class="logistics-action-wrapper">
+                
+                <div class="card-panel action-box">
+                    <h4>Process Inbound Consignment</h4>
+                    <p>Log incoming shipment arrivals, register lot items, and safely update physical balance counts for the VVS vault storage.</p>
+                    <button class="btn-trigger inbound" onclick="openLogisticsModal('inboundModal')">📥 Open Inbound Form</button>
+                </div>
+
+                <div class="card-panel action-box">
+                    <h4>Process Outbound Despatch</h4>
+                    <p>Authorize asset stock drawdowns, record delivery destinations, and write verification receipts out of the facility bounds.</p>
+                    <button class="btn-trigger outbound" onclick="openLogisticsModal('outboundModal')">📤 Open Outbound Form</button>
+                </div>
+
             </div>
 
-            <div class="action-panel">
-                <h3>📤 Process Outbound Despatch</h3>
-                <form id="outboundForm" onsubmit="handleTransaction(event, 'Outbound')">
-                    <div class="form-group">
-                        <label>Item / SKU Identifier</label>
-                        <input type="text" id="outboundItemName" placeholder="e.g. Completed Assembly V2" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Quantity Unit Metric</label>
-                        <input type="number" id="outboundQuantity" min="1" placeholder="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Manifest Reference Bill Number</label>
-                        <input type="text" id="outboundRef" placeholder="e.g. SHIP-VVS-1042" required>
-                    </div>
-                    <button type="submit" class="submit-btn btn-outbound">Authorize Outbound Release</button>
-                </form>
+            <div class="card-panel" style="padding: 20px 0px;">
+                <h3 style="margin-left: 25px; margin-right: 25px;">VVS Plant Transaction Logs</h3>
+                <div class="table-responsive">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Product Code</th>
+                                <th>Movement Type</th>
+                                <th>Quantity (Cases)</th>
+                                <th>Operator</th>
+                                <th>Reference Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logisticsTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing facility transfers...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
         </div>
+    </div>
 
-        <div class="log-block">
-            <h3>Unified VVS Ledger Operations Log</h3>
-            <div class="table-wrapper">
-                <table class="log-table">
-                    <thead>
-                        <tr>
-                            <th>Execution Date/Time</th>
-                            <th>Transaction Context</th>
-                            <th>Item Definition</th>
-                            <th>Quantity Metric</th>
-                            <th>Manifest Ref Code</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ledgerTableBody">
-                        <tr>
-                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">Fetching asset ledger history from storage layer...</td>
-                        </tr>
-                    </tbody>
-                </table>
+    <div id="inboundModal" class="modal-overlay" onclick="closeOutsideModal(event, 'inboundModal')">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3>📥 Process Inbound Entry</h3>
+                <button class="modal-close" onclick="closeLogisticsModal('inboundModal')">&times;</button>
             </div>
+            <form id="inboundForm" onsubmit="submitTransaction(event, 'Inbound')">
+                <div class="form-group">
+                    <label>Select Registered Item</label>
+                    <select id="inboundItemSelect" required>
+                        </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantity to Receive (Cases)</label>
+                    <input type="number" id="inboundQty" required min="1" placeholder="e.g., 150">
+                </div>
+                <div class="form-group">
+                    <label>Reference Code / Waybill</label>
+                    <input type="text" id="inboundRef" required placeholder="e.g., WR-99210">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-modal-submit">Commit to Vault Balance</button>
+                    <button type="button" class="btn-modal-cancel" onclick="closeLogisticsModal('inboundModal')">Dismiss</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="outboundModal" class="modal-overlay" onclick="closeOutsideModal(event, 'outboundModal')">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3>📤 Process Outbound Release</h3>
+                <button class="modal-close" onclick="closeLogisticsModal('outboundModal')">&times;</button>
+            </div>
+            <form id="outboundForm" onsubmit="submitTransaction(event, 'Outbound')">
+                <div class="form-group">
+                    <label>Select Registered Item</label>
+                    <select id="outboundItemSelect" required>
+                        </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantity to Dispatch (Cases)</label>
+                    <input type="number" id="outboundQty" required min="1" placeholder="e.g., 45">
+                </div>
+                <div class="form-group">
+                    <label>Destination / Order Reference</label>
+                    <input type="text" id="outboundRef" required placeholder="e.g., SO-44021">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-modal-submit" style="background:#dc2626; color:white;">Authorize Gate Release</button>
+                    <button type="button" class="btn-modal-cancel" onclick="closeLogisticsModal('outboundModal')">Dismiss</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -168,106 +221,186 @@
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentAdminId = null;
+        let bypassAuthListener = false;
+        let activeOperatorEmail = "";
+        const FACILITY_TARGET = "VVS Cold Storage and Processing Plant Corp.";
 
-        const FACILITY_SCOPE = "VVS Logistics";
+        function showAlert(msg, type) {
+            const box = document.getElementById('alertBox');
+            box.textContent = msg;
+            box.className = `alert ${type}`;
+            box.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => { box.style.display = 'none'; }, 4000);
+        }
 
-        async function initLogisticsHub() {
+        /* Modal Visibility Methods */
+        function openLogisticsModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeLogisticsModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            if(modalId === 'inboundModal') document.getElementById('inboundForm').reset();
+            if(modalId === 'outboundModal') document.getElementById('outboundForm').reset();
+        }
+
+        function closeOutsideModal(e, modalId) {
+            if (e.target.id === modalId) closeLogisticsModal(modalId);
+        }
+
+        async function initRegistryDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
+            currentAdminId = user.id;
+            activeOperatorEmail = user.email.split('@')[0];
+            
+            // Check cross-reference permissions
             const { data: profile } = await supabaseClient.from('profiles').select('role, inventory_access').eq('id', user.id).single();
-            if (!profile || (profile.role !== 'Admin' && profile.inventory_access === false)) {
-                alert("Security Clearance Exception: Access to inventory modules is currently restricted.");
-                window.location.href = "employee-dashboard.html";
+            if (profile && (profile.role === 'Admin' || profile.inventory_access !== false)) {
+                document.getElementById('adminEmail').className = profile.role === 'Admin' ? "admin-badge" : "employee-badge";
+                document.getElementById('adminEmail').textContent = `${profile.role === 'Admin' ? '⚙️ Admin' : '👤 Staff'}: ${activeOperatorEmail}`;
+                document.getElementById('sidebarTitle').textContent = profile.role === 'Admin' ? "JMP Admin HQ" : "JMP Terminal";
+                document.getElementById('mainWorkspace').style.display = "grid";
+                
+                fetchDropdownOptions();
+                fetchTransactionLogDataset();
+            } else {
+                document.getElementById('permissionBlock').style.display = "block";
+            }
+            setupSessionCrossCheckListener();
+        }
+
+        /* Fetch only items configured to VVS facility storage target profiles */
+        async function fetchDropdownOptions() {
+            const { data, error } = await supabaseClient
+                .from('inventory')
+                .select('id, item_code, item_name')
+                .eq('storage_facility', FACILITY_TARGET);
+
+            if (error) return;
+
+            const inSel = document.getElementById('inboundItemSelect');
+            const outSel = document.getElementById('outboundItemSelect');
+            
+            if(!data || data.length === 0) {
+                const blankOpt = `<option value="">No items registered under VVS facility</option>`;
+                inSel.innerHTML = blankOpt; outSel.innerHTML = blankOpt;
                 return;
             }
 
-            fetchFacilityLedger();
+            const markup = data.map(i => `<option value="${i.id}" data-code="${i.item_code}">${i.item_code} - ${i.item_name}</option>`).join('');
+            inSel.innerHTML = markup;
+            outSel.innerHTML = markup;
         }
 
-        async function fetchFacilityLedger() {
-            const { data: transactions, error } = await supabaseClient
-                .from('transactions')
+        async function fetchTransactionLogDataset() {
+            // Assumes structural transaction log tables exist named 'inventory_transactions'
+            const { data, error } = await supabaseClient
+                .from('inventory_transactions')
                 .select('*')
-                .eq('facility', FACILITY_SCOPE)
+                .eq('facility', FACILITY_TARGET)
                 .order('created_at', { ascending: false });
 
-            const tbody = document.getElementById('ledgerTableBody');
-            if (error) {
-                console.error("Ledger Query Failure Context:", error.message);
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 20px;">Error syncing data matrices.</td></tr>`;
+            const tbody = document.getElementById('logisticsTableBody');
+            if (error || !data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#94a3b8;">No physical transfers recorded for VVS Plant yet.</td></tr>`;
                 return;
             }
 
-            if (!transactions || transactions.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">No operational transactions cataloged at this hub node.</td></tr>`;
-                updateMetrics(0, 0);
+            tbody.innerHTML = data.map(log => `
+                <tr>
+                    <td style="color:#64748b;">${new Date(log.created_at).toLocaleString()}</td>
+                    <td style="font-weight:700; color:#0f172a;">${log.item_code}</td>
+                    <td><span class="badge ${log.type.toLowerCase()}">${log.type}</span></td>
+                    <td style="font-weight:700;">${log.quantity}</td>
+                    <td>${log.operator}</td>
+                    <td style="font-style:italic; color:#475569;">${log.reference || '—'}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function submitTransaction(e, movementType) {
+            e.preventDefault();
+            const prefix = movementType.toLowerCase();
+            const selectEl = document.getElementById(`${prefix}ItemSelect`);
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            
+            if(!selectEl.value) { showAlert("Invalid item transaction target.", "error"); return; }
+
+            const itemId = selectEl.value;
+            const itemCode = selectedOption.getAttribute('data-code');
+            const rawQty = parseInt(document.getElementById(`${prefix}Qty`).value);
+            const reference = document.getElementById(`${prefix}Ref`).value.trim();
+
+            // 1. Double check actual quantities currently inside main table index
+            const { data: currentItem, error: fetchErr } = await supabaseClient.from('inventory').select('stock_quantity').eq('id', itemId).single();
+            if (fetchErr) { showAlert("Failed to resolve asset balance metadata.", "error"); return; }
+
+            let currentBalance = parseInt(currentItem.stock_quantity) || 0;
+            let finalCalculatedBalance = movementType === 'Inbound' ? currentBalance + rawQty : currentBalance - rawQty;
+
+            if (finalCalculatedBalance < 0) {
+                showAlert(`Transaction rejected. Insufficient warehouse stock (Available: ${currentBalance} cases).`, "error");
                 return;
             }
 
-            tbody.innerHTML = "";
-            let inboundTotal = 0;
-            let outboundTotal = 0;
+            // 2. Perform safe balancing updates to main database records
+            const { error: balanceUpdateError } = await supabaseClient
+                .from('inventory')
+                .update({ stock_quantity: finalCalculatedBalance })
+                .eq('id', itemId);
 
-            transactions.forEach(tx => {
-                const tr = document.createElement('tr');
-                const badgeClass = tx.type === 'Inbound' ? 'badge-inbound' : 'badge-outbound';
-                const formattedDate = new Date(tx.created_at).toLocaleString();
+            if (balanceUpdateError) {
+                showAlert("Inventory stock level synchronization failed: " + balanceUpdateError.message, "error");
+                return;
+            }
 
-                if (tx.type === 'Inbound') inboundTotal += parseInt(tx.quantity || 0);
-                if (tx.type === 'Outbound') outboundTotal += parseInt(tx.quantity || 0);
+            // 3. Append to detailed history transaction log tables
+            const { error: logAppendError } = await supabaseClient
+                .from('inventory_transactions')
+                .insert([{
+                    item_id: itemId,
+                    item_code: itemCode,
+                    type: movementType,
+                    quantity: rawQty,
+                    facility: FACILITY_TARGET,
+                    operator: activeOperatorEmail,
+                    reference: reference
+                }]);
 
-                tr.innerHTML = `
-                    <td><strong>${formattedDate}</strong></td>
-                    <td><span class="badge ${badgeClass}">${tx.type}</span></td>
-                    <td>${tx.item_name}</td>
-                    <td>${tx.quantity} units</td>
-                    <td><code>${tx.reference_no}</code></td>
-                `;
-                tbody.appendChild(tr);
+            if (logAppendError) {
+                console.error("Log tracking table failed to append record.", logAppendError);
+            }
+
+            showAlert(`Logistics ledger written successfully: Processed ${rawQty} cases (${movementType}).`, "success");
+            closeLogisticsModal(`${prefix}Modal`);
+            fetchTransactionLogDataset();
+        }
+
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (bypassAuthListener) return;
+                if (session && session.user && session.user.id !== currentAdminId) {
+                    bypassAuthListener = true; 
+                    alert("Session Conflicted. Redirecting...");
+                    await supabaseClient.auth.signOut();
+                    window.location.href = "login.html";
+                }
+                if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
             });
-
-            updateMetrics(inboundTotal, outboundTotal);
         }
 
-        function updateMetrics(inbound, outbound) {
-            document.getElementById('totalInboundCount').textContent = inbound.toLocaleString();
-            document.getElementById('totalOutboundCount').textContent = outbound.toLocaleString();
-            
-            const netFlow = inbound - outbound;
-            const netField = document.getElementById('netFlowIndicator');
-            netField.textContent = `${netFlow > 0 ? '+' : ''}${netFlow.toLocaleString()} units`;
-            netField.style.color = netFlow >= 0 ? '#16a34a' : '#dc2626';
+        async function handleLogout() {
+            bypassAuthListener = true;
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
         }
 
-        async function handleTransaction(event, txType) {
-            event.preventDefault();
-            
-            const prefix = txType.toLowerCase();
-            const itemName = document.getElementById(`${prefix}ItemName`).value.trim();
-            const quantity = parseInt(document.getElementById(`${prefix}Quantity`).value);
-            const referenceNo = document.getElementById(`${prefix}Ref`).value.trim();
-
-            const txPayload = {
-                facility: FACILITY_SCOPE,
-                type: txType,
-                item_name: itemName,
-                quantity: quantity,
-                reference_no: referenceNo,
-                status: 'Completed'
-            };
-
-            const { error } = await supabaseClient.from('transactions').insert([txPayload]);
-
-            if (error) {
-                alert("Transaction Commit Aborted: " + error.message);
-            } else {
-                document.getElementById(`${prefix}Form`).reset();
-                fetchFacilityLedger();
-            }
-        }
-
-        initLogisticsHub();
+        initRegistryDashboard();
     </script>
 </body>
 </html>
