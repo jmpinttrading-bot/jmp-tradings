@@ -28,11 +28,18 @@
         .register-trigger-btn:hover { opacity: 0.9; }
 
         /* Logistics Routing Matrix Cards Grid */
-        .logistics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .logistics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 30px; }
         .logistics-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; }
         .logistics-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
-        .logistics-card h4 { font-size: 1rem; color: #0f172a; margin-bottom: 12px; line-height: 1.4; }
-        .logistics-route-btn { background: #1e293b; color: white; border: none; border-radius: 6px; padding: 8px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; margin-top: 10px; }
+        
+        /* Stylized Container Frame Housing for Logos */
+        .facility-logo-container { width: 100%; height: 75px; display: flex; align-items: center; justify-content: flex-start; margin-bottom: 12px; overflow: hidden; }
+        .facility-logo-container img { height: 100%; max-width: 100%; object-fit: contain; border-radius: 4px; }
+        /* High-contrast container layer for layouts that thrive on dark mode backgrounds */
+        .facility-logo-container.dark-bg { background-color: #0f172a; padding: 8px; border-radius: 6px; justify-content: center; }
+
+        .logistics-card h4 { font-size: 0.95rem; color: #0f172a; margin-bottom: 12px; line-height: 1.4; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+        .logistics-route-btn { background: #1e293b; color: white; border: none; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; margin-top: 5px; }
         .logistics-route-btn:hover { background: #ee964b; color: #0f172a; }
 
         .card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
@@ -95,22 +102,39 @@
 
         <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
         <div class="logistics-grid">
+            
             <div class="logistics-card">
+                <div class="facility-logo-container">
+                    <img src="1000017477.png" alt="VVS Logo">
+                </div>
                 <h4>VVS Cold Storage & Processing Plant Corp.</h4>
                 <a href="vvs-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
+            
             <div class="logistics-card">
+                <div class="facility-logo-container">
+                    <img src="1000017474.png" alt="Hightower Logo">
+                </div>
                 <h4>Hightower Storage & Trading Centre, Inc.</h4>
                 <a href="hightower-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
+            
             <div class="logistics-card">
+                <div class="facility-logo-container">
+                    <img src="1000017475.png" alt="Eisberg Logo">
+                </div>
                 <h4>Eisberg Cold Logistics Inc.</h4>
                 <a href="eisberg-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
+            
             <div class="logistics-card">
+                <div class="facility-logo-container">
+                    <img src="1000017476.png" alt="Crystal Logo">
+                </div>
                 <h4>Crystal Cold Storage, Inc.</h4>
                 <a href="crystal-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
+            
         </div>
 
         <div id="alertBox" class="alert"></div>
@@ -214,7 +238,7 @@
         let currentAdminId = null;
         let bypassAuthListener = false;
         let masterInventoryCachedData = [];
-        let currentUserRole = "Employee"; // Default fallback track
+        let currentUserRole = "Employee"; 
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -230,7 +254,6 @@
             
             currentAdminId = user.id;
             
-            // Querying role from database profile relation
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
             if (profile && profile.role === 'Admin') {
                 currentUserRole = "Admin";
@@ -242,8 +265,6 @@
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Terminal";
-                
-                // Readjust sidebar visibility constraints for staff profiles if necessary
                 if(document.getElementById('controlPanelLink')) document.getElementById('controlPanelLink').style.display = 'none';
             }
             
@@ -314,7 +335,6 @@
             renderTableRecords(filtered);
         }
 
-        // Authentication Gate Checking Loop Pre-triggers
         function checkAccessPermission() {
             if (currentUserRole !== "Admin") {
                 document.getElementById('restrictionModal').style.display = 'flex';
@@ -323,27 +343,10 @@
             return true;
         }
 
-        function handleRegisterTrigger() {
-            if (checkAccessPermission()) {
-                openRegistryModal();
-            }
-        }
-
-        function handleEditTrigger(item) {
-            if (checkAccessPermission()) {
-                populateFormForEdit(item);
-            }
-        }
-
-        function handleDeleteTrigger(id) {
-            if (checkAccessPermission()) {
-                deleteInventoryItem(id);
-            }
-        }
-
-        function closeRestrictionModal() {
-            document.getElementById('restrictionModal').style.display = 'none';
-        }
+        function handleRegisterTrigger() { if (checkAccessPermission()) openRegistryModal(); }
+        function handleEditTrigger(item) { if (checkAccessPermission()) populateFormForEdit(item); }
+        function handleDeleteTrigger(id) { if (checkAccessPermission()) deleteInventoryItem(id); }
+        function closeRestrictionModal() { document.getElementById('restrictionModal').style.display = 'none'; }
 
         async function handleFormSubmit(e) {
             e.preventDefault();
@@ -377,15 +380,8 @@
             fetchMasterInventoryLedger();
         }
 
-        function openRegistryModal() {
-            resetFormState();
-            document.getElementById('registryModal').style.display = 'flex';
-        }
-
-        function closeRegistryModal() {
-            document.getElementById('registryModal').style.display = 'none';
-            resetFormState();
-        }
+        function openRegistryModal() { resetFormState(); document.getElementById('registryModal').style.display = 'flex'; }
+        function closeRegistryModal() { document.getElementById('registryModal').style.display = 'none'; resetFormState(); }
 
         function populateFormForEdit(item) {
             document.getElementById('itemId').value = item.id;
