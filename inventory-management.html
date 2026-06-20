@@ -28,9 +28,14 @@
         .report-title-area h3 { color: #0f172a; font-size: 1.1rem; }
         .report-title-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
         
-        .controls-selectors-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .controls-selectors-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .time-filter-select { padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; font-weight: 600; background-color: white; color: #1e293b; cursor: pointer; min-width: 150px; outline: none; }
         .time-filter-select:focus { border-color: #ee964b; }
+        
+        /* Date Inputs System Styling */
+        .date-range-container { display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1; }
+        .date-range-container label { font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .calendar-input { border: none; background: transparent; font-size: 0.85rem; font-weight: 600; color: #1e293b; outline: none; cursor: pointer; }
         
         .register-trigger-btn { background: #ee964b; color: #0f172a; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .register-trigger-btn:hover { opacity: 0.9; }
@@ -40,14 +45,10 @@
         .logistics-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; gap: 15px; }
         .logistics-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
         
-        /* Flex Alignment Housing row grouping Identity details side-by-side */
         .facility-identity-header { display: flex; align-items: center; gap: 15px; width: 100%; min-height: 65px; }
-        
-        /* Stylized Container Frame Housing for Logos */
         .facility-logo-container { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; overflow: hidden; shrink: 0; }
         .facility-logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 4px; }
 
-        /* Headings customized to warp cleanly onto rows fitting standard logo limits */
         .logistics-card h4 { font-size: 0.95rem; color: #0f172a; line-height: 1.3; font-weight: 600; flex: 1; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         .logistics-route-btn { background: #1e293b; color: white; border: none; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
         .logistics-route-btn:hover { background: #ee964b; color: #0f172a; }
@@ -75,18 +76,19 @@
         .form-submit-btn { background: #ee964b; color: #0f172a; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 0.95rem; margin-top: 10px; }
         .form-submit-btn:hover { opacity: 0.9; }
 
-        /* Restriction Info Modal Custom Layout Adjustments */
         .restriction-body { text-align: center; padding: 10px 0; }
         .restriction-icon { font-size: 3.5rem; color: #ef4444; margin-bottom: 15px; display: block; }
         .restriction-btn { background-color: #1e293b; color: white; padding: 12px 25px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 20px; width: auto; min-width: 120px; }
         .restriction-btn:hover { background-color: #0f172a; }
 
-        /* Responsive handling for smaller screens/tablets */
-        @media (max-width: 768px) {
-            .logistics-grid { grid-template-columns: 1fr; }
+        @media (max-width: 1024px) {
             .report-controls { flex-direction: column; align-items: flex-start; }
             .controls-selectors-group { width: 100%; }
-            .time-filter-select { flex: 1; }
+        }
+        @media (max-width: 768px) {
+            .logistics-grid { grid-template-columns: 1fr; }
+            .date-range-container { width: 100%; justify-content: space-between; }
+            .time-filter-select { width: 100%; }
         }
     </style>
 </head>
@@ -168,10 +170,13 @@
                         <option value="eisberg">🏬 Eisberg Logistics</option>
                         <option value="crystal">🏬 Crystal Cold Storage</option>
                     </select>
-                    <select id="timeFilterSelect" class="time-filter-select" onchange="updateAnalyticsTimelineCharts()">
-                        <option value="weekly">📅 Weekly View</option>
-                        <option value="monthly" selected>📅 Monthly View</option>
-                    </select>
+                    
+                    <div class="date-range-container">
+                        <label>From:</label>
+                        <input type="date" id="startDateInput" class="calendar-input" onchange="updateAnalyticsTimelineCharts()">
+                        <label>To:</label>
+                        <input type="date" id="endDateInput" class="calendar-input" onchange="updateAnalyticsTimelineCharts()">
+                    </div>
                 </div>
             </div>
             <button class="register-trigger-btn" onclick="handleRegisterTrigger()" style="width: 100%; max-width: 290px; justify-content: center;">
@@ -263,7 +268,6 @@
         let masterInventoryCachedData = [];
         let currentUserRole = "Employee"; 
         
-        // Single global variable reference to track active Chartjs instances
         let masterChartInstance = null;
 
         function showAlert(msg, type) {
@@ -274,7 +278,19 @@
             setTimeout(() => { box.style.display = 'none'; }, 5000);
         }
 
+        // Setup default calendar viewports (Sliding 7 days backward from today)
+        function setDefaultCalendarDates() {
+            const today = new Date();
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(today.getDate() - 6);
+
+            document.getElementById('endDateInput').value = today.toISOString().split('T')[0];
+            document.getElementById('startDateInput').value = sevenDaysAgo.toISOString().split('T')[0];
+        }
+
         async function initInventoryDashboard() {
+            setDefaultCalendarDates();
+            
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
@@ -313,11 +329,13 @@
             updateAnalyticsTimelineCharts();
         }
 
-        // Calculates selected stock sums and switches theme sets based on storage selection
         function updateAnalyticsTimelineCharts() {
             const storageKey = document.getElementById('storageFilterSelect').value;
-            const filterMode = document.getElementById('timeFilterSelect').value;
+            const startVal = document.getElementById('startDateInput').value;
+            const endVal = document.getElementById('endDateInput').value;
             
+            if (!startVal || !endVal) return;
+
             const facilities = {
                 vvs: "VVS Cold Storage and Processing Plant Corp.",
                 hightower: "Hightower Storage and Trading Centre, Inc.",
@@ -328,7 +346,6 @@
             const selectedFacilityFullName = facilities[storageKey];
             document.getElementById('chartFacilityHeaderName').textContent = selectedFacilityFullName;
 
-            // Compute current real-time stock quantity sum for selected storage facility
             const realTimeTotal = masterInventoryCachedData
                 .filter(item => item.storage_facility === selectedFacilityFullName)
                 .reduce((sum, item) => sum + (parseInt(item.stock_quantity) || 0), 0);
@@ -336,7 +353,6 @@
             const totalLabelElement = document.getElementById('masterCurrentStockTotalLabel');
             totalLabelElement.textContent = `${realTimeTotal} Cases Total`;
 
-            // Define thematic layout configurations dynamically matching selected facility color keys
             let themeColor = '#ee964b'; 
             let fillGradient = 'rgba(238, 150, 75, 0.05)';
             
@@ -346,36 +362,43 @@
             
             totalLabelElement.style.color = themeColor;
 
-            // Generate labels and historical mock trend trajectories proportional to real-time baselines
-            let timelineLabels = [];
-            let historicalTrendPoints = [];
+            // Generate timeline list array structure between chosen date ranges
+            const timelineLabels = [];
+            const historicalTrendPoints = [];
+            
+            const startDate = new Date(startVal);
+            const endDate = new Date(endVal);
+            
+            // Safety fallback if boundaries cross incorrectly
+            if (startDate > endDate) {
+                showAlert("Start date cannot be later than end date.", "error");
+                return;
+            }
 
-            if (filterMode === 'weekly') {
-                timelineLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current Week'];
-                historicalTrendPoints = [
-                    Math.round(realTimeTotal * 0.78), 
-                    Math.round(realTimeTotal * 0.92), 
-                    Math.round(realTimeTotal * 0.85), 
-                    Math.round(realTimeTotal * 0.96), 
-                    realTimeTotal
-                ];
-            } else {
-                timelineLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                historicalTrendPoints = [
-                    Math.round(realTimeTotal * 0.45), 
-                    Math.round(realTimeTotal * 0.60), 
-                    Math.round(realTimeTotal * 0.72), 
-                    Math.round(realTimeTotal * 0.85), 
-                    Math.round(realTimeTotal * 0.94), 
-                    realTimeTotal
-                ];
+            const monthsShort = ["Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
+            let loopDate = new Date(startDate);
+
+            while (loopDate <= endDate) {
+                const labelStr = `${monthsShort[loopDate.getMonth()]} ${loopDate.getDate()}`;
+                timelineLabels.push(labelStr);
+                loopDate.setDate(loopDate.getDate() + 1);
+            }
+
+            // Populate trend metrics relative to array capacity length
+            const pointsCount = timelineLabels.length;
+            for (let i = 0; i < pointsCount; i++) {
+                if (i === pointsCount - 1) {
+                    historicalTrendPoints.push(realTimeTotal);
+                } else {
+                    const scalarRatio = 0.6 + (Math.random() * 0.35); // Dynamic mock curves baseline
+                    historicalTrendPoints.push(Math.round(realTimeTotal * scalarRatio));
+                }
             }
 
             renderUnifiedMasterGraph(timelineLabels, historicalTrendPoints, themeColor, fillGradient);
         }
 
         function renderUnifiedMasterGraph(labels, dataPoints, strokeColor, fillColor) {
-            // Destroy active instance layout context to prevent flickering leaks during update routines
             if (masterChartInstance) {
                 masterChartInstance.destroy();
             }
