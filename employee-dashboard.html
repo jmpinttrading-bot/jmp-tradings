@@ -46,9 +46,11 @@
         
         /* Profile Image Container Layout */
         .profile-pic-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; }
-        .profile-pic-frame { width: 160px; height: 160px; border-radius: 50%; border: 4px solid #f4f6f9; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .profile-pic-frame { width: 160px; height: 160px; border-radius: 50%; border: 4px solid #f4f6f9; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; position: relative; }
         .profile-pic-frame img { width: 100%; height: 100%; object-fit: cover; }
         .profile-pic-frame .fallback-avatar { font-size: 5rem; color: #94a3b8; user-select: none; }
+        
+        .upload-status-text { font-size: 0.8rem; color: #64748b; margin-top: 5px; text-align: center; font-weight: 500; }
 
         .section-title { font-size: 0.85rem; font-weight: bold; color: #ee964b; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 10px 0; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9; }
         .section-title:first-of-type { margin-top: 0; }
@@ -66,10 +68,9 @@
         
         .btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
         .btn:hover { background: #133a6f; }
-        
-        .alert { padding: 10px; margin-bottom: 15px; border-radius: 6px; font-size: 0.9rem; display: none; }
-        .alert.success { background: #d1fae5; color: #065f46; }
-        .alert.error { background: #fee2e2; color: #991b1b; }
+        .btn.secondary { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; margin-top: 10px; }
+        .btn.secondary:hover { background: #cbd5e1; }
+        .btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
         /* Inline Block Banner Area when initial workspace loads locked out */
         .roadblock-panel { display: none; background: white; padding: 40px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; max-width: 600px; margin: 40px auto; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
@@ -229,6 +230,9 @@
                             <div class="profile-pic-frame" id="profilePicFrame">
                                 <span class="fallback-avatar" id="fallbackAvatar">👤</span>
                             </div>
+                            <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
+                            <button class="btn secondary" id="uploadAvatarBtn" onclick="document.getElementById('avatarFileInput').click()">Choose & Upload Photo</button>
+                            <div class="upload-status-text" id="uploadStatusText"></div>
                         </div>
                     </div>
 
@@ -250,7 +254,7 @@
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <span class="modal-alert-icon">🛑</span>
-            <h4 id="modalModuleTitle">Access Restricted</h4>
+            h4 id="modalModuleTitle">Access Restricted</h4>
             <p>You do not currently possess permission parameters to operate this system module. Please ask your administrator for permission to access.</p>
             <button class="modal-dismiss-btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
@@ -377,11 +381,79 @@
                 document.getElementById('pagibigNo').value = data.pagibig_no || '';
                 document.getElementById('philhealthNo').value = data.philhealth_no || '';
 
-                // Handle Display Logic for Profile Image / Avatar 
-                if (data.avatar_url && data.avatar_url.trim() !== '') {
-                    const frame = document.getElementById('profilePicFrame');
-                    frame.innerHTML = `<img src="${data.avatar_url}" alt="Employee Profile Picture Image">`;
-                }
+                // Render dynamic avatar URL if available
+                renderAvatarView(data.avatar_url);
+            }
+        }
+
+        function renderAvatarView(url) {
+            const frame = document.getElementById('profilePicFrame');
+            if (url && url.trim() !== '') {
+                // Append a unique query parameter to bust browser cache on updates
+                const cacheBusterUrl = `${url}?t=${new Date().getTime()}`;
+                frame.innerHTML = `<img src="${cacheBusterUrl}" alt="Employee Profile Picture Image">`;
+            } else {
+                frame.innerHTML = `<span class="fallback-avatar" id="fallbackAvatar">👤</span>`;
+            }
+        }
+
+        async function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const uploadBtn = document.getElementById('uploadAvatarBtn');
+            const statusText = document.getElementById('uploadStatusText');
+
+            // Client side validation
+            if (!file.type.startsWith('image/')) {
+                showAlert("Please select a valid image file format.", "error");
+                return;
+            }
+
+            try {
+                uploadBtn.disabled = true;
+                statusText.textContent = "Processing upload sequence...";
+
+                // Establish clean file identifier parameters
+                const fileExtension = file.name.split('.').pop();
+                const filePath = `${currentEmployeeId}/avatar-${Date.now()}.${fileExtension}`;
+
+                // 1. Upload raw payload to Supabase Avatars storage bucket
+                const { data: storageData, error: storageError } = await supabaseClient
+                    .storage
+                    .from('avatars')
+                    .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+                if (storageError) throw storageError;
+
+                // 2. Derive deterministic public retrieval URL endpoint
+                const { data: { publicUrl } } = supabaseClient
+                    .storage
+                    .from('avatars')
+                    .getPublicUrl(filePath);
+
+                statusText.textContent = "Updating dossier schema data...";
+
+                // 3. Mutate target avatar_url text field row inside employee_201_docs table
+                const { error: dbError } = await supabaseClient
+                    .from('employee_201_docs')
+                    .update({ avatar_url: publicUrl })
+                    .eq('id', currentEmployeeId);
+
+                if (dbError) throw dbError;
+
+                // Update visual frames
+                renderAvatarView(publicUrl);
+                statusText.textContent = "";
+                showAlert("Profile identification photo updated successfully!", "success");
+
+            } catch (err) {
+                console.error("Dossier identity transmission failure:", err.message);
+                statusText.textContent = "";
+                showAlert(`Upload Failed: ${err.message}`, "error");
+            } finally {
+                uploadBtn.disabled = false;
+                event.target.value = ''; // Flush input channel buffer
             }
         }
 
