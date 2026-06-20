@@ -19,13 +19,11 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
-        /* Online Roster Layout Header styling */
         .online-users-panel { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 30px; display: flex; flex-direction: column; gap: 15px; }
         .online-users-panel .roster-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
         .online-users-panel h3 { color: #0f172a; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
         .live-count-badge { background: #22c55e; color: white; border-radius: 12px; font-size: 0.75rem; padding: 3px 12px; font-weight: bold; }
         
-        /* Horizontal flow tracking row for online profiles */
         .user-presence-list { list-style: none; display: flex; flex-wrap: wrap; gap: 12px; max-height: 150px; overflow-y: auto; }
         .user-presence-item { display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 30px; font-size: 0.88rem; }
         .user-meta-info { display: flex; align-items: center; gap: 6px; }
@@ -33,13 +31,11 @@
         .user-role-lbl { font-size: 0.75rem; color: #64748b; background: #e2e8f0; padding: 2px 8px; border-radius: 10px; text-transform: capitalize; }
         .pulse-indicator-dot { height: 8px; width: 8px; background-color: #22c55e; border-radius: 50%; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); animation: pulseTrackingEffect 1.8s infinite; }
 
-        /* User Access Account Section Blocks */
         .control-block { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .control-block h3 { margin-bottom: 5px; color: #0f172a; font-size: 1.25rem; }
         .control-block p { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5; }
         
-        /* New Vertical Layout Cards Architecture */
-        .user-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px; }
+        .user-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-top: 20px; }
         .user-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; }
         .user-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
         
@@ -53,7 +49,6 @@
         .permission-item { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #f1f5f9; }
         .permission-label { font-size: 0.85rem; color: #475569; font-weight: 600; }
 
-        /* Clean Switch Toggle Input Elements */
         .toggle-switch-container { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; }
         .toggle-switch-container span.allowed { color: #16a34a; }
         .toggle-switch-container span.restricted { color: #94a3b8; }
@@ -144,7 +139,7 @@
         async function fetchPlatformUserProfiles() {
             const { data: profiles, error } = await supabaseClient
                 .from('profiles')
-                .select('id, username, role, profile_access, import_access, employee_201_access, inventory_access')
+                .select('id, username, role, profile_access, import_access, employee_201_access, inv_register_access, inv_edit_access, inv_quantity_access')
                 .order('role', { ascending: true });
 
             const container = document.getElementById('accessManagementCardsContainer');
@@ -159,11 +154,16 @@
             profiles.forEach(profile => {
                 const displayName = profile.username || 'Unidentified Node';
                 const roleBadge = profile.role === 'Admin' ? `<span class="admin-pill-badge">Admin</span>` : `<span class="employee-badge">Employee</span>`;
+                const isAdmin = profile.role === 'Admin';
                 
                 const isProfileAllowed = profile.profile_access !== false; 
                 const isImportAllowed = profile.import_access !== false; 
                 const isEmployee201Allowed = profile.employee_201_access !== false; 
-                const isInventoryAllowed = profile.inventory_access !== false;
+                
+                // New Segmented Inventory flags Evaluation
+                const isRegAllowed = profile.inv_register_access === true;
+                const isEditAllowed = profile.inv_edit_access === true;
+                const isQtyAllowed = profile.inv_quantity_access === true;
 
                 const card = document.createElement('div');
                 card.className = "user-card";
@@ -178,10 +178,10 @@
                             <span class="permission-label">Profile Management</span>
                             <div class="toggle-switch-container">
                                 <label class="switch-input-element">
-                                    <input type="checkbox" ${isProfileAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'profile_access', this.checked)">
+                                    <input type="checkbox" ${isProfileAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'profile_access', this.checked)">
                                     <span class="slider-rail"></span>
                                 </label>
-                                ${profile.role === 'Admin' ? '<span class="locked">Locked (ON)</span>' : (isProfileAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isProfileAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
                             </div>
                         </div>
 
@@ -189,10 +189,10 @@
                             <span class="permission-label">Import Doc Management</span>
                             <div class="toggle-switch-container">
                                 <label class="switch-input-element">
-                                    <input type="checkbox" ${isImportAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'import_access', this.checked)">
+                                    <input type="checkbox" ${isImportAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'import_access', this.checked)">
                                     <span class="slider-rail"></span>
                                 </label>
-                                ${profile.role === 'Admin' ? '<span class="locked">Locked (ON)</span>' : (isImportAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isImportAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
                             </div>
                         </div>
 
@@ -200,21 +200,43 @@
                             <span class="permission-label">Employee 201 File</span>
                             <div class="toggle-switch-container">
                                 <label class="switch-input-element">
-                                    <input type="checkbox" ${isEmployee201Allowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'employee_201_access', this.checked)">
+                                    <input type="checkbox" ${isEmployee201Allowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'employee_201_access', this.checked)">
                                     <span class="slider-rail"></span>
                                 </label>
-                                ${profile.role === 'Admin' ? '<span class="locked">Locked (ON)</span>' : (isEmployee201Allowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isEmployee201Allowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
                             </div>
                         </div>
 
-                        <div class="permission-item">
-                            <span class="permission-label">Inventory Master Action</span>
+                        <div class="permission-item" style="border-left: 3px solid #ee964b;">
+                            <span class="permission-label">Inventory: Register Items</span>
                             <div class="toggle-switch-container">
                                 <label class="switch-input-element">
-                                    <input type="checkbox" ${isInventoryAllowed ? 'checked' : ''} ${profile.role === 'Admin' ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inventory_access', this.checked)">
+                                    <input type="checkbox" ${isRegAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inv_register_access', this.checked)">
                                     <span class="slider-rail"></span>
                                 </label>
-                                ${profile.role === 'Admin' ? '<span class="locked">Locked (ON)</span>' : (isInventoryAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isRegAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                            </div>
+                        </div>
+
+                        <div class="permission-item" style="border-left: 3px solid #ee964b;">
+                            <span class="permission-label">Inventory: Edit Product Info</span>
+                            <div class="toggle-switch-container">
+                                <label class="switch-input-element">
+                                    <input type="checkbox" ${isEditAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inv_edit_access', this.checked)">
+                                    <span class="slider-rail"></span>
+                                </label>
+                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isEditAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                            </div>
+                        </div>
+
+                        <div class="permission-item" style="border-left: 3px solid #ee964b;">
+                            <span class="permission-label">Inventory: Adjust Quantities</span>
+                            <div class="toggle-switch-container">
+                                <label class="switch-input-element">
+                                    <input type="checkbox" ${isQtyAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inv_quantity_access', this.checked)">
+                                    <span class="slider-rail"></span>
+                                </label>
+                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isQtyAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
                             </div>
                         </div>
                     </div>
@@ -305,7 +327,7 @@
                 if (bypassAuthListener) return;
                 if (session && session.user && session.user.id !== currentAdminId) {
                     bypassAuthListener = true; 
-                    alert("Session Conflicted: Another user logged into this browser. Forcing redirect to login...");
+                    alert("Session Conflicted. Forcing redirect to login...");
                     await disconnectPresenceChannel();
                     await supabaseClient.auth.signOut();
                     window.location.href = "login.html";
