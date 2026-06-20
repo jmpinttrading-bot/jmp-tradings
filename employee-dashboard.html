@@ -40,9 +40,16 @@
         }
 
         .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; flex: 1; min-width: 0; }
-        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: fit-content; }
+        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: fit-content; margin-bottom: 30px; }
+        .card:last-of-type { margin-bottom: 0; }
         .card h3 { color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
         
+        /* Profile Image Container Layout */
+        .profile-pic-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; }
+        .profile-pic-frame { width: 160px; height: 160px; border-radius: 50%; border: 4px solid #f4f6f9; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .profile-pic-frame img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-pic-frame .fallback-avatar { font-size: 5rem; color: #94a3b8; user-select: none; }
+
         .section-title { font-size: 0.85rem; font-weight: bold; color: #ee964b; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 10px 0; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9; }
         .section-title:first-of-type { margin-top: 0; }
         
@@ -215,15 +222,26 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <h3>Account Security</h3>
-                    <form onsubmit="handleChangePassword(event)">
-                        <div class="form-group">
-                            <label>New Secure Password</label>
-                            <input type="password" id="newPassword" required placeholder="••••••••">
+                <div>
+                    <div class="card">
+                        <h3>Dossier Photo Identification</h3>
+                        <div class="profile-pic-container">
+                            <div class="profile-pic-frame" id="profilePicFrame">
+                                <span class="fallback-avatar" id="fallbackAvatar">👤</span>
+                            </div>
                         </div>
-                        <button type="submit" class="btn">Update Account Password</button>
-                    </form>
+                    </div>
+
+                    <div class="card">
+                        <h3>Account Security</h3>
+                        <form onsubmit="handleChangePassword(event)">
+                            <div class="form-group">
+                                <label>New Secure Password</label>
+                                <input type="password" id="newPassword" required placeholder="••••••••">
+                            </div>
+                            <button type="submit" class="btn">Update Account Password</button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -358,6 +376,12 @@
                 document.getElementById('tinNo').value = data.tin_no || '';
                 document.getElementById('pagibigNo').value = data.pagibig_no || '';
                 document.getElementById('philhealthNo').value = data.philhealth_no || '';
+
+                // Handle Display Logic for Profile Image / Avatar 
+                if (data.avatar_url && data.avatar_url.trim() !== '') {
+                    const frame = document.getElementById('profilePicFrame');
+                    frame.innerHTML = `<img src="${data.avatar_url}" alt="Employee Profile Picture Image">`;
+                }
             }
         }
 
