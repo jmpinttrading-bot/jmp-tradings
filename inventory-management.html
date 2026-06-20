@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JMP Inventory Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
+        
+        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
+        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
+        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        .main-content { flex: 1; padding: 40px; min-width: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        
+        /* Facility Selector Tab Row */
+        .facility-selector-container { display: flex; gap: 12px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 5px; }
+        .facility-tab { background: white; border: 1px solid #cbd5e1; color: #334155; padding: 14px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.2s ease; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .facility-tab:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .facility-tab.active { background: #0f172a; color: white; border-color: #0f172a; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15); }
+
+        .active-facility-banner { background: #e0f2fe; color: #0369a1; padding: 12px 20px; border-radius: 6px; font-weight: 600; margin-bottom: 25px; font-size: 0.95rem; border: 1px solid #bae6fd; }
+
+        .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; margin-bottom: 30px; align-items: flex-start; }
+        .card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .card h3 { margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #475569; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+        
+        .btn { background: #ee964b; color: #0f172a; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; text-align: center; font-size: 0.95rem; }
+        .btn:hover { opacity: 0.9; }
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 14px; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; }
+        th { background-color: #f8fafc; color: #64748b; font-weight: 600; }
+        
+        .badge { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; display: inline-block; }
+        .badge.low-stock { background-color: #fee2e2; color: #991b1b; }
+        .badge.in-stock { background-color: #d1fae5; color: #065f46; }
+
+        .action-icon-btn { background: transparent; border: none; cursor: pointer; font-size: 1.1rem; padding: 4px 8px; border-radius: 4px; transition: 0.2s; }
+        .action-icon-btn.edit:hover { background-color: #e0f2fe; }
+        .action-icon-btn.delete:hover { background-color: #fee2e2; }
+
+        .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
+        .alert.success { background: #d1fae5; color: #065f46; }
+        .alert.error { background: #fee2e2; color: #991b1b; }
+
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>JMP Admin HQ</h2>
+        <a href="admin-dashboard.html">Profile Management</a>
+        <a href="control-panel.html">🎛️ Control Panel</a>
+        <a href="employee-201.html">📋 Employee 201 File</a>
+        <a href="import-docs.html">📄 Import Doc File Management</a>
+        <a href="#" class="active">📦 Inventory Management</a>
+        <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Stock & Asset Control Matrix</h1>
+            <div class="admin-badge" id="adminEmail">Admin System</div>
+        </div>
+
+        <div class="facility-selector-container">
+            <button class="facility-tab active" onclick="switchFacility('VVS Cold Storage and Processing Plant Corp.', this)">🏢 VVS Cold Storage</button>
+            <button class="facility-tab" onclick="switchFacility('Hightower Storage and Trading Centre, Inc.', this)">🏢 Hightower Centre</button>
+            <button class="facility-tab" onclick="switchFacility('Eisberg Cold Logistics Inc.', this)">🏢 Eisberg Logistics</button>
+            <button class="facility-tab" onclick="switchFacility('Crystal Cold Storage, Inc.', this)">🏢 Crystal Cold Storage</button>
+        </div>
+
+        <div id="activeFacilityBanner" class="active-facility-banner">
+            Currently Viewing Inventory For: <strong>VVS Cold Storage and Processing Plant Corp.</strong>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <div class="grid">
+            <div class="card">
+                <h3 id="formTitle">Register New Stock Item</h3>
+                <form id="inventoryForm" onsubmit="handleFormSubmit(event)">
+                    <input type="hidden" id="itemId">
+                    
+                    <div class="form-group">
+                        <label>Unique Item Code</label>
+                        <input type="text" id="itemCode" required placeholder="e.g., JMP-ACC-01">
+                    </div>
+                    <div class="form-group">
+                        <label>Item / Asset Name</label>
+                        <input type="text" id="itemName" required placeholder="Item identifier text">
+                    </div>
+                    <div class="form-group">
+                        <label>Stock Category</label>
+                        <select id="itemCategory">
+                            <option value="Hardware">Hardware Assets</option>
+                            <option value="Office Supplies">Office Supplies</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Logistics">Logistics Equipment</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Initial Stock Level Quantity</label>
+                        <input type="number" id="stockQuantity" required min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Unit Valuation Price</label>
+                        <input type="number" id="unitPrice" required min="0" step="0.01" value="0.00">
+                    </div>
+                    <button type="submit" class="btn" id="submitBtn">Save Entry Log</button>
+                    <button type="button" class="btn" id="cancelEditBtn" style="background: #cbd5e1; color: #334155; margin-top: 10px; display: none;" onclick="resetFormState()">Cancel Mutation</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>Live Inventory Records Ledger</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Stock</th>
+                                <th>Unit Price</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody">
+                            <tr><td colspan="6">Polling master database recordsets...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentAdminId = null;
+        let bypassAuthListener = false;
+        
+        // Track the actively selected warehouse context
+        let activeFacility = 'VVS Cold Storage and Processing Plant Corp.';
+
+        function showAlert(msg, type) {
+            const box = document.getElementById('alertBox');
+            box.textContent = msg;
+            box.className = `alert ${type}`;
+            box.style.display = 'block';
+            setTimeout(() => { box.style.display = 'none'; }, 5000);
+        }
+
+        async function initInventoryDashboard() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            
+            currentAdminId = user.id;
+            document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
+            
+            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+            if (!profile || profile.role !== 'Admin') {
+                window.location.href = "employee-dashboard.html";
+                return;
+            }
+            
+            fetchInventoryLedger();
+            setupSessionCrossCheckListener();
+        }
+
+        // Switch location view instantly
+        function switchFacility(facilityName, element) {
+            activeFacility = facilityName;
+            
+            // Update UI banner text
+            document.getElementById('activeFacilityBanner').innerHTML = `Currently Viewing Inventory For: <strong>${facilityName}</strong>`;
+            
+            // Handle tab style highlights
+            document.querySelectorAll('.facility-tab').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            
+            resetFormState();
+            fetchInventoryLedger();
+        }
+
+        async function fetchInventoryLedger() {
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = `<tr><td colspan="6">Filtering records for facility...</td></tr>`;
+
+            // Filter row queries down to the active facility scope
+            const { data, error } = await supabaseClient
+                .from('inventory')
+                .select('*')
+                .eq('storage_facility', activeFacility)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                showAlert("Error fetching catalog logs: " + error.message, "error");
+                return;
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b;">No items recorded in this storage facility yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            data.forEach(item => {
+                const stockStatusClass = item.stock_quantity <= 5 ? 'low-stock' : 'in-stock';
+                const stockStatusLabel = item.stock_quantity <= 5 ? 'Low Stock' : 'Healthy';
+                
+                const row = `<tr>
+                    <td><strong>${item.item_code}</strong></td>
+                    <td>${item.item_name}</td>
+                    <td>${item.category}</td>
+                    <td>
+                        <strong>${item.stock_quantity}</strong> 
+                        <span class="badge ${stockStatusClass}" style="margin-left: 5px;">${stockStatusLabel}</span>
+                    </td>
+                    <td>$${parseFloat(item.unit_price).toFixed(2)}</td>
+                    <td>
+                        <button class="action-icon-btn edit" onclick="populateFormForEdit(${JSON.stringify(item).replace(/"/g, '&quot;')})" title="Edit Item">📝</button>
+                        <button class="action-icon-btn delete" onclick="deleteInventoryItem(${item.id})" title="Delete Item">❌</button>
+                    </td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('itemId').value;
+            const item_code = document.getElementById('itemCode').value.trim();
+            const item_name = document.getElementById('itemName').value.trim();
+            const category = document.getElementById('itemCategory').value;
+            const stock_quantity = parseInt(document.getElementById('stockQuantity').value);
+            const unit_price = parseFloat(document.getElementById('unitPrice').value);
+
+            // Include storage_facility field so updates stay pinned inside the selected container
+            const payload = { item_code, item_name, category, stock_quantity, unit_price, storage_facility: activeFacility };
+
+            if (id) {
+                const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
+                if (error) showAlert(error.message, "error");
+                else {
+                    showAlert("Inventory entry updated successfully.", "success");
+                    resetFormState();
+                }
+            } else {
+                const { error } = await supabaseClient.from('inventory').insert([payload]);
+                if (error) showAlert(error.message, "error");
+                else {
+                    showAlert("New asset entry saved to current storage facility.", "success");
+                    document.getElementById('inventoryForm').reset();
+                }
+            }
+            fetchInventoryLedger();
+        }
+
+        function populateFormForEdit(item) {
+            document.getElementById('itemId').value = item.id;
+            document.getElementById('itemCode').value = item.item_code;
+            document.getElementById('itemName').value = item.item_name;
+            document.getElementById('itemCategory').value = item.category;
+            document.getElementById('stockQuantity').value = item.stock_quantity;
+            document.getElementById('unitPrice').value = item.unit_price;
+
+            document.getElementById('formTitle').textContent = "Mutate Ledger Entry Target";
+            document.getElementById('submitBtn').textContent = "Apply Structural Updates";
+            document.getElementById('cancelEditBtn').style.display = "block";
+        }
+
+        function resetFormState() {
+            document.getElementById('itemId').value = '';
+            document.getElementById('inventoryForm').reset();
+            document.getElementById('formTitle').textContent = "Register New Stock Item";
+            document.getElementById('submitBtn').textContent = "Save Entry Log";
+            document.getElementById('cancelEditBtn').style.display = "none";
+        }
+
+        async function deleteInventoryItem(id) {
+            if (!confirm("Are you sure you want to permanently delete this item?")) return;
+
+            const { error } = await supabaseClient.from('inventory').delete().eq('id', id);
+            if (error) showAlert(error.message, "error");
+            else {
+                showAlert("Entry track dropped from data cluster.", "success");
+                if (document.getElementById('itemId').value == id) resetFormState();
+                fetchInventoryLedger();
+            }
+        }
+
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (bypassAuthListener) return;
+                if (session && session.user && session.user.id !== currentAdminId) {
+                    bypassAuthListener = true; 
+                    alert("Session Conflicted. Redirecting...");
+                    await supabaseClient.auth.signOut();
+                    window.location.href = "login.html";
+                }
+                if (event === 'SIGNED_OUT') {
+                    window.location.href = "login.html";
+                }
+            });
+        }
+
+        async function handleLogout() {
+            bypassAuthListener = true;
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        initInventoryDashboard();
+    </script>
+</body>
+</html>
