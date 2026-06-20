@@ -7,19 +7,23 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* Layout & Navigation */
-        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
-        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
-        .sidebar h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin: 15px 0 8px 5px; }
-        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; font-size: 0.95rem; }
-        .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
-        .sidebar .return-link { color: #f8fafc; font-weight: 600; background-color: #1e293b; border-left: 4px solid #ee964b; margin-bottom: 20px; }
-        .sidebar .return-link:hover { background-color: #334155; }
-        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        /* Horizontal Header Navigation Bar Layout */
+        .top-navbar { background-color: #0f172a; color: white; padding: 0 40px; display: flex; align-items: center; justify-content: space-between; height: 70px; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .nav-branding-zone { display: flex; align-items: center; gap: 24px; }
+        .top-navbar h2 { font-size: 1.15rem; color: #ee964b; font-weight: 700; white-space: nowrap; }
         
-        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        .return-link { color: #f8fafc; text-decoration: none; font-weight: 600; font-size: 0.9rem; background-color: #1e293b; padding: 8px 16px; border-radius: 6px; border-left: 3px solid #ee964b; transition: 0.2s; }
+        .return-link:hover { background-color: #334155; }
+        
+        .nav-links-cluster { display: flex; align-items: center; gap: 8px; height: 100%; }
+        .nav-links-cluster a { color: #94a3b8; text-decoration: none; padding: 0 16px; height: 70px; display: flex; align-items: center; font-size: 0.9rem; font-weight: 500; transition: 0.2s; border-bottom: 3px solid transparent; }
+        .nav-links-cluster a:hover { color: white; background-color: #1e293b; }
+        .nav-links-cluster a.active { color: white; background-color: #1e293b; border-bottom-color: #ee964b; font-weight: 600; }
+        
+        /* Core Viewport Container Panels */
+        .main-content { flex: 1; padding: 40px; max-width: 1600px; width: 100%; margin: 0 auto; min-width: 0; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .facility-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; border: 1px solid #bae6fd; }
 
@@ -31,6 +35,7 @@
 
         /* Logistics Action Forms Panels */
         .transaction-zone { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        @media (max-width: 900px) { .transaction-zone { grid-template-columns: 1fr; } }
         .action-panel { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .action-panel h3 { margin-bottom: 15px; color: #0f172a; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
         
@@ -61,19 +66,19 @@
 </head>
 <body>
 
-    <div class="sidebar">
-        <h2>JMP Logistics HQ</h2>
+    <nav class="top-navbar">
+        <div class="nav-branding-zone">
+            <h2>JMP Logistics HQ</h2>
+            <a href="inventory-management.html" class="return-link">📦 ⬅ Back to Inventory</a>
+        </div>
         
-        <a href="inventory-management.html" class="return-link">📦 ⬅ Back to Inventory</a>
-        
-        <h3>Hub Networks</h3>
-        <a href="#" class="active">🏢 VVS Logistics</a>
-        <a href="hightower-logistics.html">🏢 Hightower Logistics</a>
-        <a href="eisberg-logistics.html">🏢 Eisberg Logistics</a>
-        <a href="crystal-logistics.html">🏢 Crystal Logistics</a>
-        
-        <button class="logout-btn" onclick="handleLogout()">Logout Session</button>
-    </div>
+        <div class="nav-links-cluster">
+            <a href="#" class="active">🏢 VVS Logistics</a>
+            <a href="hightower-logistics.html">🏢 Hightower Logistics</a>
+            <a href="eisberg-logistics.html">🏢 Eisberg Logistics</a>
+            <a href="crystal-logistics.html">🏢 Crystal Logistics</a>
+        </div>
+    </nav>
 
     <div class="main-content">
         <div class="header">
@@ -260,11 +265,6 @@
                 document.getElementById(`${prefix}Form`).reset();
                 fetchFacilityLedger();
             }
-        }
-
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            window.location.href = "login.html";
         }
 
         initLogisticsHub();
