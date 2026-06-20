@@ -15,6 +15,8 @@
         .sidebar h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin: 15px 0 8px 5px; }
         .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; font-size: 0.95rem; }
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
+        .sidebar .return-link { color: #f8fafc; font-weight: 600; background-color: #1e293b; border-left: 4px solid #ee964b; margin-bottom: 20px; }
+        .sidebar .return-link:hover { background-color: #334155; }
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
         .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
@@ -61,16 +63,16 @@
 
     <div class="sidebar">
         <h2>JMP Logistics HQ</h2>
-        <a href="admin-dashboard.html">Profile Management</a>
-        <a href="control-panel.html">🎛️ Control Panel</a>
+        
+        <a href="inventory-management.html" class="return-link">📦 ⬅ Back to Inventory</a>
         
         <h3>Hub Networks</h3>
-        <a href="#" class="active">📦 VVS Logistics</a>
-        <a href="hightower-logistics.html">📦 Hightower Logistics</a>
-        <a href="eisberg-logistics.html">📦 Eisberg Logistics</a>
-        <a href="crystal-logistics.html">📦 Crystal Logistics</a>
+        <a href="#" class="active">🏢 VVS Logistics</a>
+        <a href="hightower-logistics.html">🏢 Hightower Logistics</a>
+        <a href="eisberg-logistics.html">🏢 Eisberg Logistics</a>
+        <a href="crystal-logistics.html">🏢 Crystal Logistics</a>
         
-        <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
+        <button class="logout-btn" onclick="handleLogout()">Logout Session</button>
     </div>
 
     <div class="main-content">
@@ -165,11 +167,9 @@
         const FACILITY_SCOPE = "VVS Logistics";
 
         async function initLogisticsHub() {
-            // Verify Authentication State context
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            // Check Control Panel Permissions Structure
             const { data: profile } = await supabaseClient.from('profiles').select('role, inventory_access').eq('id', user.id).single();
             if (!profile || (profile.role !== 'Admin' && profile.inventory_access === false)) {
                 alert("Security Clearance Exception: Access to inventory modules is currently restricted.");
