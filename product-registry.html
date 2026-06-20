@@ -23,7 +23,8 @@
         .back-link { display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-weight: 600; font-size: 0.9rem; margin-bottom: 20px; }
         .back-link:hover { color: #ee964b; }
 
-        .workspace-grid { display: grid; grid-template-columns: 420px 1fr; gap: 30px; align-items: start; }
+        /* Realigned Workspace Grid to Stack Vertically with Clean Gap Distances */
+        .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
         
         .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
         .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
@@ -215,7 +216,6 @@
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
             } else {
-                // Check master key verification first
                 const masterAccess = profile ? profile.inventory_access !== false : false;
                 
                 if (!masterAccess) {
@@ -266,7 +266,7 @@
         }
 
         async function fetchLedgerDataset() {
-            const { data, error } = await supabaseClient
+            const { data, error = null } = await supabaseClient
                 .from('inventory')
                 .select('*')
                 .order('created_at', { ascending: false });
