@@ -41,6 +41,7 @@
         .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
         .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        .form-group input:disabled { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
         
         /* Modal Action Button Layouts */
         .btn-trigger { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: background 0.2s; display: block; text-align: center; }
@@ -169,17 +170,25 @@
             </div>
             <form id="inboundForm" onsubmit="submitTransaction(event, 'Inbound')">
                 <div class="form-group">
-                    <label>Select Registered Item</label>
-                    <select id="inboundItemSelect" required>
+                    <label>Reference No.</label>
+                    <input type="text" id="inboundRef" required placeholder="e.g., WR-99210">
+                </div>
+                <div class="form-group">
+                    <label>Date Received</label>
+                    <input type="date" id="inboundDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Item Code</label>
+                    <select id="inboundItemSelect" required onchange="handleInboundItemChange()">
                         </select>
+                </div>
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" id="inboundItemNameDisplay" disabled placeholder="Select an Item Code above...">
                 </div>
                 <div class="form-group">
                     <label>Quantity to Receive (Cases)</label>
                     <input type="number" id="inboundQty" required min="1" placeholder="e.g., 150">
-                </div>
-                <div class="form-group">
-                    <label>Reference Code / Waybill</label>
-                    <input type="text" id="inboundRef" required placeholder="e.g., WR-99210">
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-modal-submit">Commit to Vault Balance</button>
@@ -239,16 +248,36 @@
         /* Modal Visibility Methods */
         function openLogisticsModal(modalId) {
             document.getElementById(modalId).classList.add('active');
+            // Default Inbound Date to present date calendar default values
+            if(modalId === 'inboundModal') {
+                document.getElementById('inboundDate').valueAsDate = new Date();
+            }
         }
 
         function closeLogisticsModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
-            if(modalId === 'inboundModal') document.getElementById('inboundForm').reset();
+            if(modalId === 'inboundModal') {
+                document.getElementById('inboundForm').reset();
+                document.getElementById('inboundItemNameDisplay').value = '';
+            }
             if(modalId === 'outboundModal') document.getElementById('outboundForm').reset();
         }
 
         function closeOutsideModal(e, modalId) {
             if (e.target.id === modalId) closeLogisticsModal(modalId);
+        }
+
+        // Interceptor capturing selection modifications on the inbound code option layout
+        function handleInboundItemChange() {
+            const selectEl = document.getElementById('inboundItemSelect');
+            const selectedOption = selectEl.options[selectEl.selectedIndex];
+            const nameDisplay = document.getElementById('inboundItemNameDisplay');
+            
+            if (selectedOption && selectedOption.value) {
+                nameDisplay.value = selectedOption.getAttribute('data-name') || '';
+            } else {
+                nameDisplay.value = '';
+            }
         }
 
         async function initRegistryDashboard() {
@@ -258,7 +287,6 @@
             currentAdminId = user.id;
             activeOperatorEmail = user.email.split('@')[0];
             
-            // Check cross-reference permissions
             const { data: profile } = await supabaseClient.from('profiles').select('role, inventory_access').eq('id', user.id).single();
             if (profile && (profile.role === 'Admin' || profile.inventory_access !== false)) {
                 document.getElementById('adminEmail').className = profile.role === 'Admin' ? "admin-badge" : "employee-badge";
@@ -266,7 +294,7 @@
                 document.getElementById('sidebarTitle').textContent = profile.role === 'Admin' ? "JMP Admin HQ" : "JMP Terminal";
                 document.getElementById('mainWorkspace').style.display = "grid";
                 
-                fetchDropdownOptions();
+                await fetchDropdownOptions();
                 fetchTransactionLogDataset();
             } else {
                 document.getElementById('permissionBlock').style.display = "block";
@@ -274,7 +302,6 @@
             setupSessionCrossCheckListener();
         }
 
-        /* Fetch only items configured to VVS facility storage target profiles */
         async function fetchDropdownOptions() {
             const { data, error } = await supabaseClient
                 .from('inventory')
@@ -292,13 +319,17 @@
                 return;
             }
 
-            const markup = data.map(i => `<option value="${i.id}" data-code="${i.item_code}">${i.item_code} - ${i.item_name}</option>`).join('');
-            inSel.innerHTML = markup;
-            outSel.innerHTML = markup;
+            // Build dynamic text structures with embedded descriptive tokens
+            const inboundMarkup = `<option value="" disabled selected>-- Select Product Code --</option>` + 
+                data.map(i => `<option value="${i.id}" data-code="${i.item_code}" data-name="${i.item_name}">${i.item_code}</option>`).join('');
+            
+            const outboundMarkup = data.map(i => `<option value="${i.id}" data-code="${i.item_code}">${i.item_code} - ${i.item_name}</option>`).join('');
+
+            inSel.innerHTML = inboundMarkup;
+            outSel.innerHTML = outboundMarkup;
         }
 
         async function fetchTransactionLogDataset() {
-            // Assumes structural transaction log tables exist named 'inventory_transactions'
             const { data, error } = await supabaseClient
                 .from('inventory_transactions')
                 .select('*')
@@ -329,14 +360,20 @@
             const selectEl = document.getElementById(`${prefix}ItemSelect`);
             const selectedOption = selectEl.options[selectEl.selectedIndex];
             
-            if(!selectEl.value) { showAlert("Invalid item transaction target.", "error"); return; }
+            if(!selectEl.value) { showAlert("Invalid item transaction target selection.", "error"); return; }
 
             const itemId = selectEl.value;
             const itemCode = selectedOption.getAttribute('data-code');
             const rawQty = parseInt(document.getElementById(`${prefix}Qty`).value);
-            const reference = document.getElementById(`${prefix}Ref`).value.trim();
+            let reference = document.getElementById(`${prefix}Ref`).value.trim();
 
-            // 1. Double check actual quantities currently inside main table index
+            // Append specific delivery parameters for historical references if processing an inbound movement
+            if(movementType === 'Inbound') {
+                const receivedDateValue = document.getElementById('inboundDate').value;
+                reference = `${reference} | Recv Date: ${receivedDateValue}`;
+            }
+
+            // 1. Check actual quantities currently inside table index
             const { data: currentItem, error: fetchErr } = await supabaseClient.from('inventory').select('stock_quantity').eq('id', itemId).single();
             if (fetchErr) { showAlert("Failed to resolve asset balance metadata.", "error"); return; }
 
@@ -348,7 +385,7 @@
                 return;
             }
 
-            // 2. Perform safe balancing updates to main database records
+            // 2. Perform balancing updates to backend schema
             const { error: balanceUpdateError } = await supabaseClient
                 .from('inventory')
                 .update({ stock_quantity: finalCalculatedBalance })
@@ -359,7 +396,7 @@
                 return;
             }
 
-            // 3. Append to detailed history transaction log tables
+            // 3. Append to history log dataset configurations
             const { error: logAppendError } = await supabaseClient
                 .from('inventory_transactions')
                 .insert([{
