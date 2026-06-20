@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Product Registry - JMP System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
+        
+        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
+        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
+        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-weight: 600; font-size: 0.9rem; margin-bottom: 20px; }
+        .back-link:hover { color: #ee964b; }
+
+        /* Workplace Two-Column Layout */
+        .workspace-grid { display: grid; grid-template-columns: 420px 1fr; gap: 30px; align-items: start; }
+        
+        .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
+        
+        .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        
+        .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-primary { flex: 1; background: #ee964b; color: #0f172a; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; }
+        .btn-primary:hover { background: #e0853c; }
+        .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .btn-secondary:hover { background: #b8c5d6; }
+
+        /* Master Table Formatting */
+        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; }
+        .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
+        .master-table tr:hover td { background-color: #f8fafc; }
+        
+        /* Adjustment Steppers Structure */
+        .qty-stepper { display: inline-flex; align-items: center; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px; gap: 4px; }
+        .stepper-btn { width: 28px; height: 28px; border: none; background: white; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .stepper-btn:hover { background: #ee964b; color: white; }
+        .qty-val { font-weight: 700; min-width: 45px; text-align: center; color: #0f172a; font-size: 0.9rem; }
+
+        .btn-edit { background: #1e293b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+        .btn-edit:hover { background: #ee964b; color: #0f172a; }
+
+        .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
+        .alert.success { background: #d1fae5; color: #065f46; }
+        .alert.error { background: #fee2e2; color: #991b1b; }
+
+        /* Lockscreen State styling */
+        .lock-overlay { display: none; text-align: center; padding: 40px 20px; }
+        .lock-icon { font-size: 3.5rem; color: #ef4444; margin-bottom: 15px; display: block; }
+
+        @media (max-width: 1100px) {
+            .workspace-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2 id="sidebarTitle">JMP System</h2>
+        <a href="admin-dashboard.html" id="profileLink">Profile Management</a>
+        <a href="control-panel.html" id="controlPanelLink">🎛️ Control Panel</a>
+        <a href="employee-201.html" id="employeeLink">📋 Employee 201 File</a>
+        <a href="import-docs.html" id="importLink">📄 Import Doc File Management</a>
+        <a href="inventory-management.html" class="active">📦 Inventory Management</a>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Master Product Configuration Node</h1>
+            <div class="admin-badge" id="adminEmail">Loading Context...</div>
+        </div>
+
+        <a href="inventory-management.html" class="back-link">⬅️ Back to Stock Dashboard</a>
+        
+        <div id="alertBox" class="alert"></div>
+
+        <div id="permissionBlock" class="card-panel lock-overlay">
+            <span class="lock-icon">🔒</span>
+            <h3 style="border:none; margin:0 0 10px 0;">Access Privileges Required</h3>
+            <p style="color:#64748b; font-size:0.95rem; max-width:500px; margin:0 auto;">
+                Your account type tier does not hold permission configurations to edit baseline metrics or append structural master product logs.
+            </p>
+        </div>
+
+        <div class="workspace-grid" id="mainWorkspace" style="display: none;">
+            
+            <div class="card-panel">
+                <h3 id="formTitle">Register New Stock Item</h3>
+                <form id="inventoryForm" onsubmit="handleFormSubmit(event)">
+                    <input type="hidden" id="itemId">
+                    
+                    <div class="form-group">
+                        <label>Unique Item Code</label>
+                        <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Product / Item Name</label>
+                        <input type="text" id="itemName" required placeholder="e.g., Premium White Shrimp">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Stock Category</label>
+                        <select id="itemCategory">
+                            <option value="Fish">Fish (Whole / Fillet)</option>
+                            <option value="Crustaceans">Crustaceans (Shrimp, Crabs, Lobster)</option>
+                            <option value="Mollusks">Mollusks (Squid, Octopus, Clams)</option>
+                            <option value="Value-Added Seafood">Value-Added / Processed Lines</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Allocation Facility Target Location</label>
+                        <select id="storageFacility">
+                            <option value="VVS Cold Storage and Processing Plant Corp.">VVS Cold Storage and Processing Plant Corp.</option>
+                            <option value="Hightower Storage and Trading Centre, Inc.">Hightower Storage and Trading Centre, Inc.</option>
+                            <option value="Eisberg Cold Logistics Inc.">Eisberg Cold Logistics Inc.</option>
+                            <option value="Crystal Cold Storage, Inc.">Crystal Cold Storage, Inc.</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group" id="initialQtyWrapper">
+                        <label>Initial Stock Level Quantity (Cases)</label>
+                        <input type="number" id="stockQuantity" required min="0" value="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Unit Valuation Price</label>
+                        <input type="number" id="unitPrice" required min="0" step="0.01" value="0.00">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="submitBtn">Save Entry Log</button>
+                        <button type="button" class="btn-secondary" onclick="resetFormState()">Clear</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-panel" style="padding: 20px 0px;">
+                <h3 style="margin-left: 25px; margin-right: 25px;">Global Active Product Ledger</h3>
+                <div class="table-responsive">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>Product Specifications</th>
+                                <th>Category</th>
+                                <th>Assigned Hub</th>
+                                <th style="width: 140px;">Stock Balance</th>
+                                <th>Valuation</th>
+                                <th style="text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentAdminId = null;
+        let bypassAuthListener = false;
+        let currentUserRole = "Employee"; 
+
+        function showAlert(msg, type) {
+            const box = document.getElementById('alertBox');
+            box.textContent = msg;
+            box.className = `alert ${type}`;
+            box.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => { box.style.display = 'none'; }, 5000);
+        }
+
+        async function initRegistryDashboard() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            
+            currentAdminId = user.id;
+            
+            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+            if (profile && profile.role === 'Admin') {
+                currentUserRole = "Admin";
+                document.getElementById('adminEmail').className = "admin-badge";
+                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
+                document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
+                document.getElementById('mainWorkspace').style.display = "grid";
+                fetchLedgerDataset();
+            } else {
+                currentUserRole = "Employee";
+                document.getElementById('adminEmail').className = "employee-badge";
+                document.getElementById('adminEmail').textContent = `👤 Staff: ${user.email.split('@')[0]}`;
+                document.getElementById('sidebarTitle').textContent = "JMP Terminal";
+                if(document.getElementById('controlPanelLink')) document.getElementById('controlPanelLink').style.display = 'none';
+                document.getElementById('permissionBlock').style.display = "block";
+            }
+            setupSessionCrossCheckListener();
+        }
+
+        async function fetchLedgerDataset() {
+            const { data, error } = await supabaseClient
+                .from('inventory')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                showAlert("System error syncing ledger elements: " + error.message, "error");
+                return;
+            }
+
+            renderLedgerTable(data || []);
+        }
+
+        function renderLedgerTable(items) {
+            const tbody = document.getElementById('ledgerTableBody');
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:#94a3b8;">No records logged inside storage profiles.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => `
+                <tr>
+                    <td style="font-weight: 700; color: #0f172a;">${item.item_code}</td>
+                    <td style="font-weight: 600;">${item.item_name}</td>
+                    <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem;">${item.category}</span></td>
+                    <td style="font-size:0.8rem; color:#64748b; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.storage_facility}</td>
+                    <td>
+                        <div class="qty-stepper">
+                            <button class="stepper-btn" onclick="adjustQuantity('${item.id}', -1)">−</button>
+                            <span class="qty-val">${item.stock_quantity}</span>
+                            <button class="stepper-btn" onclick="adjustQuantity('${item.id}', 1)">＋</button>
+                        </div>
+                    </td>
+                    <td style="font-weight:600; color:#0f172a;">$${parseFloat(item.unit_price).toFixed(2)}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-edit" onclick="populateFormForEdit(${JSON.stringify(item).replace(/"/g, '&quot;')})">Edit</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function adjustQuantity(id, delta) {
+            // Locate raw quantitative state via view layers
+            event.stopPropagation();
+            const { data: currentItem, error: fetchErr } = await supabaseClient.from('inventory').select('stock_quantity').eq('id', id).single();
+            
+            if (fetchErr) { showAlert("Delta resolution update faulted.", "error"); return; }
+            
+            const targetQty = Math.max(0, (parseInt(currentItem.stock_quantity) || 0) + delta);
+
+            const { error } = await supabaseClient
+                .from('inventory')
+                .update({ stock_quantity: targetQty })
+                .eq('id', id);
+
+            if (error) showAlert(error.message, "error");
+            else fetchLedgerDataset();
+        }
+
+        function populateFormForEdit(item) {
+            document.getElementById('itemId').value = item.id;
+            document.getElementById('itemCode').value = item.item_code;
+            document.getElementById('itemName').value = item.item_name;
+            document.getElementById('itemCategory').value = item.category;
+            document.getElementById('storageFacility').value = item.storage_facility;
+            document.getElementById('unitPrice').value = item.unit_price;
+            
+            // Hide incremental quantity on modification forms to prevent ledger discrepancies
+            document.getElementById('initialQtyWrapper').style.display = "none";
+            document.getElementById('stockQuantity').required = false;
+
+            document.getElementById('formTitle').textContent = "Modify Registered Product Parameters";
+            document.getElementById('submitBtn').textContent = "Update System Log";
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            if (currentUserRole !== "Admin") return;
+
+            const id = document.getElementById('itemId').value;
+            const item_code = document.getElementById('itemCode').value.trim();
+            const item_name = document.getElementById('itemName').value.trim();
+            const category = document.getElementById('itemCategory').value;
+            const storage_facility = document.getElementById('storageFacility').value;
+            const unit_price = parseFloat(document.getElementById('unitPrice').value);
+
+            const payload = { item_code, item_name, category, storage_facility, unit_price };
+
+            if (id) {
+                const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
+                if (error) showAlert(error.message, "error");
+                else {
+                    showAlert("Master log file adjustments written successfully.", "success");
+                    resetFormState();
+                }
+            } else {
+                payload.stock_quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
+                const { error } = await supabaseClient.from('inventory').insert([payload]);
+                if (error) showAlert(error.message, "error");
+                else {
+                    showAlert("Product entry registered successfully into structural tables.", "success");
+                    resetFormState();
+                }
+            }
+            fetchLedgerDataset();
+        }
+
+        function resetFormState() {
+            document.getElementById('itemId').value = '';
+            document.getElementById('inventoryForm').reset();
+            document.getElementById('initialQtyWrapper').style.display = "flex";
+            document.getElementById('stockQuantity').required = true;
+            document.getElementById('formTitle').textContent = "Register New Stock Item";
+            document.getElementById('submitBtn').textContent = "Save Entry Log";
+        }
+
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (bypassAuthListener) return;
+                if (session && session.user && session.user.id !== currentAdminId) {
+                    bypassAuthListener = true; 
+                    alert("Session Conflicted. Redirecting...");
+                    await supabaseClient.auth.signOut();
+                    window.location.href = "login.html";
+                }
+                if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
+            });
+        }
+
+        async function handleLogout() {
+            bypassAuthListener = true;
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        initRegistryDashboard();
+    </script>
+</body>
+</html>

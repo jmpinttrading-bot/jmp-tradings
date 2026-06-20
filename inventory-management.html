@@ -21,12 +21,10 @@
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
-        /* Dedicated Product Registration Container Box */
         .registration-box { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .registration-text-area h3 { color: #0f172a; font-size: 1.1rem; }
         .registration-text-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
 
-        /* Layout Actions Section */
         .dashboard-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
         .report-controls { background: white; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
         .report-title-area { flex: 1; min-width: 250px; }
@@ -37,15 +35,13 @@
         .time-filter-select { padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; font-weight: 600; background-color: white; color: #1e293b; cursor: pointer; min-width: 150px; outline: none; }
         .time-filter-select:focus { border-color: #ee964b; }
         
-        /* Date Inputs System Styling */
         .date-range-container { display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1; }
         .date-range-container label { font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; }
         .calendar-input { border: none; background: transparent; font-size: 0.85rem; font-weight: 600; color: #1e293b; outline: none; cursor: pointer; }
         
-        .register-trigger-btn { background: #ee964b; color: #0f172a; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; transition: background 0.2s; }
+        .register-trigger-btn { background: #ee964b; color: #0f172a; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; text-decoration: none; transition: background 0.2s; }
         .register-trigger-btn:hover { background: #e0853c; }
 
-        /* Logistics Routing Matrix Cards Grid - Forced 2 Column Layout */
         .logistics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 30px; }
         .logistics-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; gap: 15px; }
         .logistics-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
@@ -58,7 +54,6 @@
         .logistics-route-btn { background: #1e293b; color: white; border: none; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
         .logistics-route-btn:hover { background: #ee964b; color: #0f172a; }
 
-        /* Analytics Unified Single Chart Structure */
         .analytics-full-width-container { width: 100%; margin-top: 5px; }
         .chart-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
         .chart-card h3 { font-size: 1.1rem; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
@@ -67,24 +62,6 @@
         .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
-
-        /* Pop-up Overlay Registry Modal Layout */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
-        .modal-content { background: white; width: 100%; max-width: 500px; padding: 30px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); position: relative; animation: slideDown 0.25s ease-out; }
-        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .close-modal-btn { position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #94a3b8; }
-        .close-modal-btn:hover { color: #475569; }
-
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; color: #475569; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
-        .form-submit-btn { background: #ee964b; color: #0f172a; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 0.95rem; margin-top: 10px; }
-        .form-submit-btn:hover { opacity: 0.9; }
-
-        .restriction-body { text-align: center; padding: 10px 0; }
-        .restriction-icon { font-size: 3.5rem; color: #ef4444; margin-bottom: 15px; display: block; }
-        .restriction-btn { background-color: #1e293b; color: white; padding: 12px 25px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 20px; width: auto; min-width: 120px; }
-        .restriction-btn:hover { background-color: #0f172a; }
 
         @media (max-width: 1024px) {
             .report-controls { flex-direction: column; align-items: flex-start; }
@@ -122,9 +99,9 @@
                 <h3>Stock Inventory Registration</h3>
                 <p>Append fresh structural cargo entries, batch designations, and valuation parameters to the global ledger</p>
             </div>
-            <button class="register-trigger-btn" onclick="handleRegisterTrigger()">
+            <a href="product-registry.html" class="register-trigger-btn">
                 <span>➕</span> Register New Product Item
-            </button>
+            </a>
         </div>
 
         <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
@@ -212,66 +189,6 @@
 
     </div>
 
-    <div id="registryModal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="close-modal-btn" onclick="closeRegistryModal()">&times;</button>
-            <h3 id="formTitle" style="margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Register New Stock Item</h3>
-            <form id="inventoryForm" onsubmit="handleFormSubmit(event)">
-                <input type="hidden" id="itemId">
-                
-                <div class="form-group">
-                    <label>Unique Item Code</label>
-                    <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
-                </div>
-                <div class="form-group">
-                    <label>Product / Item Name</label>
-                    <input type="text" id="itemName" required placeholder="e.g., Premium White Shrimp (Head-on)">
-                </div>
-                <div class="form-group">
-                    <label>Stock Category</label>
-                    <select id="itemCategory">
-                        <option value="Fish">Fish (Whole / Fillet)</option>
-                        <option value="Crustaceans">Crustaceans (Shrimp, Crabs, Lobster)</option>
-                        <option value="Mollusks">Mollusks (Squid, Octopus, Clams)</option>
-                        <option value="Value-Added Seafood">Value-Added / Processed Lines</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Destination Storage Allocation Facility</label>
-                    <select id="storageFacility">
-                        <option value="VVS Cold Storage and Processing Plant Corp.">VVS Cold Storage and Processing Plant Corp.</option>
-                        <option value="Hightower Storage and Trading Centre, Inc.">Hightower Storage and Trading Centre, Inc.</option>
-                        <option value="Eisberg Cold Logistics Inc.">Eisberg Cold Logistics Inc.</option>
-                        <option value="Crystal Cold Storage, Inc.">Crystal Cold Storage, Inc.</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Initial Stock Level Quantity (Cases/Boxes)</label>
-                    <input type="number" id="stockQuantity" required min="0" value="0">
-                </div>
-                <div class="form-group">
-                    <label>Unit Valuation Price</label>
-                    <input type="number" id="unitPrice" required min="0" step="0.01" value="0.00">
-                </div>
-                <button type="submit" class="form-submit-btn" id="submitBtn">Save Entry Log</button>
-            </form>
-        </div>
-    </div>
-
-    <div id="restrictionModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 420px;">
-            <button class="close-modal-btn" onclick="closeRestrictionModal()">&times;</button>
-            <div class="restriction-body">
-                <span class="restriction-icon">🔒</span>
-                <h3 style="color: #0f172a; margin-bottom: 10px;">Access Permission Required</h3>
-                <p style="color: #64748b; font-size: 0.95rem; line-height: 1.5;">
-                    Your account type does not have permission to alter structural master records. Please contact your system administrator to request privileges.
-                </p>
-                <button class="restriction-btn" onclick="closeRestrictionModal()">Understood</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -281,11 +198,11 @@
         let bypassAuthListener = false;
         let masterInventoryCachedData = [];
         let currentUserRole = "Employee"; 
-        
         let masterChartInstance = null;
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
+            if(!box) return;
             box.textContent = msg;
             box.className = `alert ${type}`;
             box.style.display = 'block';
@@ -437,75 +354,13 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: '#f1f5f9' },
-                            ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 }
-                        }
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 } },
+                        x: { grid: { display: false }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 } }
                     }
                 }
             });
-        }
-
-        function checkAccessPermission() {
-            if (currentUserRole !== "Admin") {
-                document.getElementById('restrictionModal').style.display = 'flex';
-                return false;
-            }
-            return true;
-        }
-
-        function handleRegisterTrigger() { if (checkAccessPermission()) openRegistryModal(); }
-        function closeRestrictionModal() { document.getElementById('restrictionModal').style.display = 'none'; }
-
-        async function handleFormSubmit(e) {
-            e.preventDefault();
-            if (!checkAccessPermission()) return;
-            
-            const id = document.getElementById('itemId').value;
-            const item_code = document.getElementById('itemCode').value.trim();
-            const item_name = document.getElementById('itemName').value.trim();
-            const category = document.getElementById('itemCategory').value;
-            const storage_facility = document.getElementById('storageFacility').value;
-            const stock_quantity = parseInt(document.getElementById('stockQuantity').value);
-            const unit_price = parseFloat(document.getElementById('unitPrice').value);
-
-            const payload = { item_code, item_name, category, storage_facility, stock_quantity, unit_price };
-
-            if (id) {
-                const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
-                if (error) showAlert(error.message, "error");
-                else {
-                    showAlert("Master file product layout updated.", "success");
-                    closeRegistryModal();
-                }
-            } else {
-                const { error } = await supabaseClient.from('inventory').insert([payload]);
-                if (error) showAlert(error.message, "error");
-                else {
-                    showAlert("New product registered successfully inside the master dataset.", "success");
-                    closeRegistryModal();
-                }
-            }
-            fetchMasterInventoryLedger();
-        }
-
-        function openRegistryModal() { resetFormState(); document.getElementById('registryModal').style.display = 'flex'; }
-        function closeRegistryModal() { document.getElementById('registryModal').style.display = 'none'; resetFormState(); }
-
-        function resetFormState() {
-            document.getElementById('itemId').value = '';
-            document.getElementById('inventoryForm').reset();
-            document.getElementById('formTitle').textContent = "Register New Stock Item";
-            document.getElementById('submitBtn').textContent = "Save Entry Log";
         }
 
         function setupSessionCrossCheckListener() {
