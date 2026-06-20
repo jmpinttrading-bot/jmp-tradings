@@ -21,6 +21,11 @@
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
+        /* Dedicated Product Registration Container Box */
+        .registration-box { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .registration-text-area h3 { color: #0f172a; font-size: 1.1rem; }
+        .registration-text-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
+
         /* Layout Actions Section */
         .dashboard-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
         .report-controls { background: white; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
@@ -37,8 +42,8 @@
         .date-range-container label { font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; }
         .calendar-input { border: none; background: transparent; font-size: 0.85rem; font-weight: 600; color: #1e293b; outline: none; cursor: pointer; }
         
-        .register-trigger-btn { background: #ee964b; color: #0f172a; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .register-trigger-btn:hover { opacity: 0.9; }
+        .register-trigger-btn { background: #ee964b; color: #0f172a; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; transition: background 0.2s; }
+        .register-trigger-btn:hover { background: #e0853c; }
 
         /* Logistics Routing Matrix Cards Grid - Forced 2 Column Layout */
         .logistics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 30px; }
@@ -86,6 +91,8 @@
             .controls-selectors-group { width: 100%; }
         }
         @media (max-width: 768px) {
+            .registration-box { flex-direction: column; align-items: stretch; text-align: center; }
+            .register-trigger-btn { justify-content: center; }
             .logistics-grid { grid-template-columns: 1fr; }
             .date-range-container { width: 100%; justify-content: space-between; }
             .time-filter-select { width: 100%; }
@@ -108,6 +115,16 @@
         <div class="header">
             <h1>Stock & Asset Control Matrix</h1>
             <div class="admin-badge" id="adminEmail">Loading Context...</div>
+        </div>
+
+        <div class="registration-box">
+            <div class="registration-text-area">
+                <h3>Stock Inventory Registration</h3>
+                <p>Append fresh structural cargo entries, batch designations, and valuation parameters to the global ledger</p>
+            </div>
+            <button class="register-trigger-btn" onclick="handleRegisterTrigger()">
+                <span>➕</span> Register New Product Item
+            </button>
         </div>
 
         <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
@@ -179,9 +196,6 @@
                     </div>
                 </div>
             </div>
-            <button class="register-trigger-btn" onclick="handleRegisterTrigger()" style="width: 100%; max-width: 290px; justify-content: center;">
-                <span>➕</span> Register New Product Item
-            </button>
         </div>
 
         <div class="analytics-full-width-container">
@@ -278,7 +292,6 @@
             setTimeout(() => { box.style.display = 'none'; }, 5000);
         }
 
-        // Setup default calendar viewports (Sliding 7 days backward from today)
         function setDefaultCalendarDates() {
             const today = new Date();
             const sevenDaysAgo = new Date();
@@ -362,14 +375,12 @@
             
             totalLabelElement.style.color = themeColor;
 
-            // Generate timeline list array structure between chosen date ranges
             const timelineLabels = [];
             const historicalTrendPoints = [];
             
             const startDate = new Date(startVal);
             const endDate = new Date(endVal);
             
-            // Safety fallback if boundaries cross incorrectly
             if (startDate > endDate) {
                 showAlert("Start date cannot be later than end date.", "error");
                 return;
@@ -384,13 +395,12 @@
                 loopDate.setDate(loopDate.getDate() + 1);
             }
 
-            // Populate trend metrics relative to array capacity length
             const pointsCount = timelineLabels.length;
             for (let i = 0; i < pointsCount; i++) {
                 if (i === pointsCount - 1) {
                     historicalTrendPoints.push(realTimeTotal);
                 } else {
-                    const scalarRatio = 0.6 + (Math.random() * 0.35); // Dynamic mock curves baseline
+                    const scalarRatio = 0.6 + (Math.random() * 0.35);
                     historicalTrendPoints.push(Math.round(realTimeTotal * scalarRatio));
                 }
             }
