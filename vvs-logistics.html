@@ -179,8 +179,8 @@
                 </div>
                 <div class="form-group">
                     <label>Item Code</label>
-                    <select id="inboundItemSelect" required onchange="handleInboundItemChange()">
-                        </select>
+                    <select id="inboundItemSelect" required onchange="handleItemDropdownChange('inbound')">
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Item Name</label>
@@ -206,17 +206,25 @@
             </div>
             <form id="outboundForm" onsubmit="submitTransaction(event, 'Outbound')">
                 <div class="form-group">
-                    <label>Select Registered Item</label>
-                    <select id="outboundItemSelect" required>
-                        </select>
+                    <label>Sales Order No. (S.O)</label>
+                    <input type="text" id="outboundRef" disabled style="background: #f1f5f9; font-weight: 700; color: #0f172a;">
+                </div>
+                <div class="form-group">
+                    <label>Date Dispatched</label>
+                    <input type="date" id="outboundDate" required>
+                </div>
+                <div class="form-group">
+                    <label>Item Code</label>
+                    <select id="outboundItemSelect" required onchange="handleItemDropdownChange('outbound')">
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" id="outboundItemNameDisplay" disabled placeholder="Select an Item Code above...">
                 </div>
                 <div class="form-group">
                     <label>Quantity to Dispatch (Cases)</label>
                     <input type="number" id="outboundQty" required min="1" placeholder="e.g., 45">
-                </div>
-                <div class="form-group">
-                    <label>Sales Order No. (S.O)</label>
-                    <input type="text" id="outboundRef" disabled style="background: #e2e8f0; font-weight: bold; color: #0f172a;">
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-modal-submit" style="background:#dc2626; color:white;">Authorize Gate Release</button>
@@ -245,7 +253,7 @@
             setTimeout(() => { box.style.display = 'none'; }, 4000);
         }
 
-        /* Helper to generate a unique auto-running Sales Order key */
+        /* Unique dynamic code algorithm */
         function generateSalesOrderNumber() {
             const now = new Date();
             const year = now.getFullYear();
@@ -262,6 +270,7 @@
                 document.getElementById('inboundDate').valueAsDate = new Date();
             }
             if(modalId === 'outboundModal') {
+                document.getElementById('outboundDate').valueAsDate = new Date();
                 document.getElementById('outboundRef').value = generateSalesOrderNumber();
             }
         }
@@ -274,6 +283,7 @@
             }
             if(modalId === 'outboundModal') {
                 document.getElementById('outboundForm').reset();
+                document.getElementById('outboundItemNameDisplay').value = '';
             }
         }
 
@@ -281,10 +291,11 @@
             if (e.target.id === modalId) closeLogisticsModal(modalId);
         }
 
-        function handleInboundItemChange() {
-            const selectEl = document.getElementById('inboundItemSelect');
+        /* Combined item change event listener */
+        function handleItemDropdownChange(prefix) {
+            const selectEl = document.getElementById(`${prefix}ItemSelect`);
             const selectedOption = selectEl.options[selectEl.selectedIndex];
-            const nameDisplay = document.getElementById('inboundItemNameDisplay');
+            const nameDisplay = document.getElementById(`${prefix}ItemNameDisplay`);
             
             if (selectedOption && selectedOption.value) {
                 nameDisplay.value = selectedOption.getAttribute('data-name') || '';
@@ -332,13 +343,11 @@
                 return;
             }
 
-            const inboundMarkup = `<option value="" disabled selected>-- Select Product Code --</option>` + 
+            const markupTemplate = `<option value="" disabled selected>-- Select Product Code --</option>` + 
                 data.map(i => `<option value="${i.id}" data-code="${i.item_code}" data-name="${i.item_name}">${i.item_code}</option>`).join('');
             
-            const outboundMarkup = data.map(i => `<option value="${i.id}" data-code="${i.item_code}">${i.item_code} - ${i.item_name}</option>`).join('');
-
-            inSel.innerHTML = inboundMarkup;
-            outSel.innerHTML = outboundMarkup;
+            inSel.innerHTML = markupTemplate;
+            outSel.innerHTML = markupTemplate;
         }
 
         async function fetchTransactionLogDataset() {
@@ -357,7 +366,7 @@
             tbody.innerHTML = data.map(log => {
                 let referenceDisplay = log.reference_no || log.reference || '—';
                 if (log.date_received) {
-                    referenceDisplay += ` (Recv: ${log.date_received})`;
+                    referenceDisplay += ` (Date: ${log.date_received})`;
                 }
                 
                 return `
@@ -385,7 +394,7 @@
             const itemCode = selectedOption.getAttribute('data-code');
             const rawQty = parseInt(document.getElementById(`${prefix}Qty`).value);
             const rawReferenceNo = document.getElementById(`${prefix}Ref`).value.trim();
-            const dateReceivedVal = movementType === 'Inbound' ? document.getElementById('inboundDate').value : null;
+            const dateReceivedVal = document.getElementById(`${prefix}Date`).value;
 
             // 1. Check actual quantities currently inside table index
             const { data: currentItem, error: fetchErr } = await supabaseClient.from('inventory').select('stock_quantity').eq('id', itemId).single();
