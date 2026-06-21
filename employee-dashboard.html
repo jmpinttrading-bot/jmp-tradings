@@ -113,6 +113,8 @@
         <h2>JMP Workspace</h2>
         <a id="navMyProfile" class="active" onclick="verifyNavigationPrivilege('Profile Management', '#')">👤 My Account Profile</a>
         <a id="navImportDocs" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">📄 Import Doc File Management</a>
+        <!-- ADDED: Inventory Management Sidebar Node Link Element -->
+        <a id="navInventoryManagement" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">📦 Inventory Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout System</button>
     </div>
 
@@ -254,7 +256,7 @@
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <span class="modal-alert-icon">🛑</span>
-            h4 id="modalModuleTitle">Access Restricted</h4>
+            <h4 id="modalModuleTitle">Access Restricted</h4>
             <p>You do not currently possess permission parameters to operate this system module. Please ask your administrator for permission to access.</p>
             <button class="modal-dismiss-btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
@@ -268,13 +270,16 @@
         let currentEmployeeId = null;
         let bypassAuthListener = false;
         
+        // UPDATED: Added structural mapping reference column parameter tracking state defaults
         let permissionsMatrix = {
             profile_access: true,
-            import_access: true
+            import_access: true,
+            inventory_access: true
         };
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
+            if(!box) return;
             box.textContent = msg;
             box.className = `alert ${type}`;
             box.style.display = 'block';
@@ -292,9 +297,10 @@
         }
 
         async function fetchEmployeeSystemPermissions(authUser) {
+            // UPDATED: Added inventory_access parameter lookup query parameter string context mapping rules
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
-                .select('username, role, profile_access, import_access')
+                .select('username, role, profile_access, import_access, inventory_access')
                 .eq('id', currentEmployeeId)
                 .maybeSingle();
 
@@ -310,6 +316,8 @@
                 const isAdminUser = profile.role === 'Admin';
                 permissionsMatrix.profile_access = isAdminUser || profile.profile_access !== false;
                 permissionsMatrix.import_access = isAdminUser || profile.import_access !== false;
+                // UPDATED: Bind structural fallback column properties mapping rules context values checks
+                permissionsMatrix.inventory_access = isAdminUser || profile.inventory_access !== false;
 
                 if (!permissionsMatrix.profile_access) {
                     document.getElementById('profileDossierWorkspaceWrapper').style.display = 'none';
@@ -330,6 +338,9 @@
                 isAccessPermitted = permissionsMatrix.profile_access;
             } else if (moduleName === 'Import Doc File Management') {
                 isAccessPermitted = permissionsMatrix.import_access;
+            // UPDATED: Verify conditional switch evaluations constraints rules check
+            } else if (moduleName === 'Inventory Management') {
+                isAccessPermitted = permissionsMatrix.inventory_access;
             }
 
             if (isAccessPermitted) {
