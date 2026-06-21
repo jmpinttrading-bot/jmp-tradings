@@ -155,7 +155,7 @@
                         
                         <div class="form-group">
                             <label>Unit Price (Per Item)</label>
-                            <input type="number" id="unitPrice" required min="0" step="0.01" value="0.00">
+                            <input type="number" id="unitPrice" required min="0" step="0.01" value="">
                         </div>
                     </div>
 
@@ -342,7 +342,7 @@
                                 <button class="stepper-btn" ${stepperDisabledAttr} onclick="adjustQuantity(event, '${item.id}', 1)">＋</button>
                             </div>
                         </td>
-                        <td style="font-weight:600; color:#0f172a;">$${parseFloat(item.unit_price || 0).toFixed(2)}</td>
+                        <td style="font-weight:600; color:#0f172a;">₱${parseFloat(item.unit_price || 0).toFixed(2)}</td>
                         <td style="text-align: center;">
                             <button class="btn-edit" ${editDisabledAttr} onclick="populateFormForEdit(${secureDataPayload})">Edit</button>
                         </td>
@@ -476,7 +476,7 @@
             const category = document.getElementById('itemCategory').value;
             const storage_facility = document.getElementById('storageFacility').value;
             const chosen_date = document.getElementById('dateReceived').value;
-            const unit_price = parseFloat(document.getElementById('unitPrice').value);
+            const unit_price = parseFloat(document.getElementById('unitPrice').value) || 0;
             const input_remarks = document.getElementById('formRemarks').value.trim();
             const currentTimestampISO = new Date().toISOString();
 
@@ -573,6 +573,7 @@
             document.getElementById('initialQtyWrapper').style.display = "flex";
             document.getElementById('stockQuantity').required = true;
             document.getElementById('stockQuantity').value = "1";
+            document.getElementById('unitPrice').value = "";
             document.getElementById('remarksLabel').textContent = "Remarks / Reason for Registration";
             document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
             document.getElementById('submitBtn').textContent = "Process Gate Arrival & Register";
