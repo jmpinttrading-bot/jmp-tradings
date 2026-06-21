@@ -37,9 +37,10 @@
         
         .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
         .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; height: 42px; }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
-        .form-group input:disabled, .form-group select:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; height: 42px; }
+        .form-group textarea { height: 80px; resize: vertical; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
         
         .form-actions { display: flex; gap: 10px; margin-top: 20px; }
         .btn-primary { flex: 1; background: #ee964b; color: #0f172a; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; }
@@ -147,14 +148,21 @@
                         <input type="text" id="itemSizes" placeholder="e.g., 21/25, 16/20, Medium">
                     </div>
                     
-                    <div class="form-group" id="initialQtyWrapper">
-                        <label>Arriving Cargo Inbound Quantity (Cases)</label>
-                        <input type="number" id="stockQuantity" required min="1" value="1">
+                    <div class="form-row">
+                        <div class="form-group" id="initialQtyWrapper">
+                            <label>Inbound Quantity (Cases)</label>
+                            <input type="number" id="stockQuantity" required min="1" value="1">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Unit Price (Per Item)</label>
+                            <input type="number" id="unitPrice" required min="0" step="0.01" value="0.00">
+                        </div>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label>Unit Price</label>
-                        <input type="number" id="unitPrice" required min="0" step="0.01" value="0.00">
+                        <label>Remarks</label>
+                        <textarea id="formRemarks" placeholder="Enter any specific transaction notes, container parameters, or gate conditions..."></textarea>
                     </div>
                     
                     <div class="form-actions">
@@ -287,6 +295,7 @@
                 document.getElementById('dateReceived').disabled = true;
                 document.getElementById('stockQuantity').disabled = true;
                 document.getElementById('unitPrice').disabled = true;
+                document.getElementById('formRemarks').disabled = true;
                 document.getElementById('submitBtn').disabled = true;
                 
                 document.getElementById('formTitle').textContent = "Select 'Edit' below to modify parameters";
@@ -375,6 +384,7 @@
             document.getElementById('storageFacility').disabled = false;
             document.getElementById('dateReceived').disabled = false;
             document.getElementById('unitPrice').disabled = false;
+            document.getElementById('formRemarks').disabled = false;
             document.getElementById('submitBtn').disabled = false;
 
             document.getElementById('itemId').value = item.id;
@@ -385,6 +395,7 @@
             document.getElementById('storageFacility').value = item.storage_facility || '';
             document.getElementById('dateReceived').value = item.date || ''; 
             document.getElementById('unitPrice').value = item.unit_price || 0;
+            document.getElementById('formRemarks').value = item.remarks || '';
             
             document.getElementById('initialQtyWrapper').style.display = "none";
             document.getElementById('stockQuantity').required = false;
@@ -413,8 +424,9 @@
             const storage_facility = document.getElementById('storageFacility').value;
             const chosen_date = document.getElementById('dateReceived').value;
             const unit_price = parseFloat(document.getElementById('unitPrice').value);
+            const input_remarks = document.getElementById('formRemarks').value.trim();
 
-            const payload = { item_code, item_name, sizes, category, storage_facility, date: chosen_date, unit_price };
+            const payload = { item_code, item_name, sizes, category, storage_facility, date: chosen_date, unit_price, remarks: input_remarks };
 
             if (id) {
                 const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
@@ -449,7 +461,7 @@
                     processed_by: currentUserEmail,
                     facility_location: storage_facility,
                     date: chosen_date, 
-                    remarks: "Auto-generated upon initial gate product code registry registration"
+                    remarks: input_remarks || "Auto-generated upon initial gate product code registry registration"
                 };
 
                 const { error: txError } = await supabaseClient
