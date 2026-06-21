@@ -54,21 +54,27 @@
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
         .master-table tr:hover td { background-color: #f8fafc; }
         
-        .qty-stepper { display: inline-flex; align-items: center; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px; gap: 4px; }
-        .stepper-btn { width: 28px; height: 28px; border: none; background: white; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .stepper-btn:hover { background: #ee964b; color: white; }
-        .stepper-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
-        .qty-val { font-weight: 700; min-width: 45px; text-align: center; color: #0f172a; font-size: 0.9rem; }
+        .qty-val { font-weight: 700; color: #0f172a; font-size: 0.95rem; }
 
+        .action-btn-group { display: flex; gap: 6px; justify-content: center; }
         .btn-edit { background: #1e293b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
         .btn-edit:hover { background: #ee964b; color: #0f172a; }
         .btn-edit:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        
+        .btn-qty-adj { background: #ee964b; color: #0f172a; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+        .btn-qty-adj:hover { background: #e0853c; }
+        .btn-qty-adj:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
         .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
+
+        /* Modal Overlay Background styling */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-card { background: white; border-radius: 12px; max-width: 450px; width: 100%; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+        .modal-card h3 { font-size: 1.2rem; color: #0f172a; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
 
         @media (max-width: 768px) {
             .form-row { flex-direction: column; gap: 0; }
@@ -199,6 +205,36 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="qtyModalOverlay">
+        <div class="modal-card">
+            <h3>Manual Quantity Balancing</h3>
+            <form id="qtyAdjustmentForm" onsubmit="handleQtyModalSubmit(event)">
+                <input type="hidden" id="modalItemId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Old Quantity Balance</label>
+                        <input type="number" id="modalOldQty" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>New Target Quantity</label>
+                        <input type="number" id="modalNewQty" required min="0">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Edit Remarks / Alteration Log Reason</label>
+                    <textarea id="modalEditRemarks" required placeholder="Provide analytical adjustment parameters or descriptive reason details..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save Balances</button>
+                    <button type="button" class="btn-secondary" onclick="closeQtyModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -323,7 +359,7 @@
             }
 
             tbody.innerHTML = items.map(item => {
-                const stepperDisabledAttr = permissions.canQuantity ? '' : 'disabled';
+                const qtyDisabledAttr = permissions.canQuantity ? '' : 'disabled';
                 const editDisabledAttr = permissions.canEdit ? '' : 'disabled';
                 
                 const secureDataPayload = JSON.stringify(item).replace(/"/g, '&quot;');
@@ -336,35 +372,53 @@
                         <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem;">${item.category || ''}</span></td>
                         <td style="font-size:0.8rem; color:#64748b; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.storage_facility || ''}</td>
                         <td>
-                            <div class="qty-stepper">
-                                <button class="stepper-btn" ${stepperDisabledAttr} onclick="adjustQuantity(event, '${item.id}', -1)">−</button>
-                                <span class="qty-val">${item.stock_quantity || 0}</span>
-                                <button class="stepper-btn" ${stepperDisabledAttr} onclick="adjustQuantity(event, '${item.id}', 1)">＋</button>
-                            </div>
+                            <span class="qty-val">${item.stock_quantity || 0}</span>
                         </td>
                         <td style="font-weight:600; color:#0f172a;">₱${parseFloat(item.unit_price || 0).toFixed(2)}</td>
-                        <td style="text-align: center;">
-                            <button class="btn-edit" ${editDisabledAttr} onclick="populateFormForEdit(${secureDataPayload})">Edit</button>
+                        <td>
+                            <div class="action-btn-group">
+                                <button class="btn-edit" ${editDisabledAttr} onclick="populateFormForEdit(${secureDataPayload})">Edit</button>
+                                <button class="btn-qty-adj" ${qtyDisabledAttr} onclick="openQtyModal(${secureDataPayload})">Adj Qty</button>
+                            </div>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        async function adjustQuantity(event, id, delta) {
+        function openQtyModal(item) {
             if (!permissions.canQuantity) {
                 showAlert("Action Denied: You do not have permission to alter stock counts.", "error");
                 return;
             }
-            if (event) event.stopPropagation();
+            document.getElementById('modalItemId').value = item.id;
+            document.getElementById('modalOldQty').value = item.stock_quantity || 0;
+            document.getElementById('modalNewQty').value = item.stock_quantity || 0;
+            document.getElementById('modalEditRemarks').value = item.edit_remarks || '';
+            document.getElementById('qtyModalOverlay').style.display = 'flex';
+        }
+
+        function closeQtyModal() {
+            document.getElementById('qtyModalOverlay').style.display = 'none';
+            document.getElementById('qtyAdjustmentForm').reset();
+        }
+
+        async function handleQtyModalSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('modalItemId').value;
+            const oldQty = parseInt(document.getElementById('modalOldQty').value) || 0;
+            const newQty = parseInt(document.getElementById('modalNewQty').value) || 0;
+            const trackingRemarks = document.getElementById('modalEditRemarks').value.trim();
             
-            const inputReason = prompt("Reason / Remarks for altering stock balances manually:");
-            if (inputReason === null) return; 
-            if (inputReason.trim() === "") {
-                showAlert("Action Aborted: A valid tracking remark/reason is required to adjust quantities.", "error");
+            if (trackingRemarks === "") {
+                alert("Action Aborted: A tracking entry record change explanation is required.");
                 return;
             }
-            
+
+            const delta = newQty - oldQty;
+            const currentTimestampISO = new Date().toISOString();
+
+            // Fetch structural values for correct audit updates
             const { data: currentItem, error: fetchErr } = await supabaseClient
                 .from('inventory')
                 .select('*')
@@ -372,19 +426,16 @@
                 .single();
                 
             if (fetchErr) { 
-                showAlert("Delta resolution update faulted: " + fetchErr.message, "error"); 
+                showAlert("Update tracking verification configuration error: " + fetchErr.message, "error"); 
                 return; 
             }
-            
-            const targetQty = Math.max(0, (parseInt(currentItem.stock_quantity) || 0) + delta);
-            const currentTimestampISO = new Date().toISOString();
 
             const { error: invError } = await supabaseClient
                 .from('inventory')
                 .update({ 
-                    stock_quantity: targetQty,
+                    stock_quantity: newQty,
                     edit_date: currentTimestampISO,
-                    edit_remarks: inputReason.trim(),
+                    edit_remarks: trackingRemarks,
                     processed_by: currentUserEmail
                 })
                 .eq('id', id);
@@ -394,31 +445,37 @@
                 return;
             }
 
-            const transactionPayload = {
-                item_id: currentItem.id,
-                item_code: currentItem.item_code,
-                item_name: currentItem.item_name,
-                sizes: currentItem.sizes,
-                category: currentItem.category,
-                quantity: Math.abs(delta), 
-                transactions_type: delta > 0 ? "Adjustment In" : "Adjustment Out", 
-                processed_by: currentUserEmail,
-                storage_facility: currentItem.storage_facility,
-                date: currentTimestampISO.split('T')[0], 
-                remarks: `Manual Stepper Change: ${inputReason.trim()}`
-            };
+            // Record into systemic audit ledger trail only if changes occured
+            if (delta !== 0) {
+                const transactionPayload = {
+                    item_id: currentItem.id,
+                    item_code: currentItem.item_code,
+                    item_name: currentItem.item_name,
+                    sizes: currentItem.sizes,
+                    category: currentItem.category,
+                    quantity: Math.abs(delta), 
+                    transactions_type: delta > 0 ? "Adjustment In" : "Adjustment Out", 
+                    processed_by: currentUserEmail,
+                    storage_facility: currentItem.storage_facility,
+                    date: currentTimestampISO.split('T')[0], 
+                    remarks: `Modal Quantity Sync (From ${oldQty} to ${newQty}): ${trackingRemarks}`
+                };
 
-            const { error: txError } = await supabaseClient
-                .from('transactions')
-                .insert([transactionPayload]);
+                const { error: txError } = await supabaseClient
+                    .from('transactions')
+                    .insert([transactionPayload]);
 
-            if (txError) {
-                console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
-                showAlert("Quantity shifted inside inventory, but transaction ledger recording failed: " + txError.message, "error");
+                if (txError) {
+                    console.error("Audit log failed to save record payload: ", txError.message);
+                    showAlert("Balances modified inside active registry, but transactions audit subtrace log generation failed.", "error");
+                } else {
+                    showAlert("Quantity stock parameters updated and transaction audit tracking successfully generated.", "success");
+                }
             } else {
-                showAlert("Quantity balance updated and adjustment transaction entry logged.", "success");
+                showAlert("Inventory information metadata saved successfully without balance fluctuations.", "success");
             }
 
+            closeQtyModal();
             fetchLedgerDataset();
         }
 
@@ -447,12 +504,14 @@
             
             document.getElementById('dateReceived').value = item.date || ''; 
             document.getElementById('unitPrice').value = item.unit_price || 0;
-            document.getElementById('formRemarks').value = item.edit_remarks || '';
+            
+            // Populate using edit_remarks if present; fallback to original registration remarks
+            document.getElementById('formRemarks').value = item.edit_remarks || item.remarks || '';
             
             document.getElementById('initialQtyWrapper').style.display = "none";
             document.getElementById('stockQuantity').required = false;
 
-            document.getElementById('remarksLabel').textContent = "Remarks / Reason for Modification";
+            document.getElementById('remarksLabel').textContent = "Edit Remarks / Reason for Modification";
             document.getElementById('formTitle').textContent = "Modify Registered Parameters";
             document.getElementById('submitBtn').textContent = "Update Registry Log";
         }
