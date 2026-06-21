@@ -111,17 +111,6 @@
                         </select>
                     </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Unique SKU Code / Item Code</label>
-                            <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
-                        </div>
-                        <div class="form-group">
-                            <label>Stock Code</label>
-                            <input type="text" id="stockCode" placeholder="e.g., STK-001">
-                        </div>
-                    </div>
-
                     <div class="form-group">
                         <label>Stock Category</label>
                         <select id="itemCategory">
@@ -130,6 +119,11 @@
                             <option value="Mollusks">Mollusks (Squid, Octopus, Clams)</option>
                             <option value="Value-Added Seafood">Value-Added / Processed Lines</option>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Unique SKU Code / Item Code</label>
+                        <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
                     </div>
                     
                     <div class="form-group">
@@ -275,7 +269,6 @@
 
             if (!permissions.canRegister && document.getElementById('itemId').value === '') {
                 document.getElementById('itemCode').disabled = true;
-                if(document.getElementById('stockCode')) document.getElementById('stockCode').disabled = true;
                 document.getElementById('itemName').disabled = true;
                 document.getElementById('itemSizes').disabled = true;
                 document.getElementById('itemCategory').disabled = true;
@@ -364,7 +357,6 @@
             }
 
             document.getElementById('itemCode').disabled = false;
-            if(document.getElementById('stockCode')) document.getElementById('stockCode').disabled = false;
             document.getElementById('itemName').disabled = false;
             document.getElementById('itemSizes').disabled = false;
             document.getElementById('itemCategory').disabled = false;
@@ -374,7 +366,6 @@
 
             document.getElementById('itemId').value = item.id;
             document.getElementById('itemCode').value = item.item_code || '';
-            if(document.getElementById('stockCode')) document.getElementById('stockCode').value = item.stock_code || '';
             document.getElementById('itemName').value = item.item_name || '';
             document.getElementById('itemSizes').value = item.sizes || '';
             document.getElementById('itemCategory').value = item.category || '';
@@ -402,14 +393,13 @@
             }
 
             const item_code = document.getElementById('itemCode').value.trim();
-            const stock_code = document.getElementById('stockCode') ? document.getElementById('stockCode').value.trim() : '';
             const item_name = document.getElementById('itemName').value.trim();
             const sizes = document.getElementById('itemSizes').value.trim();
             const category = document.getElementById('itemCategory').value;
             const storage_facility = document.getElementById('storageFacility').value;
             const unit_price = parseFloat(document.getElementById('unitPrice').value);
 
-            const payload = { item_code, stock_code, item_name, sizes, category, storage_facility, unit_price };
+            const payload = { item_code, item_name, sizes, category, storage_facility, unit_price };
 
             if (id) {
                 // 1. UPDATE EXISTING LOG RECORD
