@@ -31,7 +31,6 @@
         .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
         .form-row .form-group { flex: 1; margin-bottom: 0; }
         
-        /* Custom distribution classes for mismatched form row alignments */
         .form-row .flex-2 { flex: 2; }
         .form-row .flex-1 { flex: 1; }
         
@@ -161,8 +160,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Remarks</label>
-                        <textarea id="formRemarks" placeholder="Enter any specific transaction notes, container parameters, or gate conditions..."></textarea>
+                        <label id="remarksLabel">Remarks / Reason for Registration</label>
+                        <textarea id="formRemarks" placeholder="Enter transaction parameters, notes, or justification metrics..."></textarea>
                     </div>
                     
                     <div class="form-actions">
@@ -327,6 +326,8 @@
                 const stepperDisabledAttr = permissions.canQuantity ? '' : 'disabled';
                 const editDisabledAttr = permissions.canEdit ? '' : 'disabled';
                 
+                const secureDataPayload = JSON.stringify(item).replace(/"/g, '&quot;');
+                
                 return `
                     <tr>
                         <td style="font-weight: 700; color: #0f172a;">${item.item_code || ''}</td>
@@ -336,39 +337,93 @@
                         <td style="font-size:0.8rem; color:#64748b; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.storage_facility || ''}</td>
                         <td>
                             <div class="qty-stepper">
-                                <button class="stepper-btn" ${stepperDisabledAttr} onclick="adjustQuantity('${item.id}', -1)">−</button>
+                                <button class="stepper-btn" ${stepperDisabledAttr} onclick="adjustQuantity(event, '${item.id}', -1)">−</button>
                                 <span class="qty-val">${item.stock_quantity || 0}</span>
-                                <button class="stepper-btn" ${stepperDisabledAttr} onclick="adjustQuantity('${item.id}', 1)">＋</button>
+                                <button class="stepper-btn" ${stepperDisabledAttr} onclick="adjustQuantity(event, '${item.id}', 1)">＋</button>
                             </div>
                         </td>
                         <td style="font-weight:600; color:#0f172a;">$${parseFloat(item.unit_price || 0).toFixed(2)}</td>
                         <td style="text-align: center;">
-                            <button class="btn-edit" ${editDisabledAttr} onclick="populateFormForEdit(${JSON.stringify(item).replace(/"/g, '&quot;')})">Edit</button>
+                            <button class="btn-edit" ${editDisabledAttr} onclick="populateFormForEdit(${secureDataPayload})">Edit</button>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        async function adjustQuantity(id, delta) {
+        async function adjustQuantity(event, id, delta) {
             if (!permissions.canQuantity) {
                 showAlert("Action Denied: You do not have permission to alter stock counts.", "error");
                 return;
             }
-            event.stopPropagation();
+            if (event) event.stopPropagation();
             
-            const { data: currentItem, error: fetchErr } = await supabaseClient.from('inventory').select('stock_quantity').eq('id', id).single();
-            if (fetchErr) { showAlert("Delta resolution update faulted.", "error"); return; }
+            // Collect operational justification reason seamlessly via window prompt
+            const inputReason = prompt("Reason / Remarks for altering stock balances manually:");
+            if (inputReason === null) return; // Action cancelled by user
+            if (inputReason.trim() === "") {
+                showAlert("Action Aborted: A valid tracking remark/reason is required to adjust quantities.", "error");
+                return;
+            }
+            
+            // Fetch comprehensive row data to construct transactions subledger correctly
+            const { data: currentItem, error: fetchErr } = await supabaseClient
+                .from('inventory')
+                .select('*')
+                .eq('id', id)
+                .single();
+                
+            if (fetchErr) { 
+                showAlert("Delta resolution update faulted: " + fetchErr.message, "error"); 
+                return; 
+            }
             
             const targetQty = Math.max(0, (parseInt(currentItem.stock_quantity) || 0) + delta);
+            const currentTimestampISO = new Date().toISOString();
 
-            const { error } = await supabaseClient
+            // 1. Update Inventory Master Ledger Entry
+            const { error: invError } = await supabaseClient
                 .from('inventory')
-                .update({ stock_quantity: targetQty })
+                .update({ 
+                    stock_quantity: targetQty,
+                    edit_date: currentTimestampISO,
+                    remarks: inputReason.trim(),
+                    processed_by: currentUserEmail
+                })
                 .eq('id', id);
 
-            if (error) showAlert(error.message, "error");
-            else fetchLedgerDataset();
+            if (invError) {
+                showAlert(invError.message, "error");
+                return;
+            }
+
+            // 2. Append Transaction Audit Trail Ledger Record with explicit adjustment categorization
+            const transactionPayload = {
+                item_id: currentItem.id,
+                item_code: currentItem.item_code,
+                item_name: currentItem.item_name,
+                sizes: currentItem.sizes,
+                category: currentItem.category,
+                quantity: Math.abs(delta), // Absolute mutation amount (always 1 for stepper clicks)
+                transaction_type: delta > 0 ? "Adjustment In" : "Adjustment Out", // Mapped to clear adjustment types
+                processed_by: currentUserEmail,
+                facility_location: currentItem.storage_facility,
+                date: currentTimestampISO.split('T')[0], // Standard clean date format distribution
+                remarks: `Manual Stepper Change: ${inputReason.trim()}`
+            };
+
+            const { error: txError } = await supabaseClient
+                .from('transactions')
+                .insert([transactionPayload]);
+
+            if (txError) {
+                console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
+                showAlert("Quantity shifted inside inventory, but transaction ledger recording failed: " + txError.message, "error");
+            } else {
+                showAlert("Quantity balance updated and adjustment transaction entry logged.", "success");
+            }
+
+            fetchLedgerDataset();
         }
 
         function populateFormForEdit(item) {
@@ -393,6 +448,8 @@
             document.getElementById('itemSizes').value = item.sizes || '';
             document.getElementById('itemCategory').value = item.category || '';
             document.getElementById('storageFacility').value = item.storage_facility || '';
+            
+            // Retaining native date schema targeting without schema mutations
             document.getElementById('dateReceived').value = item.date || ''; 
             document.getElementById('unitPrice').value = item.unit_price || 0;
             document.getElementById('formRemarks').value = item.remarks || '';
@@ -400,6 +457,7 @@
             document.getElementById('initialQtyWrapper').style.display = "none";
             document.getElementById('stockQuantity').required = false;
 
+            document.getElementById('remarksLabel').textContent = "Remarks / Reason for Modification";
             document.getElementById('formTitle').textContent = "Modify Registered Parameters";
             document.getElementById('submitBtn').textContent = "Update Registry Log";
         }
@@ -425,23 +483,54 @@
             const chosen_date = document.getElementById('dateReceived').value;
             const unit_price = parseFloat(document.getElementById('unitPrice').value);
             const input_remarks = document.getElementById('formRemarks').value.trim();
-
-            const payload = { item_code, item_name, sizes, category, storage_facility, date: chosen_date, unit_price, remarks: input_remarks };
+            const currentTimestampISO = new Date().toISOString();
 
             if (id) {
-                const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
+                // Edit Item Action Matrix Loop
+                if (input_remarks === "") {
+                    showAlert("Tracking Failure: You must supply a remark/reason to edit item parameters.", "error");
+                    return;
+                }
+
+                const editPayload = { 
+                    item_code, 
+                    item_name, 
+                    sizes, 
+                    category, 
+                    storage_facility, 
+                    date: chosen_date, 
+                    unit_price, 
+                    remarks: input_remarks,
+                    edit_date: currentTimestampISO,
+                    processed_by: currentUserEmail
+                };
+
+                const { error } = await supabaseClient.from('inventory').update(editPayload).eq('id', id);
                 if (error) showAlert(error.message, "error");
                 else {
-                    showAlert("Master log file adjustments written successfully.", "success");
+                    showAlert("Master log file parameters updated successfully.", "success");
                     resetFormState();
                 }
             } else {
+                // New Registry Item Action Matrix Loop
                 const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
-                payload.stock_quantity = quantity;
+                
+                const registryPayload = {
+                    item_code,
+                    item_name,
+                    sizes,
+                    category,
+                    storage_facility,
+                    date: chosen_date,
+                    unit_price,
+                    remarks: input_remarks,
+                    stock_quantity: quantity,
+                    processed_by: currentUserEmail
+                };
 
                 const { data: newInventoryItem, error: invError } = await supabaseClient
                     .from('inventory')
-                    .insert([payload])
+                    .insert([registryPayload])
                     .select()
                     .single();
 
@@ -484,6 +573,7 @@
             document.getElementById('initialQtyWrapper').style.display = "flex";
             document.getElementById('stockQuantity').required = true;
             document.getElementById('stockQuantity').value = "1";
+            document.getElementById('remarksLabel').textContent = "Remarks / Reason for Registration";
             document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
             document.getElementById('submitBtn').textContent = "Process Gate Arrival & Register";
             
