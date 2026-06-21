@@ -384,7 +384,7 @@
                 .update({ 
                     stock_quantity: targetQty,
                     edit_date: currentTimestampISO,
-                    remarks: inputReason.trim(),
+                    edit_remarks: inputReason.trim(),
                     processed_by: currentUserEmail
                 })
                 .eq('id', id);
@@ -447,7 +447,7 @@
             
             document.getElementById('dateReceived').value = item.date || ''; 
             document.getElementById('unitPrice').value = item.unit_price || 0;
-            document.getElementById('formRemarks').value = item.remarks || '';
+            document.getElementById('formRemarks').value = item.edit_remarks || '';
             
             document.getElementById('initialQtyWrapper').style.display = "none";
             document.getElementById('stockQuantity').required = false;
@@ -494,7 +494,7 @@
                     storage_facility, 
                     date: chosen_date, 
                     unit_price, 
-                    remarks: input_remarks,
+                    edit_remarks: input_remarks,
                     edit_date: currentTimestampISO,
                     processed_by: currentUserEmail
                 };
