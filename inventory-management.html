@@ -322,7 +322,8 @@
                 }
             }
 
-            renderUnifiedMasterGraph(labels, historicalTrendPoints, themeColor, fillGradient);
+            // FIXED: Passed timelineLabels here instead of the undefined 'labels' variable
+            renderUnifiedMasterGraph(timelineLabels, historicalTrendPoints, themeColor, fillGradient);
         }
 
         function renderUnifiedMasterGraph(labels, dataPoints, strokeColor, fillColor) {
