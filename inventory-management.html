@@ -272,6 +272,9 @@
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
+                
+                // RETAIN: Keep the standard label for Admins
+                if(document.getElementById('profileLink')) document.getElementById('profileLink').textContent = "Profile Management";
             } else {
                 currentUserRole = "Employee";
                 
@@ -283,7 +286,9 @@
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Terminal";
                 
-                // FIXED: Hides the employee link completely if the role is Employee
+                // UPDATED: Dynamic label modification for the profile navigation item
+                if(document.getElementById('profileLink')) document.getElementById('profileLink').textContent = "👤 My Account Profile";
+                
                 if(document.getElementById('controlPanelLink')) document.getElementById('controlPanelLink').style.display = 'none';
                 if(document.getElementById('employeeLink')) document.getElementById('employeeLink').style.display = 'none';
             }
@@ -295,7 +300,8 @@
         function verifyNavigationPrivilege(moduleName, destinationUrl) {
             let isAccessPermitted = true;
 
-            if (moduleName === 'Profile Management') {
+            // Checked against moduleName identifiers
+            if (moduleName === 'Profile Management' || moduleName === '👤 My Account Profile') {
                 isAccessPermitted = permissionsMatrix.profile_access;
             } else if (moduleName === 'Import Doc File Management') {
                 isAccessPermitted = permissionsMatrix.import_access;
