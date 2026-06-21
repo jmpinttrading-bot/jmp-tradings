@@ -225,11 +225,10 @@
         let currentUserRole = "Employee"; 
         let masterChartInstance = null;
 
-        // ADDED: Tracks permissions matrix locally on this file layout
         let permissionsMatrix = {
             profile_access: true,
             import_access: true,
-            employee_201_access: false // Employees should be restricted from viewing everyone's 201 file database
+            employee_201_access: false 
         };
 
         function showAlert(msg, type) {
@@ -258,7 +257,6 @@
             
             currentAdminId = user.id;
             
-            // UPDATED: Dynamically checking explicit permissions columns out of Supabase profiles table
             const { data: profile } = await supabaseClient
                 .from('profiles')
                 .select('role, profile_access, import_access')
@@ -269,7 +267,7 @@
                 currentUserRole = "Admin";
                 permissionsMatrix.profile_access = true;
                 permissionsMatrix.import_access = true;
-                permissionsMatrix.employee_201_access = true; // Admins have master view access
+                permissionsMatrix.employee_201_access = true; 
 
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
@@ -277,24 +275,23 @@
             } else {
                 currentUserRole = "Employee";
                 
-                // Parse boolean flags explicitly if set by administrators
                 permissionsMatrix.profile_access = profile ? profile.profile_access !== false : true;
                 permissionsMatrix.import_access = profile ? profile.import_access !== false : true;
-                permissionsMatrix.employee_201_access = false; // Strictly hard-blocked for standard employees
+                permissionsMatrix.employee_201_access = false; 
 
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Terminal";
                 
-                // Completely hide control panel from standard visual sidebar layout flow
+                // FIXED: Hides the employee link completely if the role is Employee
                 if(document.getElementById('controlPanelLink')) document.getElementById('controlPanelLink').style.display = 'none';
+                if(document.getElementById('employeeLink')) document.getElementById('employeeLink').style.display = 'none';
             }
             
             fetchMasterInventoryLedger();
             setupSessionCrossCheckListener();
         }
 
-        // ADDED: Standardized access boundary check validation workflow 
         function verifyNavigationPrivilege(moduleName, destinationUrl) {
             let isAccessPermitted = true;
 
@@ -315,7 +312,6 @@
             }
         }
 
-        // ADDED: Modal trigger utility helpers
         function openRestrictionModal(moduleName) {
             document.getElementById('modalModuleTitle').textContent = `${moduleName} Restricted`;
             document.getElementById('accessBlockerModal').classList.add('is-visible');
