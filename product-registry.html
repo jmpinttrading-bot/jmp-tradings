@@ -358,15 +358,13 @@
             }
             if (event) event.stopPropagation();
             
-            // Collect operational justification reason seamlessly via window prompt
             const inputReason = prompt("Reason / Remarks for altering stock balances manually:");
-            if (inputReason === null) return; // Action cancelled by user
+            if (inputReason === null) return; 
             if (inputReason.trim() === "") {
                 showAlert("Action Aborted: A valid tracking remark/reason is required to adjust quantities.", "error");
                 return;
             }
             
-            // Fetch comprehensive row data to construct transactions subledger correctly
             const { data: currentItem, error: fetchErr } = await supabaseClient
                 .from('inventory')
                 .select('*')
@@ -381,7 +379,6 @@
             const targetQty = Math.max(0, (parseInt(currentItem.stock_quantity) || 0) + delta);
             const currentTimestampISO = new Date().toISOString();
 
-            // 1. Update Inventory Master Ledger Entry
             const { error: invError } = await supabaseClient
                 .from('inventory')
                 .update({ 
@@ -397,18 +394,17 @@
                 return;
             }
 
-            // 2. Append Transaction Audit Trail Ledger Record with explicit adjustment categorization
             const transactionPayload = {
                 item_id: currentItem.id,
                 item_code: currentItem.item_code,
                 item_name: currentItem.item_name,
                 sizes: currentItem.sizes,
                 category: currentItem.category,
-                quantity: Math.abs(delta), // Absolute mutation amount (always 1 for stepper clicks)
-                transaction_type: delta > 0 ? "Adjustment In" : "Adjustment Out", // Mapped to clear adjustment types
+                quantity: Math.abs(delta), 
+                transaction_type: delta > 0 ? "Adjustment In" : "Adjustment Out", 
                 processed_by: currentUserEmail,
                 facility_location: currentItem.storage_facility,
-                date: currentTimestampISO.split('T')[0], // Standard clean date format distribution
+                date: currentTimestampISO.split('T')[0], 
                 remarks: `Manual Stepper Change: ${inputReason.trim()}`
             };
 
@@ -449,7 +445,6 @@
             document.getElementById('itemCategory').value = item.category || '';
             document.getElementById('storageFacility').value = item.storage_facility || '';
             
-            // Retaining native date schema targeting without schema mutations
             document.getElementById('dateReceived').value = item.date || ''; 
             document.getElementById('unitPrice').value = item.unit_price || 0;
             document.getElementById('formRemarks').value = item.remarks || '';
@@ -486,7 +481,6 @@
             const currentTimestampISO = new Date().toISOString();
 
             if (id) {
-                // Edit Item Action Matrix Loop
                 if (input_remarks === "") {
                     showAlert("Tracking Failure: You must supply a remark/reason to edit item parameters.", "error");
                     return;
@@ -512,14 +506,9 @@
                     resetFormState();
                 }
             } else {
-                // New Registry Item Action Matrix Loop
                 const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
                 
-                // CLIENT GENERATED ID SOLUTION: Create the unique ID beforehand explicitly 
-                const pregeneratedItemId = crypto.randomUUID();
-
                 const registryPayload = {
-                    id: pregeneratedItemId, // Shared Explicitly
                     item_code,
                     item_name,
                     sizes,
@@ -532,18 +521,25 @@
                     processed_by: currentUserEmail
                 };
 
-                const { error: invError } = await supabaseClient
+                // Insert into inventory, allowing Postgres to assign the int8 incrementing value, and immediately select it back
+                const { data: newInventoryItem, error: invError } = await supabaseClient
                     .from('inventory')
-                    .insert([registryPayload]);
+                    .insert([registryPayload])
+                    .select('id')
+                    .single();
 
                 if (invError) {
                     showAlert("Error generating inventory registration: " + invError.message, "error");
                     return;
                 }
 
-                // Both tables safely inherit the exact same link id
+                if (!newInventoryItem || !newInventoryItem.id) {
+                    showAlert("Error: Inventory record created, but system could not retrieve the generated ID token.", "error");
+                    return;
+                }
+
                 const transactionPayload = {
-                    item_id: pregeneratedItemId, 
+                    item_id: newInventoryItem.id, 
                     item_code: item_code,
                     item_name: item_name,
                     sizes: sizes,
@@ -562,7 +558,7 @@
 
                 if (txError) {
                     console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
-                    showAlert("Inventory registered, but transaction history failed to write.", "error");
+                    showAlert("Inventory registered, but transaction history failed to write: " + txError.message, "error");
                     return;
                 }
 
