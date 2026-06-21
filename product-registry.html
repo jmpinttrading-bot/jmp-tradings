@@ -31,9 +31,13 @@
         .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
         .form-row .form-group { flex: 1; margin-bottom: 0; }
         
+        /* Custom distribution classes for mismatched form row alignments */
+        .form-row .flex-2 { flex: 2; }
+        .form-row .flex-1 { flex: 1; }
+        
         .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
         .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; }
+        .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; height: 42px; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
         .form-group input:disabled, .form-group select:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
         
@@ -68,7 +72,7 @@
 
         @media (max-width: 768px) {
             .form-row { flex-direction: column; gap: 0; }
-            .form-row .form-group { margin-bottom: 16px; }
+            .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
         }
     </style>
 </head>
@@ -102,7 +106,7 @@
                     <input type="hidden" id="itemId">
                     
                     <div class="form-row">
-                        <div class="form-group">
+                        <div class="form-group flex-2">
                             <label>Receiving Cold Storage Hub Facility</label>
                             <select id="storageFacility">
                                 <option value="VVS Cold Storage and Processing Plant Corp.">VVS Cold Storage and Processing Plant Corp.</option>
@@ -111,7 +115,7 @@
                                 <option value="Crystal Cold Storage, Inc.">Crystal Cold Storage, Inc.</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group flex-1">
                             <label>Date Received</label>
                             <input type="date" id="dateReceived" required>
                         </div>
@@ -379,7 +383,7 @@
             document.getElementById('itemSizes').value = item.sizes || '';
             document.getElementById('itemCategory').value = item.category || '';
             document.getElementById('storageFacility').value = item.storage_facility || '';
-            document.getElementById('dateReceived').value = item.date || ''; // Mapped to 'date' database column
+            document.getElementById('dateReceived').value = item.date || ''; 
             document.getElementById('unitPrice').value = item.unit_price || 0;
             
             document.getElementById('initialQtyWrapper').style.display = "none";
@@ -410,11 +414,9 @@
             const chosen_date = document.getElementById('dateReceived').value;
             const unit_price = parseFloat(document.getElementById('unitPrice').value);
 
-            // Mapped to inventory table 'date' field
             const payload = { item_code, item_name, sizes, category, storage_facility, date: chosen_date, unit_price };
 
             if (id) {
-                // 1. UPDATE EXISTING LOG RECORD
                 const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
                 if (error) showAlert(error.message, "error");
                 else {
@@ -422,11 +424,9 @@
                     resetFormState();
                 }
             } else {
-                // 2. COMBINED INITIAL REGISTRY + INBOUND TRANSACTION
                 const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
                 payload.stock_quantity = quantity;
 
-                // Step A: Insert row into master Inventory ledger
                 const { data: newInventoryItem, error: invError } = await supabaseClient
                     .from('inventory')
                     .insert([payload])
@@ -438,7 +438,6 @@
                     return;
                 }
 
-                // Step B: Fire transaction record directly to unified transactions ledger
                 const transactionPayload = {
                     item_id: newInventoryItem.id,
                     item_code: item_code,
@@ -449,7 +448,7 @@
                     transaction_type: "Inbound", 
                     processed_by: currentUserEmail,
                     facility_location: storage_facility,
-                    date: chosen_date, // Mapped to transactions table 'date' field
+                    date: chosen_date, 
                     remarks: "Auto-generated upon initial gate product code registry registration"
                 };
 
