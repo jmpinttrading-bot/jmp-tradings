@@ -521,7 +521,6 @@
                     processed_by: currentUserEmail
                 };
 
-                // Insert into inventory, allowing Postgres to assign the int8 incrementing value, and immediately select it back
                 const { data: newInventoryItem, error: invError } = await supabaseClient
                     .from('inventory')
                     .insert([registryPayload])
