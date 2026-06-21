@@ -71,7 +71,7 @@
 
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
 
-        /* Modal Overlay Background styling */
+        /* Modal Overlays Background styling */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
         .modal-card { background: white; border-radius: 12px; max-width: 450px; width: 100%; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
         .modal-card h3 { font-size: 1.2rem; color: #0f172a; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
@@ -230,6 +230,22 @@
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">Save Balances</button>
                     <button type="button" class="btn-secondary" onclick="closeQtyModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editRemarksModalOverlay">
+        <div class="modal-card">
+            <h3>Registry Log Authorization</h3>
+            <form id="editRemarksForm" onsubmit="handleEditRemarksModalSubmit(event)">
+                <div class="form-group">
+                    <label style="color: #d9534f;">Reason / Edit Remarks (Required)</label>
+                    <textarea id="modalItemEditRemarks" placeholder="You must supply a change log parameter modification description to proceed..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary" style="background: #1e293b; color: white;">Confirm Changes</button>
+                    <button type="button" class="btn-secondary" onclick="closeEditRemarksModal()">Cancel</button>
                 </div>
             </form>
         </div>
@@ -418,7 +434,6 @@
             const delta = newQty - oldQty;
             const currentTimestampISO = new Date().toISOString();
 
-            // Fetch structural values for correct audit updates
             const { data: currentItem, error: fetchErr } = await supabaseClient
                 .from('inventory')
                 .select('*')
@@ -445,7 +460,6 @@
                 return;
             }
 
-            // Record into systemic audit ledger trail only if changes occured
             if (delta !== 0) {
                 const transactionPayload = {
                     item_id: currentItem.id,
@@ -505,15 +519,24 @@
             document.getElementById('dateReceived').value = item.date || ''; 
             document.getElementById('unitPrice').value = item.unit_price || 0;
             
-            // Populate using edit_remarks if present; fallback to original registration remarks
-            document.getElementById('formRemarks').value = item.edit_remarks || item.remarks || '';
+            // Populates original registration details notes back down safely 
+            document.getElementById('formRemarks').value = item.remarks || '';
             
             document.getElementById('initialQtyWrapper').style.display = "none";
             document.getElementById('stockQuantity').required = false;
 
-            document.getElementById('remarksLabel').textContent = "Edit Remarks / Reason for Modification";
+            document.getElementById('remarksLabel').textContent = "Remarks / Reason for Registration";
             document.getElementById('formTitle').textContent = "Modify Registered Parameters";
             document.getElementById('submitBtn').textContent = "Update Registry Log";
+        }
+
+        function openEditRemarksModal() {
+            document.getElementById('modalItemEditRemarks').value = '';
+            document.getElementById('editRemarksModalOverlay').style.display = 'flex';
+        }
+
+        function closeEditRemarksModal() {
+            document.getElementById('editRemarksModalOverlay').style.display = 'none';
         }
 
         async function handleFormSubmit(e) {
@@ -529,6 +552,61 @@
                 return;
             }
 
+            // Interrupt submission flow here if editing, shifting parameters context to popups
+            if (id) {
+                openEditRemarksModal();
+            } else {
+                await executeRegistration();
+            }
+        }
+
+        async function handleEditRemarksModalSubmit(e) {
+            e.preventDefault();
+            const editRemarksText = document.getElementById('modalItemEditRemarks').value.trim();
+
+            if (editRemarksText === "") {
+                alert("Editing aborted: You must supply valid edit remarks documentation reasons to apply modifications.");
+                return;
+            }
+
+            const id = document.getElementById('itemId').value;
+            const item_code = document.getElementById('itemCode').value.trim();
+            const item_name = document.getElementById('itemName').value.trim();
+            const sizes = document.getElementById('itemSizes').value.trim();
+            const category = document.getElementById('itemCategory').value;
+            const storage_facility = document.getElementById('storageFacility').value;
+            const chosen_date = document.getElementById('dateReceived').value;
+            const unit_price = parseFloat(document.getElementById('unitPrice').value) || 0;
+            const original_remarks = document.getElementById('formRemarks').value.trim();
+            const currentTimestampISO = new Date().toISOString();
+
+            const editPayload = { 
+                item_code, 
+                item_name, 
+                sizes, 
+                category, 
+                storage_facility, 
+                date: chosen_date, 
+                unit_price, 
+                remarks: original_remarks, // Keeps the underlying panel state secure
+                edit_remarks: editRemarksText,
+                edit_date: currentTimestampISO,
+                processed_by: currentUserEmail
+            };
+
+            const { error } = await supabaseClient.from('inventory').update(editPayload).eq('id', id);
+            
+            if (error) {
+                showAlert(error.message, "error");
+            } else {
+                showAlert("Master log file parameters updated successfully.", "success");
+                closeEditRemarksModal();
+                resetFormState();
+                fetchLedgerDataset();
+            }
+        }
+
+        async function executeRegistration() {
             const item_code = document.getElementById('itemCode').value.trim();
             const item_name = document.getElementById('itemName').value.trim();
             const sizes = document.getElementById('itemSizes').value.trim();
@@ -537,92 +615,63 @@
             const chosen_date = document.getElementById('dateReceived').value;
             const unit_price = parseFloat(document.getElementById('unitPrice').value) || 0;
             const input_remarks = document.getElementById('formRemarks').value.trim();
-            const currentTimestampISO = new Date().toISOString();
+            const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
+            
+            const registryPayload = {
+                item_code,
+                item_name,
+                sizes,
+                category,
+                storage_facility,
+                date: chosen_date,
+                unit_price,
+                remarks: input_remarks,
+                stock_quantity: quantity,
+                processed_by: currentUserEmail
+            };
 
-            if (id) {
-                if (input_remarks === "") {
-                    showAlert("Tracking Failure: You must supply a remark/reason to edit item parameters.", "error");
-                    return;
-                }
+            const { data: newInventoryItem, error: invError } = await supabaseClient
+                .from('inventory')
+                .insert([registryPayload])
+                .select('id')
+                .single();
 
-                const editPayload = { 
-                    item_code, 
-                    item_name, 
-                    sizes, 
-                    category, 
-                    storage_facility, 
-                    date: chosen_date, 
-                    unit_price, 
-                    edit_remarks: input_remarks,
-                    edit_date: currentTimestampISO,
-                    processed_by: currentUserEmail
-                };
-
-                const { error } = await supabaseClient.from('inventory').update(editPayload).eq('id', id);
-                if (error) showAlert(error.message, "error");
-                else {
-                    showAlert("Master log file parameters updated successfully.", "success");
-                    resetFormState();
-                }
-            } else {
-                const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
-                
-                const registryPayload = {
-                    item_code,
-                    item_name,
-                    sizes,
-                    category,
-                    storage_facility,
-                    date: chosen_date,
-                    unit_price,
-                    remarks: input_remarks,
-                    stock_quantity: quantity,
-                    processed_by: currentUserEmail
-                };
-
-                const { data: newInventoryItem, error: invError } = await supabaseClient
-                    .from('inventory')
-                    .insert([registryPayload])
-                    .select('id')
-                    .single();
-
-                if (invError) {
-                    showAlert("Error generating inventory registration: " + invError.message, "error");
-                    return;
-                }
-
-                if (!newInventoryItem || !newInventoryItem.id) {
-                    showAlert("Error: Inventory record created, but system could not retrieve the generated ID token.", "error");
-                    return;
-                }
-
-                const transactionPayload = {
-                    item_id: newInventoryItem.id, 
-                    item_code: item_code,
-                    item_name: item_name,
-                    sizes: sizes,
-                    category: category,
-                    quantity: quantity,
-                    transactions_type: "Inbound", 
-                    processed_by: currentUserEmail,
-                    storage_facility: storage_facility,
-                    date: chosen_date, 
-                    remarks: input_remarks || "Auto-generated upon initial gate product code registry registration"
-                };
-
-                const { error: txError } = await supabaseClient
-                    .from('transactions')
-                    .insert([transactionPayload]);
-
-                if (txError) {
-                    console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
-                    showAlert("Inventory registered, but transaction history failed to write: " + txError.message, "error");
-                    return;
-                }
-
-                showAlert(`Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`, "success");
-                resetFormState();
+            if (invError) {
+                showAlert("Error generating inventory registration: " + invError.message, "error");
+                return;
             }
+
+            if (!newInventoryItem || !newInventoryItem.id) {
+                showAlert("Error: Inventory record created, but system could not retrieve the generated ID token.", "error");
+                return;
+            }
+
+            const transactionPayload = {
+                item_id: newInventoryItem.id, 
+                item_code: item_code,
+                item_name: item_name,
+                sizes: sizes,
+                category: category,
+                quantity: quantity,
+                transactions_type: "Inbound", 
+                processed_by: currentUserEmail,
+                storage_facility: storage_facility,
+                date: chosen_date, 
+                remarks: input_remarks || "Auto-generated upon initial gate product code registry registration"
+            };
+
+            const { error: txError } = await supabaseClient
+                .from('transactions')
+                .insert([transactionPayload]);
+
+            if (txError) {
+                console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
+                showAlert("Inventory registered, but transaction history failed to write: " + txError.message, "error");
+                return;
+            }
+
+            showAlert(`Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`, "success");
+            resetFormState();
             fetchLedgerDataset();
         }
 
