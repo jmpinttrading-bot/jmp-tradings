@@ -515,7 +515,11 @@
                 // New Registry Item Action Matrix Loop
                 const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
                 
+                // CLIENT GENERATED ID SOLUTION: Create the unique ID beforehand explicitly 
+                const pregeneratedItemId = crypto.randomUUID();
+
                 const registryPayload = {
+                    id: pregeneratedItemId, // Shared Explicitly
                     item_code,
                     item_name,
                     sizes,
@@ -528,19 +532,18 @@
                     processed_by: currentUserEmail
                 };
 
-                const { data: newInventoryItem, error: invError } = await supabaseClient
+                const { error: invError } = await supabaseClient
                     .from('inventory')
-                    .insert([registryPayload])
-                    .select()
-                    .single();
+                    .insert([registryPayload]);
 
                 if (invError) {
                     showAlert("Error generating inventory registration: " + invError.message, "error");
                     return;
                 }
 
+                // Both tables safely inherit the exact same link id
                 const transactionPayload = {
-                    item_id: newInventoryItem.id,
+                    item_id: pregeneratedItemId, 
                     item_code: item_code,
                     item_name: item_name,
                     sizes: sizes,
@@ -559,6 +562,8 @@
 
                 if (txError) {
                     console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
+                    showAlert("Inventory registered, but transaction history failed to write.", "error");
+                    return;
                 }
 
                 showAlert(`Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`, "success");
