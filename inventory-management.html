@@ -12,7 +12,7 @@
         
         .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
         .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
-        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
+        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; cursor: pointer; }
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
@@ -63,6 +63,17 @@
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
+        /* Access Blocker Warning Popup Modal Design */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
+        .restriction-modal-card { background: white; border-radius: 12px; width: 100%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; transform: scale(0.9); transition: transform 0.25s ease; }
+        .restriction-modal-container.is-visible .restriction-modal-card { transform: scale(1); }
+        .modal-alert-icon { font-size: 3rem; margin-bottom: 15px; color: #ef4444; display: inline-block; animation: shakeEffect 0.5s ease-in-out; }
+        .restriction-modal-card h4 { font-size: 1.3rem; color: #0f172a; margin-bottom: 10px; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px; }
+        .modal-dismiss-btn { background: #0f172a; color: white; border: none; padding: 10px 24px; font-weight: 600; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; }
+        .modal-dismiss-btn:hover { background: #1e293b; }
+
         @media (max-width: 1024px) {
             .report-controls { flex-direction: column; align-items: flex-start; }
             .controls-selectors-group { width: 100%; }
@@ -74,16 +85,21 @@
             .date-range-container { width: 100%; justify-content: space-between; }
             .time-filter-select { width: 100%; }
         }
+        @keyframes shakeEffect {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <h2 id="sidebarTitle">JMP System</h2>
-        <a href="admin-dashboard.html" id="profileLink">Profile Management</a>
-        <a href="control-panel.html" id="controlPanelLink">🎛️ Control Panel</a>
-        <a href="employee-201.html" id="employeeLink">📋 Employee 201 File</a>
-        <a href="import-docs.html" id="importLink">📄 Import Doc File Management</a>
+        <a id="profileLink" onclick="verifyNavigationPrivilege('Profile Management', 'employee-dashboard.html')">Profile Management</a>
+        <a id="controlPanelLink" onclick="verifyNavigationPrivilege('Control Panel', 'control-panel.html')">🎛️ Control Panel</a>
+        <a id="employeeLink" onclick="verifyNavigationPrivilege('Employee 201 File', 'employee-201.html')">📋 Employee 201 File</a>
+        <a id="importLink" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">📄 Import Doc File Management</a>
         <a href="#" class="active">📦 Inventory Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </div>
@@ -189,6 +205,15 @@
 
     </div>
 
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <span class="modal-alert-icon">🛑</span>
+            <h4 id="modalModuleTitle">Access Restricted</h4>
+            <p>You do not currently possess permission parameters to operate this system module. Please ask your administrator for permission to access.</p>
+            <button class="modal-dismiss-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -199,6 +224,13 @@
         let masterInventoryCachedData = [];
         let currentUserRole = "Employee"; 
         let masterChartInstance = null;
+
+        // ADDED: Tracks permissions matrix locally on this file layout
+        let permissionsMatrix = {
+            profile_access: true,
+            import_access: true,
+            employee_201_access: false // Employees should be restricted from viewing everyone's 201 file database
+        };
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -226,22 +258,71 @@
             
             currentAdminId = user.id;
             
-            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+            // UPDATED: Dynamically checking explicit permissions columns out of Supabase profiles table
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('role, profile_access, import_access')
+                .eq('id', user.id)
+                .maybeSingle();
+
             if (profile && profile.role === 'Admin') {
                 currentUserRole = "Admin";
+                permissionsMatrix.profile_access = true;
+                permissionsMatrix.import_access = true;
+                permissionsMatrix.employee_201_access = true; // Admins have master view access
+
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
             } else {
                 currentUserRole = "Employee";
+                
+                // Parse boolean flags explicitly if set by administrators
+                permissionsMatrix.profile_access = profile ? profile.profile_access !== false : true;
+                permissionsMatrix.import_access = profile ? profile.import_access !== false : true;
+                permissionsMatrix.employee_201_access = false; // Strictly hard-blocked for standard employees
+
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Terminal";
+                
+                // Completely hide control panel from standard visual sidebar layout flow
                 if(document.getElementById('controlPanelLink')) document.getElementById('controlPanelLink').style.display = 'none';
             }
             
             fetchMasterInventoryLedger();
             setupSessionCrossCheckListener();
+        }
+
+        // ADDED: Standardized access boundary check validation workflow 
+        function verifyNavigationPrivilege(moduleName, destinationUrl) {
+            let isAccessPermitted = true;
+
+            if (moduleName === 'Profile Management') {
+                isAccessPermitted = permissionsMatrix.profile_access;
+            } else if (moduleName === 'Import Doc File Management') {
+                isAccessPermitted = permissionsMatrix.import_access;
+            } else if (moduleName === 'Employee 201 File') {
+                isAccessPermitted = permissionsMatrix.employee_201_access;
+            } else if (moduleName === 'Control Panel') {
+                isAccessPermitted = (currentUserRole === 'Admin');
+            }
+
+            if (isAccessPermitted) {
+                window.location.href = destinationUrl;
+            } else {
+                openRestrictionModal(moduleName);
+            }
+        }
+
+        // ADDED: Modal trigger utility helpers
+        function openRestrictionModal(moduleName) {
+            document.getElementById('modalModuleTitle').textContent = `${moduleName} Restricted`;
+            document.getElementById('accessBlockerModal').classList.add('is-visible');
+        }
+
+        function closeRestrictionModal() {
+            document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
         async function fetchMasterInventoryLedger() {
@@ -322,7 +403,6 @@
                 }
             }
 
-            // FIXED: Passed timelineLabels here instead of the undefined 'labels' variable
             renderUnifiedMasterGraph(timelineLabels, historicalTrendPoints, themeColor, fillGradient);
         }
 
