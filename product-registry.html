@@ -401,9 +401,9 @@
                 sizes: currentItem.sizes,
                 category: currentItem.category,
                 quantity: Math.abs(delta), 
-                type: delta > 0 ? "Adjustment In" : "Adjustment Out", 
+                transactions_type: delta > 0 ? "Adjustment In" : "Adjustment Out", 
                 processed_by: currentUserEmail,
-                facility_location: currentItem.storage_facility,
+                storage_facility: currentItem.storage_facility,
                 date: currentTimestampISO.split('T')[0], 
                 remarks: `Manual Stepper Change: ${inputReason.trim()}`
             };
@@ -544,9 +544,9 @@
                     sizes: sizes,
                     category: category,
                     quantity: quantity,
-                    type: "Inbound", 
+                    transactions_type: "Inbound", 
                     processed_by: currentUserEmail,
-                    facility_location: storage_facility,
+                    storage_facility: storage_facility,
                     date: chosen_date, 
                     remarks: input_remarks || "Auto-generated upon initial gate product code registry registration"
                 };
