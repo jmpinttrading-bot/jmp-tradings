@@ -28,6 +28,9 @@
         .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
         .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
         
+        .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
+        .form-row .form-group { flex: 1; margin-bottom: 0; }
+        
         .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
         .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
         .form-group input, .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; }
@@ -47,7 +50,7 @@
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; }
         .master-table tr:hover td { background-color: #f8fafc; }
         
-        .qty-stepper { display: inline-flex; align-items: center; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px; gap: 4px; }
+        .qty-stepper { inline-flex; align-items: center; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px; gap: 4px; }
         .stepper-btn { width: 28px; height: 28px; border: none; background: white; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .stepper-btn:hover { background: #ee964b; color: white; }
         .stepper-btn:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
@@ -62,6 +65,11 @@
         .alert.error { background: #fee2e2; color: #991b1b; }
 
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
+
+        @media (max-width: 768px) {
+            .form-row { flex-direction: column; gap: 0; }
+            .form-row .form-group { margin-bottom: 16px; }
+        }
     </style>
 </head>
 <body>
@@ -94,16 +102,6 @@
                     <input type="hidden" id="itemId">
                     
                     <div class="form-group">
-                        <label>Stock Category</label>
-                        <select id="itemCategory">
-                            <option value="Fish">Fish (Whole / Fillet)</option>
-                            <option value="Crustaceans">Crustaceans (Shrimp, Crabs, Lobster)</option>
-                            <option value="Mollusks">Mollusks (Squid, Octopus, Clams)</option>
-                            <option value="Value-Added Seafood">Value-Added / Processed Lines</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
                         <label>Receiving Cold Storage Hub Facility</label>
                         <select id="storageFacility">
                             <option value="VVS Cold Storage and Processing Plant Corp.">VVS Cold Storage and Processing Plant Corp.</option>
@@ -114,8 +112,24 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Unique SKU Code / Item Code</label>
-                        <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
+                        <label>Stock Category</label>
+                        <select id="itemCategory">
+                            <option value="Fish">Fish (Whole / Fillet)</option>
+                            <option value="Crustaceans">Crustaceans (Shrimp, Crabs, Lobster)</option>
+                            <option value="Mollusks">Mollusks (Squid, Octopus, Clams)</option>
+                            <option value="Value-Added Seafood">Value-Added / Processed Lines</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Unique SKU Code / Item Code</label>
+                            <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
+                        </div>
+                        <div class="form-group">
+                            <label>Stock Code</label>
+                            <input type="text" id="stockCode" placeholder="e.g., STK-001">
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -261,6 +275,7 @@
 
             if (!permissions.canRegister && document.getElementById('itemId').value === '') {
                 document.getElementById('itemCode').disabled = true;
+                if(document.getElementById('stockCode')) document.getElementById('stockCode').disabled = true;
                 document.getElementById('itemName').disabled = true;
                 document.getElementById('itemSizes').disabled = true;
                 document.getElementById('itemCategory').disabled = true;
@@ -349,6 +364,7 @@
             }
 
             document.getElementById('itemCode').disabled = false;
+            if(document.getElementById('stockCode')) document.getElementById('stockCode').disabled = false;
             document.getElementById('itemName').disabled = false;
             document.getElementById('itemSizes').disabled = false;
             document.getElementById('itemCategory').disabled = false;
@@ -358,6 +374,7 @@
 
             document.getElementById('itemId').value = item.id;
             document.getElementById('itemCode').value = item.item_code || '';
+            if(document.getElementById('stockCode')) document.getElementById('stockCode').value = item.stock_code || '';
             document.getElementById('itemName').value = item.item_name || '';
             document.getElementById('itemSizes').value = item.sizes || '';
             document.getElementById('itemCategory').value = item.category || '';
@@ -385,13 +402,15 @@
             }
 
             const item_code = document.getElementById('itemCode').value.trim();
+            const stock_code = document.getElementById('stockCode') ? document.getElementById('stockCode').value.trim() : '';
             const item_name = document.getElementById('itemName').value.trim();
             const sizes = document.getElementById('itemSizes').value.trim();
             const category = document.getElementById('itemCategory').value;
             const storage_facility = document.getElementById('storageFacility').value;
             const unit_price = parseFloat(document.getElementById('unitPrice').value);
 
-            const payload = { item_code, item_name, sizes, category, storage_facility, unit_price };
+            // Added stock_code context safely into payload submission architectures
+            const payload = { item_code, stock_code, item_name, sizes, category, storage_facility, unit_price };
 
             if (id) {
                 // 1. UPDATE EXISTING LOG RECORD
