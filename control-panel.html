@@ -140,7 +140,7 @@
         async function fetchPlatformUserProfiles() {
             const { data: profiles, error } = await supabaseClient
                 .from('profiles')
-                .select('id, username, role, profile_access, import_access, inventory_access, inv_register_access, inv_edit_access, inv_quantity_access')
+                .select('id, username, role, profile_access, import_access, employee_201_access, inventory_access, inv_register_access, inv_edit_access, inv_quantity_access')
                 .order('role', { ascending: true });
 
             const container = document.getElementById('accessManagementCardsContainer');
@@ -159,6 +159,7 @@
                 
                 const isProfileAllowed = profile.profile_access !== false; 
                 const isImportAllowed = profile.import_access !== false; 
+                const isEmployee201Allowed = profile.employee_201_access !== false;
                 const isInventoryAllowed = profile.inventory_access !== false;
 
                 const isRegAllowed = profile.inv_register_access === true;
@@ -182,6 +183,17 @@
                                     <span class="slider-rail"></span>
                                 </label>
                                 ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isProfileAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                            </div>
+                        </div>
+
+                        <div class="permission-item">
+                            <span class="permission-label">Employee 201 File</span>
+                            <div class="toggle-switch-container">
+                                <label class="switch-input-element">
+                                    <input type="checkbox" ${isEmployee201Allowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'employee_201_access', this.checked)">
+                                    <span class="slider-rail"></span>
+                                </label>
+                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isEmployee201Allowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
                             </div>
                         </div>
 
