@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Product Registry - JMP System</title>
+    <title>Master Product Registry & Inbound Gate - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
@@ -23,7 +23,6 @@
         .back-link { display: inline-flex; align-items: center; gap: 6px; color: #64748b; text-decoration: none; font-weight: 600; font-size: 0.9rem; margin-bottom: 20px; }
         .back-link:hover { color: #ee964b; }
 
-        /* Realigned Workspace Grid to Stack Vertically with Clean Gap Distances */
         .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
         
         .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
@@ -79,7 +78,7 @@
 
     <div class="main-content">
         <div class="header">
-            <h1>Master Product Configuration Node</h1>
+            <h1>Unified Cargo Registry & Inbound Gate Node</h1>
             <div class="admin-badge" id="adminEmail">Loading Context...</div>
         </div>
 
@@ -90,18 +89,18 @@
         <div class="workspace-grid">
             
             <div class="card-panel" id="formContainerPanel">
-                <h3 id="formTitle">Register New Stock Item</h3>
+                <h3 id="formTitle">Register Arriving Container / Truck</h3>
                 <form id="inventoryForm" onsubmit="handleFormSubmit(event)">
                     <input type="hidden" id="itemId">
                     
                     <div class="form-group">
-                        <label>Unique Item Code</label>
-                        <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
+                        <label>Container / Truck Plate Number (Unique SKU Code)</label>
+                        <input type="text" id="itemCode" required placeholder="e.g., MCU-472910-2 / TEM-991A">
                     </div>
                     
                     <div class="form-group">
-                        <label>Product / Item Name</label>
-                        <input type="text" id="itemName" required placeholder="e.g., Premium White Shrimp">
+                        <label>Cargo / Commodity Description</label>
+                        <input type="text" id="itemName" required placeholder="e.g., Frozen Premium White Shrimp 21/25">
                     </div>
                     
                     <div class="form-group">
@@ -115,7 +114,7 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>Allocation Facility Target Location</label>
+                        <label>Receiving Cold Storage Hub Facility</label>
                         <select id="storageFacility">
                             <option value="VVS Cold Storage and Processing Plant Corp.">VVS Cold Storage and Processing Plant Corp.</option>
                             <option value="Hightower Storage and Trading Centre, Inc.">Hightower Storage and Trading Centre, Inc.</option>
@@ -125,33 +124,33 @@
                     </div>
                     
                     <div class="form-group" id="initialQtyWrapper">
-                        <label>Initial Stock Level Quantity (Cases)</label>
-                        <input type="number" id="stockQuantity" required min="0" value="0">
+                        <label>Arriving Cargo Inbound Quantity (Cases)</label>
+                        <input type="number" id="stockQuantity" required min="1" value="1">
                     </div>
                     
                     <div class="form-group">
-                        <label>Unit Valuation Price</label>
+                        <label>Declared Cargo Valuation Unit Price</label>
                         <input type="number" id="unitPrice" required min="0" step="0.01" value="0.00">
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="btn-primary" id="submitBtn">Save Entry Log</button>
+                        <button type="submit" class="btn-primary" id="submitBtn">Process Gate Arrival & Register</button>
                         <button type="button" class="btn-secondary" id="clearBtn" onclick="resetFormState()">Clear</button>
                     </div>
                 </form>
             </div>
 
             <div class="card-panel" style="padding: 20px 0px;">
-                <h3 style="margin-left: 25px; margin-right: 25px;">Global Active Product Ledger</h3>
+                <h3 style="margin-left: 25px; margin-right: 25px;">Active Fleet & Container Yards Balance Ledger</h3>
                 <div class="table-responsive">
                     <table class="master-table">
                         <thead>
                             <tr>
-                                <th>Code</th>
-                                <th>Product Specifications</th>
+                                <th>Plate / Container</th>
+                                <th>Cargo Specifications</th>
                                 <th>Category</th>
                                 <th>Assigned Hub</th>
-                                <th style="width: 140px;">Stock Balance</th>
+                                <th style="width: 140px;">On-Hand Balance</th>
                                 <th>Valuation</th>
                                 <th style="text-align: center;">Actions</th>
                             </tr>
@@ -174,6 +173,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentAdminId = null;
+        let currentUserEmail = "";
         let bypassAuthListener = false;
         
         let permissions = {
@@ -198,6 +198,7 @@
             if (!user) { window.location.href = "login.html"; return; }
             
             currentAdminId = user.id;
+            currentUserEmail = user.email;
             
             const { data: profile } = await supabaseClient
                 .from('profiles')
@@ -247,7 +248,7 @@
             if (!permissions.canRegister && !permissions.canEdit) {
                 const lockMask = document.createElement('div');
                 lockMask.className = "form-lock-message";
-                lockMask.innerHTML = `<span>🔒 Account privileges do not allow product parameter configuration modifications.</span>`;
+                lockMask.innerHTML = `<span>🔒 Account privileges do not allow cargo parameters or gate configurations modifications.</span>`;
                 container.appendChild(lockMask);
                 return;
             }
@@ -261,7 +262,7 @@
                 document.getElementById('unitPrice').disabled = true;
                 document.getElementById('submitBtn').disabled = true;
                 
-                document.getElementById('formTitle').textContent = "Select 'Edit' on an item below to modify parameters";
+                document.getElementById('formTitle').textContent = "Select 'Edit' below to modify parameters";
             }
         }
 
@@ -356,8 +357,8 @@
             document.getElementById('initialQtyWrapper').style.display = "none";
             document.getElementById('stockQuantity').required = false;
 
-            document.getElementById('formTitle').textContent = "Modify Registered Product Parameters";
-            document.getElementById('submitBtn').textContent = "Update System Log";
+            document.getElementById('formTitle').textContent = "Modify Registered Container Parameters";
+            document.getElementById('submitBtn').textContent = "Update Fleet Log";
         }
 
         async function handleFormSubmit(e) {
@@ -365,11 +366,11 @@
             const id = document.getElementById('itemId').value;
             
             if (!id && !permissions.canRegister) {
-                showAlert("Action Denied: Missing Product Registry Privileges.", "error");
+                showAlert("Action Denied: Missing Cargo Registry Privileges.", "error");
                 return;
             }
             if (id && !permissions.canEdit) {
-                showAlert("Action Denied: Missing Product Modification Privileges.", "error");
+                showAlert("Action Denied: Missing Parameter Modification Privileges.", "error");
                 return;
             }
 
@@ -382,6 +383,7 @@
             const payload = { item_code, item_name, category, storage_facility, unit_price };
 
             if (id) {
+                // 1. UPDATE EXISTING LOG RECORD
                 const { error } = await supabaseClient.from('inventory').update(payload).eq('id', id);
                 if (error) showAlert(error.message, "error");
                 else {
@@ -389,13 +391,43 @@
                     resetFormState();
                 }
             } else {
-                payload.stock_quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
-                const { error } = await supabaseClient.from('inventory').insert([payload]);
-                if (error) showAlert(error.message, "error");
-                else {
-                    showAlert("Product entry registered successfully.", "success");
-                    resetFormState();
+                // 2. COMBINED INITIAL REGISTRY + INBOUND TRANSACTION
+                const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
+                payload.stock_quantity = quantity;
+
+                // Step A: Insert row into master Inventory ledger
+                const { data: newInventoryItem, error: invError } = await supabaseClient
+                    .from('inventory')
+                    .insert([payload])
+                    .select()
+                    .single();
+
+                if (invError) {
+                    showAlert("Error generating cargo registration: " + invError.message, "error");
+                    return;
                 }
+
+                // Step B: Fire transaction record directly to unified transactions ledger
+                const transactionPayload = {
+                    item_id: newInventoryItem.id,
+                    item_code: item_code,
+                    quantity: quantity,
+                    transaction_type: "Inbound", 
+                    processed_by: currentUserEmail,
+                    facility_location: storage_facility,
+                    remarks: "Auto-generated upon initial gate container registry code registration"
+                };
+
+                const { error: txError } = await supabaseClient
+                    .from('transactions')
+                    .insert([transactionPayload]);
+
+                if (txError) {
+                    console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
+                }
+
+                showAlert(`Successfully processed Gate Arrival and registered plate "${item_code}" with ${quantity} cases.`, "success");
+                resetFormState();
             }
             fetchLedgerDataset();
         }
@@ -405,8 +437,9 @@
             document.getElementById('inventoryForm').reset();
             document.getElementById('initialQtyWrapper').style.display = "flex";
             document.getElementById('stockQuantity').required = true;
-            document.getElementById('formTitle').textContent = "Register New Stock Item";
-            document.getElementById('submitBtn').textContent = "Save Entry Log";
+            document.getElementById('stockQuantity').value = "1";
+            document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
+            document.getElementById('submitBtn').textContent = "Process Gate Arrival & Register";
             
             applyFormUIRestrictions();
         }
