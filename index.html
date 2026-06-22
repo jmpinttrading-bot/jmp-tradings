@@ -322,6 +322,112 @@
             padding-bottom: 40px;
         }
 
+        /* Product Context & Table Styles */
+        .product-context-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 30px auto 40px;
+            gap: 40px;
+            text-align: left;
+            flex-wrap: wrap;
+            padding: 0 40px;
+        }
+
+        .product-context-block {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .product-context-block h3, .product-specs-table-wrapper h3 {
+            font-size: 1.4rem;
+            color: #0b2545;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .product-context-block p {
+            color: #4a5568;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+
+        .product-specs-table-wrapper {
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .product-specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+        }
+
+        .product-specs-table th {
+            background-color: #0b2545;
+            color: #fff;
+            padding: 12px 16px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .product-specs-table td {
+            padding: 14px 16px;
+            color: #4a5568;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .product-specs-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .product-specs-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        /* Product Card Inside Details Styles */
+        .product-info {
+            width: 100%;
+            padding-top: 15px;
+            text-align: left;
+            border-top: 1px solid #f1f5f9;
+            margin-top: 10px;
+        }
+
+        .product-info h3 {
+            font-size: 1.05rem;
+            color: #0b2545;
+            font-weight: 700;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .product-info .scientific-name {
+            font-size: 0.82rem;
+            color: #64748b;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+
+        .product-tag {
+            display: inline-block;
+            background-color: #e0eaf4;
+            color: #0b2545;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
         .slider-wrapper {
             max-width: 1200px;
             margin: 45px auto 0;
@@ -360,7 +466,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             padding: 15px;
         }
 
@@ -387,14 +493,15 @@
             transform: translateX(-50%) translateY(0);
         }
 
-        /* FIXED IMAGE FIXTURE: Changed to standard img elements to preserve dynamic calculations */
+        /* FIXED IMAGE FIXTURE: Standard heights configured cleanly to balance dynamic metadata text space */
         .product-img {
             width: 100%;
-            height: 230px; 
+            height: 170px; 
             object-fit: contain;
             background-color: #ffffff; 
             border-radius: 6px;
             pointer-events: none; /* Passes interaction up cleanly to the card element */
+            margin-bottom: 5px;
         }
 
         /* Carousel Nav Arrows */
@@ -817,6 +924,10 @@
                 text-align: center;
                 gap: 30px;
             }
+            .product-context-container {
+                padding: 0 15px;
+                gap: 25px;
+            }
             .slider-wrapper {
                 padding: 0 10px;
             }
@@ -926,7 +1037,49 @@
     </section>
 
     <section class="products" id="products">
-        <h2>Our Seafood Product Gallery</h2>
+        <h2>Our Seafood Product Portfolio</h2>
+        
+        <div class="product-context-container">
+            <div class="product-context-block">
+                <h3>Wholesale Supply &amp; Processing Excellence</h3>
+                <p>
+                    JMP International Fish Trading provides a comprehensive line of premium marine imports processed immediately at source to lock in peak freshness. Our inventory spans high-demand pelagic species, premium loin cuts, cephalopods, and processed seafood tailored for large-scale distribution, food service groups, and processing plants.
+                </p>
+                <p>
+                    By working closely with trusted vessel networks and global processing facilities, we maintain stable volume scalability throughout the year, ensuring your supply pipeline remains uninterrupted even during strict regional fishing off-seasons.
+                </p>
+            </div>
+            
+            <div class="product-specs-table-wrapper">
+                <h3>Commercial Procurement Specifications</h3>
+                <table class="product-specs-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Available Formats &amp; Cuts</th>
+                            <th>Logistical Packaging</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Premium Pelagics</strong></td>
+                            <td>Whole Round (WR), Gilled &amp; Gutted (GG)</td>
+                            <td>Master Carton Box / Bundled Plastic</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tuna &amp; Salmon</strong></td>
+                            <td>Saku Bars (AAA), Steaks, Cubes, Bellies, Heads</td>
+                            <td>Vacuum Packed / Interleaved (IQF)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Shrimp &amp; Cephalopods</strong></td>
+                            <td>Peeled &amp; Deveined (PD/PUD), Nobashi, Whole Squid</td>
+                            <td>Block Frozen / Individual Quick Frozen</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
         
         <div class="slider-wrapper">
             <button class="slider-arrow arrow-left" id="prevSlide">
@@ -941,98 +1094,218 @@
                     
                     <div class="product-card">
                         <img class="product-img" src="Frozen Golden Pomfret Whole Round (Trachinotus spp.).jpg" alt="Frozen Golden Pomfret">
+                        <div class="product-info">
+                            <h3>Golden Pomfret</h3>
+                            <p class="scientific-name">Trachinotus spp.</p>
+                            <span class="product-tag">Whole Round</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Lian - Common Scad Whole (Trachurus trachurus).jpg" alt="Frozen Common Scad">
+                        <div class="product-info">
+                            <h3>Common Scad (Lian)</h3>
+                            <p class="scientific-name">Trachurus trachurus</p>
+                            <span class="product-tag">Whole</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Nobashi Shrimp.jpg" alt="Frozen Nobashi Shrimp">
+                        <div class="product-info">
+                            <h3>Nobashi Shrimp</h3>
+                            <p class="scientific-name">Penaeidae</p>
+                            <span class="product-tag">Stretched / Peeled</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Pangasius Fillet (Pangasianodon hypophtalmus).jpg" alt="Frozen Pangasius Fillet">
+                        <div class="product-info">
+                            <h3>Pangasius Fillet</h3>
+                            <p class="scientific-name">Pangasianodon hypophthalmus</p>
+                            <span class="product-tag">Fillet / Boneless</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Peeled Shrimp (Penaeus vannamei).jpg" alt="Frozen Peeled Shrimp">
+                        <div class="product-info">
+                            <h3>Peeled Shrimp</h3>
+                            <p class="scientific-name">Penaeus vannamei</p>
+                            <span class="product-tag">PD / PUD</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Round Scad (Trachurus trachurus).jpg" alt="Frozen Round Scad">
+                        <div class="product-info">
+                            <h3>Round Scad</h3>
+                            <p class="scientific-name">Trachurus trachurus</p>
+                            <span class="product-tag">Whole Round</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Salmon Belly (Salmo salar).jpg" alt="Frozen Salmon Belly">
+                        <div class="product-info">
+                            <h3>Salmon Belly</h3>
+                            <p class="scientific-name">Salmo salar</p>
+                            <span class="product-tag">Premium Cuts</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Salmon Head (Salmo salar).jpg" alt="Frozen Salmon Head">
+                        <div class="product-info">
+                            <h3>Salmon Head</h3>
+                            <p class="scientific-name">Salmo salar</p>
+                            <span class="product-tag">Whole Head</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Seabass Whole Round (Dicentrarchus spp.).jpg" alt="Frozen Seabass Whole Round">
+                        <div class="product-info">
+                            <h3>Seabass</h3>
+                            <p class="scientific-name">Dicentrarchus spp.</p>
+                            <span class="product-tag">Whole Round</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Squid Whole (Uroteusthis chinensis).jpg" alt="Frozen Squid Whole">
+                        <div class="product-info">
+                            <h3>Mitre Squid</h3>
+                            <p class="scientific-name">Uroteusthis chinensis</p>
+                            <span class="product-tag">Whole</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Squid Whole Round (Illex illecebrosus).jpg" alt="Frozen Squid Whole Round">
+                        <div class="product-info">
+                            <h3>Illex Squid</h3>
+                            <p class="scientific-name">Illex illecebrosus</p>
+                            <span class="product-tag">Whole Round</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Squid Whole Round (Todarodes Pacificus).jpg" alt="Frozen Squid Whole Round">
+                        <div class="product-info">
+                            <h3>Japanese Flying Squid</h3>
+                            <p class="scientific-name">Todarodes pacificus</p>
+                            <span class="product-tag">Whole Round</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Tuna Belly (Thunnus Albacares).jpg" alt="Frozen Tuna Belly">
+                        <div class="product-info">
+                            <h3>Yellowfin Tuna Belly</h3>
+                            <p class="scientific-name">Thunnus albacares</p>
+                            <span class="product-tag">Premium Commercial</span>
+                        </div>
                     </div>
                                         
                     <div class="product-card">
                         <img class="product-img" src="Frozen Tuna Cubes (Thunnus albacares).jpg" alt="Frozen Tuna Cubes">
+                        <div class="product-info">
+                            <h3>Tuna Cubes</h3>
+                            <p class="scientific-name">Thunnus albacares</p>
+                            <span class="product-tag">Pre-Cut / Poke Ready</span>
+                        </div>
                     </div>
                     
                     <div class="product-card">
                         <img class="product-img" src="Frozen Tuna Kama (Thunnus albacares).jpg" alt="Frozen Tuna Kama">
+                        <div class="product-info">
+                            <h3>Tuna Kama (Collar)</h3>
+                            <p class="scientific-name">Thunnus albacares</p>
+                            <span class="product-tag">Wholesale Cut</span>
+                        </div>
                     </div>
                     
                     <div class="product-card">
                         <img class="product-img" src="Frozen Tuna Portion Cut (Thunnus albacares).jpg" alt="Frozen Tuna Portion Cut">
+                        <div class="product-info">
+                            <h3>Tuna Portion Cut</h3>
+                            <p class="scientific-name">Thunnus albacares</p>
+                            <span class="product-tag">Exact Spec Cuts</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Tuna Saku Bar (Thunnus albacares).jpg" alt="Frozen Tuna Saku Bar">
+                        <div class="product-info">
+                            <h3>Tuna Saku Bar</h3>
+                            <p class="scientific-name">Thunnus albacares</p>
+                            <span class="product-tag">AAA Grade / Sashimi Ready</span>
+                        </div>
                     </div>
                                         
                     <div class="product-card">
                         <img class="product-img" src="Frozen YellowTail Scad Whole (Atule Mate).jpg" alt="Frozen YellowTail Scad Whole">
+                        <div class="product-info">
+                            <h3>Yellowtail Scad (Marot)</h3>
+                            <p class="scientific-name">Atule mate</p>
+                            <span class="product-tag">Whole</span>
+                        </div>
                     </div>
                     
                     <div class="product-card">
                         <img class="product-img" src="Frozen Yellowtail Scad Whole (Selaroides leptolepis).jpg" alt="Frozen Yellowtail Scad Whole">
+                        <div class="product-info">
+                            <h3>Smooth-Tailed Trevally</h3>
+                            <p class="scientific-name">Selaroides leptolepis</p>
+                            <span class="product-tag">Whole</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Yellowtail Whole Round (Seriola quinqeradiata).jpg" alt="Frozen Yellowtail Whole Round">
+                        <div class="product-info">
+                            <h3>Japanese Amberjack (Buri)</h3>
+                            <p class="scientific-name">Seriola quinqueradiata</p>
+                            <span class="product-tag">Whole Round</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Bigeye Scad Whole (Sela crumenophthalmus).jpg" alt="Frozen Bigeye Scad Whole">
+                        <div class="product-info">
+                            <h3>Bigeye Scad (Matangbaka)</h3>
+                            <p class="scientific-name">Selar crumenophthalmus</p>
+                            <span class="product-tag">Whole Round</span>
+                        </div>
                     </div>
                                         
                     <div class="product-card">
                         <img class="product-img" src="Frozen Moonfish Whole (Mene maculata).jpg" alt="Frozen Moonfish Whole">
+                        <div class="product-info">
+                            <h3>Moonfish (Chabita)</h3>
+                            <p class="scientific-name">Mene maculata</p>
+                            <span class="product-tag">Whole</span>
+                        </div>
                     </div>
                     
                     <div class="product-card">
                         <img class="product-img" src="Frozen Bigeye Scad Whole (Selar crumenophthalmus).jpg" alt="Frozen Bigeye Scad Whole">
+                        <div class="product-info">
+                            <h3>Bigeye Scad (Matangbaka)</h3>
+                            <p class="scientific-name">Selar crumenophthalmus</p>
+                            <span class="product-tag">Whole Round</span>
+                        </div>
                     </div>
 
                     <div class="product-card">
                         <img class="product-img" src="Frozen Tuna Steak (Thunnus albacares).jpg" alt="Frozen Tuna Steak">
+                        <div class="product-info">
+                            <h3>Tuna Steak</h3>
+                            <p class="scientific-name">Thunnus albacares</p>
+                            <span class="product-tag">Premium Bone-In</span>
+                        </div>
                     </div>
                 </div>
             </div>
