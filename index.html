@@ -355,13 +355,17 @@
             border: 1px solid #e1e8ed;
             flex: 0 0 calc(25% - 15px); /* Responsive 4 items view layout setup */
             min-width: 260px;
-            /* Click/Double-click functionality enabled for zoom modal scripts */
             cursor: pointer;
             position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
         }
 
         .product-card::after {
-            content: "Double Click to View";
+            content: "Double Click / Tap to View";
             position: absolute;
             bottom: 10px;
             left: 50%;
@@ -375,6 +379,7 @@
             transition: all 0.3s ease;
             pointer-events: none;
             font-weight: 500;
+            z-index: 5;
         }
 
         .product-card:hover::after {
@@ -382,14 +387,14 @@
             transform: translateX(-50%) translateY(0);
         }
 
+        /* FIXED IMAGE FIXTURE: Changed to standard img elements to preserve dynamic calculations */
         .product-img {
-            height: 260px; 
-            background-size: contain; /* Fitted completely to display full aspect ratio width boundaries safely */
-            background-position: center;
-            background-repeat: no-repeat;
-            background-color: #ffffff; /* Smooth fallback backdrop coloring context */
-            margin: 10px;
+            width: 100%;
+            height: 230px; 
+            object-fit: contain;
+            background-color: #ffffff; 
             border-radius: 6px;
+            pointer-events: none; /* Passes interaction up cleanly to the card element */
         }
 
         /* Carousel Nav Arrows */
@@ -935,47 +940,47 @@
                 <div class="product-grid-track" id="sliderTrack">
                     
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Golden Pomfret Whole Round (Trachinotus spp.).jpg');"></div>
+                        <img class="product-img" src="Frozen Golden Pomfret Whole Round (Trachinotus spp.).jpg" alt="Frozen Golden Pomfret">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Lian - Common Scad Whole (Trachurus trachurus).jpg');"></div>
+                        <img class="product-img" src="Frozen Lian - Common Scad Whole (Trachurus trachurus).jpg" alt="Frozen Common Scad">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Nobashi Shrimp.jpg');"></div>
+                        <img class="product-img" src="Frozen Nobashi Shrimp.jpg" alt="Frozen Nobashi Shrimp">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Round Scad (Trachurus trachurus).jpg');"></div>
+                        <img class="product-img" src="Frozen Round Scad (Trachurus trachurus).jpg" alt="Frozen Round Scad">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Salmon Belly (Salmo salar).jpg');"></div>
+                        <img class="product-img" src="Frozen Salmon Belly (Salmo salar).jpg" alt="Frozen Salmon Belly">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Salmon Head (Salmo salar).jpg');"></div>
+                        <img class="product-img" src="Frozen Salmon Head (Salmo salar).jpg" alt="Frozen Salmon Head">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Tuna Cubes (Thunnus albacares).jpg');"></div>
+                        <img class="product-img" src="Frozen Tuna Cubes (Thunnus albacares).jpg" alt="Frozen Tuna Cubes">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Tuna Saku Bar (Thunnus albacares).jpg');"></div>
+                        <img class="product-img" src="Frozen Tuna Saku Bar (Thunnus albacares).jpg" alt="Frozen Tuna Saku Bar">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen YellowTail Scad Whole (Atule Mate).jpg');"></div>
+                        <img class="product-img" src="Frozen YellowTail Scad Whole (Atule Mate).jpg" alt="Frozen YellowTail Scad">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Yellowtail Whole Round (Seriola quinqeradiata).jpg');"></div>
+                        <img class="product-img" src="Frozen Yellowtail Whole Round (Seriola quinqeradiata).jpg" alt="Frozen Yellowtail Whole Round">
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Tuna Kama (Thunnus albacares).jpg');"></div>
+                        <img class="product-img" src="Frozen Tuna Kama (Thunnus albacares).jpg" alt="Frozen Tuna Kama">
                     </div>
 
                 </div>
@@ -1242,6 +1247,7 @@
         let currentTranslate = 0;
         let prevTranslate = 0;
         let autoPlayInterval;
+        let lastTap = 0; // Tracking variable for mobile double-taps
 
         const getMaxScroll = () => container.clientWidth - track.scrollWidth;
 
@@ -1260,6 +1266,9 @@
         });
 
         function startAutoPlay() {
+            // Safety structural logic check
+            if (lightboxModal.classList.contains('active')) return;
+            stopAutoPlay(); 
             autoPlayInterval = setInterval(() => {
                 if (isDragging) return;
                 currentTranslate -= 1.2; 
@@ -1281,6 +1290,7 @@
             track.style.transform = `translateX(${currentTranslate}px)`;
         }
 
+        // Carousel interaction pauses
         container.addEventListener('mouseenter', stopAutoPlay);
         container.addEventListener('mouseleave', startAutoPlay);
 
@@ -1332,17 +1342,36 @@
             applyTranslate(false);
         }, {passive: true});
 
-        // Double Click Zoom Script Functions
-        productCards.forEach(card => {
-            card.addEventListener('dblclick', () => {
-                const imgDiv = card.querySelector('.product-img');
-                // Extract clean URL string value from background-image CSS property
-                const bgStyle = window.getComputedStyle(imgDiv).backgroundImage;
-                const cleanUrl = bgStyle.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
-                
-                lightboxImg.src = cleanUrl;
-                lightboxModal.classList.add('active');
+        // ZOOM TRIGGER FUNCTION
+        function openZoom(card) {
+            const imgElement = card.querySelector('.product-img');
+            if (imgElement) {
                 stopAutoPlay();
+                lightboxImg.src = imgElement.src;
+                lightboxModal.classList.add('active');
+            }
+        }
+
+        // Unified cross-platform double click action listeners
+        productCards.forEach(card => {
+            // Mouse Pause Fix: Halts translation engine when hover intent changes
+            card.addEventListener('mouseenter', stopAutoPlay);
+            
+            // Desktop double click trigger
+            card.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                openZoom(card);
+            });
+
+            // Mobile double tap implementation fix
+            card.addEventListener('touchend', (e) => {
+                const currentTime = new Date().getTime();
+                const tapLength = currentTime - lastTap;
+                if (tapLength < 300 && tapLength > 0) {
+                    e.preventDefault();
+                    openZoom(card);
+                }
+                lastTap = currentTime;
             });
         });
 
@@ -1365,6 +1394,7 @@
             }
         });
 
+        // Initialize script sequence
         startAutoPlay();
     </script>
 </body>
