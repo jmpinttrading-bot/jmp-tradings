@@ -342,7 +342,7 @@
 
         .product-grid-track {
             display: flex;
-            gap: 30px;
+            gap: 20px;
             transition: transform 0.1s linear; 
             will-change: transform;
         }
@@ -353,33 +353,16 @@
             overflow: hidden;
             box-shadow: 0 6px 18px rgba(0,0,0,0.06);
             border: 1px solid #e1e8ed;
-            flex: 0 0 calc(33.333% - 20px); 
-            min-width: 300px;
+            flex: 0 0 calc(25% - 15px); /* Clean layout looking 4 items a row dynamically */
+            min-width: 260px;
             pointer-events: none; 
         }
 
         .product-img {
-            height: 230px;
+            height: 260px; /* Enhanced view since text details are removed */
             background-size: cover;
             background-position: center;
-        }
-
-        .product-info {
-            padding: 25px;
-            text-align: left;
-        }
-
-        .product-info h3 {
-            margin-bottom: 8px;
-            color: #0b2545;
-            font-size: 1.3rem;
-            font-weight: 600;
-        }
-
-        .product-info p {
-            color: #657786;
-            font-size: 0.9rem;
-            line-height: 1.5;
+            background-repeat: no-repeat;
         }
 
         /* Carousel Nav Arrows */
@@ -845,7 +828,7 @@
     </section>
 
     <section class="products" id="products">
-        <h2>Our Seafood & Processed Product Offerings</h2>
+        <h2>Our Seafood Product Gallery</h2>
         
         <div class="slider-wrapper">
             <button class="slider-arrow arrow-left" id="prevSlide">
@@ -859,43 +842,43 @@
                 <div class="product-grid-track" id="sliderTrack">
                     
                     <div class="product-card">
+                        <div class="product-img" style="background-image: url('Frozeb Squid Whole Round (Illex illecebrosus).jpg');"></div>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('Frozen Bigeye Scad Whole (Sela crumenophthalmus).jpg');"></div>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('Frozen Bigeye Scad Whole (Selar crumenophthalmus).jpg');"></div>
+                    </div>
+
+                    <div class="product-card">
                         <div class="product-img" style="background-image: url('Frozen Golden Pomfret Whole Round (Trachinotus spp.).jpg');"></div>
-                        <div class="product-info">
-                            <h3>Premium Frozen Selections</h3>
-                            <p>Featuring Golden Pomfret, Pangasius Fillet, and Sea Bass. Sourced dynamically from monitored global fishing sectors to guarantee texture density and dynamic yield parameters.</p>
-                        </div>
                     </div>
 
                     <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Salmon Belly (Salmo salar).jpg');"></div>
-                        <div class="product-info">
-                            <h3>Salmon Portions</h3>
-                            <p>Premium Salmon Head and rich Salmon Belly. Handled carefully to minimize bruising and maximize flavor integrity for dynamic distribution and wholesale networks.</p>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Peeled Shrimp (Penaeus vannamei).jpg');"></div>
-                        <div class="product-info">
-                            <h3>Cephalopods &amp; Crustaceans</h3>
-                            <p>High-grade Illex Squid, Nobashi Shrimp, and perfectly processed Peeled Shrimp. Flash-frozen rapidly to avoid crystallization and retain natural sweetness for culinary applications.</p>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <div class="product-img" style="background-image: url('Frozen Pangasius Fillet (Pangasianodon hypophtalmus).jpg');"></div>
-                        <div class="product-info">
-                            <h3>Premium Tuna Cuts</h3>
-                            <p>Comprehensive professional range including Tuna Saku Bar, Portion Cuts, Tuna Kama, Tuna Cubes, and choice Tuna Belly segments.</p>
-                        </div>
+                        <div class="product-img" style="background-image: url('Frozen Lian - Common Scad Whole (Trachurus trachurus).jpg');"></div>
                     </div>
 
                     <div class="product-card">
                         <div class="product-img" style="background-image: url('Frozen Moonfish Whole (Mene maculata).jpg');"></div>
-                        <div class="product-info">
-                            <h3>Processed Products</h3>
-                            <p>Traditional dried and preserved selections containing choice Dried Moonfish, Dried Squid, Dried Yellowtail, Smoked Horse Mackerel, and savory Dried Bigeye variations.</p>
-                        </div>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('Frozen Nobashi Shrimp.jpg');"></div>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('Frozen Pangasius Fillet (Pangasianodon hypophtalmus).jpg');"></div>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('Frozen Peeled Shrimp (Penaeus vannamei).jpg');"></div>
+                    </div>
+
+                    <div class="product-card">
+                        <div class="product-img" style="background-image: url('Frozen Round Scad (Trachurus trachurus).jpg');"></div>
                     </div>
 
                 </div>
