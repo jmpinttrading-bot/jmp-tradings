@@ -983,6 +983,26 @@
                         <img class="product-img" src="Frozen Tuna Kama (Thunnus albacares).jpg" alt="Frozen Tuna Kama">
                     </div>
 
+                    <div class="product-card">
+                        <img class="product-img" src="Frozeb Squid Whole Round (Illex illecebrosus).jpg" alt="Frozen Squid Whole Round">
+                    </div>
+
+                    <div class="product-card">
+                        <img class="product-img" src="Frozen Bigeye Scad Whole (Selar crumenophthalmus).jpg" alt="Frozen Bigeye Scad Whole">
+                    </div>
+
+                    <div class="product-card">
+                        <img class="product-img" src="Frozen Moonfish Whole (Mene maculata).jpg" alt="Frozen Moonfish Whole">
+                    </div>
+
+                    <div class="product-card">
+                        <img class="product-img" src="Frozen Pangasius Fillet (Pangasianodon hypophtalmus).jpg" alt="Frozen Pangasius Fillet">
+                    </div>
+
+                    <div class="product-card">
+                        <img class="product-img" src="Frozen Peeled Shrimp (Penaeus vannamei).jpg" alt="Frozen Peeled Shrimp">
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -1240,7 +1260,6 @@
         const lightboxModal = document.getElementById('lightboxModal');
         const lightboxImg = document.getElementById('lightboxImg');
         const lightboxClose = document.getElementById('lightboxClose');
-        const productCards = document.querySelectorAll('.product-card');
 
         let isDragging = false;
         let startX;
@@ -1266,7 +1285,6 @@
         });
 
         function startAutoPlay() {
-            // Safety structural logic check
             if (lightboxModal.classList.contains('active')) return;
             stopAutoPlay(); 
             autoPlayInterval = setInterval(() => {
@@ -1290,7 +1308,6 @@
             track.style.transform = `translateX(${currentTranslate}px)`;
         }
 
-        // Carousel interaction pauses
         container.addEventListener('mouseenter', stopAutoPlay);
         container.addEventListener('mouseleave', startAutoPlay);
 
@@ -1342,7 +1359,6 @@
             applyTranslate(false);
         }, {passive: true});
 
-        // ZOOM TRIGGER FUNCTION
         function openZoom(card) {
             const imgElement = card.querySelector('.product-img');
             if (imgElement) {
@@ -1352,28 +1368,28 @@
             }
         }
 
-        // Unified cross-platform double click action listeners
-        productCards.forEach(card => {
-            // Mouse Pause Fix: Halts translation engine when hover intent changes
-            card.addEventListener('mouseenter', stopAutoPlay);
-            
-            // Desktop double click trigger
-            card.addEventListener('dblclick', (e) => {
-                e.preventDefault();
-                openZoom(card);
-            });
-
-            // Mobile double tap implementation fix
-            card.addEventListener('touchend', (e) => {
-                const currentTime = new Date().getTime();
-                const tapLength = currentTime - lastTap;
-                if (tapLength < 300 && tapLength > 0) {
+        // Setup double click action listeners dynamically
+        function setupCardEvents() {
+            const productCards = document.querySelectorAll('.product-card');
+            productCards.forEach(card => {
+                card.addEventListener('mouseenter', stopAutoPlay);
+                
+                card.addEventListener('dblclick', (e) => {
                     e.preventDefault();
                     openZoom(card);
-                }
-                lastTap = currentTime;
+                });
+
+                card.addEventListener('touchend', (e) => {
+                    const currentTime = new Date().getTime();
+                    const tapLength = currentTime - lastTap;
+                    if (tapLength < 300 && tapLength > 0) {
+                        e.preventDefault();
+                        openZoom(card);
+                    }
+                    lastTap = currentTime;
+                });
             });
-        });
+        }
 
         function closeZoom() {
             lightboxModal.classList.remove('active');
@@ -1395,6 +1411,7 @@
         });
 
         // Initialize script sequence
+        setupCardEvents();
         startAutoPlay();
     </script>
 </body>
