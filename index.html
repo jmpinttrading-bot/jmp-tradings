@@ -355,14 +355,41 @@
             border: 1px solid #e1e8ed;
             flex: 0 0 calc(25% - 15px); /* Responsive 4 items view layout setup */
             min-width: 260px;
-            pointer-events: none; 
+            /* Click/Double-click functionality enabled for zoom modal scripts */
+            cursor: pointer;
+            position: relative;
+        }
+
+        .product-card::after {
+            content: "Double Click to View";
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(11, 37, 69, 0.85);
+            color: #fff;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            border-radius: 15px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            font-weight: 500;
+        }
+
+        .product-card:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
         }
 
         .product-img {
             height: 260px; 
-            background-size: cover;
+            background-size: contain; /* Fitted completely to display full aspect ratio width boundaries safely */
             background-position: center;
             background-repeat: no-repeat;
+            background-color: #ffffff; /* Smooth fallback backdrop coloring context */
+            margin: 10px;
+            border-radius: 6px;
         }
 
         /* Carousel Nav Arrows */
@@ -395,6 +422,72 @@
 
         .arrow-left { left: -5px; }
         .arrow-right { right: -5px; }
+
+        /* Double Click Lightbox Zoom Layer Styles */
+        .lightbox-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(7, 22, 44, 0.9);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .lightbox-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .lightbox-img {
+            max-width: 90%;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            user-select: none;
+            background-color: #fff;
+            padding: 8px;
+        }
+
+        .lightbox-modal.active .lightbox-img {
+            transform: scale(1);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 25px;
+            right: 35px;
+            color: #fff;
+            font-size: 2.5rem;
+            font-weight: 300;
+            cursor: pointer;
+            transition: color 0.2s;
+            user-select: none;
+            line-height: 1;
+        }
+
+        .lightbox-close:hover {
+            color: #f4d35e;
+        }
+
+        .lightbox-hint {
+            position: absolute;
+            bottom: 25px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+        }
 
         /* Testimonials Section Styles - Overflow fixed */
         .testimonials {
@@ -890,6 +983,12 @@
         </div>
     </section>
 
+    <div class="lightbox-modal" id="lightboxModal">
+        <span class="lightbox-close" id="lightboxClose">&times;</span>
+        <img class="lightbox-img" id="lightboxImg" src="" alt="Zoomed Seafood Asset View">
+        <div class="lightbox-hint">Double click anywhere or hit Esc to exit zoom</div>
+    </div>
+
     <section class="testimonials" id="testimonials">
         <h2 style="margin-bottom: 35px;">What Our Partners Say</h2>
         <div class="testimonials-container">
@@ -1131,6 +1230,12 @@
         const track = document.getElementById('sliderTrack');
         const prevBtn = document.getElementById('prevSlide');
         const nextBtn = document.getElementById('nextSlide');
+        
+        // Lightbox elements mapping
+        const lightboxModal = document.getElementById('lightboxModal');
+        const lightboxImg = document.getElementById('lightboxImg');
+        const lightboxClose = document.getElementById('lightboxClose');
+        const productCards = document.querySelectorAll('.product-card');
 
         let isDragging = false;
         let startX;
@@ -1226,6 +1331,39 @@
             currentTranslate = x - startX;
             applyTranslate(false);
         }, {passive: true});
+
+        // Double Click Zoom Script Functions
+        productCards.forEach(card => {
+            card.addEventListener('dblclick', () => {
+                const imgDiv = card.querySelector('.product-img');
+                // Extract clean URL string value from background-image CSS property
+                const bgStyle = window.getComputedStyle(imgDiv).backgroundImage;
+                const cleanUrl = bgStyle.replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
+                
+                lightboxImg.src = cleanUrl;
+                lightboxModal.classList.add('active');
+                stopAutoPlay();
+            });
+        });
+
+        function closeZoom() {
+            lightboxModal.classList.remove('active');
+            startAutoPlay();
+        }
+
+        lightboxClose.addEventListener('click', closeZoom);
+        lightboxModal.addEventListener('click', (e) => {
+            if (e.target !== lightboxImg) {
+                closeZoom();
+            }
+        });
+        lightboxModal.addEventListener('dblclick', closeZoom);
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightboxModal.classList.contains('active')) {
+                closeZoom();
+            }
+        });
 
         startAutoPlay();
     </script>
