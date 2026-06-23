@@ -96,7 +96,7 @@
 
     <div class="sidebar">
         <h2 id="sidebarTitle">JMP System</h2>
-        <a id="profileLink" onclick="verifyNavigationPrivilege('Profile Management', 'employee-dashboard.html')">Profile Management</a>
+        <a id="profileLink">Profile Management</a>
         <a id="controlPanelLink" onclick="verifyNavigationPrivilege('Control Panel', 'control-panel.html')">🎛️ Control Panel</a>
         <a id="employeeLink" onclick="verifyNavigationPrivilege('Employee 201 File', 'employee-201.html')">📋 Employee 201 File</a>
         <a id="importLink" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">📄 Import Doc File Management</a>
@@ -273,8 +273,11 @@
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
                 
-                // RETAIN: Keep the standard label for Admins
-                if(document.getElementById('profileLink')) document.getElementById('profileLink').textContent = "Profile Management";
+                // OPTION 1: Dynamic assignment of layout configuration context parameters for Admin
+                if(document.getElementById('profileLink')) {
+                    document.getElementById('profileLink').textContent = "Profile Management";
+                    document.getElementById('profileLink').setAttribute('onclick', "verifyNavigationPrivilege('Profile Management', 'admin-dashboard.html')");
+                }
             } else {
                 currentUserRole = "Employee";
                 
@@ -286,8 +289,11 @@
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Terminal";
                 
-                // UPDATED: Dynamic label modification for the profile navigation item
-                if(document.getElementById('profileLink')) document.getElementById('profileLink').textContent = "👤 My Account Profile";
+                // OPTION 1: Dynamic assignment of layout configuration context parameters for Employee
+                if(document.getElementById('profileLink')) {
+                    document.getElementById('profileLink').textContent = "👤 My Account Profile";
+                    document.getElementById('profileLink').setAttribute('onclick', "verifyNavigationPrivilege('Profile Management', 'employee-dashboard.html')");
+                }
                 
                 if(document.getElementById('controlPanelLink')) document.getElementById('controlPanelLink').style.display = 'none';
                 if(document.getElementById('employeeLink')) document.getElementById('employeeLink').style.display = 'none';
@@ -299,13 +305,10 @@
 
         function verifyNavigationPrivilege(moduleName, destinationUrl) {
             let isAccessPermitted = true;
-            let finalDestination = destinationUrl;
 
             // Checked against moduleName identifiers
             if (moduleName === 'Profile Management' || moduleName === '👤 My Account Profile') {
                 isAccessPermitted = permissionsMatrix.profile_access;
-                // Dynamically route based on user role parameter
-                finalDestination = (currentUserRole === 'Admin') ? 'admin-dashboard.html' : 'employee-dashboard.html';
             } else if (moduleName === 'Import Doc File Management') {
                 isAccessPermitted = permissionsMatrix.import_access;
             } else if (moduleName === 'Employee 201 File') {
@@ -315,7 +318,7 @@
             }
 
             if (isAccessPermitted) {
-                window.location.href = finalDestination;
+                window.location.href = destinationUrl;
             } else {
                 openRestrictionModal(moduleName);
             }
@@ -443,7 +446,7 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 } },
-                        x: { grid: { display: false }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 }
+                        x: { grid: { display: false }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 } }
                     }
                 }
             });
