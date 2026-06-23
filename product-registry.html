@@ -318,7 +318,11 @@
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Terminal";
-                if(document.getElementById('controlPanelLink')) document.getElementById('controlPanelLink').style.display = 'none';
+                
+                // Fixed logic to maintain sidebar visibility if user configuration allows access
+                if (!masterAccess && document.getElementById('controlPanelLink')) {
+                    document.getElementById('controlPanelLink').style.display = 'none';
+                }
             }
             
             applyFormUIRestrictions();
