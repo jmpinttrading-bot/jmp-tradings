@@ -12,9 +12,13 @@
         
         .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         .viewer-body { flex: 1; background: #f1f5f9; border-radius: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 15px; }
-        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; transition: height 0.2s ease; }
         
-        .office-fallback-container { background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 30px; text-align: center; margin-bottom: 10px; }
+        /* Individual File Interactive Node Wrappers */
+        .file-preview-node { background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; transition: box-shadow 0.2s ease; cursor: zoom-in; }
+        .file-preview-node:hover { box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+        
+        .compiled-frame { width: 100%; height: 500px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; display: block; }
+        
         .viewer-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
         
         .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
@@ -22,18 +26,34 @@
         .download-action-btn { background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .download-action-btn:hover { background: #1d4ed8; }
         
-        .doc-header-title { font-size: 1rem; color: #0f172a; margin: 15px 0 5px 0; display: flex; justify-content: space-between; align-items: center; }
+        .doc-header-title { font-size: 1rem; color: #0f172a; margin: 5px 0 12px 0; display: flex; justify-content: space-between; align-items: center; user-select: none; }
         .upload-date-span { font-size: 0.85rem; color: #64748b; font-weight: normal; background: #e2e8f0; padding: 2px 8px; border-radius: 4px; }
+        .double-click-badge { font-size: 0.75rem; color: #2563eb; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px dashed #2563eb; padding: 2px 6px; border-radius: 4px; background: #eff6ff; }
+
+        /* Full View Modal Engine Architecture */
+        .zoom-overlay-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: none; flex-direction: column; z-index: 99999; }
+        .zoom-modal-header { background: #0f172a; color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .zoom-modal-header h3 { font-size: 1.1rem; color: #f8fafc; }
+        .close-zoom-overlay-btn { background: #ef4444; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; transition: background 0.15s; }
+        .close-zoom-overlay-btn:hover { background: #dc2626; }
+        
+        .zoom-modal-content-container { flex: 1; overflow-y: auto; padding: 20px; display: flex; justify-content: center; align-items: flex-start; background: #334155; }
+        
+        /* Flattened Complete Multi-page Print View Sandbox Simulation */
+        .full-print-preview-canvas { width: 100%; max-width: 1100px; background: white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border-radius: 8px; border: none; height: 88vh; display: block; }
+        img.full-print-preview-canvas { height: auto; object-fit: contain; padding: 10px; background: white; }
     </style>
 </head>
 <body>
 
-    <div class="viewer-card" id="interactiveViewerCard" ondblclick="toggleLocalZoomScale()">
+    <div class="viewer-card" id="interactiveViewerCard">
         <div class="viewer-header">
             <h2 id="viewerTitleDisplay">Compiled View Panel</h2>
-            <button onclick="toggleLocalZoomScale()" style="background: #0f172a; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">🔎 Toggle Full Page Zoom</button>
+            <button onclick="toggleLocalZoomScale()" style="background: #0f172a; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 0.8rem; cursor: pointer; user-select: none;">🔎 Toggle Full Page Zoom</button>
         </div>
+        
         <div class="viewer-body" id="viewerTargetBody"></div>
+        
         <div class="viewer-footer">
             <button id="modalDownloadActionBtn" class="download-action-btn" onclick="window.parent.downloadCurrentDocumentPackage()">📥 Download Document Package</button>
             <button id="modalApproveActionBtn" class="approve-action-btn" onclick="window.parent.approveCurrentDocument()">Approve Documents</button>
@@ -41,15 +61,63 @@
         </div>
     </div>
 
+    <div class="zoom-overlay-modal" id="documentZoomOverlayModal">
+        <div class="zoom-modal-header">
+            <h3 id="zoomModalTitleDisplay">File Zoom Perspective</h3>
+            <button class="close-zoom-overlay-btn" onclick="closeFileZoomModal()">✕ Close Full View</button>
+        </div>
+        <div class="zoom-modal-content-container" id="zoomModalContentWrapper" onclick="closeFileZoomModal(event)">
+            </div>
+    </div>
+
     <script>
         function toggleLocalZoomScale() {
             const card = document.getElementById('interactiveViewerCard');
             card.classList.toggle('zoomed-full');
-            // Tells parent document window frame to toggle sizing limits alongside the iframe layout
             window.parent.handleIframeZoomToggle(card.classList.contains('zoomed-full'));
         }
 
-        // Exposed function called by parent window to render UI states dynamically
+        function openFileZoomModal(fileName, fileUrl, isOfficeFile, isAdmin) {
+            const modal = document.getElementById('documentZoomOverlayModal');
+            const title = document.getElementById('zoomModalTitleDisplay');
+            const wrapper = document.getElementById('zoomModalContentWrapper');
+            
+            title.innerHTML = `📄 Full Document Canvas Print View &mdash; <strong>${fileName}</strong>`;
+            wrapper.innerHTML = "";
+
+            const lowerUrl = fileUrl.toLowerCase();
+            const isImageFile = lowerUrl.includes('.png') || lowerUrl.includes('.jpg') || lowerUrl.includes('.jpeg') || lowerUrl.includes('.gif') || lowerUrl.includes('.webp');
+
+            if (isImageFile) {
+                const img = document.createElement('img');
+                img.className = "full-print-preview-canvas";
+                img.src = fileUrl;
+                wrapper.appendChild(img);
+            } else {
+                const frame = document.createElement('iframe');
+                frame.className = "full-print-preview-canvas";
+                
+                if (isOfficeFile) {
+                    // Force complete document print-preview template layout via Office Online Engine
+                    frame.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}&wdPrint=1&wdEmbedPrint=1`;
+                } else {
+                    // Standard PDF document loading parameters
+                    frame.src = !isAdmin ? `${fileUrl}#toolbar=0&navpanes=0&scrollbar=1` : fileUrl;
+                }
+                wrapper.appendChild(frame);
+            }
+
+            modal.style.display = "flex";
+        }
+
+        function closeFileZoomModal(event) {
+            if (event && event.target !== document.getElementById('zoomModalContentWrapper')) {
+                return;
+            }
+            document.getElementById('documentZoomOverlayModal').style.display = "none";
+            document.getElementById('zoomModalContentWrapper').innerHTML = "";
+        }
+
         function setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, parentSupabaseClient) {
             document.getElementById('viewerTitleDisplay').textContent = `Manifest Viewer: SPSIC-${doc.spsic_number}`;
             const targetBody = document.getElementById('viewerTargetBody');
@@ -60,27 +128,35 @@
                 const { data } = parentSupabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(file.path);
                 let publicUrl = data.publicUrl;
 
-                const titleContainer = document.createElement('div');
-                titleContainer.className = "doc-header-title";
-                titleContainer.innerHTML = `<h4>${file.name}</h4> <span class="upload-date-span">Date Upload: ${readableTimestamp}</span>`;
-                targetBody.appendChild(titleContainer);
-
                 const lowerPath = file.path.toLowerCase();
                 const isOfficeFile = lowerPath.endsWith('.doc') || lowerPath.endsWith('.docx') || lowerPath.endsWith('.xls') || lowerPath.endsWith('.xlsx');
 
+                const fileNode = document.createElement('div');
+                fileNode.className = "file-preview-node";
+                fileNode.title = "Double-click to expand this component into full page print-view mode";
+                
+                fileNode.ondblclick = (e) => {
+                    e.stopPropagation(); 
+                    openFileZoomModal(file.name, publicUrl, isOfficeFile, isAdmin);
+                };
+
+                const titleContainer = document.createElement('div');
+                titleContainer.className = "doc-header-title";
+                titleContainer.innerHTML = `<h4>${file.name}</h4> <div style="display:flex; gap:8px; align-items:center;"><span class="double-click-badge">Double Click to Full View</span><span class="upload-date-span">Date Upload: ${readableTimestamp}</span></div>`;
+                fileNode.appendChild(titleContainer);
+
+                const iframe = document.createElement('iframe');
+                iframe.className = "compiled-frame";
+                
                 if (isOfficeFile) {
-                    const officeBlock = document.createElement('div');
-                    officeBlock.className = "office-fallback-container";
-                    officeBlock.innerHTML = isAdmin ? 
-                        `<p style="font-weight: 600; color: #1e293b;">📄 Word / Excel Document Asset</p><p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Web browsers cannot preview custom spreadsheet files inline natively. Download the manifest package to review files locally.</p>` :
-                        `<p style="font-weight: 600; color: #ef4444;">🛡️ Document Protected (Access Restricted)</p><p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Local asset downloading rules are disabled for current Employee profile permission levels.</p>`;
-                    targetBody.appendChild(officeBlock);
+                    // Embedded viewing framework mapping Office binaries directly to document elements 
+                    iframe.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`;
                 } else {
-                    const iframe = document.createElement('iframe');
-                    iframe.className = "compiled-frame";
                     iframe.src = !isAdmin ? `${publicUrl}#toolbar=0&navpanes=0&scrollbar=0` : publicUrl;
-                    targetBody.appendChild(iframe);
                 }
+                
+                fileNode.appendChild(iframe);
+                targetBody.appendChild(fileNode);
             });
 
             const approveBtn = document.getElementById('modalApproveActionBtn');
