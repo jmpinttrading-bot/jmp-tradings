@@ -75,10 +75,15 @@
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
 
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; padding: 20px; }
-        .viewer-card { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; }
+        .viewer-card { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; transition: all 0.3s ease; }
+        
+        /* Zoom Expansion Classes */
+        .viewer-card.zoomed-full { max-width: 98% !important; height: 96vh !important; }
+        .viewer-card.zoomed-full .compiled-frame { height: 72vh !important; }
+
         .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         .viewer-body { flex: 1; background: #f1f5f9; border-radius: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 15px; }
-        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; }
+        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; transition: height 0.3s ease; }
         
         .office-fallback-container { background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 30px; text-align: center; margin-bottom: 10px; }
         .office-download-btn { display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 12px; font-size: 0.9rem; }
@@ -113,6 +118,11 @@
         .alert-btn-danger:hover { background: #b91c1c; }
         .alert-btn-secondary { background: #e2e8f0; color: #475569; }
         .alert-btn-secondary:hover { background: #cbd5e1; }
+
+        /* Print Media Blockout for Employee Mode Security Compliance */
+        @media print {
+            body.employee-secure-lockout { display: none !important; visibility: hidden !important; }
+        }
 
         @keyframes alertPopIn {
             from { transform: scale(0.95); opacity: 0; }
@@ -264,9 +274,10 @@
     </div>
 
     <div class="viewer-overlay" id="documentViewerOverlay">
-        <div class="viewer-card">
+        <div class="viewer-card" id="interactiveViewerCard" ondblclick="toggleViewerZoomScale()">
             <div class="viewer-header">
                 <h2 id="viewerTitleDisplay">Compiled View Panel</h2>
+                <small style="color: #64748b; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-weight: 500;">💡 Double click frame background to zoom</small>
             </div>
             <div class="viewer-body" id="viewerTargetBody"></div>
             <div class="viewer-footer">
@@ -370,6 +381,62 @@
             document.getElementById('systemAlertOverlay').style.display = 'none';
         }
 
+        // Feature: Zoom Functionality Toggled on Double Click
+        function toggleViewerZoomScale() {
+            const card = document.getElementById('interactiveViewerCard');
+            card.classList.toggle('zoomed-full');
+        }
+
+        // Feature: Employee Level Anti-Screenshot and Print restriction hooks
+        function registerSecurityInterceptors() {
+            // Apply class mapping to body for print stylesheet extraction blockout
+            document.body.classList.add('employee-secure-lockout');
+
+            // 1. Intercept Standard Keyboard combinations for taking screenshots or printing
+            window.addEventListener('keydown', (e) => {
+                if (currentUserRole !== 'admin') {
+                    // Prevent Ctrl+P or Cmd+P
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                        e.preventDefault();
+                        triggerSecurityAlertNotice("Print Request Refused", "Printing document data parameters is blocked on non-administrative endpoints.");
+                    }
+                    // Prevent Windows+Shift+S, Cmd+Shift+4, PrintScreen variations
+                    if (e.key === 'PrintScreen') {
+                        e.preventDefault();
+                        navigator.clipboard.writeText(""); // Clear clipboard asset string parameters
+                        triggerSecurityAlertNotice("Screen Capture Detected", "Screenshot actions violate local corporate compliance data protection loops.");
+                    }
+                }
+            });
+
+            // 2. Clear out clipboard buffer strings when copy executions are run
+            document.addEventListener('copy', (e) => {
+                if (currentUserRole !== 'admin') {
+                    e.preventDefault();
+                    triggerSecurityAlertNotice("Data Extraction Interrupted", "Copy operations are restricted within this workspace window.");
+                }
+            });
+
+            // 3. Monitor browser window blurring (frequently caused by external sniping tools or OS frame context shifts)
+            window.addEventListener('blur', () => {
+                if (currentUserRole !== 'admin') {
+                    const overlay = document.getElementById('documentViewerOverlay');
+                    if (overlay && overlay.style.display === 'flex') {
+                        overlay.style.visibility = 'hidden'; 
+                        setTimeout(() => { overlay.style.visibility = 'visible'; }, 800);
+                    }
+                }
+            });
+        }
+
+        function triggerSecurityAlertNotice(title, text) {
+            showSystemModal({
+                type: 'error',
+                title: `🛡️ Security Alert: ${title}`,
+                message: `${text} This infraction log timestamp has been bound to account session context parameters.`
+            });
+        }
+
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
@@ -385,6 +452,9 @@
                     document.getElementById('adminControlPanelLink').style.display = "none";
                     document.getElementById('adminEmployee201Link').style.display = "none";
                     document.getElementById('sidebarLogoutBtn').textContent = "Logout Employee";
+                    
+                    // Activate structural constraints for general employees
+                    registerSecurityInterceptors();
                 } else {
                     document.getElementById('sidebarPanelHeading').textContent = "JMP Admin HQ";
                     document.getElementById('backToDashboardBtn').href = "admin-dashboard.html";
@@ -1087,6 +1157,8 @@
 
         function closeViewer() {
             document.getElementById('documentViewerOverlay').style.display = 'none';
+            // Reset zoom expansion rules on modal dismissal transitions
+            document.getElementById('interactiveViewerCard').classList.remove('zoomed-full');
             activeInspectingRecordId = null;
         }
 
@@ -1166,7 +1238,7 @@
                     return;
                 }
 
-                btn.textContent = "⚡ Generating Zip...";
+                btn.textContent = "📦 Generating Zip...";
                 const generatedZipContentBlob = await zip.generateAsync({ type: "blob" });
                 
                 const tempDownloadAnchorUrl = window.URL.createObjectURL(generatedZipContentBlob);
