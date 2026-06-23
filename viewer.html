@@ -42,6 +42,23 @@
         /* Flattened Complete Multi-page Print View Sandbox Simulation */
         .full-print-preview-canvas { width: 100%; max-width: 1100px; background: white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); border-radius: 8px; border: none; height: 88vh; display: block; }
         img.full-print-preview-canvas { height: auto; object-fit: contain; padding: 10px; background: white; }
+
+        /* Employee Security Restriction Layer Overlays */
+        .employee-restricted-mode { user-select: none !important; -webkit-user-select: none !important; }
+        
+        /* Warning Alert Notification Dialog Popup style */
+        .security-alert-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); display: none; justify-content: center; align-items: center; z-index: 100000; }
+        .security-alert-card { background: white; padding: 30px; border-radius: 12px; max-width: 455px; width: 90%; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15); border: 2px solid #ef4444; }
+        .security-alert-icon { font-size: 2.5rem; color: #ef4444; margin-bottom: 12px; }
+        .security-alert-card h4 { font-size: 1.25rem; color: #0f172a; margin-bottom: 8px; }
+        .security-alert-card p { font-size: 0.9rem; color: #475569; line-height: 1.5; margin-bottom: 20px; }
+        .security-alert-btn { background: #0f172a; color: white; padding: 8px 24px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+
+        /* Anti-Print Style Sheet Logic Override */
+        @media print {
+            body, .viewer-card, .zoom-overlay-modal { display: none !important; }
+            html::after { content: "SECURITY VIOLATION: Unauthorized duplication attempt recorded."; color: red; font-family: sans-serif; font-weight: bold; font-size: 2rem; text-align: center; margin-top: 100px; display: block; }
+        }
     </style>
 </head>
 <body>
@@ -70,7 +87,32 @@
             </div>
     </div>
 
+    <div class="security-alert-modal" id="securityBreachModal">
+        <div class="security-alert-card">
+            <div class="security-alert-icon">⚠️</div>
+            <h4>Security Action Restricted</h4>
+            <p>Screenshots, print actions, snipping, or text copying actions on company manifest records are restricted under employee data protection protocols.</p>
+            <button class="security-alert-btn" onclick="dismissSecurityModal()">Acknowledge</button>
+        </div>
+    </div>
+
     <script>
+        let securityWatchActive = false;
+
+        function triggerSecurityAlert() {
+            if (!securityWatchActive) return;
+            document.getElementById('securityBreachModal').style.display = 'flex';
+            
+            // Clear system clipboard content data buffer if possible during actions
+            if(navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText("Protected Data Content");
+            }
+        }
+
+        function dismissSecurityModal() {
+            document.getElementById('securityBreachModal').style.display = 'none';
+        }
+
         function toggleLocalZoomScale() {
             const card = document.getElementById('interactiveViewerCard');
             card.classList.toggle('zoomed-full');
@@ -98,10 +140,8 @@
                 frame.className = "full-print-preview-canvas";
                 
                 if (isOfficeFile) {
-                    // Force complete document print-preview template layout via Office Online Engine
                     frame.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}&wdPrint=1&wdEmbedPrint=1`;
                 } else {
-                    // Standard PDF document loading parameters
                     frame.src = !isAdmin ? `${fileUrl}#toolbar=0&navpanes=0&scrollbar=1` : fileUrl;
                 }
                 wrapper.appendChild(frame);
@@ -122,6 +162,14 @@
             document.getElementById('viewerTitleDisplay').textContent = `Manifest Viewer: SPSIC-${doc.spsic_number}`;
             const targetBody = document.getElementById('viewerTargetBody');
             targetBody.innerHTML = "";
+
+            // Enable policy triggers when employee checks the files
+            securityWatchActive = !isAdmin;
+            if (securityWatchActive) {
+                document.body.classList.add('employee-restricted-mode');
+            } else {
+                document.body.classList.remove('employee-restricted-mode');
+            }
 
             filesArray.forEach(file => {
                 const readableTimestamp = window.parent.formatHumanReadableDate(file.uploadDate);
@@ -149,7 +197,6 @@
                 iframe.className = "compiled-frame";
                 
                 if (isOfficeFile) {
-                    // Embedded viewing framework mapping Office binaries directly to document elements 
                     iframe.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`;
                 } else {
                     iframe.src = !isAdmin ? `${publicUrl}#toolbar=0&navpanes=0&scrollbar=0` : publicUrl;
@@ -162,6 +209,54 @@
             const approveBtn = document.getElementById('modalApproveActionBtn');
             approveBtn.style.display = (isAdmin && doc.status === 'For Approval') ? "block" : "none";
         }
+
+        // --- Hardware Intercept and Anti-Screenshot Engine Event Listeners ---
+        
+        // Intercept standard context options (Right Click Protection)
+        document.addEventListener('contextmenu', function(e) {
+            if (securityWatchActive) {
+                e.preventDefault();
+                triggerSecurityAlert();
+            }
+        });
+
+        // Track Hotkey configurations 
+        document.addEventListener('keydown', function(e) {
+            if (!securityWatchActive) return;
+
+            // 1. Detect PrintScreen Key
+            if (e.key === "PrintScreen" || e.keyCode === 44) {
+                e.preventDefault();
+                triggerSecurityAlert();
+            }
+
+            // 2. Detect Windows Snipping Tool (Win + Shift + S), Mac Screen Commands (Cmd + Shift + 3/4)
+            if (
+                (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === 's')) || 
+                (e.ctrlKey && e.key === 'p') || // Block standard print controls
+                (e.ctrlKey && e.shiftKey && e.key === 'I') || // Block inspection elements tool
+                (e.ctrlKey && e.key === 'c') // Block structural copying routines
+            ) {
+                e.preventDefault();
+                triggerSecurityAlert();
+            }
+        });
+
+        // Monitor focus transitions (e.g., when the Snipping Tool modal overlay opens)
+        window.addEventListener('blur', function() {
+            if (securityWatchActive) {
+                // Instantly inject blank overlay values if the active viewport loses contextual structural focus
+                const canvasElements = document.querySelectorAll('.compiled-frame, .full-print-preview-canvas');
+                canvasElements.forEach(el => el.style.visibility = 'hidden');
+            }
+        });
+
+        window.addEventListener('focus', function() {
+            if (securityWatchActive) {
+                const canvasElements = document.querySelectorAll('.compiled-frame, .full-print-preview-canvas');
+                canvasElements.forEach(el => el.style.visibility = 'visible');
+            }
+        });
     </script>
 </body>
 </html>
