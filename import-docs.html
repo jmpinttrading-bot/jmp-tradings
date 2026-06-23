@@ -75,30 +75,8 @@
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
 
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; padding: 20px; }
-        .viewer-card { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); position: relative; }
-        
-        .viewer-card.zoomed-full { max-width: 100% !important; width: 100vw !important; height: 100vh !important; border-radius: 0px !important; position: fixed !important; top: 0 !important; left: 0 !important; z-index: 10001 !important; }
-        .viewer-card.zoomed-full .viewer-body { height: calc(100vh - 140px) !important; }
-        .viewer-card.zoomed-full .compiled-frame { height: 85vh !important; }
-
-        .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
-        .viewer-body { flex: 1; background: #f1f5f9; border-radius: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 15px; }
-        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; transition: height 0.2s ease; }
-        
-        .office-fallback-container { background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 30px; text-align: center; margin-bottom: 10px; }
-        .office-download-btn { display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 12px; font-size: 0.9rem; }
-        .office-download-btn:hover { background: #1d4ed8; }
-
-        .viewer-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
-        .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .approve-action-btn { background: #22c55e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
-        .download-action-btn { background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .download-action-btn:hover { background: #1d4ed8; }
 
         .empty-placeholder { text-align: center; color: #64748b; padding: 30px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.95rem; margin-top: 10px; }
-
-        .doc-header-title { font-size: 1rem; color: #0f172a; margin: 15px 0 5px 0; display: flex; justify-content: space-between; align-items: center; }
-        .upload-date-span { font-size: 0.85rem; color: #64748b; font-weight: normal; background: #e2e8f0; padding: 2px 8px; border-radius: 4px; }
 
         .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); transition: opacity 0.2s ease; }
         .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); overflow: hidden; animation: alertPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -271,19 +249,9 @@
         </div>
     </div>
 
+    <!-- Decoupled overlay container referencing independent viewer document frame -->
     <div class="viewer-overlay" id="documentViewerOverlay">
-        <div class="viewer-card" id="interactiveViewerCard" ondblclick="toggleViewerZoomScale()">
-            <div class="viewer-header">
-                <h2 id="viewerTitleDisplay">Compiled View Panel</h2>
-                <button onclick="toggleViewerZoomScale()" style="background: #0f172a; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">🔎 Toggle Full Page Zoom</button>
-            </div>
-            <div class="viewer-body" id="viewerTargetBody"></div>
-            <div class="viewer-footer">
-                <button id="modalDownloadActionBtn" class="download-action-btn" onclick="downloadCurrentDocumentPackage()">📥 Download Document Package</button>
-                <button id="modalApproveActionBtn" class="approve-action-btn" onclick="approveCurrentDocument()">Approve Documents</button>
-                <button class="close-viewer-btn" onclick="closeViewer()">Dismiss Viewer</button>
-            </div>
-        </div>
+        <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);"></iframe>
     </div>
 
     <div class="system-alert-overlay" id="systemAlertOverlay">
@@ -379,9 +347,15 @@
             document.getElementById('systemAlertOverlay').style.display = 'none';
         }
 
-        function toggleViewerZoomScale() {
-            const card = document.getElementById('interactiveViewerCard');
-            card.classList.toggle('zoomed-full');
+        function handleIframeZoomToggle(isZoomedFull) {
+            const iframe = document.getElementById('viewerModuleIframe');
+            if (isZoomedFull) {
+                iframe.style.maxWidth = '100%';
+                iframe.style.height = '100vh';
+            } else {
+                iframe.style.maxWidth = '900px';
+                iframe.style.height = '90vh';
+            }
         }
 
         function registerSecurityInterceptors() {
@@ -966,83 +940,25 @@
             const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
             if(!doc) return;
 
-            document.getElementById('viewerTitleDisplay').textContent = `Manifest Viewer: SPSIC-${doc.spsic_number}`;
-            const targetBody = document.getElementById('viewerTargetBody');
-            targetBody.innerHTML = "";
-
             const filesArray = [];
-            if(doc.spsic_file_path) filesArray.push({ name: "1. SPSIC Document", path: doc.spsic_file_path });
-            if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path });
-            if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path });
+            if(doc.spsic_file_path) filesArray.push({ name: "1. SPSIC Document", path: doc.spsic_file_path, uploadDate: doc.updated_at });
+            if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path, uploadDate: doc.updated_at });
+            if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path, uploadDate: doc.updated_at });
 
             const isAdmin = (currentUserRole === 'admin');
+            const overlay = document.getElementById('documentViewerOverlay');
+            const iframe = document.getElementById('viewerModuleIframe');
 
-            for(let file of filesArray) {
-                let fileUploadDate = doc.updated_at; 
-                
-                try {
-                    const { data: metaData } = await supabaseClient
-                        .storage
-                        .from(STORAGE_BUCKET_NAME)
-                        .getMetadata(file.path);
-                        
-                    if (metaData && metaData.created_at) {
-                        fileUploadDate = metaData.created_at;
-                    }
-                } catch(e) {
-                    console.warn("Could not retrieve precise storage object creation metadata:", e);
-                }
+            overlay.style.display = 'flex';
 
-                const readableTimestamp = formatHumanReadableDate(fileUploadDate);
-                const { data } = supabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(file.path);
-                let publicUrl = data.publicUrl;
-
-                const titleContainer = document.createElement('div');
-                titleContainer.className = "doc-header-title";
-                titleContainer.innerHTML = `<h4>${file.name}</h4> <span class="upload-date-span">Date Upload: ${readableTimestamp}</span>`;
-                targetBody.appendChild(titleContainer);
-
-                const lowerPath = file.path.toLowerCase();
-                const isOfficeFile = lowerPath.endsWith('.doc') || lowerPath.endsWith('.docx') || lowerPath.endsWith('.xls') || lowerPath.endsWith('.xlsx');
-
-                if (isOfficeFile) {
-                    const officeBlock = document.createElement('div');
-                    officeBlock.className = "office-fallback-container";
-                    
-                    if (isAdmin) {
-                        officeBlock.innerHTML = `
-                            <p style="font-weight: 600; color: #1e293b;">📄 Word / Excel Document Asset</p>
-                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Web browsers cannot preview custom spreadsheet or text documents inline natively. Download the manifest package to review files locally.</p>
-                        `;
-                    } else {
-                        officeBlock.innerHTML = `
-                            <p style="font-weight: 600; color: #ef4444;">🛡️ Document Protected (Access Restricted)</p>
-                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Local asset downloading and replication rules are disabled for current Employee profile permission levels.</p>
-                        `;
-                    }
-                    targetBody.appendChild(officeBlock);
-                } else {
-                    const iframe = document.createElement('iframe');
-                    iframe.className = "compiled-frame";
-                    
-                    if (!isAdmin) {
-                        iframe.src = `${publicUrl}#toolbar=0&navpanes=0&scrollbar=0`;
-                    } else {
-                        iframe.src = publicUrl;
-                    }
-                    
-                    targetBody.appendChild(iframe);
-                }
-            }
-
-            const approveBtn = document.getElementById('modalApproveActionBtn');
-            if (isAdmin && doc.status === 'For Approval') {
-                approveBtn.style.display = "block";
+            // Safe transfer initialization pipeline targeting the standalone HTML window ecosystem
+            if (iframe.contentWindow && typeof iframe.contentWindow.setupViewerContent === 'function') {
+                iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient);
             } else {
-                approveBtn.style.display = "none";
+                iframe.onload = function() {
+                    iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient);
+                };
             }
-
-            document.getElementById('documentViewerOverlay').style.display = 'flex';
         }
 
         async function downloadCurrentDocumentPackage() {
@@ -1057,9 +973,16 @@
 
             if (!activeInspectingRecordId) return;
 
-            const dlBtn = document.getElementById('modalDownloadActionBtn');
-            dlBtn.setAttribute('disabled', 'true');
-            dlBtn.textContent = "⏳ Packing files...";
+            const iframe = document.getElementById('viewerModuleIframe');
+            let dlBtn = null;
+            if(iframe.contentWindow && iframe.contentWindow.document) {
+                dlBtn = iframe.contentWindow.document.getElementById('modalDownloadActionBtn');
+            }
+
+            if(dlBtn) {
+                dlBtn.setAttribute('disabled', 'true');
+                dlBtn.textContent = "⏳ Packing files...";
+            }
 
             try {
                 const { data: record, error } = await supabaseClient
@@ -1113,8 +1036,10 @@
             } catch (err) {
                 showSystemModal({ type: 'error', title: 'Extraction Error', message: err.message });
             } finally {
-                dlBtn.removeAttribute('disabled');
-                dlBtn.textContent = "📥 Download Document Package";
+                if(dlBtn) {
+                    dlBtn.removeAttribute('disabled');
+                    dlBtn.textContent = "📥 Download Document Package";
+                }
             }
         }
 
@@ -1148,7 +1073,13 @@
 
         function closeViewer() {
             document.getElementById('documentViewerOverlay').style.display = 'none';
-            document.getElementById('interactiveViewerCard').classList.remove('zoomed-full');
+            const iframe = document.getElementById('viewerModuleIframe');
+            iframe.style.maxWidth = '900px';
+            iframe.style.height = '90vh';
+            
+            if(iframe.contentWindow && iframe.contentWindow.document.getElementById('interactiveViewerCard')) {
+                iframe.contentWindow.document.getElementById('interactiveViewerCard').classList.remove('zoomed-full');
+            }
             activeInspectingRecordId = null;
         }
 
