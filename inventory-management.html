@@ -299,10 +299,13 @@
 
         function verifyNavigationPrivilege(moduleName, destinationUrl) {
             let isAccessPermitted = true;
+            let finalDestination = destinationUrl;
 
             // Checked against moduleName identifiers
             if (moduleName === 'Profile Management' || moduleName === '👤 My Account Profile') {
                 isAccessPermitted = permissionsMatrix.profile_access;
+                // Dynamically route based on user role parameter
+                finalDestination = (currentUserRole === 'Admin') ? 'admin-dashboard.html' : 'employee-dashboard.html';
             } else if (moduleName === 'Import Doc File Management') {
                 isAccessPermitted = permissionsMatrix.import_access;
             } else if (moduleName === 'Employee 201 File') {
@@ -312,7 +315,7 @@
             }
 
             if (isAccessPermitted) {
-                window.location.href = destinationUrl;
+                window.location.href = finalDestination;
             } else {
                 openRestrictionModal(moduleName);
             }
@@ -440,7 +443,7 @@
                     plugins: { legend: { display: false } },
                     scales: {
                         y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 } },
-                        x: { grid: { display: false }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 } }
+                        x: { grid: { display: false }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 }
                     }
                 }
             });
