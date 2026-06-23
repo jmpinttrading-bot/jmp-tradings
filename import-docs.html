@@ -75,15 +75,16 @@
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
 
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; padding: 20px; }
-        .viewer-card { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; transition: all 0.3s ease; }
+        .viewer-card { background: white; width: 100%; max-width: 900px; height: 90vh; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); position: relative; }
         
-        /* Zoom Expansion Classes */
-        .viewer-card.zoomed-full { max-width: 98% !important; height: 96vh !important; }
-        .viewer-card.zoomed-full .compiled-frame { height: 72vh !important; }
+        /* Fixed & Optimized Zoom Expansion Target Profiles */
+        .viewer-card.zoomed-full { max-width: 100% !important; width: 100vw !important; height: 100vh !important; border-radius: 0px !important; position: fixed !important; top: 0 !important; left: 0 !important; z-index: 10001 !important; }
+        .viewer-card.zoomed-full .viewer-body { height: calc(100vh - 140px) !important; }
+        .viewer-card.zoomed-full .compiled-frame { height: 85vh !important; }
 
         .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         .viewer-body { flex: 1; background: #f1f5f9; border-radius: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 15px; }
-        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; transition: height 0.3s ease; }
+        .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; transition: height 0.2s ease; }
         
         .office-fallback-container { background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 30px; text-align: center; margin-bottom: 10px; }
         .office-download-btn { display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 12px; font-size: 0.9rem; }
@@ -119,7 +120,7 @@
         .alert-btn-secondary { background: #e2e8f0; color: #475569; }
         .alert-btn-secondary:hover { background: #cbd5e1; }
 
-        /* Print Media Blockout for Employee Mode Security Compliance */
+        /* Print Media Blockout ONLY for Employee Mode Security Compliance */
         @media print {
             body.employee-secure-lockout { display: none !important; visibility: hidden !important; }
         }
@@ -277,7 +278,7 @@
         <div class="viewer-card" id="interactiveViewerCard" ondblclick="toggleViewerZoomScale()">
             <div class="viewer-header">
                 <h2 id="viewerTitleDisplay">Compiled View Panel</h2>
-                <small style="color: #64748b; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; font-weight: 500;">💡 Double click frame background to zoom</small>
+                <button onclick="toggleViewerZoomScale()" style="background: #0f172a; color: white; padding: 6px 12px; border: none; border-radius: 4px; font-weight: 600; font-size: 0.8rem; cursor: pointer;">🔎 Toggle Full Page Zoom</button>
             </div>
             <div class="viewer-body" id="viewerTargetBody"></div>
             <div class="viewer-footer">
@@ -381,7 +382,7 @@
             document.getElementById('systemAlertOverlay').style.display = 'none';
         }
 
-        // Feature: Zoom Functionality Toggled on Double Click
+        // Feature: Zoom Functionality Toggled on Double Click / Button Interaction
         function toggleViewerZoomScale() {
             const card = document.getElementById('interactiveViewerCard');
             card.classList.toggle('zoomed-full');
@@ -453,7 +454,7 @@
                     document.getElementById('adminEmployee201Link').style.display = "none";
                     document.getElementById('sidebarLogoutBtn').textContent = "Logout Employee";
                     
-                    // Activate structural constraints for general employees
+                    // Activate structural constraints ONLY for general employees
                     registerSecurityInterceptors();
                 } else {
                     document.getElementById('sidebarPanelHeading').textContent = "JMP Admin HQ";
@@ -462,6 +463,9 @@
                     document.getElementById('adminControlPanelLink').style.display = "block";
                     document.getElementById('adminEmployee201Link').style.display = "block";
                     document.getElementById('sidebarLogoutBtn').textContent = "Logout Admin";
+                    
+                    // Remind system body to drop class limits if previously configured on admins
+                    document.body.classList.remove('employee-secure-lockout');
                 }
             }
 
@@ -1157,7 +1161,6 @@
 
         function closeViewer() {
             document.getElementById('documentViewerOverlay').style.display = 'none';
-            // Reset zoom expansion rules on modal dismissal transitions
             document.getElementById('interactiveViewerCard').classList.remove('zoomed-full');
             activeInspectingRecordId = null;
         }
