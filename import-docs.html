@@ -80,9 +80,9 @@
         .viewer-body { flex: 1; background: #f1f5f9; border-radius: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 15px; }
         .compiled-frame { width: 100%; height: 500px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; background: white; }
         
-        .zip-fallback-container { background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 30px; text-align: center; margin-bottom: 10px; }
-        .zip-download-btn { display: inline-block; background: #0f172a; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 12px; font-size: 0.9rem; }
-        .zip-download-btn:hover { background: #1e293b; }
+        .office-fallback-container { background: white; border: 1px solid #cbd5e1; border-radius: 6px; padding: 30px; text-align: center; margin-bottom: 10px; }
+        .office-download-btn { display: inline-block; background: #2563eb; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; margin-top: 12px; font-size: 0.9rem; }
+        .office-download-btn:hover { background: #1d4ed8; }
 
         .viewer-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
         .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
@@ -171,23 +171,23 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>1st Upload: SPSIC Document File (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileSpsic" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="handleFileSelection('fileSpsic', 'progressSpsic')">
+                        <label>1st Upload: SPSIC Document File (PDF / Image / Word / Excel)</label>
+                        <input type="file" id="fileSpsic" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="handleFileSelection('fileSpsic', 'progressSpsic')">
                         <div id="progressSpsic" class="upload-progress-status"></div>
                         <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
-                        <label>2nd Upload: Arrival Notice (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileArrival" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="handleFileSelection('fileArrival', 'progressArrival')">
+                        <label>2nd Upload: Arrival Notice (PDF / Image / Word / Excel)</label>
+                        <input type="file" id="fileArrival" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="handleFileSelection('fileArrival', 'progressArrival')">
                         <div id="progressArrival" class="upload-progress-status"></div>
                         <div id="noticeArrival" class="lock-notice">⚠️ Locked: Upload 1st File (SPSIC) first.</div>
                         <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
                     </div>
                     
                     <div class="form-group">
-                        <label>3rd Upload: Import Docs File (PDF / Image / ZIP)</label>
-                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,application/zip,application/x-zip-compressed" onchange="handleFileSelection('fileImportDocs', 'progressImport')">
+                        <label>3rd Upload: Import Docs File (PDF / Image / Word / Excel)</label>
+                        <input type="file" id="fileImportDocs" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="handleFileSelection('fileImportDocs', 'progressImport')">
                         <div id="progressImport" class="upload-progress-status"></div>
                         <div id="noticeImport" class="lock-notice">⚠️ Locked: Upload 1st and 2nd Files first.</div>
                         <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
@@ -941,24 +941,25 @@
                 titleContainer.innerHTML = `<h4>${file.name}</h4> <span class="upload-date-span">Date Upload: ${readableTimestamp}</span>`;
                 targetBody.appendChild(titleContainer);
 
-                const isZipFile = file.path.toLowerCase().endsWith('.zip');
+                const lowerPath = file.path.toLowerCase();
+                const isOfficeFile = lowerPath.endsWith('.doc') || lowerPath.endsWith('.docx') || lowerPath.endsWith('.xls') || lowerPath.endsWith('.xlsx');
 
-                if (isZipFile) {
-                    const zipBlock = document.createElement('div');
-                    zipBlock.className = "zip-fallback-container";
+                if (isOfficeFile) {
+                    const officeBlock = document.createElement('div');
+                    officeBlock.className = "office-fallback-container";
                     
                     if (isAdmin) {
-                        zipBlock.innerHTML = `
-                            <p style="font-weight: 600; color: #1e293b;">📦 Compressed File Package Archive</p>
-                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Web browsers cannot preview ZIP components inline. Use the panel action controls to securely batch down historical bundles.</p>
+                        officeBlock.innerHTML = `
+                            <p style="font-weight: 600; color: #1e293b;">📄 Word / Excel Document Asset</p>
+                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Web browsers cannot preview custom spreadsheet or text documents inline natively. Download the manifest package to review files locally.</p>
                         `;
                     } else {
-                        zipBlock.innerHTML = `
-                            <p style="font-weight: 600; color: #ef4444;">🛡️ Compressed Archive (Access Restricted)</p>
-                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">This package contains compressed data assets. Local storage duplication and raw file data copying are disabled for Employee profiles.</p>
+                        officeBlock.innerHTML = `
+                            <p style="font-weight: 600; color: #ef4444;">🛡️ Document Protected (Access Restricted)</p>
+                            <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Local asset downloading and replication rules are disabled for current Employee profile permission levels.</p>
                         `;
                     }
-                    targetBody.appendChild(zipBlock);
+                    targetBody.appendChild(officeBlock);
                 } else {
                     const iframe = document.createElement('iframe');
                     iframe.className = "compiled-frame";
