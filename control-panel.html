@@ -15,7 +15,7 @@
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        .main-content { flex: 1; padding: 40px; min-width: 0; overflow: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
@@ -269,8 +269,11 @@
             if (error) {
                 console.error("Supabase privilege update conflict:", error.message);
                 alert("Error updating access clearance: " + error.message);
+                fetchPlatformUserProfiles(); 
             } else {
-                fetchPlatformUserProfiles();
+                setTimeout(() => {
+                    fetchPlatformUserProfiles();
+                }, 300);
             }
         }
 
