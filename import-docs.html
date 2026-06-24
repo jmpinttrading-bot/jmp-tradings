@@ -249,7 +249,6 @@
         </div>
     </div>
 
-    <!-- Decoupled overlay container referencing independent viewer document frame -->
     <div class="viewer-overlay" id="documentViewerOverlay">
         <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);"></iframe>
     </div>
@@ -272,6 +271,7 @@
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYkhnKE92jlRakz_-uWHQueDg4gUEcakn5Iip8AAjLWwYQvcMe1N47gSj1tEORNXP_WA/exec";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let selectedFolderMonth = ""; 
@@ -674,6 +674,18 @@
             activeTrackingSpsic = null;
         }
 
+        function formatMonthlyDirectoryName(targetMonthString) {
+            if (!targetMonthString) return "Unknown_Month";
+            const [year, monthNum] = targetMonthString.split('-');
+            const matchedMonth = monthsLabels.find(m => m.value === monthNum);
+            return matchedMonth ? `${matchedMonth.text}_${year}` : targetMonthString;
+        }
+
+        function getFileExtension(filename, defaultExt = "pdf") {
+            if (!filename) return defaultExt;
+            return filename.split('.').pop() || defaultExt;
+        }
+
         function buildMonthlyFolders() {
             const container = document.getElementById('monthFolderContainer');
             container.innerHTML = "";
@@ -829,6 +841,9 @@
             let importPath = localFetchedRecord ? localFetchedRecord.import_docs_path : null;
 
             try {
+                let recentlyUploadedPublicUrl = "";
+                let baseFileNameString = "";
+
                 if (fileSpsicEl) fileSpsicEl = await optimizeAndCompressPdfFile(fileSpsicEl);
                 if (fileArrivalEl) fileArrivalEl = await optimizeAndCompressPdfFile(fileArrivalEl);
                 if (fileImportEl) fileImportEl = await optimizeAndCompressPdfFile(fileImportEl);
@@ -838,6 +853,10 @@
                     const { error: uploadErr } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileSpsicEl, { upsert: true });
                     if (uploadErr) throw new Error(`SPSIC Document upload failed: ${uploadErr.message}`);
                     spsicPath = name;
+
+                    const { data: publicUrlData } = supabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(name);
+                    recentlyUploadedPublicUrl = publicUrlData.publicUrl;
+                    baseFileNameString = `SPSIC_${rawNumber}_${sDateVal}_SPSIC_Doc.${getFileExtension(fileSpsicEl.name)}`;
                 }
                 
                 if (fileArrivalEl) {
@@ -845,6 +864,10 @@
                     const { error: uploadErr } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileArrivalEl, { upsert: true });
                     if (uploadErr) throw new Error(`Arrival Notice upload failed: ${uploadErr.message}`);
                     arrivalPath = name;
+
+                    const { data: publicUrlData } = supabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(name);
+                    recentlyUploadedPublicUrl = publicUrlData.publicUrl;
+                    baseFileNameString = `SPSIC_${rawNumber}_${sDateVal}_ArrivalNotice.${getFileExtension(fileArrivalEl.name)}`;
                 }
                 
                 if (fileImportEl) {
@@ -852,6 +875,10 @@
                     const { error: uploadErr } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(name, fileImportEl, { upsert: true });
                     if (uploadErr) throw new Error(`Import Docs package upload failed: ${uploadErr.message}`);
                     importPath = name;
+
+                    const { data: publicUrlData } = supabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(name);
+                    recentlyUploadedPublicUrl = publicUrlData.publicUrl;
+                    baseFileNameString = `SPSIC_${rawNumber}_${sDateVal}_ImportDocs.${getFileExtension(fileImportEl.name)}`;
                 }
 
                 if (!spsicPath) {
@@ -887,10 +914,40 @@
                     
                 if (dbError) throw dbError;
 
+                if (recentlyUploadedPublicUrl) {
+                    try {
+                        const googlePayload = {
+                            spsic_number: `SPSIC_${rawNumber}_${formatMonthlyDirectoryName(monthTarget)}`,
+                            date: sDateVal,
+                            files: recentlyUploadedPublicUrl
+                        };
+
+                        await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                            method: "POST",
+                            mode: "no-cors",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify(googlePayload)
+                        });
+                        console.log("Asynchronous asset duplication event passed to Google Apps Script.");
+                    } catch (gErr) {
+                        console.error("Secondary cloud network channel synchronization failed:", gErr);
+                    }
+                }
+
                 await clearLockHeartbeat();
+
+                /*
+                 * ⚠️ ONE SMALL PIPELINE RISK TO WATCH FOR:
+                 * Direct reference assignment of the client-side 'payload' object straight into 
+                 * 'localFetchedRecord' shortcuts the database schema reflection layer. If this upsert 
+                 * was an initial record creation, 'payload.id' might be absent or out of sync with 
+                 * your primary auto-incrementing database keys, causing state validation failures 
+                 * in downstream tracking routines. Consider chaining a '.select().single()' to 
+                 * your Supabase query block to cleanly hydrate state from server-side truth.
+                 */
                 localFetchedRecord = payload;
                 
-                showSystemModal({ type: 'success', title: 'Pipeline Sync Successful', message: `Manifest profile parameters for SPSIC-${rawNumber} have been saved.` });
+                showSystemModal({ type: 'success', title: 'Pipeline Sync Successful', message: `Manifest profile parameters for SPSIC-${rawNumber} have been saved and dispatched to cloud directories.` });
                 
                 document.getElementById('spsicDate').value = "";
                 document.getElementById('fileSpsic').value = "";
