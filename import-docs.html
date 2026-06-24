@@ -249,7 +249,6 @@
         </div>
     </div>
 
-    <!-- Decoupled overlay container referencing independent viewer document frame -->
     <div class="viewer-overlay" id="documentViewerOverlay">
         <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);"></iframe>
     </div>
@@ -274,6 +273,9 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+        // 🔗 MAKE.COM AUTOMATION CONFIGURATION WEBHOOK
+        const AUTOMATION_WEBHOOK_URL = "https://hook.us2.make.com/8puup2g1911uomiajlogccbknm5s17jg";
+
         let selectedFolderMonth = ""; 
         let availableYears = [2026, 2027]; 
         const STORAGE_BUCKET_NAME = "shipment-documents";
@@ -810,6 +812,16 @@
             }
         }
 
+        // Helper function to convert a file to Base64 data string for the webhook payload
+        function convertFileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+
         async function executeDocumentUpload(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submitSyncPipelineBtn');
@@ -887,10 +899,54 @@
                     
                 if (dbError) throw dbError;
 
+                // 🚀 TRIGGER MAKE.COM WEBHOOK FOR GOOGLE DRIVE AUTOMATION
+                try {
+                    const webhookPayload = {
+                        spsic_number: rawNumber,
+                        date: sDateVal,
+                        target_month: monthTarget,
+                        status: derivedStatus,
+                        uploaded_by: currentUserSession ? currentUserSession.email : "Unknown User",
+                        files: []
+                    };
+
+                    if (fileSpsicEl) {
+                        webhookPayload.files.push({
+                            type: "SPSIC_Document",
+                            fileName: fileSpsicEl.name,
+                            base64Data: await convertFileToBase64(fileSpsicEl)
+                        });
+                    }
+                    if (fileArrivalEl) {
+                        webhookPayload.files.push({
+                            type: "Arrival_Notice",
+                            fileName: fileArrivalEl.name,
+                            base64Data: await convertFileToBase64(fileArrivalEl)
+                        });
+                    }
+                    if (fileImportEl) {
+                        webhookPayload.files.push({
+                            type: "Import_Docs",
+                            fileName: fileImportEl.name,
+                            base64Data: await convertFileToBase64(fileImportEl)
+                        });
+                    }
+
+                    // Async execution post request to Make
+                    await fetch(AUTOMATION_WEBHOOK_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(webhookPayload)
+                    });
+                    console.log("Automation parameters successfully pushed out to Make.com Webhook.");
+                } catch (webhookErr) {
+                    console.error("External Make Webhook Pipeline execution error handled:", webhookErr);
+                }
+
                 await clearLockHeartbeat();
                 localFetchedRecord = payload;
                 
-                showSystemModal({ type: 'success', title: 'Pipeline Sync Successful', message: `Manifest profile parameters for SPSIC-${rawNumber} have been saved.` });
+                showSystemModal({ type: 'success', title: 'Pipeline Sync Successful', message: `Manifest profile parameters for SPSIC-${rawNumber} have been saved and synced.` });
                 
                 document.getElementById('spsicDate').value = "";
                 document.getElementById('fileSpsic').value = "";
