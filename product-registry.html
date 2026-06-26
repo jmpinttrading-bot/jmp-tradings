@@ -197,7 +197,7 @@
                     
                     <div class="form-row">
                         <div class="form-group" id="initialQtyWrapper">
-                            <label>Inbound Quantity (Cases)</label>
+                            <label> Total Inbound Quantity</label>
                             <input type="number" id="stockQuantity" required min="1" value="1">
                         </div>
                         
@@ -208,7 +208,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label id="remarksLabel">Remarks / Reason for Registration</label>
+                        <label id="remarksLabel">Damage Item Quantity</label>
                         <textarea id="formRemarks" placeholder="Enter transaction parameters, notes, or justification metrics..."></textarea>
                     </div>
                     
@@ -320,6 +320,12 @@
             canEdit: false,
             canQuantity: false
         };
+
+        // Standardized formatting configuration helper
+        const pesoFormatter = new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP'
+        });
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -485,6 +491,7 @@
             tbody.innerHTML = items.map((item, index) => {
                 const qtyDisabledAttr = permissions.canQuantity ? '' : 'disabled';
                 const editDisabledAttr = permissions.canEdit ? '' : 'disabled';
+                const unitPriceParsed = parseFloat(item.unit_price || 0);
                 
                 return `
                     <tr>
@@ -497,7 +504,7 @@
                         <td>
                             <span class="qty-val">${item.stock_quantity || 0}</span>
                         </td>
-                        <td style="font-weight:600; color:#0f172a;">₱${parseFloat(item.unit_price || 0).toFixed(2)}</td>
+                        <td style="font-weight:600; color:#0f172a;">${pesoFormatter.format(unitPriceParsed)}</td>
                         <td>
                             <div class="action-btn-group">
                                 <button class="btn-edit" ${editDisabledAttr} onclick="populateFormByIndex(${index})">Edit</button>
@@ -638,7 +645,7 @@
             document.getElementById('initialQtyWrapper').style.display = "none";
             document.getElementById('stockQuantity').required = false;
 
-            document.getElementById('remarksLabel').textContent = "Remarks / Reason for Registration";
+            document.getElementById('remarksLabel').textContent = "Damage Item Quantity";
             document.getElementById('formTitle').textContent = "Modify Registered Parameters";
             document.getElementById('submitBtn').textContent = "Update Registry Log";
         }
@@ -802,7 +809,7 @@
             document.getElementById('stockQuantity').required = true;
             document.getElementById('stockQuantity').value = "1";
             document.getElementById('unitPrice').value = "";
-            document.getElementById('remarksLabel').textContent = "Remarks / Reason for Registration";
+            document.getElementById('remarksLabel').textContent = "Damage Item Quantity";
             document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
             document.getElementById('submitBtn').textContent = "Process Gate Arrival & Register";
             
