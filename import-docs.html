@@ -56,7 +56,7 @@
         .status-badge.completed { background: #d1fae5; color: #065f46; }
 
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; }
+        .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; white-space: nowrap; }
         .item-list-table th { background: #f8fafc; color: #64748b; }
         
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
@@ -181,14 +181,21 @@
                     <table class="item-list-table">
                         <thead>
                             <tr>
-                                <th>SPSIC Ref</th>
-                                <th>Month</th>
+                                <th>SPSIC Number</th>
+                                <th>Created Date</th>
+                                <th>Approved Date</th>
+                                <th>Expiration Date</th>
+                                <th>Storage</th>
+                                <th>Commodity</th>
+                                <th>Storage Arrival Date</th>
+                                <th>Client Name</th>
+                                <th>CV Number</th>
                                 <th>Current Status</th>
                                 <th>Control Interfaces</th>
                             </tr>
                         </thead>
                         <tbody id="documentLogsTableBody">
-                            <tr><td colspan="4" style="text-align:center; color:#64748b;">Initializing items...</td></tr>
+                            <tr><td colspan="11" style="text-align:center; color:#64748b;">Initializing items...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -505,23 +512,37 @@
             tbody.innerHTML = "";
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No compiled 'Completed' archive entries found matching this directory folder path.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#64748b;">No compiled 'Completed' archive entries found matching this directory folder path.</td></tr>`;
                 return;
             }
 
             data.forEach(doc => {
                 const badgeClass = doc.status.toLowerCase().replace(" ", "-");
+                
+                // Formatting dates safely
+                const createdDate = doc.s_date ? formatHumanReadableDate(doc.s_date) : 'N/A';
+                const approvedDate = doc.approved_date ? formatHumanReadableDate(doc.approved_date) : 'N/A';
+                const expirationDate = doc.expiration_date ? formatHumanReadableDate(doc.expiration_date) : 'N/A';
+                const storageArrivalDate = doc.storage_arrival_date ? formatHumanReadableDate(doc.storage_arrival_date) : 'N/A';
+
                 const row = `<tr>
-                    <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
-                    <td>${doc.target_month.toUpperCase()}</td>
-                    <td><span class="status-badge ${badgeClass}">${doc.status.toUpperCase()}</span></td>
+                    <td><strong>SPSIC-${(doc.spsic_number || 'N/A').toUpperCase()}</strong></td>
+                    <td>${createdDate}</td>
+                    <td>${approvedDate}</td>
+                    <td>${expirationDate}</td>
+                    <td>${(doc.storage_location || 'N/A').toUpperCase()}</td>
+                    <td>${(doc.commodity || 'N/A').toUpperCase()}</td>
+                    <td>${storageArrivalDate}</td>
+                    <td>${(doc.client_name || 'N/A').toUpperCase()}</td>
+                    <td>${(doc.cv_no || 'N/A').toUpperCase()}</td>
+                    <td><span class="status-badge ${badgeClass}">${(doc.status || 'Pending').toUpperCase()}</span></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
         }
 
-        // --- NEW BRIDGE UTILITY FUNCTIONS REQUIRED BY VIEWER.HTML FRAME ---
+        // --- BRIDGE UTILITY FUNCTIONS REQUIRED BY VIEWER.HTML FRAME ---
         function formatHumanReadableDate(dateString) {
             if (!dateString) return 'N/A';
             const date = new Date(dateString);
@@ -569,7 +590,6 @@
                 showSystemModal({ type: 'error', title: 'Download Failed', message: err.message });
             }
         }
-        // ------------------------------------------------------------------
 
         async function openDocCompiler(recordId) {
             activeInspectingRecordId = recordId;
