@@ -249,7 +249,6 @@
         </div>
     </div>
 
-    <!-- Decoupled overlay container referencing independent viewer document frame -->
     <div class="viewer-overlay" id="documentViewerOverlay">
         <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);"></iframe>
     </div>
@@ -951,7 +950,6 @@
 
             overlay.style.display = 'flex';
 
-            // Safe transfer initialization pipeline targeting the standalone HTML window ecosystem
             if (iframe.contentWindow && typeof iframe.contentWindow.setupViewerContent === 'function') {
                 iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient);
             } else {
