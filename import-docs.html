@@ -30,6 +30,10 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+        
+        /* Forces text input types to display in uppercase */
+        .form-group input[type="text"] { text-transform: uppercase; }
+        
         .form-group input[type="file"] { background: #f8fafc; padding: 6px; cursor: pointer; }
         
         .form-group input[disabled], .form-group select[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
@@ -332,6 +336,16 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
+        // Global Event listener targeting text inputs to dynamically uppercase values natively
+        document.addEventListener('input', function (e) {
+            if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'text') {
+                const selectionStart = e.target.selectionStart;
+                const selectionEnd = e.target.selectionEnd;
+                e.target.value = e.target.value.toUpperCase();
+                e.target.setSelectionRange(selectionStart, selectionEnd);
+            }
+        });
+
         function showSystemModal(options = {}) {
             const type = options.type || 'success'; 
             const title = options.title || 'Notification';
@@ -576,7 +590,6 @@
             fDate.removeAttribute('disabled');
             submitBtn.removeAttribute('disabled');
 
-            // Managed configuration matching active elements roster array paths
             const inputElementsToManage = ['approvedDate', 'expirationDate', 'storageLocation', 'storageArrivalDate', 'commodity', 'clientName', 'cvNumber'];
 
             inputElementsToManage.forEach(id => {
@@ -886,14 +899,14 @@
             const monthTarget = document.getElementById('spsicTargetMonth').value;
             const sDateVal = document.getElementById('spsicDate').value;
             
-            // Capture added structural parameters from user fields
+            // Text values are cast directly to uppercase for database insertion safety arrays
             const approvedDateVal = document.getElementById('approvedDate').value || null;
             const expirationDateVal = document.getElementById('expirationDate').value || null;
             const storageLocationVal = document.getElementById('storageLocation').value || null;
             const storageArrivalDateVal = document.getElementById('storageArrivalDate').value || null;
-            const commodityVal = document.getElementById('commodity').value.trim() || null;
-            const clientNameVal = document.getElementById('clientName').value.trim() || null;
-            const cvNumberVal = document.getElementById('cvNumber').value.trim() || null;
+            const commodityVal = document.getElementById('commodity').value.trim().toUpperCase() || null;
+            const clientNameVal = document.getElementById('clientName').value.trim().toUpperCase() || null;
+            const cvNumberVal = document.getElementById('cvNumber').value.trim().toUpperCase() || null;
 
             let fileSpsicEl = document.getElementById('fileSpsic').files[0];
             let fileArrivalEl = document.getElementById('fileArrival').files[0];
@@ -979,7 +992,6 @@
                 document.getElementById('fileArrival').value = "";
                 document.getElementById('fileImportDocs').value = "";
 
-                // Reset custom inputs elements
                 document.getElementById('approvedDate').value = "";
                 document.getElementById('expirationDate').value = "";
                 document.getElementById('storageLocation').value = "";
