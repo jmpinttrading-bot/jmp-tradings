@@ -173,8 +173,12 @@
 
                     <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                            <label>Storage Date of Arrival Commodity</label>
+                            <label>Storage Date of Arrival</label>
                             <input type="date" id="storageArrivalDate">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                            <label>Commodity</label>
+                            <input type="text" id="commodity" placeholder="e.g., Frozen Goods">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>Client Name</label>
@@ -568,7 +572,7 @@
             submitBtn.removeAttribute('disabled');
 
             // Managed configuration matching active elements roster array paths
-            const inputElementsToManage = ['approvedDate', 'expirationDate', 'storageLocation', 'storageArrivalDate', 'clientName', 'cvNumber'];
+            const inputElementsToManage = ['approvedDate', 'expirationDate', 'storageLocation', 'storageArrivalDate', 'commodity', 'clientName', 'cvNumber'];
 
             inputElementsToManage.forEach(id => {
                 const el = document.getElementById(id);
@@ -596,6 +600,7 @@
                 if (localFetchedRecord.expiration_date) document.getElementById('expirationDate').value = localFetchedRecord.expiration_date;
                 if (localFetchedRecord.storage_location) document.getElementById('storageLocation').value = localFetchedRecord.storage_location;
                 if (localFetchedRecord.storage_arrival_date) document.getElementById('storageArrivalDate').value = localFetchedRecord.storage_arrival_date;
+                if (localFetchedRecord.commodity) document.getElementById('commodity').value = localFetchedRecord.commodity;
                 if (localFetchedRecord.client_name) document.getElementById('clientName').value = localFetchedRecord.client_name;
                 if (localFetchedRecord.cv_number) document.getElementById('cvNumber').value = localFetchedRecord.cv_number;
             }
@@ -881,6 +886,7 @@
             const expirationDateVal = document.getElementById('expirationDate').value || null;
             const storageLocationVal = document.getElementById('storageLocation').value.trim() || null;
             const storageArrivalDateVal = document.getElementById('storageArrivalDate').value || null;
+            const commodityVal = document.getElementById('commodity').value.trim() || null;
             const clientNameVal = document.getElementById('clientName').value.trim() || null;
             const cvNumberVal = document.getElementById('cvNumber').value.trim() || null;
 
@@ -942,6 +948,7 @@
                     expiration_date: expirationDateVal,
                     storage_location: storageLocationVal,
                     storage_arrival_date: storageArrivalDateVal,
+                    commodity: commodityVal,
                     client_name: clientNameVal,
                     cv_number: cvNumberVal,
                     updated_at: new Date().toISOString()
@@ -972,6 +979,7 @@
                 document.getElementById('expirationDate').value = "";
                 document.getElementById('storageLocation').value = "";
                 document.getElementById('storageArrivalDate').value = "";
+                document.getElementById('commodity').value = "";
                 document.getElementById('clientName').value = "";
                 document.getElementById('cvNumber').value = "";
                 
