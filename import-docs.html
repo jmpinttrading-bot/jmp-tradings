@@ -141,33 +141,31 @@
                 <div class="live-lock-banner" id="lockStatusBanner"></div>
 
                 <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
-                    <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                        <div class="form-group" style="flex: 1; min-width: 0; margin-bottom: 0;">
+                    
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                             <label>SPSIC Number</label>
                             <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()" onblur="handleInputBlur()">
                         </div>
-                        <div class="form-group" style="flex: 1; min-width: 0; margin-bottom: 0;">
+                        <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                             <label>Created Date</label>
                             <input type="date" id="spsicDate" required>
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                            <label>Approved Date</label>
+                            <input type="date" id="approvedDate">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                            <label>Expiration Date</label>
+                            <input type="date" id="expirationDate">
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                        <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                            <label>Approved Date</label>
-                            <input type="date" id="approvedDate">
-                        </div>
-                        <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                            <label>Expiration Date</label>
-                            <input type="date" id="expirationDate">
-                        </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>Storage</label>
                             <input type="text" id="storageLocation" placeholder="e.g., Warehouse A">
                         </div>
-                    </div>
-
-                    <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>Storage Date of Arrival</label>
                             <input type="date" id="storageArrivalDate">
