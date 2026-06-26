@@ -7,6 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Added SheetJS CDN for native Excel generation -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
@@ -37,6 +39,8 @@
         .year-btn { background: #0f172a; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
         .download-year-btn { background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.2s; }
         .download-year-btn:hover { background: #1d4ed8; }
+        .export-excel-btn { background: #10b981; color: white; border: none; padding: 12px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .export-excel-btn:hover { background: #059669; }
 
         .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .search-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
@@ -204,6 +208,8 @@
 
                 <div class="search-container">
                     <input type="text" id="docSearchBox" class="search-box" placeholder="Search entries in this folder by exact SPSIC Number sequence..." oninput="fetchDocuments()">
+                    <!-- Added Export Table Action Button -->
+                    <button class="export-excel-btn" onclick="exportWorkspaceTableToExcel()">📊 Export to Excel</button>
                 </div>
 
                 <div class="table-responsive-wrapper">
@@ -254,7 +260,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3IDE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let selectedFolderMonth = ""; 
@@ -569,6 +575,33 @@
                 </tr>`;
                 tbody.innerHTML += row;
             });
+        }
+
+        // --- EXPORT TO EXCEL SYSTEM ENGINE ---
+        function exportWorkspaceTableToExcel() {
+            const table = document.querySelector("#folderWorkspaceWrapper table");
+            if (!table) return;
+
+            const rows = table.querySelectorAll("#documentLogsTableBody tr");
+            if (rows.length === 0 || (rows.length === 1 && rows[0].cells.length === 1 && rows[0].cells[0].textContent.includes("No compiled"))) {
+                showSystemModal({ type: 'error', title: 'Export Empty', message: 'There are no completed items inside this directory workspace track to compile.' });
+                return;
+            }
+
+            // Clean clone track setup to skip action interface buttons
+            const structuralCloneTable = table.cloneNode(true);
+            const targets = structuralCloneTable.querySelectorAll("tr");
+            targets.forEach(r => {
+                if (r.cells.length > 0) {
+                    r.deleteCell(-1); // Strips 'Control Interfaces' column out 
+                }
+            });
+
+            const workbookNode = XLSX.utils.table_to_book(structuralCloneTable, { sheet: "Workspace Log Sheet" });
+            const currentYearSelected = document.getElementById('directoryYearSelect').value;
+            const finalFilenameFormat = `Consolidated_Logs_${selectedFolderMonth || currentYearSelected}.xlsx`;
+            
+            XLSX.writeFile(workbookNode, finalFilenameFormat);
         }
 
         // --- BRIDGE UTILITY FUNCTIONS REQUIRED BY VIEWER.HTML FRAME ---
