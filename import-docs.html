@@ -602,25 +602,25 @@
                 return;
             }
 
-            if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
+            if (!localFetchedRecord || localFetchedRecord['SPSIC Number'] !== numInput || localFetchedRecord['Target Folder Month'] !== targetMonthInput) {
                 const { data } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('*')
-                    .eq('spsic_number', numInput)
-                    .eq('target_month', targetMonthInput)
+                    .eq('SPSIC Number', numInput)
+                    .eq('Target Folder Month', targetMonthInput)
                     .maybeSingle();
                 
                 localFetchedRecord = data;
             }
 
             if (localFetchedRecord) {
-                if (localFetchedRecord.approved_date) document.getElementById('approvedDate').value = localFetchedRecord.approved_date;
-                if (localFetchedRecord.expiration_date) document.getElementById('expirationDate').value = localFetchedRecord.expiration_date;
-                if (localFetchedRecord.storage_location) document.getElementById('storageLocation').value = localFetchedRecord.storage_location;
-                if (localFetchedRecord.storage_arrival_date) document.getElementById('storageArrivalDate').value = localFetchedRecord.storage_arrival_date;
-                if (localFetchedRecord.commodity) document.getElementById('commodity').value = localFetchedRecord.commodity;
+                if (localFetchedRecord['Approved Date']) document.getElementById('approvedDate').value = localFetchedRecord['Approved Date'];
+                if (localFetchedRecord['Expiration Date']) document.getElementById('expirationDate').value = localFetchedRecord['Expiration Date'];
+                if (localFetchedRecord['Storage']) document.getElementById('storageLocation').value = localFetchedRecord['Storage'];
+                if (localFetchedRecord['Storage Date of Arrival']) document.getElementById('storageArrivalDate').value = localFetchedRecord['Storage Date of Arrival'];
+                if (localFetchedRecord['Commodity']) document.getElementById('commodity').value = localFetchedRecord['Commodity'];
                 if (localFetchedRecord.client_name) document.getElementById('clientName').value = localFetchedRecord.client_name;
-                if (localFetchedRecord.cv_number) document.getElementById('cvNumber').value = localFetchedRecord.cv_number;
+                if (localFetchedRecord['CV No']) document.getElementById('cvNumber').value = localFetchedRecord['CV No'];
             }
 
             if (localFetchedRecord && localFetchedRecord.status === "Completed") {
@@ -671,8 +671,8 @@
             let hasArrivalInDb = false;
 
             if (localFetchedRecord) {
-                if (localFetchedRecord.s_date) {
-                    fDate.value = localFetchedRecord.s_date;
+                if (localFetchedRecord['Created Date']) {
+                    fDate.value = localFetchedRecord['Created Date'];
                 }
                 if (localFetchedRecord.spsic_file_path) { 
                     hasSpsicInDb = true; 
@@ -813,8 +813,8 @@
                     actionableData.forEach(doc => {
                         const badgeClass = doc.status.toLowerCase().replace(" ", "-");
                         const row = `<tr>
-                            <td><strong>SPSIC-${doc.spsic_number}</strong></td>
-                            <td>${doc.target_month}</td>
+                            <td><strong>SPSIC-${doc['SPSIC Number']}</strong></td>
+                            <td>${doc['Target Folder Month']}</td>
                             <td><span class="status-badge ${badgeClass}">${doc.status}</span></td>
                             <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                         </tr>`;
@@ -828,10 +828,10 @@
             if (!selectedFolderMonth) return;
             
             const searchVal = document.getElementById('docSearchBox').value.trim();
-            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed');
+            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('Target Folder Month', selectedFolderMonth).eq('status', 'Completed');
 
             if (searchVal) { 
-                query = query.ilike('spsic_number', `%${searchVal}%`); 
+                query = query.ilike('SPSIC Number', `%${searchVal}%`); 
             }
 
             const { data } = await query.order('created_at', { ascending: false });
@@ -846,8 +846,8 @@
             data.forEach(doc => {
                 const badgeClass = doc.status.toLowerCase().replace(" ", "-");
                 const row = `<tr>
-                    <td><strong>SPSIC-${doc.spsic_number}</strong></td>
-                    <td>${doc.target_month}</td>
+                    <td><strong>SPSIC-${doc['SPSIC Number']}</strong></td>
+                    <td>${doc['Target Folder Month']}</td>
                     <td><span class="status-badge ${badgeClass}">${doc.status}</span></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
@@ -955,20 +955,20 @@
                 else if (spsicPath && arrivalPath && importPath) derivedStatus = "For Approval";
 
                 const payload = {
-                    spsic_number: rawNumber,
-                    s_date: sDateVal,
-                    target_month: monthTarget,
+                    'SPSIC Number': rawNumber,
+                    'Created Date': sDateVal,
+                    'Target Folder Month': monthTarget,
                     spsic_file_path: spsicPath,
                     arrival_notice_path: arrivalPath,
                     import_docs_path: importPath,
                     status: derivedStatus,
-                    approved_date: approvedDateVal,
-                    expiration_date: expirationDateVal,
-                    storage_location: storageLocationVal,
-                    storage_arrival_date: storageArrivalDateVal,
-                    commodity: commodityVal,
+                    'Approved Date': approvedDateVal,
+                    'Expiration Date': expirationDateVal,
+                    'Storage': storageLocationVal,
+                    'Storage Date of Arrival': storageArrivalDateVal,
+                    'Commodity': commodityVal,
                     client_name: clientNameVal,
-                    cv_number: cvNumberVal,
+                    'CV No': cvNumberVal,
                     updated_at: new Date().toISOString()
                 };
 
@@ -978,7 +978,7 @@
 
                 const { error: dbError } = await supabaseClient
                     .from('imported_shipment_docs')
-                    .upsert(payload, { onConflict: 'spsic_number,target_month' });
+                    .upsert(payload, { onConflict: 'SPSIC Number,Target Folder Month' });
                     
                 if (dbError) throw dbError;
 
@@ -1096,7 +1096,7 @@
                 if (error || !record) throw new Error("Could not parse shipment files roster data.");
 
                 const zip = new JSZip();
-                const folder = zip.folder(`SPSIC-${record.spsic_number}_Manifest`);
+                const folder = zip.folder(`SPSIC-${record['SPSIC Number']}_Manifest`);
                 let addedFiles = 0;
 
                 const pathsList = [
@@ -1128,7 +1128,7 @@
                 const anchorUrl = window.URL.createObjectURL(content);
                 const tempAnchor = document.createElement('a');
                 tempAnchor.href = anchorUrl;
-                tempAnchor.download = `SPSIC-${record.spsic_number}_Compiled_Package.zip`;
+                tempAnchor.download = `SPSIC-${record['SPSIC Number']}_Compiled_Package.zip`;
                 document.body.appendChild(tempAnchor);
                 tempAnchor.click();
 
@@ -1208,8 +1208,8 @@
                 const { data: records, error } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('*')
-                    .gte('target_month', startMonthRange)
-                    .lte('target_month', endMonthRange);
+                    .gte('Target Folder Month', startMonthRange)
+                    .lte('Target Folder Month', endMonthRange);
 
                 if (error) throw error;
 
@@ -1224,12 +1224,12 @@
                 let compiledFilesCount = 0;
 
                 for (let record of records) {
-                    const monthStringValue = record.target_month.split('-')[1];
+                    const monthStringValue = record['Target Folder Month'].split('-')[1];
                     const matchedMonthLabelObj = monthsLabels.find(m => m.value === monthStringValue);
                     const folderMonthHumanReadableName = matchedMonthLabelObj ? `${matchedMonthLabelObj.text} - ${monthStringValue}` : monthStringValue;
                     
                     const monthFolderNode = baseYearFolder.folder(folderMonthHumanReadableName);
-                    const spsicFolderNode = monthFolderNode.folder(`SPSIC-${record.spsic_number}`);
+                    const spsicFolderNode = monthFolderNode.folder(`SPSIC-${record['SPSIC Number']}`);
 
                     const attachmentsToPull = [];
                     if (record.spsic_file_path) attachmentsToPull.push({ field: 'SPSIC_Doc', path: record.spsic_file_path });
