@@ -143,16 +143,12 @@
                 <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
                     <div style="display: flex; gap: 15px; margin-bottom: 15px;">
                         <div class="form-group" style="flex: 1; min-width: 0; margin-bottom: 0;">
-                            <label>SPSIC Identification sequence number</label>
+                            <label>SPSIC Number</label>
                             <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()" onblur="handleInputBlur()">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 0; margin-bottom: 0;">
-                            <label>Date</label>
+                            <label>Created Date</label>
                             <input type="date" id="spsicDate" required>
-                        </div>
-                        <div class="form-group" style="flex: 1; min-width: 0; margin-bottom: 0;">
-                            <label>Target Folder Month</label>
-                            <input type="month" id="spsicTargetMonth" required onchange="forceRefetchAndEvaluate()">
                         </div>
                     </div>
 
@@ -188,6 +184,11 @@
                             <label>CV No.</label>
                             <input type="text" id="cvNumber" placeholder="e.g., CV-99210">
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Target Folder Month</label>
+                        <input type="month" id="spsicTargetMonth" required onchange="forceRefetchAndEvaluate()">
                     </div>
                     
                     <div class="form-group">
