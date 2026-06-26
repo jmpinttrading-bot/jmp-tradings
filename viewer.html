@@ -13,6 +13,16 @@
         .viewer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         .viewer-body { flex: 1; background: #f1f5f9; border-radius: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding: 15px; }
         
+        /* New: Shipment Metadata Dashboard Panel */
+        .manifest-meta-panel { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .meta-item { display: flex; flex-direction: column; gap: 4px; }
+        .meta-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .meta-value { font-size: 0.95rem; font-weight: 600; color: #0f172a; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; width: max-content; }
+        .status-for-approval { background: #fef3c7; color: #d97706; }
+        .status-approved { background: #dcfce7; color: #15803d; }
+        .status-pending { background: #f1f5f9; color: #475569; }
+
         /* Individual File Interactive Node Wrappers */
         .file-preview-node { background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; transition: box-shadow 0.2s ease; cursor: zoom-in; }
         .file-preview-node:hover { box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
@@ -83,8 +93,7 @@
             <h3 id="zoomModalTitleDisplay">File Zoom Perspective</h3>
             <button class="close-zoom-overlay-btn" onclick="closeFileZoomModal()">✕ Close Full View</button>
         </div>
-        <div class="zoom-modal-content-container" id="zoomModalContentWrapper" onclick="closeFileZoomModal(event)">
-            </div>
+        <div class="zoom-modal-content-container" id="zoomModalContentWrapper" onclick="closeFileZoomModal(event)"></div>
     </div>
 
     <div class="security-alert-modal" id="securityBreachModal">
@@ -103,7 +112,6 @@
             if (!securityWatchActive) return;
             document.getElementById('securityBreachModal').style.display = 'flex';
             
-            // Clear system clipboard content data buffer if possible during actions
             if(navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText("Protected Data Content");
             }
@@ -163,7 +171,7 @@
             const targetBody = document.getElementById('viewerTargetBody');
             targetBody.innerHTML = "";
 
-            // Enable policy triggers when employee checks the files
+            // Enable data policy triggers based on role configuration
             securityWatchActive = !isAdmin;
             if (securityWatchActive) {
                 document.body.classList.add('employee-restricted-mode');
@@ -171,6 +179,44 @@
                 document.body.classList.remove('employee-restricted-mode');
             }
 
+            // 1. Structural Addition: Synchronized Manifest Info Grid Dashboard (from import-docs)
+            const metaPanel = document.createElement('div');
+            metaPanel.className = "manifest-meta-panel";
+            
+            // Format Status display logic
+            let statusClass = "status-pending";
+            if(doc.status === "For Approval") statusClass = "status-for-approval";
+            if(doc.status === "Approved") statusClass = "status-approved";
+
+            metaPanel.innerHTML = `
+                <div class="meta-item">
+                    <span class="meta-label">Client Name</span>
+                    <span class="meta-value">${(doc.client_name || 'N/A').toUpperCase()}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Commodity</span>
+                    <span class="meta-value">${(doc.commodity || 'N/A').toUpperCase()}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Storage Location</span>
+                    <span class="meta-value">${(doc.storage || 'N/A').toUpperCase()}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">CV Number</span>
+                    <span class="meta-value">${(doc.cv_no || 'N/A').toUpperCase()}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Expiration Date</span>
+                    <span class="meta-value">${doc.expiration_date ? window.parent.formatHumanReadableDate(doc.expiration_date) : 'N/A'}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Verification Status</span>
+                    <span class="status-badge ${statusClass}">${doc.status || 'Pending'}</span>
+                </div>
+            `;
+            targetBody.appendChild(metaPanel);
+
+            // 2. Loop Through and Append Associated Document Engine Nodes
             filesArray.forEach(file => {
                 const readableTimestamp = window.parent.formatHumanReadableDate(file.uploadDate);
                 const { data } = parentSupabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(file.path);
@@ -211,8 +257,6 @@
         }
 
         // --- Hardware Intercept and Anti-Screenshot Engine Event Listeners ---
-        
-        // Intercept standard context options (Right Click Protection)
         document.addEventListener('contextmenu', function(e) {
             if (securityWatchActive) {
                 e.preventDefault();
@@ -220,32 +264,27 @@
             }
         });
 
-        // Track Hotkey configurations 
         document.addEventListener('keydown', function(e) {
             if (!securityWatchActive) return;
 
-            // 1. Detect PrintScreen Key
             if (e.key === "PrintScreen" || e.keyCode === 44) {
                 e.preventDefault();
                 triggerSecurityAlert();
             }
 
-            // 2. Detect Windows Snipping Tool (Win + Shift + S), Mac Screen Commands (Cmd + Shift + 3/4)
             if (
                 (e.metaKey && e.shiftKey && (e.key === '3' || e.key === '4' || e.key === 's')) || 
-                (e.ctrlKey && e.key === 'p') || // Block standard print controls
-                (e.ctrlKey && e.shiftKey && e.key === 'I') || // Block inspection elements tool
-                (e.ctrlKey && e.key === 'c') // Block structural copying routines
+                (e.ctrlKey && e.key === 'p') || 
+                (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+                (e.ctrlKey && e.key === 'c') 
             ) {
                 e.preventDefault();
                 triggerSecurityAlert();
             }
         });
 
-        // Monitor focus transitions (e.g., when the Snipping Tool modal overlay opens)
         window.addEventListener('blur', function() {
             if (securityWatchActive) {
-                // Instantly inject blank overlay values if the active viewport loses contextual structural focus
                 const canvasElements = document.querySelectorAll('.compiled-frame, .full-print-preview-canvas');
                 canvasElements.forEach(el => el.style.visibility = 'hidden');
             }
