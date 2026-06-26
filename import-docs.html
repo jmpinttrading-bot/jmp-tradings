@@ -139,7 +139,7 @@
                         <thead>
                             <tr>
                                 <th>SPSIC Ref</th>
-                                <th>Target Period</th>
+                                <th>Created Date</th>
                                 <th>Current Status</th>
                                 <th>Control Interfaces</th>
                             </tr>
@@ -464,7 +464,7 @@
                     .from('imported_shipment_docs')
                     .select('*')
                     .in('status', ['Pending', 'Incomplete', 'For Approval'])
-                    .order('updated_at', { ascending: false });
+                    .order('s_date', { ascending: false });
 
                 const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
                 globalTbody.innerHTML = "";
@@ -476,9 +476,11 @@
                 } else {
                     actionableData.forEach(doc => {
                         const badgeClass = doc.status.toLowerCase().replace(" ", "-");
+                        const readableCreatedDate = formatHumanReadableDate(doc.s_date);
+                        
                         const row = `<tr>
                             <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
-                            <td>${doc.target_month.toUpperCase()}</td>
+                            <td>${readableCreatedDate}</td>
                             <td><span class="status-badge ${badgeClass}">${doc.status.toUpperCase()}</span></td>
                             <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                         </tr>`;
