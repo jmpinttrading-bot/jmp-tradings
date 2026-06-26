@@ -519,6 +519,56 @@
             });
         }
 
+        // --- NEW BRIDGE UTILITY FUNCTIONS REQUIRED BY VIEWER.HTML FRAME ---
+        function formatHumanReadableDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return dateString;
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function downloadCurrentDocumentPackage() {
+            if (!activeInspectingRecordId) return;
+            
+            if (currentUserRole !== 'admin') {
+                showSystemModal({
+                    type: 'error',
+                    title: 'Access Revoked',
+                    message: 'Your current role parameters do not authorize file package downloads.'
+                });
+                return;
+            }
+            
+            const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', activeInspectingRecordId).single();
+            if (!doc || !doc.import_docs_path) {
+                showSystemModal({ type: 'error', title: 'Error', message: 'No downloadable documentation package path found for this entry.' });
+                return;
+            }
+            
+            try {
+                const { data: blob, error } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).download(doc.import_docs_path);
+                if (error) throw error;
+                
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `SPSIC-${doc.spsic_number}_Package.${doc.import_docs_path.split('.').pop()}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch(err) {
+                showSystemModal({ type: 'error', title: 'Download Failed', message: err.message });
+            }
+        }
+        // ------------------------------------------------------------------
+
         async function openDocCompiler(recordId) {
             activeInspectingRecordId = recordId;
             const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
