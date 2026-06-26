@@ -754,11 +754,19 @@
                 const baseYearFolder = zip.folder(`${currentYearSelected} Directory Folder`);
                 let compiledFilesCount = 0;
 
+                // Group database records by their specific target_month to generate dedicated excel records per month folder
+                const recordsGroupedByMonth = {};
+
                 for (let record of records) {
                     const monthStringValue = record.target_month.split('-')[1];
                     const matchedMonthLabelObj = monthsLabels.find(m => m.value === monthStringValue);
                     const folderMonthHumanReadableName = matchedMonthLabelObj ? `${matchedMonthLabelObj.text.toUpperCase()} - ${monthStringValue}` : monthStringValue;
                     
+                    if (!recordsGroupedByMonth[folderMonthHumanReadableName]) {
+                        recordsGroupedByMonth[folderMonthHumanReadableName] = [];
+                    }
+                    recordsGroupedByMonth[folderMonthHumanReadableName].push(record);
+
                     const monthFolderNode = baseYearFolder.folder(folderMonthHumanReadableName);
                     const spsicFolderNode = monthFolderNode.folder(`SPSIC-${record.spsic_number.toUpperCase()}`);
 
@@ -785,6 +793,33 @@
                             console.warn(`Could not pull file reference component at path: ${attachment.path}`, storagePullErr);
                         }
                     }
+                }
+
+                // Inject the filtered monthly Excel sheet into each month's root directory folder inside the ZIP structure
+                for (const [monthFolderName, monthRecords] of Object.entries(recordsGroupedByMonth)) {
+                    // Extract and format entries strictly matching the structural columns on Workspace Directory Table
+                    const formattedDataRows = monthRecords.map(doc => ({
+                        "SPSIC Number": `SPSIC-${(doc.spsic_number || 'N/A').toUpperCase()}`,
+                        "Created Date": doc.s_date ? formatHumanReadableDate(doc.s_date) : 'N/A',
+                        "Approved Date": doc.approved_date ? formatHumanReadableDate(doc.approved_date) : 'N/A',
+                        "Expiration Date": doc.expiration_date ? formatHumanReadableDate(doc.expiration_date) : 'N/A',
+                        "Storage": (doc.storage_location || 'N/A').toUpperCase(),
+                        "Commodity": (doc.commodity || 'N/A').toUpperCase(),
+                        "Storage Arrival Date": doc.storage_arrival_date ? formatHumanReadableDate(doc.storage_arrival_date) : 'N/A',
+                        "Client Name": (doc.client_name || 'N/A').toUpperCase(),
+                        "CV Number": (doc.cv_no || 'N/A').toUpperCase(),
+                        "Current Status": (doc.status || 'Pending').toUpperCase()
+                    }));
+
+                    const worksheet = XLSX.utils.json_to_sheet(formattedDataRows);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Workspace Log Sheet");
+                    
+                    // Generate raw array buffer stream matching native SheetJS standard outputs
+                    const excelBinaryData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                    
+                    const monthFolderNode = baseYearFolder.folder(monthFolderName);
+                    monthFolderNode.file(`Consolidated_Logs_${monthFolderName.replace(/\s/g, "")}.xlsx`, excelBinaryData);
                 }
 
                 if (compiledFilesCount === 0) {
