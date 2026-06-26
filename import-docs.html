@@ -30,12 +30,11 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
-        
-        /* Forces text input types to display in uppercase */
-        .form-group input[type="text"] { text-transform: uppercase; }
-        
         .form-group input[type="file"] { background: #f8fafc; padding: 6px; cursor: pointer; }
         
+        /* Forces text visualization to capital letters automatically */
+        .uppercase-input { text-transform: uppercase; }
+
         .form-group input[disabled], .form-group select[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
         .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
         
@@ -149,54 +148,54 @@
                     <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                         <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                             <label>SPSIC Number</label>
-                            <input type="number" id="spsicRawNumber" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()" onblur="handleInputBlur()">
+                            <input type="text" id="spsicRawNumber" class="uppercase-input" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()" onblur="handleInputBlur()">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                             <label>Created Date</label>
-                            <input type="date" id="spsicDate" required>
+                            <input type="date" id="spsicDate" class="uppercase-input" required>
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                             <label>Approved Date</label>
-                            <input type="date" id="approvedDate">
+                            <input type="date" id="approvedDate" class="uppercase-input">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                             <label>Expiration Date</label>
-                            <input type="date" id="expirationDate">
+                            <input type="date" id="expirationDate" class="uppercase-input">
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>Storage</label>
-                            <select id="storageLocation">
+                            <select id="storageLocation" class="uppercase-input">
                                 <option value="">Select Cold Storage Facility...</option>
-                                <option value="VVS Cold Storage & Processing Plant Corp.">VVS Cold Storage & Processing Plant Corp.</option>
-                                <option value="Hightower Storage & Trading Centre, Inc.">Hightower Storage & Trading Centre, Inc.</option>
-                                <option value="Eisberg Cold Logistics Inc.">Eisberg Cold Logistics Inc.</option>
-                                <option value="Crystal Cold Storage, Inc.">Crystal Cold Storage, Inc.</option>
+                                <option value="VVS COLD STORAGE & PROCESSING PLANT CORP.">VVS Cold Storage & Processing Plant Corp.</option>
+                                <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">Hightower Storage & Trading Centre, Inc.</option>
+                                <option value="EISBERG COLD LOGISTICS INC.">Eisberg Cold Logistics Inc.</option>
+                                <option value="CRYSTAL COLD STORAGE, INC.">Crystal Cold Storage, Inc.</option>
                             </select>
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>Storage Date of Arrival</label>
-                            <input type="date" id="storageArrivalDate">
+                            <input type="date" id="storageArrivalDate" class="uppercase-input">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>Commodity</label>
-                            <input type="text" id="commodity" placeholder="e.g., Frozen Goods">
+                            <input type="text" id="commodity" class="uppercase-input" placeholder="e.g., Frozen Goods">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                            <label>SUPPLIER NAME</label>
-                            <input type="text" id="clientName" placeholder="Supplier Enterprise Name">
+                            <label>Client Name</label>
+                            <input type="text" id="clientName" class="uppercase-input" placeholder="Client Enterprise Name">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>CV No.</label>
-                            <input type="text" id="cvNumber" placeholder="e.g., CV-99210">
+                            <input type="text" id="cvNumber" class="uppercase-input" placeholder="e.g., CV-99210">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label>Target Folder Month</label>
-                        <input type="month" id="spsicTargetMonth" required onchange="forceRefetchAndEvaluate()">
+                        <input type="month" id="spsicTargetMonth" class="uppercase-input" required onchange="forceRefetchAndEvaluate()">
                     </div>
                     
                     <div class="form-group">
@@ -335,16 +334,6 @@
             { text: "Sep", value: "09" }, { text: "Oct", value: "10" },
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
-
-        // Global Event listener targeting text inputs to dynamically uppercase values natively
-        document.addEventListener('input', function (e) {
-            if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'text') {
-                const selectionStart = e.target.selectionStart;
-                const selectionEnd = e.target.selectionEnd;
-                e.target.value = e.target.value.toUpperCase();
-                e.target.setSelectionRange(selectionStart, selectionEnd);
-            }
-        });
 
         function showSystemModal(options = {}) {
             const type = options.type || 'success'; 
@@ -563,8 +552,8 @@
         }
 
         async function evaluateUploadSequenceLocks() {
-            const numInput = document.getElementById('spsicRawNumber').value.trim();
-            const targetMonthInput = document.getElementById('spsicTargetMonth').value;
+            const numInput = document.getElementById('spsicRawNumber').value.trim().toUpperCase();
+            const targetMonthInput = document.getElementById('spsicTargetMonth').value.toUpperCase();
             const fSpsic = document.getElementById('fileSpsic');
             const fArrival = document.getElementById('fileArrival');
             const fImport = document.getElementById('fileImportDocs');
@@ -602,31 +591,31 @@
                 return;
             }
 
-            if (!localFetchedRecord || localFetchedRecord['SPSIC Number'] !== numInput || localFetchedRecord['Target Folder Month'] !== targetMonthInput) {
+            if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
                 const { data } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('*')
-                    .eq('SPSIC Number', numInput)
-                    .eq('Target Folder Month', targetMonthInput)
+                    .eq('spsic_number', numInput)
+                    .eq('target_month', targetMonthInput)
                     .maybeSingle();
                 
                 localFetchedRecord = data;
             }
 
             if (localFetchedRecord) {
-                if (localFetchedRecord['Approved Date']) document.getElementById('approvedDate').value = localFetchedRecord['Approved Date'];
-                if (localFetchedRecord['Expiration Date']) document.getElementById('expirationDate').value = localFetchedRecord['Expiration Date'];
-                if (localFetchedRecord['Storage']) document.getElementById('storageLocation').value = localFetchedRecord['Storage'];
-                if (localFetchedRecord['Storage Date of Arrival']) document.getElementById('storageArrivalDate').value = localFetchedRecord['Storage Date of Arrival'];
-                if (localFetchedRecord['Commodity']) document.getElementById('commodity').value = localFetchedRecord['Commodity'];
-                if (localFetchedRecord.client_name) document.getElementById('clientName').value = localFetchedRecord.client_name;
-                if (localFetchedRecord['CV No']) document.getElementById('cvNumber').value = localFetchedRecord['CV No'];
+                if (localFetchedRecord.approved_date) document.getElementById('approvedDate').value = localFetchedRecord.approved_date.toUpperCase();
+                if (localFetchedRecord.expiration_date) document.getElementById('expirationDate').value = localFetchedRecord.expiration_date.toUpperCase();
+                if (localFetchedRecord.storage_location) document.getElementById('storageLocation').value = localFetchedRecord.storage_location.toUpperCase();
+                if (localFetchedRecord.storage_arrival_date) document.getElementById('storageArrivalDate').value = localFetchedRecord.storage_arrival_date.toUpperCase();
+                if (localFetchedRecord.commodity) document.getElementById('commodity').value = localFetchedRecord.commodity.toUpperCase();
+                if (localFetchedRecord.client_name) document.getElementById('clientName').value = localFetchedRecord.client_name.toUpperCase();
+                if (localFetchedRecord.cv_number) document.getElementById('cvNumber').value = localFetchedRecord.cv_number.toUpperCase();
             }
 
             if (localFetchedRecord && localFetchedRecord.status === "Completed") {
                 const [yr, mn] = targetMonthInput.split('-');
                 const humanizedMonth = monthsLabels.find(m => m.value === mn)?.text || mn;
-                banner.innerHTML = `🔒 <strong>Immutable Records Blocked:</strong> SPSIC reference number is already **Approved & Finalized** for the directory <strong>${humanizedMonth} ${yr}</strong>. Modification access is rescinded.`;
+                banner.innerHTML = `🔒 <strong>Immutable Records Blocked:</strong> SPSIC reference number is already **Approved & Finalized** for the directory <strong>${humanizedMonth.toUpperCase()} ${yr}</strong>. Modification access is rescinded.`;
                 banner.style.display = "block";
                 fSpsic.setAttribute('disabled', 'true');
                 fArrival.setAttribute('disabled', 'true');
@@ -648,7 +637,7 @@
                 .maybeSingle();
 
             if (activeLock && activeLock.locked_by_id !== currentUserSession.id) {
-                banner.innerHTML = `🛑 <strong>Access Blocked:</strong> This document package is currently being modified by user <strong>${activeLock.locked_by_email}</strong>. To prevent conflicts, editing is disabled until they close it.`;
+                banner.innerHTML = `🛑 <strong>Access Blocked:</strong> This document package is currently being modified by user <strong>${activeLock.locked_by_email.toUpperCase()}</strong>. To prevent conflicts, editing is disabled until they close it.`;
                 banner.style.display = "block";
                 fSpsic.setAttribute('disabled', 'true');
                 fArrival.setAttribute('disabled', 'true');
@@ -671,8 +660,8 @@
             let hasArrivalInDb = false;
 
             if (localFetchedRecord) {
-                if (localFetchedRecord['Created Date']) {
-                    fDate.value = localFetchedRecord['Created Date'];
+                if (localFetchedRecord.s_date) {
+                    fDate.value = localFetchedRecord.s_date.toUpperCase();
                 }
                 if (localFetchedRecord.spsic_file_path) { 
                     hasSpsicInDb = true; 
@@ -722,11 +711,11 @@
 
         async function startLockHeartbeat(spsic) {
             clearLockHeartbeat();
-            activeTrackingSpsic = spsic;
+            activeTrackingSpsic = spsic.toUpperCase();
 
             await supabaseClient.from('active_document_locks').upsert({
-                spsic_number: spsic,
-                locked_by_email: currentUserSession.email,
+                spsic_number: activeTrackingSpsic,
+                locked_by_email: currentUserSession.email.toUpperCase(),
                 locked_by_id: currentUserSession.id,
                 last_ping_at: new Date().toISOString()
             });
@@ -735,7 +724,7 @@
                 if (activeTrackingSpsic) {
                     await supabaseClient.from('active_document_locks').upsert({
                         spsic_number: activeTrackingSpsic,
-                        locked_by_email: currentUserSession.email,
+                        locked_by_email: currentUserSession.email.toUpperCase(),
                         locked_by_id: currentUserSession.id,
                         last_ping_at: new Date().toISOString()
                     });
@@ -768,7 +757,7 @@
                     buildMonthlyFolders();
                     toggleWorkspaceView();
                 };
-                folder.innerHTML = `<span class="icon">${isCurrentActive ? '📂' : '📁'}</span> ${m.text}`;
+                folder.innerHTML = `<span class="icon">${isCurrentActive ? '📂' : '📁'}</span> ${m.text.toUpperCase()}`;
                 container.appendChild(folder);
             });
         }
@@ -784,7 +773,7 @@
                 
                 const [year, monthNum] = selectedFolderMonth.split('-');
                 const matchedMonth = monthsLabels.find(m => m.value === monthNum);
-                titleDisplay.innerHTML = `📂 Workspace Directory: <strong>${matchedMonth ? matchedMonth.text : monthNum} ${year}</strong> (Completed Archives Only)`;
+                titleDisplay.innerHTML = `📂 Workspace Directory: <strong>${matchedMonth ? matchedMonth.text.toUpperCase() : monthNum} ${year}</strong> (Completed Archives Only)`;
                 
                 document.getElementById('docSearchBox').value = "";
                 fetchDocuments();
@@ -813,9 +802,9 @@
                     actionableData.forEach(doc => {
                         const badgeClass = doc.status.toLowerCase().replace(" ", "-");
                         const row = `<tr>
-                            <td><strong>SPSIC-${doc['SPSIC Number']}</strong></td>
-                            <td>${doc['Target Folder Month']}</td>
-                            <td><span class="status-badge ${badgeClass}">${doc.status}</span></td>
+                            <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
+                            <td>${doc.target_month.toUpperCase()}</td>
+                            <td><span class="status-badge ${badgeClass}">${doc.status.toUpperCase()}</span></td>
                             <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                         </tr>`;
                         globalTbody.innerHTML += row;
@@ -827,14 +816,14 @@
 
             if (!selectedFolderMonth) return;
             
-            const searchVal = document.getElementById('docSearchBox').value.trim();
-            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('Target Folder Month', selectedFolderMonth).eq('status', 'Completed');
+            const searchVal = document.getElementById('docSearchBox').value.trim().toUpperCase();
+            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed');
 
             if (searchVal) { 
-                query = query.ilike('SPSIC Number', `%${searchVal}%`); 
+                query = query.ilike('spsic_number', `%${searchVal}%`); 
             }
 
-            const { data } = await query.order('created_at', { ascending: false });
+            const { data = [] } = await query.order('created_at', { ascending: false });
             const tbody = document.getElementById('documentLogsTableBody');
             tbody.innerHTML = "";
 
@@ -846,9 +835,9 @@
             data.forEach(doc => {
                 const badgeClass = doc.status.toLowerCase().replace(" ", "-");
                 const row = `<tr>
-                    <td><strong>SPSIC-${doc['SPSIC Number']}</strong></td>
-                    <td>${doc['Target Folder Month']}</td>
-                    <td><span class="status-badge ${badgeClass}">${doc.status}</span></td>
+                    <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
+                    <td>${doc.target_month.toUpperCase()}</td>
+                    <td><span class="status-badge ${badgeClass}">${doc.status.toUpperCase()}</span></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
                 tbody.innerHTML += row;
@@ -895,18 +884,18 @@
             submitBtn.setAttribute('disabled', 'true');
             submitBtn.textContent = "Processing sync...";
 
-            const rawNumber = document.getElementById('spsicRawNumber').value.trim();
-            const monthTarget = document.getElementById('spsicTargetMonth').value;
-            const sDateVal = document.getElementById('spsicDate').value;
+            // Strict Uppercase Text Programmatic Normalization Applied Below
+            const rawNumber = document.getElementById('spsicRawNumber').value.trim().toUpperCase();
+            const monthTarget = document.getElementById('spsicTargetMonth').value.trim().toUpperCase();
+            const sDateVal = document.getElementById('spsicDate').value.trim().toUpperCase();
             
-            // Text values are cast directly to uppercase for database insertion safety arrays
-            const approvedDateVal = document.getElementById('approvedDate').value || null;
-            const expirationDateVal = document.getElementById('expirationDate').value || null;
-            const storageLocationVal = document.getElementById('storageLocation').value || null;
-            const storageArrivalDateVal = document.getElementById('storageArrivalDate').value || null;
-            const commodityVal = document.getElementById('commodity').value.trim().toUpperCase() || null;
-            const clientNameVal = document.getElementById('clientName').value.trim().toUpperCase() || null;
-            const cvNumberVal = document.getElementById('cvNumber').value.trim().toUpperCase() || null;
+            const approvedDateVal = (document.getElementById('approvedDate').value || "").trim().toUpperCase() || null;
+            const expirationDateVal = (document.getElementById('expirationDate').value || "").trim().toUpperCase() || null;
+            const storageLocationVal = (document.getElementById('storageLocation').value || "").trim().toUpperCase() || null;
+            const storageArrivalDateVal = (document.getElementById('storageArrivalDate').value || "").trim().toUpperCase() || null;
+            const commodityVal = (document.getElementById('commodity').value || "").trim().toUpperCase() || null;
+            const clientNameVal = (document.getElementById('clientName').value || "").trim().toUpperCase() || null;
+            const cvNumberVal = (document.getElementById('cvNumber').value || "").trim().toUpperCase() || null;
 
             let fileSpsicEl = document.getElementById('fileSpsic').files[0];
             let fileArrivalEl = document.getElementById('fileArrival').files[0];
@@ -955,20 +944,20 @@
                 else if (spsicPath && arrivalPath && importPath) derivedStatus = "For Approval";
 
                 const payload = {
-                    'SPSIC Number': rawNumber,
-                    'Created Date': sDateVal,
-                    'Target Folder Month': monthTarget,
+                    spsic_number: rawNumber,
+                    s_date: sDateVal,
+                    target_month: monthTarget,
                     spsic_file_path: spsicPath,
                     arrival_notice_path: arrivalPath,
                     import_docs_path: importPath,
                     status: derivedStatus,
-                    'Approved Date': approvedDateVal,
-                    'Expiration Date': expirationDateVal,
-                    'Storage': storageLocationVal,
-                    'Storage Date of Arrival': storageArrivalDateVal,
-                    'Commodity': commodityVal,
+                    approved_date: approvedDateVal,
+                    expiration_date: expirationDateVal,
+                    storage_location: storageLocationVal,
+                    storage_arrival_date: storageArrivalDateVal,
+                    commodity: commodityVal,
                     client_name: clientNameVal,
-                    'CV No': cvNumberVal,
+                    cv_number: cvNumberVal,
                     updated_at: new Date().toISOString()
                 };
 
@@ -978,7 +967,7 @@
 
                 const { error: dbError } = await supabaseClient
                     .from('imported_shipment_docs')
-                    .upsert(payload, { onConflict: 'SPSIC Number,Target Folder Month' });
+                    .upsert(payload, { onConflict: 'spsic_number,target_month' });
                     
                 if (dbError) throw dbError;
 
@@ -1035,7 +1024,7 @@
                 month: 'long',
                 day: 'numeric',
                 year: 'numeric'
-            });
+            }).toUpperCase();
         }
 
         async function openDocCompiler(recordId) {
@@ -1096,7 +1085,7 @@
                 if (error || !record) throw new Error("Could not parse shipment files roster data.");
 
                 const zip = new JSZip();
-                const folder = zip.folder(`SPSIC-${record['SPSIC Number']}_Manifest`);
+                const folder = zip.folder(`SPSIC-${record.spsic_number.toUpperCase()}_Manifest`);
                 let addedFiles = 0;
 
                 const pathsList = [
@@ -1128,7 +1117,7 @@
                 const anchorUrl = window.URL.createObjectURL(content);
                 const tempAnchor = document.createElement('a');
                 tempAnchor.href = anchorUrl;
-                tempAnchor.download = `SPSIC-${record['SPSIC Number']}_Compiled_Package.zip`;
+                tempAnchor.download = `SPSIC-${record.spsic_number.toUpperCase()}_Compiled_Package.zip`;
                 document.body.appendChild(tempAnchor);
                 tempAnchor.click();
 
@@ -1208,8 +1197,8 @@
                 const { data: records, error } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('*')
-                    .gte('Target Folder Month', startMonthRange)
-                    .lte('Target Folder Month', endMonthRange);
+                    .gte('target_month', startMonthRange)
+                    .lte('target_month', endMonthRange);
 
                 if (error) throw error;
 
@@ -1224,12 +1213,12 @@
                 let compiledFilesCount = 0;
 
                 for (let record of records) {
-                    const monthStringValue = record['Target Folder Month'].split('-')[1];
+                    const monthStringValue = record.target_month.split('-')[1];
                     const matchedMonthLabelObj = monthsLabels.find(m => m.value === monthStringValue);
-                    const folderMonthHumanReadableName = matchedMonthLabelObj ? `${matchedMonthLabelObj.text} - ${monthStringValue}` : monthStringValue;
+                    const folderMonthHumanReadableName = matchedMonthLabelObj ? `${matchedMonthLabelObj.text.toUpperCase()} - ${monthStringValue}` : monthStringValue;
                     
                     const monthFolderNode = baseYearFolder.folder(folderMonthHumanReadableName);
-                    const spsicFolderNode = monthFolderNode.folder(`SPSIC-${record['SPSIC Number']}`);
+                    const spsicFolderNode = monthFolderNode.folder(`SPSIC-${record.spsic_number.toUpperCase()}`);
 
                     const attachmentsToPull = [];
                     if (record.spsic_file_path) attachmentsToPull.push({ field: 'SPSIC_Doc', path: record.spsic_file_path });
@@ -1272,7 +1261,7 @@
                 clickBridgeElement.click();
                 
                 window.URL.revokeObjectURL(tempDownloadAnchorUrl);
-                document.body.removeChild(tempDownloadAnchorUrl);
+                document.body.removeChild(clickBridgeElement);
 
                 showSystemModal({ type: 'success', title: 'Directory Extracted', message: `Successfully structured all available active entries for ${currentYearSelected} into a single download container.` });
 
