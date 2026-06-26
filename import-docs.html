@@ -185,8 +185,8 @@
                             <input type="text" id="commodity" placeholder="e.g., Frozen Goods">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                            <label>Client Name</label>
-                            <input type="text" id="clientName" placeholder="Client Enterprise Name">
+                            <label>SUPPLIER NAME</label>
+                            <input type="text" id="clientName" placeholder="Supplier Enterprise Name">
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>CV No.</label>
@@ -1272,7 +1272,7 @@
                 clickBridgeElement.click();
                 
                 window.URL.revokeObjectURL(tempDownloadAnchorUrl);
-                document.body.removeChild(clickBridgeElement);
+                document.body.removeChild(tempDownloadAnchorUrl);
 
                 showSystemModal({ type: 'success', title: 'Directory Extracted', message: `Successfully structured all available active entries for ${currentYearSelected} into a single download container.` });
 
