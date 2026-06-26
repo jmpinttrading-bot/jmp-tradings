@@ -41,7 +41,6 @@
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
         .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
         
-        /* Force specified elements to present uppercase stylings dynamically */
         #storageFacility, #itemCode, #itemCategory { text-transform: uppercase; }
 
         .form-actions { display: flex; gap: 10px; margin-top: 20px; }
@@ -50,6 +49,12 @@
         .btn-primary:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
         .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
         .btn-secondary:hover { background: #b8c5d6; }
+
+        /* SPSIC Search Module Style Rules */
+        .search-engine-block { display: flex; gap: 12px; width: 100%; max-width: 500px; margin-bottom: 25px; align-items: flex-end; }
+        .search-engine-block .form-group { margin-bottom: 0; flex: 1; }
+        .btn-search { background: #0f172a; color: white; border: none; height: 42px; padding: 0 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: background 0.2s; }
+        .btn-search:hover { background: #1e293b; }
 
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; }
         .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
@@ -81,6 +86,7 @@
         @media (max-width: 768px) {
             .form-row { flex-direction: column; gap: 0; }
             .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
+            .search-engine-block { max-width: 100%; }
         }
     </style>
 </head>
@@ -108,6 +114,15 @@
 
         <div class="workspace-grid">
             
+            <!-- Global SPSIC Search Node Bar Component -->
+            <div class="search-engine-block">
+                <div class="form-group">
+                    <label for="spsicSearchQuery">Search SPSIC Document Data</label>
+                    <input type="text" id="spsicSearchQuery" placeholder="e.g., 2026889" style="text-transform: uppercase;">
+                </div>
+                <button type="button" class="btn-search" onclick="querySpsicRecordDataset()">Locate Manifest</button>
+            </div>
+
             <div class="card-panel" id="formContainerPanel">
                 <h3 id="formTitle">Register Arriving Container / Truck</h3>
                 <form id="inventoryForm" onsubmit="handleFormSubmit(event)">
@@ -116,12 +131,7 @@
                     <div class="form-row">
                         <div class="form-group flex-2">
                             <label>Receiving Cold Storage Hub Facility</label>
-                            <select id="storageFacility">
-                                <option value="VVS Cold Storage and Processing Plant Corp.">VVS Cold Storage and Processing Plant Corp.</option>
-                                <option value="Hightower Storage and Trading Centre, Inc.">Hightower Storage and Trading Centre, Inc.</option>
-                                <option value="Eisberg Cold Logistics Inc.">Eisberg Cold Logistics Inc.</option>
-                                <option value="Crystal Cold Storage, Inc.">Crystal Cold Storage, Inc.</option>
-                            </select>
+                            <input type="text" id="storageFacility" placeholder="Auto-filled via SPSIC Search Match" readonly>
                         </div>
                         <div class="form-group flex-1">
                             <label>Date Received</label>
@@ -136,18 +146,7 @@
                         </div>
                         <div class="form-group">
                             <label>Commodity</label>
-                            <select id="itemCategory">
-                                <option value="Pompano">Pompano</option>
-                                <option value="Squid">Squid</option>
-                                <option value="Bullet Tuna">Bullet Tuna</option>
-                                <option value="Moonfish">Moonfish</option>
-                                <option value="Salmon Head">Salmon Head</option>
-                                <option value="Salmon Belly">Salmon Belly</option>
-                                <option value="Horse Mackerel">Horse Mackerel</option>
-                                <option value="Indian Mackerel">Indian Mackerel</option>
-                                <option value="Atlantic Mackerel">Atlantic Mackerel</option>
-                                <option value="Sardines">Sardines</option>
-                            </select>
+                            <input type="text" id="itemCategory" placeholder="Auto-filled via SPSIC Search Match" readonly>
                         </div>
                     </div>
                     
@@ -284,6 +283,36 @@
             box.style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
             setTimeout(() => { box.style.display = 'none'; }, 5000);
+        }
+
+        /* Target Search Query Execution Process Loop */
+        async function querySpsicRecordDataset() {
+            const queryVal = document.getElementById('spsicSearchQuery').value.trim().toUpperCase();
+            if (!queryVal) {
+                showAlert("Please enter a valid SPSIC Number sequence to fetch pipeline documents.", "error");
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('imported_shipment_docs')
+                .select('storage_location, commodity')
+                .eq('spsic_number', queryVal)
+                .maybeSingle();
+
+            if (error) {
+                showAlert("Database fetch engine failed to lookup SPSIC record: " + error.message, "error");
+                return;
+            }
+
+            if (!data) {
+                showAlert(`No registered context found for SPSIC Number "${queryVal}". Check your syntax or upload data.`, "error");
+                return;
+            }
+
+            // Bind values cleanly to reading targets
+            document.getElementById('storageFacility').value = data.storage_location || "";
+            document.getElementById('itemCategory').value = data.commodity || "";
+            showAlert(`Manifest loaded successfully for SPSIC: ${queryVal}`, "success");
         }
 
         async function initRegistryDashboard() {
@@ -695,6 +724,7 @@
         function resetFormState() {
             document.getElementById('itemId').value = '';
             document.getElementById('inventoryForm').reset();
+            document.getElementById('spsicSearchQuery').value = '';
             document.getElementById('initialQtyWrapper').style.display = "flex";
             document.getElementById('stockQuantity').required = true;
             document.getElementById('stockQuantity').value = "1";
