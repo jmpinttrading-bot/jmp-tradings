@@ -190,7 +190,7 @@
             if(doc.status === "Approved") statusClass = "status-approved";
             if(doc.status === "Completed") statusClass = "status-completed";
 
-            // Arranged precisely to: SPSIC Number | Created Date | Approved Date | Expiration Date | Storage | Commodity | Storage Arrival Date | Client Name | CV Number | Verification Status
+            // Arranged precisely to: SPSIC Number | Created Date | Approved Date | Expiration Date | Storage | Commodity | Storage Arrival Date | Suppliers Name | CV Number | Verification Status
             metaPanel.innerHTML = `
                 <div class="meta-item">
                     <span class="meta-label">SPSIC Number</span>
@@ -221,7 +221,7 @@
                     <span class="meta-value">${doc.storage_arrival_date ? window.parent.formatHumanReadableDate(doc.storage_arrival_date) : 'N/A'}</span>
                 </div>
                 <div class="meta-item">
-                    <span class="meta-label">Client Name</span>
+                    <span class="meta-label">Suppliers Name</span>
                     <span class="meta-value">${(doc.client_name || 'N/A').toUpperCase()}</span>
                 </div>
                 <div class="meta-item">
