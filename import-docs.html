@@ -32,7 +32,7 @@
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
         .form-group input[type="file"] { background: #f8fafc; padding: 6px; cursor: pointer; }
         
-        .form-group input[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
+        .form-group input[disabled], .form-group select[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
         .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
         
         .upload-progress-status { font-size: 0.75rem; font-weight: 500; margin-top: 4px; display: none; }
@@ -164,7 +164,13 @@
                     <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>Storage</label>
-                            <input type="text" id="storageLocation" placeholder="e.g., Warehouse A">
+                            <select id="storageLocation">
+                                <option value="">Select Cold Storage Facility...</option>
+                                <option value="VVS Cold Storage & Processing Plant Corp.">VVS Cold Storage & Processing Plant Corp.</option>
+                                <option value="Hightower Storage & Trading Centre, Inc.">Hightower Storage & Trading Centre, Inc.</option>
+                                <option value="Eisberg Cold Logistics Inc.">Eisberg Cold Logistics Inc.</option>
+                                <option value="Crystal Cold Storage, Inc.">Crystal Cold Storage, Inc.</option>
+                            </select>
                         </div>
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>Storage Date of Arrival</label>
@@ -883,7 +889,7 @@
             // Capture added structural parameters from user fields
             const approvedDateVal = document.getElementById('approvedDate').value || null;
             const expirationDateVal = document.getElementById('expirationDate').value || null;
-            const storageLocationVal = document.getElementById('storageLocation').value.trim() || null;
+            const storageLocationVal = document.getElementById('storageLocation').value || null;
             const storageArrivalDateVal = document.getElementById('storageArrivalDate').value || null;
             const commodityVal = document.getElementById('commodity').value.trim() || null;
             const clientNameVal = document.getElementById('clientName').value.trim() || null;
