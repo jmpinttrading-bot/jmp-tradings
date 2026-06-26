@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Upload Engine | JMP HQ</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
+        
+        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
+        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
+        
+        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+
+        .main-content { flex: 1; padding: 40px; min-width: 0; }
+        .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
+        .back-link { background: #0f172a; color: white; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
+
+        .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .panel-card h3 { color: #0f172a; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9; }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+        .form-group input[type="file"] { background: #f8fafc; padding: 6px; cursor: pointer; }
+        
+        .uppercase-input { text-transform: uppercase; }
+        .form-group input[disabled], .form-group select[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
+        
+        .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
+        .upload-progress-status { font-size: 0.75rem; font-weight: 500; margin-top: 4px; display: none; }
+        .upload-progress-status.working { color: #2563eb; }
+        .upload-progress-status.ready { color: #16a34a; }
+        .live-lock-banner { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
+
+        .submit-btn { background: #ee964b; color: #0f172a; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s; }
+        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+
+        /* System Modal Styles */
+        .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); }
+        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; }
+        .system-alert-header { padding: 20px 24px 10px; display: flex; align-items: center; gap: 12px; }
+        .system-alert-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; }
+        .system-alert-icon.success { background: #d1fae5; color: #065f46; }
+        .system-alert-icon.error { background: #fee2e2; color: #991b1b; }
+        .system-alert-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
+        .system-alert-content { padding: 10px 24px 24px; color: #475569; font-size: 0.95rem; }
+        .system-alert-actions { padding: 12px 24px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; }
+        .alert-btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+        .alert-btn-primary { background: #0f172a; color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2 id="sidebarPanelHeading">JMP Admin HQ</h2>
+        <a href="admin-dashboard.html" id="backToDashboardBtn">Profile Management</a>
+        <a href="import-docs.html" class="active">📄 Import Doc File Management</a>
+        <button class="logout-btn" id="sidebarLogoutBtn" onclick="handleLogout()">Logout</button>
+    </div>
+
+    <div class="main-content">
+        <div class="header-panel">
+            <div>
+                <h1>Document Upload Engine</h1>
+                <p>Register records and manage multi-stage verification attachment sequences</p>
+            </div>
+            <a href="import-docs.html" class="back-link">← Return to Dashboard</a>
+        </div>
+
+        <div class="panel-card">
+            <h3>Pipeline Operations Manager</h3>
+            <div class="live-lock-banner" id="lockStatusBanner"></div>
+
+            <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                        <label>SPSIC NUMBER</label>
+                        <input type="text" id="spsicRawNumber" class="uppercase-input" required placeholder="e.g., 2026889" oninput="forceRefetchAndEvaluate()" onblur="handleInputBlur()">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                        <label>CREATED DATE</label>
+                        <input type="date" id="spsicDate" class="uppercase-input" required>
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                        <label>APPROVED DATE</label>
+                        <input type="date" id="approvedDate" class="uppercase-input">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                        <label>EXPIRATION DATE</label>
+                        <input type="date" id="expirationDate" class="uppercase-input">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <label>COLD STORAGE</label>
+                        <select id="storageLocation" class="uppercase-input">
+                            <option value="">Select Cold Storage Facility...</option>
+                            <option value="VVS COLD STORAGE & PROCESSING PLANT CORP.">VVS Cold Storage & Processing Plant Corp.</option>
+                            <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">Hightower Storage & Trading Centre, Inc.</option>
+                            <option value="EISBERG COLD LOGISTICS INC.">Eisberg Cold Logistics Inc.</option>
+                            <option value="CRYSTAL COLD STORAGE, INC.">Crystal Cold Storage, Inc.</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <label>STORAGE DATE OF ARRIVAL</label>
+                        <input type="date" id="storageArrivalDate" class="uppercase-input">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <label>COMMODITY</label>
+                        <input type="text" id="commodity" class="uppercase-input" placeholder="e.g., Frozen Goods">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <label>SUPPLIERS NAME</label>
+                        <input type="text" id="clientName" class="uppercase-input" placeholder="Client Enterprise Name">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                        <label>CV NO.</label>
+                        <input type="text" id="cvNumber" class="uppercase-input" placeholder="e.g., CV-99210">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>TARGET FOLDER MONTH</label>
+                    <input type="month" id="spsicTargetMonth" class="uppercase-input" required onchange="forceRefetchAndEvaluate()">
+                </div>
+                
+                <div class="form-group">
+                    <label>1st Upload: SPSIC Document File (PDF / Image / Word / Excel)</label>
+                    <input type="file" id="fileSpsic" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" onchange="handleFileSelection('fileSpsic', 'progressSpsic')">
+                    <div id="progressSpsic" class="upload-progress-status"></div>
+                    <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>2nd Upload: Arrival Notice (PDF / Image / Word / Excel)</label>
+                    <input type="file" id="fileArrival" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" onchange="handleFileSelection('fileArrival', 'progressArrival')">
+                    <div id="progressArrival" class="upload-progress-status"></div>
+                    <div id="noticeArrival" class="lock-notice">⚠️ Locked: Upload 1st File (SPSIC) first.</div>
+                    <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>3rd Upload: Import Docs File (PDF / Image / Word / Excel)</label>
+                    <input type="file" id="fileImportDocs" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" onchange="handleFileSelection('fileImportDocs', 'progressImport')">
+                    <div id="progressImport" class="upload-progress-status"></div>
+                    <div id="noticeImport" class="lock-notice">⚠️ Locked: Upload 1st and 2nd Files first.</div>
+                    <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
+                </div>
+                
+                <button type="submit" id="submitSyncPipelineBtn" class="submit-btn">Execute Sync Pipeline</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="system-alert-overlay" id="systemAlertOverlay">
+        <div class="system-alert-card">
+            <div class="system-alert-header">
+                <div class="system-alert-icon success" id="systemAlertIcon">✓</div>
+                <div class="system-alert-title" id="systemAlertTitle">Notification</div>
+            </div>
+            <div class="system-alert-content" id="systemAlertContent">Message placeholder</div>
+            <div class="system-alert-actions">
+                <button class="alert-btn alert-btn-primary" onclick="closeSystemModal()">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        const STORAGE_BUCKET_NAME = "shipment-documents";
+        let localFetchedRecord = null;
+        let currentUserSession = null;
+        let activeTrackingSpsic = null;
+        let presenceHeartbeatInterval = null;
+
+        function showSystemModal(type, title, message) {
+            document.getElementById('systemAlertTitle').textContent = title;
+            document.getElementById('systemAlertContent').textContent = message;
+            document.getElementById('systemAlertIcon').className = `system-alert-icon ${type}`;
+            document.getElementById('systemAlertIcon').textContent = type === 'success' ? '✓' : '✕';
+            document.getElementById('systemAlertOverlay').style.display = 'flex';
+        }
+
+        function closeSystemModal() {
+            document.getElementById('systemAlertOverlay').style.display = 'none';
+        }
+
+        async function initModule() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            currentUserSession = user;
+
+            const today = new Date();
+            document.getElementById('spsicTargetMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            evaluateUploadSequenceLocks();
+        }
+
+        function forceRefetchAndEvaluate() {
+            localFetchedRecord = null; 
+            evaluateUploadSequenceLocks();
+        }
+
+        function handleFileSelection(inputId, progressId) {
+            const fileEl = document.getElementById(inputId);
+            const progressEl = document.getElementById(progressId);
+            if (fileEl.files && fileEl.files.length > 0) {
+                progressEl.className = "upload-progress-status working";
+                progressEl.style.display = "block";
+                progressEl.textContent = "⏳ Staging attachment parameters...";
+                setTimeout(() => {
+                    progressEl.className = "upload-progress-status ready";
+                    progressEl.textContent = `✓ Ready to Sync (${(fileEl.files[0].size / 1024).toFixed(1)} KB)`;
+                }, 400);
+            } else {
+                progressEl.style.display = "none";
+            }
+        }
+
+        async function handleInputBlur() {
+            if (!document.getElementById('spsicRawNumber').value.trim()) {
+                await clearLockHeartbeat();
+            }
+        }
+
+        async function evaluateUploadSequenceLocks() {
+            const numInput = document.getElementById('spsicRawNumber').value.trim().toUpperCase();
+            const targetMonthInput = document.getElementById('spsicTargetMonth').value.toUpperCase();
+            const fSpsic = document.getElementById('fileSpsic');
+            const fArrival = document.getElementById('fileArrival');
+            const fImport = document.getElementById('fileImportDocs');
+            const submitBtn = document.getElementById('submitSyncPipelineBtn');
+            const banner = document.getElementById('lockStatusBanner');
+
+            if (!numInput) { clearLockHeartbeat(); return; }
+
+            if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
+                const { data } = await supabaseClient.from('imported_shipment_docs').select('*').eq('spsic_number', numInput).eq('target_month', targetMonthInput).maybeSingle();
+                localFetchedRecord = data;
+            }
+
+            if (localFetchedRecord && localFetchedRecord.status === "Completed") {
+                banner.innerHTML = `🔒 <strong>Immutable Records Blocked:</strong> Approved & Finalized. Modification access rescinded.`;
+                banner.style.display = "block";
+                submitBtn.setAttribute('disabled', 'true');
+                return;
+            }
+
+            if (activeTrackingSpsic !== numInput) { startLockHeartbeat(numInput); }
+
+            let hasSpsicInDb = !!(localFetchedRecord && localFetchedRecord.spsic_file_path);
+            let hasArrivalInDb = !!(localFetchedRecord && localFetchedRecord.arrival_notice_path);
+
+            document.getElementById('statusSpsicUploaded').style.display = hasSpsicInDb ? "block" : "none";
+            document.getElementById('statusArrivalUploaded').style.display = hasArrivalInDb ? "block" : "none";
+            document.getElementById('statusImportUploaded').style.display = (localFetchedRecord && localFetchedRecord.import_docs_path) ? "block" : "none";
+
+            fSpsic.disabled = hasSpsicInDb;
+            fArrival.disabled = !hasSpsicInDb || hasArrivalInDb;
+            fImport.disabled = !hasSpsicInDb || !hasArrivalInDb;
+            
+            document.getElementById('noticeArrival').style.display = hasSpsicInDb ? "none" : "block";
+            document.getElementById('noticeImport').style.display = (hasSpsicInDb && hasArrivalInDb) ? "none" : "block";
+        }
+
+        async function startLockHeartbeat(spsic) {
+            clearLockHeartbeat();
+            activeTrackingSpsic = spsic.toUpperCase();
+            await supabaseClient.from('active_document_locks').upsert({
+                spsic_number: activeTrackingSpsic, locked_by_email: currentUserSession.email.toUpperCase(), locked_by_id: currentUserSession.id, last_ping_at: new Date().toISOString()
+            });
+            presenceHeartbeatInterval = setInterval(async () => {
+                if (activeTrackingSpsic) {
+                    await supabaseClient.from('active_document_locks').upsert({
+                        spsic_number: activeTrackingSpsic, locked_by_email: currentUserSession.email.toUpperCase(), locked_by_id: currentUserSession.id, last_ping_at: new Date().toISOString()
+                    });
+                }
+            }, 5000);
+        }
+
+        async function clearLockHeartbeat() {
+            if (activeTrackingSpsic) {
+                await supabaseClient.from('active_document_locks').delete().eq('spsic_number', activeTrackingSpsic).eq('locked_by_id', currentUserSession.id);
+            }
+            if (presenceHeartbeatInterval) clearInterval(presenceHeartbeatInterval);
+            activeTrackingSpsic = null;
+        }
+
+        async function optimizeAndCompressPdfFile(fileObject) {
+            if (fileObject.type !== "application/pdf" || fileObject.size <= 5 * 1024 * 1024) return fileObject;
+            try {
+                const rawBuffer = await fileObject.arrayBuffer();
+                const sourcePdf = await PDFLib.PDFDocument.load(rawBuffer);
+                const targetPdf = await PDFLib.PDFDocument.create();
+                const copiedPages = await targetPdf.copyPages(sourcePdf, sourcePdf.getPageIndices());
+                copiedPages.forEach(p => targetPdf.addPage(p));
+                return new File([await targetPdf.save({ useObjectStreams: true })], fileObject.name, { type: "application/pdf" });
+            } catch (err) { return fileObject; }
+        }
+
+        async function executeDocumentUpload(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitSyncPipelineBtn');
+            submitBtn.disabled = true;
+
+            const rawNumber = document.getElementById('spsicRawNumber').value.trim().toUpperCase();
+            const monthTarget = document.getElementById('spsicTargetMonth').value.trim().toUpperCase();
+            
+            let fileSpsicEl = document.getElementById('fileSpsic').files[0];
+            let fileArrivalEl = document.getElementById('fileArrival').files[0];
+            let fileImportEl = document.getElementById('fileImportDocs').files[0];
+
+            let spsicPath = localFetchedRecord ? localFetchedRecord.spsic_file_path : null;
+            let arrivalPath = localFetchedRecord ? localFetchedRecord.arrival_notice_path : null;
+            let importPath = localFetchedRecord ? localFetchedRecord.import_docs_path : null;
+
+            try {
+                if (fileSpsicEl) {
+                    fileSpsicEl = await optimizeAndCompressPdfFile(fileSpsicEl);
+                    spsicPath = `SPSIC-${rawNumber}/${monthTarget}_SPSIC_${fileSpsicEl.name}`;
+                    await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(spsicPath, fileSpsicEl, { upsert: true });
+                }
+                if (fileArrivalEl) {
+                    fileArrivalEl = await optimizeAndCompressPdfFile(fileArrivalEl);
+                    arrivalPath = `SPSIC-${rawNumber}/${monthTarget}_ArrivalNotice_${fileArrivalEl.name}`;
+                    await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(arrivalPath, fileArrivalEl, { upsert: true });
+                }
+                if (fileImportEl) {
+                    fileImportEl = await optimizeAndCompressPdfFile(fileImportEl);
+                    importPath = `SPSIC-${rawNumber}/${monthTarget}_ImportDocs_${fileImportEl.name}`;
+                    await supabaseClient.storage.from(STORAGE_BUCKET_NAME).upload(importPath, fileImportEl, { upsert: true });
+                }
+
+                let derivedStatus = "Pending"; 
+                if (spsicPath && arrivalPath && !importPath) derivedStatus = "Incomplete";
+                else if (spsicPath && arrivalPath && importPath) derivedStatus = "For Approval";
+
+                const payload = {
+                    spsic_number: rawNumber, s_date: document.getElementById('spsicDate').value, target_month: monthTarget,
+                    spsic_file_path: spsicPath, arrival_notice_path: arrivalPath, import_docs_path: importPath, status: derivedStatus,
+                    approved_date: document.getElementById('approvedDate').value, expiration_date: document.getElementById('expirationDate').value,
+                    storage_location: document.getElementById('storageLocation').value, storage_arrival_date: document.getElementById('storageArrivalDate').value,
+                    commodity: document.getElementById('commodity').value, client_name: document.getElementById('clientName').value, cv_number: document.getElementById('cvNumber').value,
+                    updated_at: new Date().toISOString()
+                };
+
+                const { error } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
+                if (error) throw error;
+
+                showSystemModal('success', 'Pipeline Sync Complete', 'Records stored successfully.');
+                window.location.href = "import-docs.html";
+            } catch (err) {
+                showSystemModal('error', 'Sync Failed', err.message);
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function handleLogout() {
+            await clearLockHeartbeat();
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        window.addEventListener('beforeunload', () => { clearLockHeartbeat(); });
+        initModule();
+    </script>
+</body>
+</html>
