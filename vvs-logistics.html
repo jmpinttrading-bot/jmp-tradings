@@ -257,7 +257,10 @@
         let currentAdminId = null;
         let currentUserEmail = "";
         let bypassAuthListener = false;
-        let globallyFetchedItems = [];
+        
+        // Separated datasets to solve query synchronization mismatch
+        let globallyAvailableStock = [];
+        let globallyFetchedHistory = [];
         
         let permissions = {
             isAdmin: false,
@@ -295,21 +298,36 @@
                 return;
             }
 
-            const matchedIndex = globallyFetchedItems.findIndex(item => String(item.id) === String(selectedId));
+            const matchedIndex = globallyAvailableStock.findIndex(item => String(item.id) === String(selectedId));
             if (matchedIndex !== -1) {
-                populateFormByIndex(matchedIndex);
-                showAlert(`Located transaction data parameters for code: ${globallyFetchedItems[matchedIndex].item_code}`, "success");
+                const stockItem = globallyAvailableStock[matchedIndex];
+                
+                document.getElementById('itemId').value = stockItem.id;
+                document.getElementById('activeSpsicNumber').value = stockItem.spsic_number || '';
+                document.getElementById('itemCode').value = stockItem.item_code || '';
+                document.getElementById('itemSizes').value = stockItem.sizes || '—';
+                document.getElementById('itemName').value = stockItem.item_name || '';
+                document.getElementById('itemCommodity').value = stockItem.commodity || '';
+                
+                document.getElementById('maxAvailableQty').value = stockItem.quantity || 0;
+                document.getElementById('displayAvailableQty').value = `${stockItem.quantity || 0} Units Available`;
+                document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
+                
+                document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
+                document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
+                
+                showAlert(`Loaded on-hand catalog properties for item code: ${stockItem.item_code}`, "success");
             }
         }
 
         function filterLedgerByDescription() {
             const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
             if (!filterQuery) {
-                renderLedgerTable(globallyFetchedItems);
+                renderLedgerTable(globallyFetchedHistory);
                 return;
             }
             
-            const filteredArray = globallyFetchedItems.filter(item => {
+            const filteredArray = globallyFetchedHistory.filter(item => {
                 return (item.item_name || "").toLowerCase().includes(filterQuery);
             });
             
@@ -318,7 +336,7 @@
 
         function clearDescriptionFilter() {
             document.getElementById('descSearchQuery').value = "";
-            renderLedgerTable(globallyFetchedItems);
+            renderLedgerTable(globallyFetchedHistory);
         }
 
         async function initLogisticsDashboard() {
@@ -359,6 +377,7 @@
             }
             
             applyFormUIRestrictions();
+            fetchDropdownInventoryPool();
             fetchTransactionsDataset();
             setupSessionCrossCheckListener();
         }
@@ -373,6 +392,23 @@
             }
         }
 
+        // Fetching On-Hand stock entries (Inbound) to populate the Dropdown choices cleanly
+        async function fetchDropdownInventoryPool() {
+            const { data, error } = await supabaseClient
+                .from('transactions')
+                .select('*')
+                .eq('transactions_type', 'Inbound')
+                .eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.');
+
+            if (error) {
+                console.error("Error loading search pool:", error.message);
+                return;
+            }
+            globallyAvailableStock = data || [];
+            populateStockDropdown(globallyAvailableStock);
+        }
+
+        // Fetching Outbound tracking history for the lower table layout
         async function fetchTransactionsDataset() {
             const { data, error } = await supabaseClient
                 .from('transactions')
@@ -386,21 +422,20 @@
                 return;
             }
 
-            globallyFetchedItems = data || [];
-            populateStockDropdown(globallyFetchedItems);
-            renderLedgerTable(globallyFetchedItems);
+            globallyFetchedHistory = data || [];
+            renderLedgerTable(globallyFetchedHistory);
         }
 
         function populateStockDropdown(items) {
             const dropdown = document.getElementById('inventorySearchQuery');
             if (items.length === 0) {
-                dropdown.innerHTML = `<option value="">No valid transaction records found for VVS facility</option>`;
+                dropdown.innerHTML = `<option value="">No on-hand inventory balances found in VVS hub registry</option>`;
                 return;
             }
 
             let optionsHtml = `<option value="">-- Select or Choose Stock Item Code --</option>`;
             items.forEach(item => {
-                optionsHtml += `<option value="${item.id}">${item.item_code || 'UNNAMED SKU'}</option>`;
+                optionsHtml += `<option value="${item.id}">${item.item_code || 'UNNAMED SKU'} - ${item.item_name || ''}</option>`;
             });
             dropdown.innerHTML = optionsHtml;
         }
@@ -435,39 +470,33 @@
             }).join('');
         }
 
-        function populateFormByIndex(index) {
-            const item = globallyFetchedItems[index];
-            if (!item) return;
-
-            document.getElementById('itemId').value = item.item_id || item.id;
-            document.getElementById('activeSpsicNumber').value = item.spsic_number || '';
-            document.getElementById('itemCode').value = item.item_code || '';
-            document.getElementById('itemSizes').value = item.sizes || '—';
-            document.getElementById('itemName').value = item.item_name || '';
-            document.getElementById('itemCommodity').value = item.commodity || '';
-            document.getElementById('storageFacility').value = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
-            
-            document.getElementById('maxAvailableQty').value = item.quantity || 0;
-            document.getElementById('displayAvailableQty').value = `${item.quantity || 0} Units In Selected Tx`;
-            document.getElementById('rawUnitPrice').value = item.unit_price || 0;
-            
-            document.getElementById('dispatchQuantity').value = item.quantity || '';
-            document.getElementById('buyerName').value = item.buyer_name || '';
-            document.getElementById('formTitle').textContent = `Modify Outbound Transaction [Code: ${item.item_code}]`;
-            
-            document.getElementById('dateReleased').value = item.date || new Date().toISOString().split('T')[0];
-            document.getElementById('salesOrderNo').value = item.sales_order_no || generateSalesOrderNumber();
-
-            document.getElementById('inventorySearchQuery').value = item.id;
-        }
-
         function initiateReturnCancel(index) {
-            populateFormByIndex(index);
+            const historyItem = globallyFetchedHistory[index];
+            if (!historyItem) return;
+
+            document.getElementById('itemId').value = historyItem.item_id || historyItem.id;
+            document.getElementById('activeSpsicNumber').value = historyItem.spsic_number || '';
+            document.getElementById('itemCode').value = historyItem.item_code || '';
+            document.getElementById('itemSizes').value = historyItem.sizes || '—';
+            document.getElementById('itemName').value = historyItem.item_name || '';
+            document.getElementById('itemCommodity').value = historyItem.commodity || '';
+            
+            document.getElementById('maxAvailableQty').value = historyItem.quantity || 0;
+            document.getElementById('displayAvailableQty').value = `${historyItem.quantity || 0} Units In Selected Tx`;
+            document.getElementById('rawUnitPrice').value = historyItem.unit_price || 0;
+            
+            document.getElementById('dispatchQuantity').value = historyItem.quantity || '';
+            document.getElementById('buyerName').value = historyItem.buyer_name || '';
+            document.getElementById('formTitle').textContent = `Modify Outbound Transaction [Code: ${historyItem.item_code}]`;
+            
+            document.getElementById('dateReleased').value = historyItem.date || new Date().toISOString().split('T')[0];
+            document.getElementById('salesOrderNo').value = historyItem.sales_order_no || generateSalesOrderNumber();
+
             showAlert("Transaction values loaded into the configuration window above for correction modifications.", "success");
         }
 
         function initiateStorageTransfer(index) {
-            const item = globallyFetchedItems[index];
+            const item = globallyFetchedHistory[index];
             if (!item) return;
             alert(`Initiating stock volume redistribution transfer route for item ${item.item_code}. Connect alternate hub allocation mechanisms here.`);
         }
@@ -482,18 +511,16 @@
 
             const id = document.getElementById('itemId').value;
             if (!id) {
-                showAlert("Please explicitly select a transaction row below to process action configurations.", "error");
+                showAlert("Please explicitly select an option from the item dropdown or history ledger.", "error");
                 return;
             }
 
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
-
             if (targetDispatchQuantity <= 0) {
                 showAlert("Outbound quantity must be at least 1 unit.", "error");
                 return;
             }
 
-            const currentTimestampISO = new Date().toISOString();
             const spsic_number = document.getElementById('activeSpsicNumber').value;
             const item_code = document.getElementById('itemCode').value;
             const item_name = document.getElementById('itemName').value;
@@ -526,14 +553,13 @@
                 .insert([transactionPayload]);
 
             if (txError) {
-                console.error("Audit tracer failure log detail output: ", txError.message);
-                showAlert("Transaction change modification sequence failed: " + txError.message, "error");
+                showAlert("Transaction modification failed: " + txError.message, "error");
             } else {
                 showAlert(`Success: Documented distribution parameters for item "${item_code}" under ${sales_order_number}.`, "success");
+                resetFormState();
+                fetchDropdownInventoryPool();
+                fetchTransactionsDataset();
             }
-
-            resetFormState();
-            fetchTransactionsDataset();
         }
 
         function resetFormState() {
