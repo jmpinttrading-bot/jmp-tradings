@@ -157,6 +157,10 @@
                             <input type="text" id="storageFacility" value="VVS COLD STORAGE & PROCESSING PLANT CORP." readonly>
                         </div>
                         <div class="form-group flex-1">
+                            <label>Sales Order No. (SO#)</label>
+                            <input type="text" id="salesOrderNo" style="font-weight: 700; color: #b45309; background: #fffbeb;" readonly placeholder="Auto-generated on selection">
+                        </div>
+                        <div class="form-group flex-1">
                             <label>Date Released</label>
                             <input type="date" id="dateReleased" required>
                         </div>
@@ -261,6 +265,21 @@
             style: 'currency',
             currency: 'PHP'
         });
+
+        function generateSalesOrderNumber() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            
+            const randomPool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            let randomHash = "";
+            for (let i = 0; i < 4; i++) {
+                randomHash += randomPool.charAt(Math.floor(Math.random() * randomPool.length));
+            }
+            
+            return `SO-${year}${month}${day}-${randomHash}`;
+        }
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
@@ -433,6 +452,7 @@
             document.getElementById('formTitle').textContent = `Outbound Dispatch Payload Configuration [Code: ${item.item_code}]`;
             
             document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
+            document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
 
             document.getElementById('inventorySearchQuery').value = item.id;
         }
@@ -474,14 +494,15 @@
             const storage_facility = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
             const chosen_date = document.getElementById('dateReleased').value;
             const unit_price = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
-            const final_remarks = document.getElementById('formRemarks').value.trim();
+            const sales_order_number = document.getElementById('salesOrderNo').value;
+            const input_remarks = document.getElementById('formRemarks').value.trim();
 
             const { error: invError } = await supabaseClient
                 .from('inventory')
                 .update({
                     stock_quantity: updatedBalanceQuantity,
                     edit_date: currentTimestampISO,
-                    edit_remarks: `Outbound Logistics Clearance Dispatch: Removed ${targetDispatchQuantity} units`,
+                    edit_remarks: `Outbound Logistics Clearance Dispatch: Removed ${targetDispatchQuantity} units via ${sales_order_number}`,
                     processed_by: currentUserEmail
                 })
                 .eq('id', id);
@@ -490,6 +511,7 @@
                 console.warn("Direct matching inventory primary reference row not mapped. Checking ledger alternatives.");
             }
 
+            // Cleaned transaction payload mapping direct column properties natively
             const transactionPayload = {
                 item_id: id,
                 item_code: item_code,
@@ -501,8 +523,9 @@
                 processed_by: currentUserEmail,
                 storage_facility: storage_facility,
                 date: chosen_date,
-                remarks: final_remarks || "Processed outbound logistics release clearance pass",
-                spsic_number: spsic_number
+                remarks: input_remarks || "Processed outbound logistics release clearance pass",
+                spsic_number: spsic_number,
+                sales_order_no: sales_order_number // <-- Clean, explicit tracking column key 
             };
 
             const { error: txError } = await supabaseClient
@@ -513,7 +536,7 @@
                 console.error("Audit tracer failure log detail output: ", txError.message);
                 showAlert("Stock balance was successfully altered, but audit history generation failed.", "error");
             } else {
-                showAlert(`Success: Dispatched ${targetDispatchQuantity} units of item "${item_code}" out of facility.`, "success");
+                showAlert(`Success: Dispatched ${targetDispatchQuantity} units of item "${item_code}" out of facility under ${sales_order_number}.`, "success");
             }
 
             resetFormState();
@@ -528,6 +551,7 @@
             document.getElementById('outboundForm').reset();
             document.getElementById('inventorySearchQuery').value = '';
             document.getElementById('descSearchQuery').value = '';
+            document.getElementById('salesOrderNo').value = '';
             document.getElementById('displayAvailableQty').value = '0 Units Available';
             document.getElementById('storageFacility').value = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
             document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
