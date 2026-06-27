@@ -415,9 +415,13 @@
 
             const distinctItems = [];
             for (const code in balanceTracker) {
-                const target = balanceTracker[code].lastItem;
-                target.calculated_balance = balanceTracker[code].runningBalance;
-                distinctItems.push(target);
+                const balance = balanceTracker[code].runningBalance;
+                // Only include items with a balance greater than 0
+                if (balance > 0) {
+                    const target = balanceTracker[code].lastItem;
+                    target.calculated_balance = balance;
+                    distinctItems.push(target);
+                }
             }
 
             globallyAvailableStock = distinctItems;
