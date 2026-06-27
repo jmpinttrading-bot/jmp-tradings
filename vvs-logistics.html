@@ -201,11 +201,6 @@
                         <label>Buyer Name</label>
                         <input type="text" id="buyerName" required placeholder="Enter individual or corporate buyer designation...">
                     </div>
-
-                    <div class="form-group">
-                        <label>Consignee & Outbound Route Parameter Logistics Details</label>
-                        <textarea id="formRemarks" required placeholder="Enter destination warehouse, plate number, sealing parameters, or gate pass references..."></textarea>
-                    </div>
                     
                     <div class="form-actions">
                         <button type="submit" class="btn-primary" id="submitBtn" style="background-color: #ee964b; color: #0f172a;">Clear Truck for Outbound Departure</button>
@@ -501,7 +496,6 @@
             const unit_price = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
             const sales_order_number = document.getElementById('salesOrderNo').value;
             const input_buyer_name = document.getElementById('buyerName').value.trim();
-            const input_remarks = document.getElementById('formRemarks').value.trim();
 
             const { error: invError } = await supabaseClient
                 .from('inventory')
@@ -529,7 +523,7 @@
                 storage_facility: storage_facility,
                 date: chosen_date,
                 buyer_name: input_buyer_name,
-                remarks: input_remarks || "Processed outbound logistics release clearance pass",
+                remarks: "Processed outbound logistics release clearance pass",
                 spsic_number: spsic_number,
                 sales_order_no: sales_order_number
             };
