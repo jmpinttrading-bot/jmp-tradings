@@ -143,19 +143,19 @@
                     <input type="hidden" id="rawUnitPrice">
                     
                     <div class="form-row" style="margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
-                        <div class="form-group" style="margin-bottom: 0; width: 100%;">
-                            <label for="inventorySearchQuery" style="color: #0f172a; font-weight: 700;">Search Stock Code</label>
+                        <div class="form-group flex-2">
+                            <label for="inventorySearchQuery" style="color: #0f172a; font-weight: 700;">Search Unique SKU Code / Item Code</label>
                             <select id="inventorySearchQuery" onchange="handleDropdownSelection(this)">
                                 <option value="">-- Synchronizing Available Stock Codes --</option>
                             </select>
                         </div>
+                        <div class="form-group flex-2">
+                            <label style="color: #0f172a; font-weight: 700;">Dispatching Cold Storage Hub Facility</label>
+                            <input type="text" id="storageFacility" value="VVS COLD STORAGE & PROCESSING PLANT CORP." readonly>
+                        </div>
                     </div>
                     
                     <div class="form-row">
-                        <div class="form-group flex-2">
-                            <label>Dispatching Cold Storage Hub Facility</label>
-                            <input type="text" id="storageFacility" value="VVS COLD STORAGE & PROCESSING PLANT CORP." readonly>
-                        </div>
                         <div class="form-group flex-1">
                             <label>Sales Order No. (SO#)</label>
                             <input type="text" id="salesOrderNo" style="font-weight: 700; color: #b45309; background: #fffbeb;" readonly placeholder="Auto-generated on selection">
@@ -195,6 +195,11 @@
                             <label>Outbound Quantity</label>
                             <input type="number" id="dispatchQuantity" required min="1" placeholder="Enter quantity to release">
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Buyer Name</label>
+                        <input type="text" id="buyerName" required placeholder="Enter individual or corporate buyer designation...">
                     </div>
 
                     <div class="form-group">
@@ -275,7 +280,6 @@
             const hour = String(now.getHours()).padStart(2, '0');
             const minute = String(now.getMinutes()).padStart(2, '0');
             
-            // Extract the first letter of the facility field (defaults to 'X' if missing)
             const facilityInput = document.getElementById('storageFacility').value || "";
             const facilityLetter = facilityInput.trim().charAt(0).toUpperCase() || "X";
             
@@ -496,6 +500,7 @@
             const chosen_date = document.getElementById('dateReleased').value;
             const unit_price = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
             const sales_order_number = document.getElementById('salesOrderNo').value;
+            const input_buyer_name = document.getElementById('buyerName').value.trim();
             const input_remarks = document.getElementById('formRemarks').value.trim();
 
             const { error: invError } = await supabaseClient
@@ -523,6 +528,7 @@
                 processed_by: currentUserEmail,
                 storage_facility: storage_facility,
                 date: chosen_date,
+                buyer_name: input_buyer_name,
                 remarks: input_remarks || "Processed outbound logistics release clearance pass",
                 spsic_number: spsic_number,
                 sales_order_no: sales_order_number
