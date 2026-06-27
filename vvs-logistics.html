@@ -133,15 +133,6 @@
         <div id="alertBox" class="alert"></div>
 
         <div class="workspace-grid">
-            
-            <div class="search-engine-block">
-                <div class="form-group">
-                    <label for="inventorySearchQuery">Verify Stock Code for Dispatch</label>
-                    <select id="inventorySearchQuery" onchange="handleDropdownSelection(this)">
-                        <option value="">-- Synchronizing Available Stock Codes --</option>
-                    </select>
-                </div>
-            </div>
 
             <div class="card-panel" id="formContainerPanel">
                 <h3 id="formTitle">Authorize Fleet Dispatch & Release Cargo</h3>
@@ -150,6 +141,15 @@
                     <input type="hidden" id="activeSpsicNumber">
                     <input type="hidden" id="maxAvailableQty">
                     <input type="hidden" id="rawUnitPrice">
+                    
+                    <div class="form-row" style="margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                        <div class="form-group" style="margin-bottom: 0; width: 100%;">
+                            <label for="inventorySearchQuery" style="color: #0f172a; font-weight: 700;">Search Stock Code</label>
+                            <select id="inventorySearchQuery" onchange="handleDropdownSelection(this)">
+                                <option value="">-- Synchronizing Available Stock Codes --</option>
+                            </select>
+                        </div>
+                    </div>
                     
                     <div class="form-row">
                         <div class="form-group flex-2">
@@ -188,7 +188,7 @@
                             <input type="text" id="displayAvailableQty" placeholder="0 Cases" style="font-weight: 700; color: #0369a1;" readonly>
                         </div>
                         <div class="form-group">
-                            <label>Cargo Outbound Quantity to Dispatch</label>
+                            <label>Outbound Quantity</label>
                             <input type="number" id="dispatchQuantity" required min="1" placeholder="Enter quantity to release">
                         </div>
                     </div>
