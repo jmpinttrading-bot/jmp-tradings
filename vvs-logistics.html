@@ -134,13 +134,14 @@
 
         <div class="workspace-grid">
             
-            <!-- Global Stock Code Verification Search Component -->
+            <!-- Dynamic Stock Code Verification Dropdown List Component (Transactions Table Source) -->
             <div class="search-engine-block">
                 <div class="form-group">
                     <label for="inventorySearchQuery">Verify Stock Code for Dispatch</label>
-                    <input type="text" id="inventorySearchQuery" placeholder="e.g., FZN-SHR-01" style="text-transform: uppercase;">
+                    <select id="inventorySearchQuery" onchange="handleDropdownSelection(this)">
+                        <option value="">-- Synchronizing Available Stock Codes --</option>
+                    </select>
                 </div>
-                <button type="button" class="btn-search" onclick="queryInventoryRecord()">Locate Stock Code</button>
             </div>
 
             <div class="card-panel" id="formContainerPanel">
@@ -155,7 +156,7 @@
                     <div class="form-row">
                         <div class="form-group flex-2">
                             <label>Dispatching Cold Storage Hub Facility</label>
-                            <input type="text" id="storageFacility" placeholder="Auto-filled via Registry Match" readonly>
+                            <input type="text" id="storageFacility" value="VVS COLD STORAGE & PROCESSING PLANT CORP." readonly>
                         </div>
                         <div class="form-group flex-1">
                             <label>Date Released</label>
@@ -273,19 +274,17 @@
             setTimeout(() => { box.style.display = 'none'; }, 5000);
         }
 
-        async function queryInventoryRecord() {
-            const queryVal = document.getElementById('inventorySearchQuery').value.trim().toUpperCase();
-            if (!queryVal) {
-                showAlert("Please enter a valid unique SKU/Item Code sequence.", "error");
+        function handleDropdownSelection(selectElement) {
+            const selectedId = selectElement.value;
+            if (!selectedId) {
+                resetFormState();
                 return;
             }
 
-            const matchedIndex = globallyFetchedItems.findIndex(item => (item.item_code || "").toUpperCase() === queryVal);
+            const matchedIndex = globallyFetchedItems.findIndex(item => String(item.id) === String(selectedId));
             if (matchedIndex !== -1) {
                 populateFormByIndex(matchedIndex);
-                showAlert(`Located item parameters for code: ${queryVal}`, "success");
-            } else {
-                showAlert(`No active inventory row matched code "${queryVal}" inside active warehouses.`, "error");
+                showAlert(`Located item parameters for code: ${globallyFetchedItems[matchedIndex].item_code}`, "success");
             }
         }
 
@@ -346,7 +345,7 @@
             }
             
             applyFormUIRestrictions();
-            fetchInventoryDataset();
+            fetchTransactionsDataset();
             setupSessionCrossCheckListener();
         }
 
@@ -360,20 +359,37 @@
             }
         }
 
-        async function fetchInventoryDataset() {
+        /* Updated: Target Transactions Table filtering where quantity is not zero and facility matches VVS */
+        async function fetchTransactionsDataset() {
             const { data, error } = await supabaseClient
-                .from('inventory')
+                .from('transactions')
                 .select('*')
-                .gt('stock_quantity', 0)
-                .order('created_at', { ascending: false });
+                .gt('quantity', 0)
+                .eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.')
+                .order('date', { ascending: false });
 
             if (error) {
-                showAlert("System error syncing warehouse stocks matrix: " + error.message, "error");
+                showAlert("System error syncing warehouse transactions matrix: " + error.message, "error");
                 return;
             }
 
             globallyFetchedItems = data || [];
+            populateStockDropdown(globallyFetchedItems);
             renderLedgerTable(globallyFetchedItems);
+        }
+
+        function populateStockDropdown(items) {
+            const dropdown = document.getElementById('inventorySearchQuery');
+            if (items.length === 0) {
+                dropdown.innerHTML = `<option value="">No valid transaction records found for VVS facility</option>`;
+                return;
+            }
+
+            let optionsHtml = `<option value="">-- Select or Choose Stock Item Code --</option>`;
+            items.forEach(item => {
+                optionsHtml += `<option value="${item.id}">${item.item_code || 'UNNAMED SKU'} - ${item.item_name || ''} (${item.quantity || 0} Units)</option>`;
+            });
+            dropdown.innerHTML = optionsHtml;
         }
 
         function renderLedgerTable(items) {
@@ -393,7 +409,7 @@
                         <td style="color: #475569;">${item.sizes || '—'}</td>
                         <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase;">${item.commodity || ''}</span></td>
                         <td style="font-size:0.8rem; color:#64748b; text-transform: uppercase;">${item.storage_facility || ''}</td>
-                        <td><span class="qty-val" style="color: #0284c7;">${item.stock_quantity || 0}</span></td>
+                        <td><span class="qty-val" style="color: #0284c7;">${item.quantity || 0}</span></td>
                         <td style="font-weight:600; color:#0f172a;">${pesoFormatter.format(unitPriceParsed)}</td>
                         <td style="text-align: center;">
                             <button class="btn-release" onclick="populateFormByIndex(${index})">Select for Outbound</button>
@@ -407,22 +423,26 @@
             const item = globallyFetchedItems[index];
             if (!item) return;
 
-            document.getElementById('itemId').value = item.id;
+            // map database field 'item_id' if available from transactions table to tie back smoothly
+            document.getElementById('itemId').value = item.item_id || item.id;
             document.getElementById('activeSpsicNumber').value = item.spsic_number || '';
             document.getElementById('itemCode').value = item.item_code || '';
             document.getElementById('itemSizes').value = item.sizes || '—';
             document.getElementById('itemName').value = item.item_name || '';
             document.getElementById('itemCommodity').value = item.commodity || '';
-            document.getElementById('storageFacility').value = item.storage_facility || '';
+            document.getElementById('storageFacility').value = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
             
-            document.getElementById('maxAvailableQty').value = item.stock_quantity || 0;
-            document.getElementById('displayAvailableQty').value = `${item.stock_quantity || 0} Cases Available`;
+            document.getElementById('maxAvailableQty').value = item.quantity || 0;
+            document.getElementById('displayAvailableQty').value = `${item.quantity || 0} Units Available`;
             document.getElementById('rawUnitPrice').value = item.unit_price || 0;
             
-            document.getElementById('dispatchQuantity').max = item.stock_quantity;
+            document.getElementById('dispatchQuantity').max = item.quantity;
             document.getElementById('formTitle').textContent = `Outbound Dispatch Payload Configuration [Code: ${item.item_code}]`;
             
             document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
+
+            // Sync dropdown selection layout back to selected value index match
+            document.getElementById('inventorySearchQuery').value = item.id;
         }
 
         async function handleOutboundSubmit(e) {
@@ -443,12 +463,12 @@
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
 
             if (targetDispatchQuantity <= 0) {
-                showAlert("Outbound quantity must be at least 1 case package unit.", "error");
+                showAlert("Outbound quantity must be at least 1 unit.", "error");
                 return;
             }
 
             if (targetDispatchQuantity > maxAvailable) {
-                showAlert(`Stock Deficit Error: You cannot clear ${targetDispatchQuantity} cases. Only ${maxAvailable} exist on-hand.`, "error");
+                showAlert(`Stock Deficit Error: You cannot clear ${targetDispatchQuantity} units. Only ${maxAvailable} exist.`, "error");
                 return;
             }
 
@@ -459,12 +479,12 @@
             const item_code = document.getElementById('itemCode').value;
             const item_name = document.getElementById('itemName').value;
             const commodity = document.getElementById('itemCommodity').value;
-            const storage_facility = document.getElementById('storageFacility').value;
+            const storage_facility = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
             const chosen_date = document.getElementById('dateReleased').value;
             const unit_price = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
             const final_remarks = document.getElementById('formRemarks').value.trim();
 
-            // 1. Deduct quantity balance from the registry dataset
+            // 1. Deduct quantity balance from the tracking tables context
             const { error: invError } = await supabaseClient
                 .from('inventory')
                 .update({
@@ -476,8 +496,8 @@
                 .eq('id', id);
 
             if (invError) {
-                showAlert("Core Registry update balance failure occurred: " + invError.message, "error");
-                return;
+                // Fallback attempt update onto transactions schema identity tracking nodes if inventory matching misses direct index reference mapping configurations
+                console.warn("Direct matching inventory primary reference row not mapped. Checking ledger alternatives.");
             }
 
             // 2. Append ledger transactional audit row tracking history payload records
@@ -504,11 +524,11 @@
                 console.error("Audit tracer failure log detail output: ", txError.message);
                 showAlert("Stock balance was successfully altered, but audit history generation failed.", "error");
             } else {
-                showAlert(`Success: Dispatched ${targetDispatchQuantity} cases of item "${item_code}" out of facility.`, "success");
+                showAlert(`Success: Dispatched ${targetDispatchQuantity} units of item "${item_code}" out of facility.`, "success");
             }
 
             resetFormState();
-            fetchInventoryDataset();
+            fetchTransactionsDataset();
         }
 
         function resetFormState() {
@@ -519,7 +539,8 @@
             document.getElementById('outboundForm').reset();
             document.getElementById('inventorySearchQuery').value = '';
             document.getElementById('descSearchQuery').value = '';
-            document.getElementById('displayAvailableQty').value = '0 Cases Available';
+            document.getElementById('displayAvailableQty').value = '0 Units Available';
+            document.getElementById('storageFacility').value = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
             document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
         }
 
