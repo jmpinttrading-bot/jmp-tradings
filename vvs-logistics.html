@@ -302,7 +302,8 @@
             if (matchedIndex !== -1) {
                 const stockItem = globallyAvailableStock[matchedIndex];
                 
-                document.getElementById('itemId').value = stockItem.id;
+                // Fixed numerical item mapping schema mismatch
+                document.getElementById('itemId').value = stockItem.item_id || stockItem.id;
                 document.getElementById('activeSpsicNumber').value = stockItem.spsic_number || '';
                 document.getElementById('itemCode').value = stockItem.item_code || '';
                 document.getElementById('itemSizes').value = stockItem.sizes || '—';
