@@ -192,7 +192,7 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Current Rolling Balance</label>
+                            <label>Current Rolling Balance Balance</label>
                             <input type="text" id="displayAvailableQty" placeholder="0 Units Available" style="font-weight: 700; color: #0369a1;" readonly>
                         </div>
                         <div class="form-group">
@@ -302,7 +302,7 @@
 
             const stockItem = globallyAvailableStock.find(item => item.item_code === selectedItemCode);
             if (stockItem) {
-                document.getElementById('selectedTransactionRowId').value = ''; 
+                document.getElementById('selectedTransactionRowId').value = ''; // Empty since we're inserting a new transaction row
                 document.getElementById('itemId').value = stockItem.item_id || stockItem.id;
                 document.getElementById('activeSpsicNumber').value = stockItem.spsic_number || '';
                 document.getElementById('itemCode').value = stockItem.item_code || '';
@@ -310,6 +310,7 @@
                 document.getElementById('itemName').value = stockItem.item_name || '';
                 document.getElementById('itemCommodity').value = stockItem.commodity || '';
                 
+                // Set balance limits dynamically using calculated on-hand values
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
@@ -394,6 +395,7 @@
         }
 
         async function fetchDropdownInventoryPool() {
+            // Fetch ALL historical records for this facility to correctly map dynamic balances
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('*')
@@ -405,6 +407,7 @@
                 return;
             }
 
+            // Calculate current live balances per item code sequentially
             const balanceTracker = {};
             data.forEach(tx => {
                 const code = tx.item_code;
@@ -417,6 +420,7 @@
                 balanceTracker[code].lastItem = tx;
             });
 
+            // Flatten out unique options for dropdown menu references
             const distinctItems = [];
             for (const code in balanceTracker) {
                 const target = balanceTracker[code].lastItem;
@@ -429,6 +433,7 @@
         }
 
         async function fetchTransactionsDataset() {
+            // Fetch everything sequentially to display full linear historical tracking logs
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('*')
@@ -501,7 +506,7 @@
             document.getElementById('itemCommodity').value = historyItem.commodity || '';
             
             document.getElementById('maxAvailableQty').value = historyItem.balance || 0;
-            document.getElementById('displayAvailableQty').value = `${historyItem.balance || 0} Units Available`;
+            document.getElementById('displayAvailableQty').value = `${historyItem.balance || 0} Units In Dynamic Tx Context`;
             document.getElementById('rawUnitPrice').value = historyItem.unit_price || 0;
             
             document.getElementById('dispatchQuantity').value = historyItem.out_quantity || historyItem.in_quantity || '';
@@ -511,7 +516,7 @@
             document.getElementById('dateReleased').value = historyItem.date || new Date().toISOString().split('T')[0];
             document.getElementById('salesOrderNo').value = historyItem.sales_order_no || generateSalesOrderNumber();
 
-            showAlert("Transaction values loaded into configuration window for correction.", "success");
+            showAlert("Transaction values loaded into configuration window above for ledger correction modifications.", "success");
         }
 
         async function handleOutboundSubmit(e) {
@@ -553,6 +558,7 @@
             const input_buyer_name = document.getElementById('buyerName').value.trim();
 
             if (targetRowId) {
+                // Modify existing entry behavior: Delete the outdated entry; new balances will recalculate automatically downstream
                 const { error: cancelError } = await supabaseClient
                     .from('transactions')
                     .delete()
@@ -562,37 +568,39 @@
                     showAlert("Failed to clear original matrix row entry: " + cancelError.message, "error");
                     return;
                 }
+            } else {
+                // Record clean outbound transaction block parameters sequentially
+                const transactionPayload = {
+                    item_id: id,
+                    item_code: item_code,
+                    item_name: item_name,
+                    sizes: item_sizes,
+                    commodity: commodity,
+                    in_quantity: 0, 
+                    out_quantity: targetDispatchQuantity, 
+                    unit_price: unit_price,
+                    transactions_type: "Outbound",
+                    processed_by: currentUserEmail,
+                    storage_facility: storage_facility,
+                    date: chosen_date,
+                    buyer_name: input_buyer_name,
+                    remarks: "Processed outbound logistics release validation modification change",
+                    spsic_number: spsic_number,
+                    sales_order_no: sales_order_number
+                    // 'balance' column is handled by your Supabase database trigger safely automatically!
+                };
+
+                const { error: txError } = await supabaseClient
+                    .from('transactions')
+                    .insert([transactionPayload]);
+
+                if (txError) {
+                    showAlert("Transaction tracking assignment failed: " + txError.message, "error");
+                    return;
+                }
             }
 
-            const transactionPayload = {
-                item_id: id,
-                item_code: item_code,
-                item_name: item_name,
-                sizes: item_sizes,
-                commodity: commodity,
-                in_quantity: 0, 
-                out_quantity: targetDispatchQuantity, 
-                unit_price: unit_price,
-                transactions_type: "Outbound",
-                processed_by: currentUserEmail,
-                storage_facility: storage_facility,
-                date: chosen_date,
-                buyer_name: input_buyer_name,
-                remarks: "Processed outbound logistics release",
-                spsic_number: spsic_number,
-                sales_order_no: sales_order_number
-            };
-
-            const { error: txError } = await supabaseClient
-                .from('transactions')
-                .insert([transactionPayload]);
-
-            if (txError) {
-                showAlert("Transaction tracking assignment failed: " + txError.message, "error");
-                return;
-            }
-
-            showAlert(`Success: Documented parameters for "${item_code}". Balance updated via DB trigger.`, "success");
+            showAlert(`Success: Documented parameters for "${item_code}". Running balance updated seamlessly.`, "success");
             resetFormState();
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
