@@ -226,13 +226,12 @@
                                 <th>Commodity</th>
                                 <th>Assigned Hub</th>
                                 <th>On-Hand Balance</th>
-                                <th>Unit Valuation</th>
                                 <th style="text-align: center;">Action Action</th>
                             </tr>
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -392,12 +391,11 @@
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No cargo assets with positive balances registered in hubs.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">No cargo assets with positive balances registered in hubs.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = items.map((item, index) => {
-                const unitPriceParsed = parseFloat(item.unit_price || 0);
                 return `
                     <tr>
                         <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
@@ -407,7 +405,6 @@
                         <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase;">${item.commodity || ''}</span></td>
                         <td style="font-size:0.8rem; color:#64748b; text-transform: uppercase;">${item.storage_facility || ''}</td>
                         <td><span class="qty-val" style="color: #0284c7;">${item.quantity || 0}</span></td>
-                        <td style="font-weight:600; color:#0f172a;">${pesoFormatter.format(unitPriceParsed)}</td>
                         <td style="text-align: center;">
                             <button class="btn-release" onclick="populateFormByIndex(${index})">Select for Outbound</button>
                         </td>
