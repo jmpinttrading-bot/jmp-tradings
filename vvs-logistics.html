@@ -230,7 +230,7 @@
                                 <th>Commodity</th>
                                 <th>Assigned Hub</th>
                                 <th>On-Hand Balance</th>
-                                <th style="text-align: center;">Action Action</th>
+                                <th style="text-align: center;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="ledgerTableBody">
@@ -266,19 +266,20 @@
             currency: 'PHP'
         });
 
+        // Generates layout format: SO#[FacilityLetter][YYYYMMDD]-[HHMM]
         function generateSalesOrderNumber() {
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
+            const hour = String(now.getHours()).padStart(2, '0');
+            const minute = String(now.getMinutes()).padStart(2, '0');
             
-            const randomPool = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            let randomHash = "";
-            for (let i = 0; i < 4; i++) {
-                randomHash += randomPool.charAt(Math.floor(Math.random() * randomPool.length));
-            }
+            // Extract the first letter of the facility field (defaults to 'X' if missing)
+            const facilityInput = document.getElementById('storageFacility').value || "";
+            const facilityLetter = facilityInput.trim().charAt(0).toUpperCase() || "X";
             
-            return `SO-${year}${month}${day}-${randomHash}`;
+            return `SO#${facilityLetter}${year}${month}${day}-${hour}${minute}`;
         }
 
         function showAlert(msg, type) {
@@ -511,7 +512,6 @@
                 console.warn("Direct matching inventory primary reference row not mapped. Checking ledger alternatives.");
             }
 
-            // Cleaned transaction payload mapping direct column properties natively
             const transactionPayload = {
                 item_id: id,
                 item_code: item_code,
@@ -525,7 +525,7 @@
                 date: chosen_date,
                 remarks: input_remarks || "Processed outbound logistics release clearance pass",
                 spsic_number: spsic_number,
-                sales_order_no: sales_order_number // <-- Clean, explicit tracking column key 
+                sales_order_no: sales_order_number
             };
 
             const { error: txError } = await supabaseClient
