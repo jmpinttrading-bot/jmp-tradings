@@ -139,6 +139,8 @@
             <div class="card-panel" id="formContainerPanel">
                 <h3 id="formTitle">Authorize Fleet Dispatch & Release Cargo</h3>
                 <form id="outboundForm" onsubmit="handleOutboundSubmit(event)">
+                    <!-- Store the actual primary key id of the selected entry row to locate for updates -->
+                    <input type="hidden" id="selectedTransactionRowId">
                     <input type="hidden" id="itemId">
                     <input type="hidden" id="activeSpsicNumber">
                     <input type="hidden" id="maxAvailableQty">
@@ -258,7 +260,6 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         
-        // Separated datasets to solve query synchronization mismatch
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
         
@@ -302,7 +303,7 @@
             if (matchedIndex !== -1) {
                 const stockItem = globallyAvailableStock[matchedIndex];
                 
-                // Fixed numerical item mapping schema mismatch
+                document.getElementById('selectedTransactionRowId').value = stockItem.id;
                 document.getElementById('itemId').value = stockItem.item_id || stockItem.id;
                 document.getElementById('activeSpsicNumber').value = stockItem.spsic_number || '';
                 document.getElementById('itemCode').value = stockItem.item_code || '';
@@ -310,8 +311,9 @@
                 document.getElementById('itemName').value = stockItem.item_name || '';
                 document.getElementById('itemCommodity').value = stockItem.commodity || '';
                 
-                document.getElementById('maxAvailableQty').value = stockItem.quantity || 0;
-                document.getElementById('displayAvailableQty').value = `${stockItem.quantity || 0} Units Available`;
+                // For an Inbound row, the available balance is mapped to the in_quantity value
+                document.getElementById('maxAvailableQty').value = stockItem.in_quantity || 0;
+                document.getElementById('displayAvailableQty').value = `${stockItem.in_quantity || 0} Units Available`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
                 
                 document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
@@ -393,7 +395,6 @@
             }
         }
 
-        // Fetching On-Hand stock entries (Inbound) to populate the Dropdown choices cleanly
         async function fetchDropdownInventoryPool() {
             const { data, error } = await supabaseClient
                 .from('transactions')
@@ -409,7 +410,6 @@
             populateStockDropdown(globallyAvailableStock);
         }
 
-        // Fetching Outbound tracking history for the lower table layout
         async function fetchTransactionsDataset() {
             const { data, error } = await supabaseClient
                 .from('transactions')
@@ -436,7 +436,7 @@
 
             let optionsHtml = `<option value="">-- Select or Choose Stock Item Code --</option>`;
             items.forEach(item => {
-                optionsHtml += `<option value="${item.id}">${item.item_code || 'UNNAMED SKU'} - ${item.item_name || ''}</option>`;
+                optionsHtml += `<option value="${item.id}">${item.item_code || 'UNNAMED SKU'} - ${item.item_name || ''} (${item.in_quantity || 0} left)</option>`;
             });
             dropdown.innerHTML = optionsHtml;
         }
@@ -458,7 +458,7 @@
                         <td style="font-weight: 600;">${item.item_name || ''}</td>
                         <td style="color: #475569;">${item.sizes || '—'}</td>
                         <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase;">${item.commodity || ''}</span></td>
-                        <td><span class="qty-val">${item.quantity || 0}</span></td>
+                        <td><span class="qty-val">${item.out_quantity || 0}</span></td>
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
                         <td style="text-align: center;">
                             <div class="action-btn-group">
@@ -475,6 +475,7 @@
             const historyItem = globallyFetchedHistory[index];
             if (!historyItem) return;
 
+            document.getElementById('selectedTransactionRowId').value = ''; 
             document.getElementById('itemId').value = historyItem.item_id || historyItem.id;
             document.getElementById('activeSpsicNumber').value = historyItem.spsic_number || '';
             document.getElementById('itemCode').value = historyItem.item_code || '';
@@ -482,11 +483,11 @@
             document.getElementById('itemName').value = historyItem.item_name || '';
             document.getElementById('itemCommodity').value = historyItem.commodity || '';
             
-            document.getElementById('maxAvailableQty').value = historyItem.quantity || 0;
-            document.getElementById('displayAvailableQty').value = `${historyItem.quantity || 0} Units In Selected Tx`;
+            document.getElementById('maxAvailableQty').value = historyItem.out_quantity || 0;
+            document.getElementById('displayAvailableQty').value = `${historyItem.out_quantity || 0} Units In Selected Tx`;
             document.getElementById('rawUnitPrice').value = historyItem.unit_price || 0;
             
-            document.getElementById('dispatchQuantity').value = historyItem.quantity || '';
+            document.getElementById('dispatchQuantity').value = historyItem.out_quantity || '';
             document.getElementById('buyerName').value = historyItem.buyer_name || '';
             document.getElementById('formTitle').textContent = `Modify Outbound Transaction [Code: ${historyItem.item_code}]`;
             
@@ -511,6 +512,7 @@
             }
 
             const id = document.getElementById('itemId').value;
+            const targetRowId = document.getElementById('selectedTransactionRowId').value;
             if (!id) {
                 showAlert("Please explicitly select an option from the item dropdown or history ledger.", "error");
                 return;
@@ -522,8 +524,15 @@
                 return;
             }
 
+            const maxAvailable = parseInt(document.getElementById('maxAvailableQty').value) || 0;
+            if (targetRowId && targetDispatchQuantity > maxAvailable) {
+                showAlert(`Insufficient Stock! Only ${maxAvailable} units are available in this entry block.`, "error");
+                return;
+            }
+
             const spsic_number = document.getElementById('activeSpsicNumber').value;
             const item_code = document.getElementById('itemCode').value;
+            const item_sizes = document.getElementById('itemSizes').value;
             const item_name = document.getElementById('itemName').value;
             const commodity = document.getElementById('itemCommodity').value;
             const storage_facility = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
@@ -536,8 +545,10 @@
                 item_id: id,
                 item_code: item_code,
                 item_name: item_name,
+                sizes: item_sizes,
                 commodity: commodity,
-                quantity: targetDispatchQuantity,
+                in_quantity: 0, // Outbound logs don't have inbound quantities
+                out_quantity: targetDispatchQuantity, // Set explicit outbound variable column
                 unit_price: unit_price,
                 transactions_type: "Outbound",
                 processed_by: currentUserEmail,
@@ -549,21 +560,38 @@
                 sales_order_no: sales_order_number
             };
 
+            // 1. Insert the Outbound tracking log record
             const { error: txError } = await supabaseClient
                 .from('transactions')
                 .insert([transactionPayload]);
 
             if (txError) {
                 showAlert("Transaction modification failed: " + txError.message, "error");
-            } else {
-                showAlert(`Success: Documented distribution parameters for item "${item_code}" under ${sales_order_number}.`, "success");
-                resetFormState();
-                fetchDropdownInventoryPool();
-                fetchTransactionsDataset();
+                return;
             }
+
+            // 2. Perform the actual inventory depletion on the originating Inbound row's `in_quantity`
+            if (targetRowId) {
+                const newQuantityBalance = maxAvailable - targetDispatchQuantity;
+                
+                const { error: updateError } = await supabaseClient
+                    .from('transactions')
+                    .update({ in_quantity: newQuantityBalance })
+                    .eq('id', targetRowId);
+
+                if (updateError) {
+                    console.error("Warning: Outbound logged, but stock balance update failed:", updateError.message);
+                }
+            }
+
+            showAlert(`Success: Documented distribution parameters for item "${item_code}" under ${sales_order_number}.`, "success");
+            resetFormState();
+            await fetchDropdownInventoryPool();
+            await fetchTransactionsDataset();
         }
 
         function resetFormState() {
+            document.getElementById('selectedTransactionRowId').value = '';
             document.getElementById('itemId').value = '';
             document.getElementById('activeSpsicNumber').value = '';
             document.getElementById('maxAvailableQty').value = '';
