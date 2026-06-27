@@ -9,7 +9,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* Converted Sidebar into a streamlined Top Navbar */
         .topbar { width: 100%; background-color: #0f172a; color: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #ee964b; }
         .topbar h2 { font-size: 1.2rem; color: #ee964b; font-weight: 700; }
         .logout-btn { background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
@@ -20,7 +19,6 @@
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
-        /* Emphasized Back Button Component */
         .back-link { 
             display: inline-flex; 
             align-items: center; 
@@ -61,7 +59,6 @@
         .form-group textarea { height: 80px; resize: vertical; }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
         
-        /* Updated: Applied explicit darker gray background and styling for disabled and read-only elements */
         .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { background: #cbd5e1; color: #475569; cursor: not-allowed; }
         
         #storageFacility, #itemCode, #itemCommodity, #itemName { text-transform: uppercase; }
@@ -73,7 +70,6 @@
         .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
         .btn-secondary:hover { background: #b8c5d6; }
 
-        /* Search Module Style Rules */
         .search-engine-block { display: flex; gap: 12px; width: 100%; max-width: 500px; margin-bottom: 25px; align-items: flex-end; }
         .search-engine-block .form-group { margin-bottom: 0; flex: 1; }
         .btn-search { background: #0f172a; color: white; border: none; height: 42px; padding: 0 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: background 0.2s; white-space: nowrap; }
@@ -81,7 +77,6 @@
         .btn-search.clear-filter { background: #64748b; padding: 0 16px; }
         .btn-search.clear-filter:hover { background: #475569; }
 
-        /* Ledger Title bar layout for search matching inside panel header */
         .ledger-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 25px; flex-wrap: wrap; gap: 15px; }
         .ledger-header-wrapper h3 { border-bottom: none !important; padding-bottom: 0 !important; margin: 0 !important; }
         .ledger-search-box { display: flex; gap: 10px; align-items: center; }
@@ -91,7 +86,6 @@
 
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; }
         
-        /* Strict single row no wrap configuration constraint rulesets */
         .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; table-layout: auto; }
         .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
@@ -417,7 +411,7 @@
                 skuInput.value = `${prefix}${spsicNum}-${commAbbr}-${sequenceNum}`;
 
             } catch (err) {
-                console.error("SKU tracking dynamic calculation exception: ", err.message);
+                console.error("SKU tracking dynamic calculation exception layout fault: ", err.message);
                 skuInput.value = "GENERATION ENG ERROR";
             }
         }
@@ -425,7 +419,7 @@
         async function querySpsicRecordDataset() {
             const queryVal = document.getElementById('spsicSearchQuery').value.trim().toUpperCase();
             if (!queryVal) {
-                showAlert("Please enter a valid SPSIC Number.", "error");
+                showAlert("Please enter a valid SPSIC Number sequence to fetch pipeline documents.", "error");
                 return;
             }
 
@@ -436,19 +430,19 @@
                 .maybeSingle();
 
             if (error) {
-                showAlert("Database lookup error: " + error.message, "error");
+                showAlert("Database fetch engine failed to lookup SPSIC record: " + error.message, "error");
                 return;
             }
 
             if (!data) {
-                showAlert(`No record found for SPSIC: "${queryVal}".`, "error");
+                showAlert(`No registered context found for SPSIC Number "${queryVal}". Check your syntax or upload data.`, "error");
                 return;
             }
 
             document.getElementById('storageFacility').value = data.storage_location || "";
             document.getElementById('itemCommodity').value = data.commodity || "";
             document.getElementById('activeSpsicNumber').value = queryVal;
-            showAlert(`Manifest loaded: ${queryVal}`, "success");
+            showAlert(`Manifest loaded successfully for SPSIC: ${queryVal}`, "success");
             
             await autoGenerateSkuCode();
         }
@@ -466,6 +460,9 @@
             });
             
             renderLedgerTable(filteredArray);
+            if (filteredArray.length === 0) {
+                showAlert("No registered ledger line matches that description context string.", "error");
+            }
         }
 
         function clearDescriptionFilter() {
@@ -500,7 +497,7 @@
                 const masterAccess = profile ? profile.inventory_access !== false : false;
                 
                 if (!masterAccess) {
-                    alert("Unauthorized.");
+                    alert("Unauthorized entry context: Account configuration prevents inventory pathing.");
                     window.location.href = "employee-dashboard.html";
                     return;
                 }
@@ -531,7 +528,7 @@
             if (!permissions.canRegister && !permissions.canEdit) {
                 const lockMask = document.createElement('div');
                 lockMask.className = "form-lock-message";
-                lockMask.innerHTML = `<span>🔒 Unauthorized to modify configurations.</span>`;
+                lockMask.innerHTML = `<span>🔒 Account privileges do not allow cargo parameters or gate configurations modifications.</span>`;
                 container.appendChild(lockMask);
                 return;
             }
@@ -547,7 +544,8 @@
                 document.getElementById('unitPrice').disabled = true;
                 document.getElementById('formRemarks').disabled = true;
                 document.getElementById('submitBtn').disabled = true;
-                document.getElementById('formTitle').textContent = "Select 'Edit' below to modify";
+                
+                document.getElementById('formTitle').textContent = "Select 'Edit' below to modify parameters";
             }
         }
 
@@ -558,7 +556,7 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                showAlert("System error syncing ledger: " + error.message, "error");
+                showAlert("System error syncing ledger elements: " + error.message, "error");
                 return;
             }
 
@@ -569,7 +567,7 @@
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records logged inside storage profiles.</td></tr>`;
                 return;
             }
 
@@ -580,14 +578,16 @@
                 
                 return `
                     <tr>
-                        <td>${item.spsic_number || '—'}</td>
-                        <td style="font-weight: 700;">${item.item_code || ''}</td>
+                        <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
+                        <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.item_code || ''}</td>
                         <td style="font-weight: 600;">${item.item_name || ''}</td>
-                        <td>${item.sizes || '—'}</td>
-                        <td>${item.commodity || ''}</td>
-                        <td>${item.storage_facility || ''}</td>
-                        <td><span class="qty-val">${item.stock_quantity || 0}</span></td>
-                        <td>${pesoFormatter.format(unitPriceParsed)}</td>
+                        <td style="color: #475569;">${item.sizes || '—'}</td>
+                        <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase;">${item.commodity || ''}</span></td>
+                        <td style="font-size:0.8rem; color:#64748b; text-transform: uppercase;">${item.storage_facility || ''}</td>
+                        <td>
+                            <span class="qty-val">${item.stock_quantity || 0}</span>
+                        </td>
+                        <td style="font-weight:600; color:#0f172a;">${pesoFormatter.format(unitPriceParsed)}</td>
                         <td>
                             <div class="action-btn-group">
                                 <button class="btn-edit" ${editDisabledAttr} onclick="populateFormByIndex(${index})">Edit</button>
@@ -602,15 +602,21 @@
         function openQtyModalByIndex(index) {
             const item = globallyFetchedItems[index];
             if (!item) return;
+
+            if (!permissions.canQuantity) {
+                showAlert("Action Denied: You do not have permission to alter stock counts.", "error");
+                return;
+            }
             document.getElementById('modalItemId').value = item.id;
             document.getElementById('modalOldQty').value = item.stock_quantity || 0;
             document.getElementById('modalNewQty').value = item.stock_quantity || 0;
-            document.getElementById('modalEditRemarks').value = '';
+            document.getElementById('modalEditRemarks').value = item.edit_remarks || '';
             document.getElementById('qtyModalOverlay').style.display = 'flex';
         }
 
         function closeQtyModal() {
             document.getElementById('qtyModalOverlay').style.display = 'none';
+            document.getElementById('qtyAdjustmentForm').reset();
         }
 
         async function handleQtyModalSubmit(e) {
@@ -620,8 +626,24 @@
             const newQty = parseInt(document.getElementById('modalNewQty').value) || 0;
             const trackingRemarks = document.getElementById('modalEditRemarks').value.trim();
             
+            if (trackingRemarks === "") {
+                alert("Action Aborted: A tracking entry record change explanation is required.");
+                return;
+            }
+
             const delta = newQty - oldQty;
             const currentTimestampISO = new Date().toISOString();
+
+            const { data: currentItem, error: fetchErr } = await supabaseClient
+                .from('inventory')
+                .select('id, item_code, item_name, sizes, commodity, storage_facility, spsic_number')
+                .eq('id', id)
+                .single();
+                
+            if (fetchErr) { 
+                showAlert("Update tracking verification configuration error: " + fetchErr.message, "error"); 
+                return; 
+            }
 
             const { error: invError } = await supabaseClient
                 .from('inventory')
@@ -638,7 +660,37 @@
                 return;
             }
 
-            showAlert("Quantity updated successfully.", "success");
+            if (delta !== 0) {
+                const transactionPayload = {
+                    item_id: currentItem.id,
+                    item_code: currentItem.item_code.toUpperCase(),
+                    item_name: currentItem.item_name.toUpperCase(),
+                    sizes: currentItem.sizes,
+                    commodity: currentItem.commodity.toUpperCase(),
+                    in_quantity: Math.abs(delta), 
+                    sales_order_no: "Shipment",
+                    transactions_type: delta > 0 ? "Adjustment In" : "Adjustment Out", 
+                    processed_by: currentUserEmail,
+                    storage_facility: currentItem.storage_facility.toUpperCase(),
+                    date: currentTimestampISO.split('T')[0], 
+                    remarks: `Modal Quantity Sync (From ${oldQty} to ${newQty}): ${trackingRemarks}`,
+                    spsic_number: currentItem.spsic_number
+                };
+
+                const { error: txError } = await supabaseClient
+                    .from('transactions')
+                    .insert([transactionPayload]);
+
+                if (txError) {
+                    console.error("Audit log failed to save record payload: ", txError.message);
+                    showAlert("Balances modified inside active registry, but transactions audit subtrace log generation failed.", "error");
+                } else {
+                    showAlert("Quantity stock parameters updated and transaction audit tracking successfully generated.", "success");
+                }
+            } else {
+                showAlert("Inventory information metadata saved successfully without balance fluctuations.", "success");
+            }
+
             closeQtyModal();
             fetchLedgerDataset();
         }
@@ -647,17 +699,41 @@
             const item = globallyFetchedItems[index];
             if (!item) return;
 
+            if (!permissions.canEdit) {
+                showAlert("Action Denied: You do not have permission to edit product descriptions.", "error");
+                return;
+            }
+
+            document.getElementById('itemCode').disabled = false;
+            document.getElementById('itemName').disabled = false;
+            document.getElementById('itemSizes').disabled = false;
+            document.getElementById('itemCommodity').disabled = false;
+            document.getElementById('storageFacility').disabled = false;
+            document.getElementById('dateReceived').disabled = false;
+            document.getElementById('unitPrice').disabled = false;
+            document.getElementById('formRemarks').disabled = false;
+            document.getElementById('submitBtn').disabled = false;
+
             document.getElementById('itemId').value = item.id;
+            document.getElementById('activeSpsicNumber').value = item.spsic_number || '';
             document.getElementById('itemCode').value = item.item_code || '';
-            document.getElementById('itemName').value = item.item_name || '';
+            document.getElementById('itemName').value = (item.item_name || '').toUpperCase();
             document.getElementById('itemSizes').value = item.sizes || '';
             document.getElementById('itemCommodity').value = item.commodity || '';
             document.getElementById('storageFacility').value = item.storage_facility || '';
+            
             document.getElementById('dateReceived').value = item.date || ''; 
-            document.getElementById('unitPrice').value = pesoFormatter.format(parseFloat(item.unit_price || 0));
+            
+            const parsedPrice = parseFloat(item.unit_price || 0);
+            document.getElementById('unitPrice').value = pesoFormatter.format(parsedPrice);
+            
             document.getElementById('formRemarks').value = item.remarks || '';
             
             document.getElementById('initialQtyWrapper').style.display = "none";
+            document.getElementById('stockQuantity').required = false;
+
+            document.getElementById('remarksLabel').textContent = "Damage Item Quantity";
+            document.getElementById('formTitle').textContent = "Modify Registered Parameters";
             document.getElementById('submitBtn').textContent = "Update Registry Log";
         }
 
@@ -673,6 +749,16 @@
         async function handleFormSubmit(e) {
             e.preventDefault();
             const id = document.getElementById('itemId').value;
+            
+            if (!id && !permissions.canRegister) {
+                showAlert("Action Denied: Missing Product Registry Privileges.", "error");
+                return;
+            }
+            if (id && !permissions.canEdit) {
+                showAlert("Action Denied: Missing Parameter Modification Privileges.", "error");
+                return;
+            }
+
             if (id) {
                 openEditRemarksModal();
             } else {
@@ -683,13 +769,37 @@
         async function handleEditRemarksModalSubmit(e) {
             e.preventDefault();
             const editRemarksText = document.getElementById('modalItemEditRemarks').value.trim();
+
+            if (editRemarksText === "") {
+                alert("Editing aborted: You must supply valid edit remarks documentation reasons to apply modifications.");
+                return;
+            }
+
             const id = document.getElementById('itemId').value;
-            
+            const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
+            const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
+            const item_name = document.getElementById('itemName').value.trim().toUpperCase();
+            const sizes = document.getElementById('itemSizes').value.trim();
+            const commodity = document.getElementById('itemCommodity').value.toUpperCase();
+            const storage_facility = document.getElementById('storageFacility').value.toUpperCase();
+            const chosen_date = document.getElementById('dateReceived').value;
+            const unit_price = getCleanUnitPriceValue();
+            const original_remarks = document.getElementById('formRemarks').value.trim();
+            const currentTimestampISO = new Date().toISOString();
+
             const editPayload = { 
-                item_name: document.getElementById('itemName').value.toUpperCase(),
-                unit_price: getCleanUnitPriceValue(),
+                spsic_number,
+                item_code, 
+                item_name, 
+                sizes, 
+                commodity, 
+                storage_facility, 
+                date: chosen_date, 
+                unit_price, 
+                remarks: original_remarks, 
                 edit_remarks: editRemarksText,
-                edit_date: new Date().toISOString()
+                edit_date: currentTimestampISO,
+                processed_by: currentUserEmail
             };
 
             const { error } = await supabaseClient.from('inventory').update(editPayload).eq('id', id);
@@ -697,7 +807,7 @@
             if (error) {
                 showAlert(error.message, "error");
             } else {
-                showAlert("Parameters updated.", "success");
+                showAlert("Master log file parameters updated successfully.", "success");
                 closeEditRemarksModal();
                 resetFormState();
                 fetchLedgerDataset();
@@ -705,41 +815,105 @@
         }
 
         async function executeRegistration() {
+            const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
+            const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
+            const item_name = document.getElementById('itemName').value.trim().toUpperCase();
+            const sizes = document.getElementById('itemSizes').value.trim();
+            const commodity = document.getElementById('itemCommodity').value.toUpperCase();
+            const storage_facility = document.getElementById('storageFacility').value.toUpperCase();
+            const chosen_date = document.getElementById('dateReceived').value;
+            const unit_price = getCleanUnitPriceValue();
+            const input_remarks = document.getElementById('formRemarks').value.trim();
+            const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
+            
             const registryPayload = {
-                spsic_number: document.getElementById('activeSpsicNumber').value.trim().toUpperCase(),
-                item_code: document.getElementById('itemCode').value.trim().toUpperCase(),
-                item_name: document.getElementById('itemName').value.trim().toUpperCase(),
-                sizes: document.getElementById('itemSizes').value.trim(),
-                commodity: document.getElementById('itemCommodity').value.toUpperCase(),
-                storage_facility: document.getElementById('storageFacility').value.toUpperCase(),
-                date: document.getElementById('dateReceived').value,
-                unit_price: getCleanUnitPriceValue(),
-                stock_quantity: parseInt(document.getElementById('stockQuantity').value) || 0,
+                spsic_number,
+                item_code,
+                item_name,
+                sizes,
+                commodity,
+                storage_facility,
+                date: chosen_date,
+                unit_price,
+                remarks: input_remarks,
+                stock_quantity: quantity,
                 processed_by: currentUserEmail
             };
 
-            const { error } = await supabaseClient.from('inventory').insert([registryPayload]);
+            const { data: newInventoryItem, error: invError } = await supabaseClient
+                .from('inventory')
+                .insert([registryPayload])
+                .select('id')
+                .single();
 
-            if (error) {
-                showAlert("Error: " + error.message, "error");
+            if (invError) {
+                showAlert("Error generating inventory registration: " + invError.message, "error");
                 return;
             }
 
-            showAlert("Successfully registered.", "success");
+            if (!newInventoryItem || !newInventoryItem.id) {
+                showAlert("Error: Inventory record created, but system could not retrieve the generated ID token.", "error");
+                return;
+            }
+
+            const transactionPayload = {
+                item_id: newInventoryItem.id, 
+                item_code: item_code,
+                item_name: item_name,
+                sizes: sizes,
+                commodity: commodity,
+                in_quantity: quantity,
+                sales_order_no: "Shipment",
+                unit_price: unit_price,
+                transactions_type: "Inbound", 
+                processed_by: currentUserEmail,
+                storage_facility: storage_facility,
+                date: chosen_date, 
+                remarks: input_remarks || "Auto-generated upon initial gate product code registry registration",
+                spsic_number: spsic_number
+            };
+
+            const { error: txError } = await supabaseClient
+                .from('transactions')
+                .insert([transactionPayload]);
+
+            if (txError) {
+                console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
+                showAlert("Inventory registered, but transaction history failed to write: " + txError.message, "error");
+                return;
+            }
+
+            showAlert(`Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`, "success");
             resetFormState();
             fetchLedgerDataset();
         }
 
         function resetFormState() {
-            document.getElementById('inventoryForm').reset();
             document.getElementById('itemId').value = '';
+            document.getElementById('activeSpsicNumber').value = '';
+            document.getElementById('inventoryForm').reset();
+            document.getElementById('spsicSearchQuery').value = '';
+            document.getElementById('descSearchQuery').value = '';
             document.getElementById('initialQtyWrapper').style.display = "flex";
+            document.getElementById('stockQuantity').required = true;
+            document.getElementById('stockQuantity').value = "1";
+            document.getElementById('unitPrice').value = "";
+            document.getElementById('remarksLabel').textContent = "Damage Item Quantity";
+            document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
             document.getElementById('submitBtn').textContent = "Process Gate Arrival & Register";
+            
+            applyFormUIRestrictions();
         }
 
         function setupSessionCrossCheckListener() {
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (bypassAuthListener) return;
+                if (session && session.user && session.user.id !== currentAdminId) {
+                    bypassAuthListener = true; 
+                    alert("Session Conflicted. Redirecting...");
+                    await supabaseClient.auth.signOut();
+                    window.location.href = "login.html";
+                }
                 if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
             });
         }
