@@ -69,7 +69,6 @@
         .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
         .btn-secondary:hover { background: #b8c5d6; }
 
-        /* Search Module Style Rules */
         .search-engine-block { display: flex; gap: 12px; width: 100%; max-width: 500px; margin-bottom: 25px; align-items: flex-end; }
         .search-engine-block .form-group { margin-bottom: 0; flex: 1; }
         .btn-search { background: #0f172a; color: white; border: none; height: 42px; padding: 0 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: background 0.2s; white-space: nowrap; }
@@ -77,7 +76,6 @@
         .btn-search.clear-filter { background: #64748b; padding: 0 16px; }
         .btn-search.clear-filter:hover { background: #475569; }
 
-        /* Ledger Layout */
         .ledger-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 25px; flex-wrap: wrap; gap: 15px; }
         .ledger-header-wrapper h3 { border-bottom: none !important; padding-bottom: 0 !important; margin: 0 !important; }
         .ledger-search-box { display: flex; gap: 10px; align-items: center; }
@@ -99,8 +97,6 @@
         .action-btn-group { display: flex; gap: 6px; justify-content: center; }
         .btn-action-cancel { background: #ea580c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
         .btn-action-cancel:hover { background: #c2410c; }
-        .btn-action-transfer { background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
-        .btn-action-transfer:hover { background: #1d4ed8; }
         
         .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
         .alert.success { background: #d1fae5; color: #065f46; }
@@ -302,7 +298,7 @@
 
             const stockItem = globallyAvailableStock.find(item => item.item_code === selectedItemCode);
             if (stockItem) {
-                document.getElementById('selectedTransactionRowId').value = ''; // Empty since we're inserting a new transaction row
+                document.getElementById('selectedTransactionRowId').value = '';
                 document.getElementById('itemId').value = stockItem.item_id || stockItem.id;
                 document.getElementById('activeSpsicNumber').value = stockItem.spsic_number || '';
                 document.getElementById('itemCode').value = stockItem.item_code || '';
@@ -310,7 +306,6 @@
                 document.getElementById('itemName').value = stockItem.item_name || '';
                 document.getElementById('itemCommodity').value = stockItem.commodity || '';
                 
-                // Set balance limits dynamically using calculated on-hand values
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
@@ -395,7 +390,6 @@
         }
 
         async function fetchDropdownInventoryPool() {
-            // Fetch ALL historical records for this facility to correctly map dynamic balances
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('*')
@@ -407,7 +401,6 @@
                 return;
             }
 
-            // Calculate current live balances per item code sequentially
             const balanceTracker = {};
             data.forEach(tx => {
                 const code = tx.item_code;
@@ -420,7 +413,6 @@
                 balanceTracker[code].lastItem = tx;
             });
 
-            // Flatten out unique options for dropdown menu references
             const distinctItems = [];
             for (const code in balanceTracker) {
                 const target = balanceTracker[code].lastItem;
@@ -433,7 +425,6 @@
         }
 
         async function fetchTransactionsDataset() {
-            // Fetch everything sequentially to display full linear historical tracking logs
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('*')
@@ -456,9 +447,9 @@
                 return;
             }
 
-            let optionsHtml = `<option value="">-- Select or Choose Stock Item Code --</option>`;
+            let optionsHtml = `<option value="">-- Select Item Code --</option>`;
             items.forEach(item => {
-                optionsHtml += `<option value="${item.item_code}">${item.item_code || 'UNNAMED SKU'} - ${item.item_name || ''} (${item.calculated_balance || 0} left)</option>`;
+                optionsHtml += `<option value="${item.item_code}">${item.item_code || 'UNNAMED SKU'}</option>`;
             });
             dropdown.innerHTML = optionsHtml;
         }
@@ -558,7 +549,6 @@
             const input_buyer_name = document.getElementById('buyerName').value.trim();
 
             if (targetRowId) {
-                // Modify existing entry behavior: Delete the outdated entry; new balances will recalculate automatically downstream
                 const { error: cancelError } = await supabaseClient
                     .from('transactions')
                     .delete()
@@ -569,7 +559,6 @@
                     return;
                 }
             } else {
-                // Record clean outbound transaction block parameters sequentially
                 const transactionPayload = {
                     item_id: id,
                     item_code: item_code,
@@ -587,7 +576,6 @@
                     remarks: "Processed outbound logistics release validation modification change",
                     spsic_number: spsic_number,
                     sales_order_no: sales_order_number
-                    // 'balance' column is handled by your Supabase database trigger safely automatically!
                 };
 
                 const { error: txError } = await supabaseClient
