@@ -177,7 +177,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Unique SKU Code / Item Code</label>
-                            <input type="text" id="itemCode" required placeholder="e.g., FZN-SHR-01">
+                            <input type="text" id="itemCode" required placeholder="Auto-generated via form input parameters" readonly>
                         </div>
                         <div class="form-group">
                             <label>Commodity</label>
@@ -362,6 +362,76 @@
             setTimeout(() => { box.style.display = 'none'; }, 5000);
         }
 
+        /* Auto-Generate Unique SKU / Item Code Logic Loop */
+        async function autoGenerateSkuCode() {
+            const id = document.getElementById('itemId').value;
+            // Skip automated generation context if editing a pre-saved item record
+            if (id) return;
+
+            const itemName = document.getElementById('itemName').value.trim();
+            const spsicNum = document.getElementById('activeSpsicNumber').value.trim();
+            const commodity = document.getElementById('itemCommodity').value.trim();
+            const sizes = document.getElementById('itemSizes').value.trim();
+            const skuInput = document.getElementById('itemCode');
+
+            // 1. Structural Filter Check: Item name description must contain 'frozen' sequence
+            if (!itemName.toLowerCase().includes('frozen')) {
+                skuInput.value = "";
+                return;
+            }
+
+            // 2. Structural Dependencies Check: Await values from search matching manifest nodes
+            if (!spsicNum || !commodity || !sizes) {
+                skuInput.value = "AWAITING REQUIRED PARAMETERS...";
+                return;
+            }
+
+            const prefix = "FZN";
+            // Strip out non-alphabetic layouts and narrow commodity to 3 character length limit strings
+            const commAbbr = commodity.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+
+            try {
+                // 3. Query records under identical manifest context definitions from the active database
+                const { data, error } = await supabaseClient
+                    .from('inventory')
+                    .select('sizes, item_code')
+                    .eq('spsic_number', spsicNum)
+                    .eq('commodity', commodity.toUpperCase());
+
+                if (error) throw error;
+
+                let matchedSizes = [];
+                if (data) {
+                    data.forEach(row => {
+                        // Validate structural criteria signatures match configuration expectations
+                        if (row.item_code && row.item_code.startsWith(prefix + spsicNum)) {
+                            if (!matchedSizes.includes(row.sizes.trim().toLowerCase())) {
+                                matchedSizes.push(row.sizes.trim().toLowerCase());
+                            }
+                        }
+                    });
+                }
+
+                // 4. Trace index mapping positions to verify current parameters assignment sequence numbers
+                const currentSizeLower = sizes.toLowerCase();
+                let sizeIndex = matchedSizes.indexOf(currentSizeLower);
+
+                let sequenceNum;
+                if (sizeIndex !== -1) {
+                    sequenceNum = String(sizeIndex + 1).padStart(2, '0');
+                } else {
+                    sequenceNum = String(matchedSizes.length + 1).padStart(2, '0');
+                }
+
+                // 5. Build full unique item reference tag
+                skuInput.value = `${prefix}${spsicNum}-${commAbbr}-${sequenceNum}`;
+
+            } catch (err) {
+                console.error("SKU tracking dynamic calculation exception layout fault: ", err.message);
+                skuInput.value = "GENERATION ENG ERROR";
+            }
+        }
+
         /* Target Search Query Execution Process Loop */
         async function querySpsicRecordDataset() {
             const queryVal = document.getElementById('spsicSearchQuery').value.trim().toUpperCase();
@@ -391,6 +461,9 @@
             document.getElementById('itemCommodity').value = data.commodity || "";
             document.getElementById('activeSpsicNumber').value = queryVal;
             showAlert(`Manifest loaded successfully for SPSIC: ${queryVal}`, "success");
+            
+            // Execute recalculations immediately when lookup context registers variations
+            await autoGenerateSkuCode();
         }
 
         /* Local State Ledger Table Item Description Filtering Process Routine */
@@ -462,6 +535,11 @@
             
             applyFormUIRestrictions();
             fetchLedgerDataset();
+            
+            // Wire input listener tracking actions to form nodes
+            document.getElementById('itemName').addEventListener('input', autoGenerateSkuCode);
+            document.getElementById('itemSizes').addEventListener('input', autoGenerateSkuCode);
+
             setupSessionCrossCheckListener();
         }
 
