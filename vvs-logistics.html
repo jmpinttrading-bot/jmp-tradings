@@ -134,7 +134,6 @@
 
         <div class="workspace-grid">
             
-            <!-- Dynamic Stock Code Verification Dropdown List Component (Transactions Table Source) -->
             <div class="search-engine-block">
                 <div class="form-group">
                     <label for="inventorySearchQuery">Verify Stock Code for Dispatch</label>
@@ -147,7 +146,6 @@
             <div class="card-panel" id="formContainerPanel">
                 <h3 id="formTitle">Authorize Fleet Dispatch & Release Cargo</h3>
                 <form id="outboundForm" onsubmit="handleOutboundSubmit(event)">
-                    <!-- Hidden contextual data anchors -->
                     <input type="hidden" id="itemId">
                     <input type="hidden" id="activeSpsicNumber">
                     <input type="hidden" id="maxAvailableQty">
@@ -359,7 +357,6 @@
             }
         }
 
-        /* Updated: Target Transactions Table filtering where quantity is not zero and facility matches VVS */
         async function fetchTransactionsDataset() {
             const { data, error } = await supabaseClient
                 .from('transactions')
@@ -387,7 +384,7 @@
 
             let optionsHtml = `<option value="">-- Select or Choose Stock Item Code --</option>`;
             items.forEach(item => {
-                optionsHtml += `<option value="${item.id}">${item.item_code || 'UNNAMED SKU'} - ${item.item_name || ''} (${item.quantity || 0} Units)</option>`;
+                optionsHtml += `<option value="${item.id}">${item.item_code || 'UNNAMED SKU'}</option>`;
             });
             dropdown.innerHTML = optionsHtml;
         }
@@ -423,7 +420,6 @@
             const item = globallyFetchedItems[index];
             if (!item) return;
 
-            // map database field 'item_id' if available from transactions table to tie back smoothly
             document.getElementById('itemId').value = item.item_id || item.id;
             document.getElementById('activeSpsicNumber').value = item.spsic_number || '';
             document.getElementById('itemCode').value = item.item_code || '';
@@ -441,7 +437,6 @@
             
             document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
 
-            // Sync dropdown selection layout back to selected value index match
             document.getElementById('inventorySearchQuery').value = item.id;
         }
 
@@ -484,7 +479,6 @@
             const unit_price = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
             const final_remarks = document.getElementById('formRemarks').value.trim();
 
-            // 1. Deduct quantity balance from the tracking tables context
             const { error: invError } = await supabaseClient
                 .from('inventory')
                 .update({
@@ -496,11 +490,9 @@
                 .eq('id', id);
 
             if (invError) {
-                // Fallback attempt update onto transactions schema identity tracking nodes if inventory matching misses direct index reference mapping configurations
                 console.warn("Direct matching inventory primary reference row not mapped. Checking ledger alternatives.");
             }
 
-            // 2. Append ledger transactional audit row tracking history payload records
             const transactionPayload = {
                 item_id: id,
                 item_code: item_code,
