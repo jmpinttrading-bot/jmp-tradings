@@ -145,7 +145,6 @@
             <div class="card-panel" id="formContainerPanel">
                 <h3 id="formTitle">Register Arriving Container / Truck</h3>
                 
-                <!-- Search block moved here -->
                 <div class="search-engine-block" style="max-width: 100%; margin-bottom: 20px;">
                     <div class="form-group">
                         <label for="spsicSearchQuery">Search SPSIC Document Data</label>
@@ -633,20 +632,9 @@
                 return;
             }
 
-            const delta = newQty - oldQty;
             const currentTimestampISO = new Date().toISOString();
 
-            const { data: currentItem, error: fetchErr } = await supabaseClient
-                .from('inventory')
-                .select('id, item_code, item_name, sizes, commodity, storage_facility, spsic_number')
-                .eq('id', id)
-                .single();
-                
-            if (fetchErr) { 
-                showAlert("Update tracking verification configuration error: " + fetchErr.message, "error"); 
-                return; 
-            }
-
+            // 1. Update the 'inventory' table
             const { error: invError } = await supabaseClient
                 .from('inventory')
                 .update({ 
@@ -657,40 +645,42 @@
                 })
                 .eq('id', id);
 
-            if (invError) {
-                showAlert(invError.message, "error");
+            if (invError) { 
+                showAlert("Inventory Update Failed: " + invError.message, "error"); 
+                return; 
+            }
+
+            // 2. Find the most recent transaction row for this item to update
+            const { data: lastTx, error: txFetchErr } = await supabaseClient
+                .from('transactions')
+                .select('id')
+                .eq('item_id', id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (txFetchErr || !lastTx) {
+                showAlert("No transaction record found to update.", "error");
                 return;
             }
 
-            if (delta !== 0) {
-                const transactionPayload = {
-                    item_id: currentItem.id,
-                    item_code: currentItem.item_code.toUpperCase(),
-                    item_name: currentItem.item_name.toUpperCase(),
-                    sizes: currentItem.sizes,
-                    commodity: currentItem.commodity.toUpperCase(),
-                    in_quantity: Math.abs(delta), 
-                    sales_order_no: "Shipment",
-                    transactions_type: delta > 0 ? "Adjustment In" : "Adjustment Out", 
+            // 3. Update the existing transaction row
+            const { error: txUpdateErr } = await supabaseClient
+                .from('transactions')
+                .update({ 
+                    in_quantity: newQty,
+                    balance: newQty,
+                    remarks: `ADJUSTMENT: ${trackingRemarks}`,
                     processed_by: currentUserEmail,
-                    storage_facility: currentItem.storage_facility.toUpperCase(),
-                    date: currentTimestampISO.split('T')[0], 
-                    remarks: `Modal Quantity Sync (From ${oldQty} to ${newQty}): ${trackingRemarks}`,
-                    spsic_number: currentItem.spsic_number
-                };
+                    date: currentTimestampISO.split('T')[0]
+                })
+                .eq('id', lastTx.id);
 
-                const { error: txError } = await supabaseClient
-                    .from('transactions')
-                    .insert([transactionPayload]);
-
-                if (txError) {
-                    console.error("Audit log failed to save record payload: ", txError.message);
-                    showAlert("Balances modified inside active registry, but transactions audit subtrace log generation failed.", "error");
-                } else {
-                    showAlert("Quantity stock parameters updated and transaction audit tracking successfully generated.", "success");
-                }
+            if (txUpdateErr) {
+                console.error("Ledger Update Error: ", txUpdateErr.message);
+                showAlert("Inventory updated, but failed to sync transaction ledger.", "error");
             } else {
-                showAlert("Inventory information metadata saved successfully without balance fluctuations.", "success");
+                showAlert("Quantity and Transaction ledger updated.", "success");
             }
 
             closeQtyModal();
