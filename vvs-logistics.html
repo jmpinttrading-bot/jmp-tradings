@@ -49,7 +49,6 @@
         
         .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
         .form-row .form-group { flex: 1; margin-bottom: 0; }
-        
         .form-row .flex-2 { flex: 2; }
         .form-row .flex-1 { flex: 1; }
         
@@ -58,18 +57,15 @@
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; height: 42px; }
         .form-group textarea { height: 80px; resize: vertical; }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
-        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
         
-        /* Updated style for auto-filled inputs */
-        .auto-filled-text { 
-            color: #64748b !important; 
-            font-style: italic !important; 
-            background-color: #f1f5f9 !important; 
-            border-color: #cbd5e1 !important;
+        /* MATCHED LOGIC: Gray background for disabled/readonly fields */
+        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { 
+            background: #cbd5e1; 
+            color: #475569; 
+            cursor: not-allowed; 
         }
 
         #storageFacility, #itemCode, #itemCommodity, #buyerName { text-transform: uppercase; }
-        #dispatchQuantity { position: relative; z-index: 5; background-color: white !important; }
 
         .form-actions { display: flex; gap: 10px; margin-top: 20px; }
         .btn-primary { flex: 1; background: #0f172a; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; transition: 0.2s; }
@@ -160,7 +156,7 @@
                     <div class="form-row">
                         <div class="form-group flex-1">
                             <label>Sales Order No. (SO#)</label>
-                            <input type="text" id="salesOrderNo" style="font-weight: 700; color: #b45309;" readonly placeholder="Auto-filled">
+                            <input type="text" id="salesOrderNo" readonly placeholder="Auto-filled">
                         </div>
                         <div class="form-group flex-1">
                             <label>Date Released</label>
@@ -191,7 +187,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Current Balance</label>
-                            <input type="text" id="displayAvailableQty" placeholder="0 Units Available" style="font-weight: 700; color: #0369a1;" readonly>
+                            <input type="text" id="displayAvailableQty" placeholder="0 Units Available" readonly>
                         </div>
                         <div class="form-group">
                             <label>Outbound Quantity</label>
@@ -205,7 +201,7 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="btn-primary" id="submitBtn" style="background-color: #ee964b; color: #0f172a;">Clear Truck for Outbound Departure</button>
+                        <button type="submit" class="btn-primary" id="submitBtn">Clear Truck for Outbound Departure</button>
                         <button type="button" class="btn-secondary" id="clearBtn" onclick="resetFormState()">Clear Entry Fields</button>
                     </div>
                 </form>
@@ -268,12 +264,6 @@
             canRelease: false
         };
 
-        function setAutoFilledStyle(elementId, isActive) {
-            const el = document.getElementById(elementId);
-            if (isActive) el.classList.add('auto-filled-text');
-            else el.classList.remove('auto-filled-text');
-        }
-
         function generateSalesOrderNumber() {
             const now = new Date();
             const year = now.getFullYear();
@@ -315,8 +305,6 @@
                 document.getElementById('itemName').value = stockItem.item_name || '';
                 document.getElementById('itemCommodity').value = stockItem.commodity || '';
                 
-                ['itemCode', 'itemSizes', 'itemCommodity', 'itemName', 'salesOrderNo'].forEach(id => setAutoFilledStyle(id, true));
-
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
@@ -335,8 +323,6 @@
             document.getElementById('maxAvailableQty').value = '';
             document.getElementById('rawUnitPrice').value = '';
             document.getElementById('outboundForm').reset();
-            
-            ['itemCode', 'itemSizes', 'itemCommodity', 'itemName', 'salesOrderNo'].forEach(id => setAutoFilledStyle(id, false));
             
             document.getElementById('inventorySearchQuery').value = '';
             document.getElementById('descSearchQuery').value = '';
@@ -406,10 +392,7 @@
                 .eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.')
                 .order('created_at', { ascending: true });
 
-            if (error) {
-                console.error("Error loading search pool:", error.message);
-                return;
-            }
+            if (error) return;
 
             const balanceTracker = {};
             data.forEach(tx => {
@@ -455,11 +438,6 @@
 
         function populateStockDropdown(items) {
             const dropdown = document.getElementById('inventorySearchQuery');
-            if (items.length === 0) {
-                dropdown.innerHTML = `<option value="">No stock item logs discovered in VVS registry</option>`;
-                return;
-            }
-
             let optionsHtml = `<option value="">-- Select Item Code --</option>`;
             items.forEach(item => {
                 optionsHtml += `<option value="${item.item_code}">${item.item_code || 'UNNAMED SKU'}</option>`;
@@ -469,11 +447,6 @@
 
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
-            if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:30px; color:#94a3b8;">No transaction history ledger logs discovered.</td></tr>`;
-                return;
-            }
-
             tbody.innerHTML = items.map((item, index) => {
                 return `
                     <tr>
@@ -508,17 +481,12 @@
             document.getElementById('itemSizes').value = historyItem.sizes || '—';
             document.getElementById('itemName').value = historyItem.item_name || '';
             document.getElementById('itemCommodity').value = historyItem.commodity || '';
-            
-            ['itemCode', 'itemSizes', 'itemCommodity', 'itemName', 'salesOrderNo'].forEach(id => setAutoFilledStyle(id, true));
-            
             document.getElementById('maxAvailableQty').value = historyItem.balance || 0;
             document.getElementById('displayAvailableQty').value = `${historyItem.balance || 0} Units In Dynamic Tx Context`;
             document.getElementById('rawUnitPrice').value = historyItem.unit_price || 0;
-            
             document.getElementById('dispatchQuantity').value = historyItem.out_quantity || historyItem.in_quantity || '';
             document.getElementById('buyerName').value = historyItem.buyer_name || '';
             document.getElementById('formTitle').textContent = `Correct Ledger Entry [ID Ref: ${historyItem.item_code}]`;
-            
             document.getElementById('dateReleased').value = historyItem.date || new Date().toISOString().split('T')[0];
             document.getElementById('salesOrderNo').value = historyItem.sales_order_no || generateSalesOrderNumber();
 
@@ -527,95 +495,44 @@
 
         async function handleOutboundSubmit(e) {
             e.preventDefault();
-            
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.textContent = "Processing Transaction...";
             
-            if (!permissions.canRelease) {
-                showAlert("Action Aborted: Account does not have cargo release verification clearances.", "error");
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Clear Truck for Outbound Departure";
-                return;
-            }
-
             const id = document.getElementById('itemId').value;
             const targetRowId = document.getElementById('selectedTransactionRowId').value;
-            
-            if (!id) {
-                showAlert("Please explicitly select an option from the item dropdown menu.", "error");
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Clear Truck for Outbound Departure";
-                return;
-            }
-
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
-            if (targetDispatchQuantity <= 0) {
-                showAlert("Outbound quantity must be at least 1 unit.", "error");
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Clear Truck for Outbound Departure";
-                return;
-            }
-
-            const maxAvailable = parseInt(document.getElementById('maxAvailableQty').value) || 0;
-            if (!targetRowId && targetDispatchQuantity > maxAvailable) {
-                showAlert(`Insufficient Stock! Only ${maxAvailable} total units remain available across running stock histories.`, "error");
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Clear Truck for Outbound Departure";
-                return;
-            }
-
-            const spsic_number = document.getElementById('activeSpsicNumber').value;
-            const item_code = document.getElementById('itemCode').value;
-            const item_sizes = document.getElementById('itemSizes').value;
-            const item_name = document.getElementById('itemName').value;
-            const commodity = document.getElementById('itemCommodity').value;
-            const storage_facility = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
-            const chosen_date = document.getElementById('dateReleased').value;
-            const unit_price = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
-            const sales_order_number = document.getElementById('salesOrderNo').value;
-            const input_buyer_name = document.getElementById('buyerName').value.trim().toUpperCase();
 
             try {
                 if (targetRowId) {
-                    const { error: cancelError } = await supabaseClient
-                        .from('transactions')
-                        .delete()
-                        .eq('id', targetRowId);
-                    if (cancelError) throw cancelError;
+                    await supabaseClient.from('transactions').delete().eq('id', targetRowId);
                 }
                 
-                const transactionPayload = {
+                const payload = {
                     item_id: id,
-                    item_code: item_code,
-                    item_name: item_name,
-                    sizes: item_sizes,
-                    commodity: commodity,
-                    in_quantity: 0, 
-                    out_quantity: targetDispatchQuantity, 
-                    unit_price: unit_price,
+                    item_code: document.getElementById('itemCode').value,
+                    item_name: document.getElementById('itemName').value,
+                    sizes: document.getElementById('itemSizes').value,
+                    commodity: document.getElementById('itemCommodity').value,
+                    in_quantity: 0,
+                    out_quantity: targetDispatchQuantity,
+                    unit_price: parseFloat(document.getElementById('rawUnitPrice').value) || 0,
                     transactions_type: "Outbound",
                     processed_by: currentUserEmail,
-                    storage_facility: storage_facility,
-                    date: chosen_date,
-                    buyer_name: input_buyer_name,
-                    remarks: "Processed outbound logistics release validation modification change",
-                    spsic_number: spsic_number,
-                    sales_order_no: sales_order_number
+                    storage_facility: 'VVS COLD STORAGE & PROCESSING PLANT CORP.',
+                    date: document.getElementById('dateReleased').value,
+                    buyer_name: document.getElementById('buyerName').value.trim().toUpperCase(),
+                    spsic_number: document.getElementById('activeSpsicNumber').value,
+                    sales_order_no: document.getElementById('salesOrderNo').value
                 };
 
-                const { error: txError } = await supabaseClient
-                    .from('transactions')
-                    .insert([transactionPayload]);
-
-                if (txError) throw txError;
-
-                showAlert(`Success: Documented parameters for "${item_code}". Running balance updated seamlessly.`, "success");
+                await supabaseClient.from('transactions').insert([payload]);
+                showAlert("Success: Ledger updated.", "success");
                 resetFormState();
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
             } catch (err) {
-                showAlert("Transaction error: " + err.message, "error");
+                showAlert("Error: " + err.message, "error");
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Clear Truck for Outbound Departure";
@@ -624,16 +541,8 @@
 
         function filterLedgerByDescription() {
             const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
-            if (!filterQuery) {
-                renderLedgerTable(globallyFetchedHistory);
-                return;
-            }
-            
-            const filteredArray = globallyFetchedHistory.filter(item => {
-                return (item.item_name || "").toLowerCase().includes(filterQuery);
-            });
-            
-            renderLedgerTable(filteredArray);
+            const filtered = globallyFetchedHistory.filter(item => (item.item_name || "").toLowerCase().includes(filterQuery));
+            renderLedgerTable(filtered);
         }
 
         function clearDescriptionFilter() {
@@ -646,11 +555,9 @@
                 if (bypassAuthListener) return;
                 if (session && session.user && session.user.id !== currentAdminId) {
                     bypassAuthListener = true; 
-                    alert("Session Conflicted. Redirecting...");
                     await supabaseClient.auth.signOut();
                     window.location.href = "login.html";
                 }
-                if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
             });
         }
 
