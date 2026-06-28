@@ -484,7 +484,7 @@
                 balanceMap.set(tx.id, itemRunningBalances[code]);
             });
 
-            tbody.innerHTML = items.map((item) => {
+            tbody.innerHTML = items.map((item, index) => {
                 return `
                     <tr>
                         <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
@@ -500,13 +500,32 @@
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
                             <div class="action-btn-group">
-                                <button type="button" class="btn-action-return" onclick="openReasonModal('Return', ${globallyFetchedHistory.findIndex(i => i.id === item.id)})">Return</button>
-                                <button type="button" class="btn-action-cancel" onclick="openReasonModal('Cancel', ${globallyFetchedHistory.findIndex(i => i.id === item.id)})">Cancel</button>
+                                <button type="button" class="btn-action-return" onclick="prepareEdit(${index})">Edit</button>
+                                <button type="button" class="btn-action-cancel" onclick="openReasonModal('Cancel', ${index})">Cancel</button>
                             </div>
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+        
+        // New helper to populate form for editing
+        function prepareEdit(index) {
+            const item = globallyFetchedHistory[index];
+            document.getElementById('selectedTransactionRowId').value = item.id;
+            document.getElementById('itemCode').value = item.item_code;
+            document.getElementById('itemName').value = item.item_name;
+            document.getElementById('itemSizes').value = item.sizes;
+            document.getElementById('itemCommodity').value = item.commodity;
+            document.getElementById('dispatchQuantity').value = item.out_quantity;
+            document.getElementById('buyerName').value = item.buyer_name;
+            document.getElementById('salesOrderNo').value = item.sales_order_no;
+            document.getElementById('dateReleased').value = item.date;
+            document.getElementById('activeSpsicNumber').value = item.spsic_number;
+            document.getElementById('itemId').value = item.item_id;
+            document.getElementById('rawUnitPrice').value = item.unit_price;
+            document.getElementById('formTitle').textContent = "Editing Transaction: " + item.sales_order_no;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function openReasonModal(type, index) {
@@ -523,39 +542,15 @@
 
             if (!reason) { alert("Please provide a reason before submitting."); return; }
 
-            let newOutQty = 0;
             if (type === 'Cancel') {
-                newOutQty = 0;
-            } else if (type === 'Return') {
-                const promptVal = prompt(`Current Outbound Quantity is ${item.out_quantity || 0}.\nEnter the NEW deducted quantity:`, item.out_quantity);
-                if (promptVal === null) return;
-                newOutQty = parseInt(promptVal);
-                if (isNaN(newOutQty) || newOutQty < 0) {
-                    alert("Invalid quantity entered.");
-                    return;
-                }
+                const { error } = await supabaseClient.from('transactions').delete().eq('id', item.id);
+                if (error) { showAlert("Error: " + error.message, "error"); return; }
+                showAlert("Transaction cancelled successfully.", "success");
             }
             
-            const payload = { ...item };
-            delete payload.id;
-            delete payload.balance; 
-            delete payload.calculated_balance;
-
-            payload.out_quantity = newOutQty;
-            payload.remarks = `${type} item - ${reason}`;
-            
-            try {
-                await supabaseClient.from('transactions').delete().eq('id', item.id);
-                await supabaseClient.from('transactions').insert([payload]);
-                
-                showAlert(`Transaction ${type} processed successfully.`, "success");
-                modal.close();
-                
-                await fetchDropdownInventoryPool();
-                await fetchTransactionsDataset();
-            } catch (err) {
-                showAlert("Error: " + err.message, "error");
-            }
+            modal.close();
+            await fetchDropdownInventoryPool();
+            await fetchTransactionsDataset();
         }
 
         async function handleOutboundSubmit(e) {
@@ -564,34 +559,38 @@
             submitBtn.disabled = true;
             submitBtn.textContent = "Processing Transaction...";
             
-            const id = document.getElementById('itemId').value;
             const targetRowId = document.getElementById('selectedTransactionRowId').value;
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
 
-            try {
-                if (targetRowId) {
-                    await supabaseClient.from('transactions').delete().eq('id', targetRowId);
-                }
-                
-                const payload = {
-                    item_id: id,
-                    item_code: document.getElementById('itemCode').value,
-                    item_name: document.getElementById('itemName').value,
-                    sizes: document.getElementById('itemSizes').value,
-                    commodity: document.getElementById('itemCommodity').value,
-                    in_quantity: 0,
-                    out_quantity: targetDispatchQuantity,
-                    unit_price: parseFloat(document.getElementById('rawUnitPrice').value) || 0,
-                    transactions_type: "Outbound",
-                    processed_by: currentUserEmail,
-                    storage_facility: 'VVS COLD STORAGE & PROCESSING PLANT CORP.',
-                    date: document.getElementById('dateReleased').value,
-                    buyer_name: document.getElementById('buyerName').value.trim().toUpperCase(),
-                    spsic_number: document.getElementById('activeSpsicNumber').value,
-                    sales_order_no: document.getElementById('salesOrderNo').value
-                };
+            const payload = {
+                item_id: document.getElementById('itemId').value,
+                item_code: document.getElementById('itemCode').value,
+                item_name: document.getElementById('itemName').value,
+                sizes: document.getElementById('itemSizes').value,
+                commodity: document.getElementById('itemCommodity').value,
+                in_quantity: 0,
+                out_quantity: targetDispatchQuantity,
+                unit_price: parseFloat(document.getElementById('rawUnitPrice').value) || 0,
+                transactions_type: "Outbound",
+                processed_by: currentUserEmail,
+                storage_facility: 'VVS COLD STORAGE & PROCESSING PLANT CORP.',
+                date: document.getElementById('dateReleased').value,
+                buyer_name: document.getElementById('buyerName').value.trim().toUpperCase(),
+                spsic_number: document.getElementById('activeSpsicNumber').value,
+                sales_order_no: document.getElementById('salesOrderNo').value
+            };
 
-                await supabaseClient.from('transactions').insert([payload]);
+            // If editing an existing row, include the ID
+            if (targetRowId) {
+                payload.id = targetRowId;
+            }
+
+            try {
+                // Upsert handles both update (if id exists) and insert (if new)
+                const { error } = await supabaseClient.from('transactions').upsert([payload]);
+                
+                if (error) throw error;
+                
                 showAlert("Success: Ledger updated.", "success");
                 resetFormState();
                 await fetchDropdownInventoryPool();
