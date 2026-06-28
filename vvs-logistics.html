@@ -291,11 +291,12 @@
             const day = String(now.getDate()).padStart(2, '0');
             const hour = String(now.getHours()).padStart(2, '0');
             const minute = String(now.getMinutes()).padStart(2, '0');
+            const second = String(now.getSeconds()).padStart(2, '0');
             
             const facilityInput = document.getElementById('storageFacility').value || "";
             const facilityLetter = facilityInput.trim().charAt(0).toUpperCase() || "X";
             
-            return `SO#${facilityLetter}${year}${month}${day}-${hour}${minute}`;
+            return `SO#${facilityLetter}${year}${month}${day}-${hour}${minute}${second}`;
         }
 
         function showAlert(msg, type) {
