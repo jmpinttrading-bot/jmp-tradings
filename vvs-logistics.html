@@ -278,11 +278,7 @@
         let globallyFetchedHistory = [];
         let pendingAdjustment = { type: '', item: null };
         
-        let permissions = {
-            isAdmin: false,
-            hasMasterAccess: false,
-            canRelease: false
-        };
+        let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
 
         function generateSalesOrderNumber() {
             const now = new Date();
@@ -291,10 +287,8 @@
             const day = String(now.getDate()).padStart(2, '0');
             const hour = String(now.getHours()).padStart(2, '0');
             const minute = String(now.getMinutes()).padStart(2, '0');
-            
             const facilityInput = document.getElementById('storageFacility').value || "";
             const facilityLetter = facilityInput.trim().charAt(0).toUpperCase() || "X";
-            
             return `SO#${facilityLetter}${year}${month}${day}-${hour}${minute}`;
         }
 
@@ -309,90 +303,59 @@
 
         function handleDropdownSelection(selectElement) {
             const selectedItemCode = selectElement.value;
-            if (!selectedItemCode) {
-                resetFormState();
-                return;
-            }
+            if (!selectedItemCode) { resetFormState(); return; }
 
             const stockItem = globallyAvailableStock.find(item => item.item_code === selectedItemCode);
             if (stockItem) {
                 document.getElementById('selectedTransactionRowId').value = '';
                 document.getElementById('itemId').value = stockItem.item_id || stockItem.id;
                 document.getElementById('activeSpsicNumber').value = stockItem.spsic_number || '';
-                
                 document.getElementById('itemCode').value = stockItem.item_code || '';
                 document.getElementById('itemSizes').value = stockItem.sizes || '—';
                 document.getElementById('itemName').value = stockItem.item_name || '';
                 document.getElementById('itemCommodity').value = stockItem.commodity || '';
-                
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
-                
                 document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
                 document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
-                
                 showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
             }
         }
 
         function resetFormState() {
+            document.getElementById('outboundForm').reset();
             document.getElementById('selectedTransactionRowId').value = '';
             document.getElementById('itemId').value = '';
             document.getElementById('activeSpsicNumber').value = '';
             document.getElementById('maxAvailableQty').value = '';
             document.getElementById('rawUnitPrice').value = '';
-            document.getElementById('outboundForm').reset();
-            
             document.getElementById('inventorySearchQuery').value = '';
-            document.getElementById('descSearchQuery').value = '';
             document.getElementById('salesOrderNo').value = '';
             document.getElementById('displayAvailableQty').value = '0 Units Available';
-            document.getElementById('storageFacility').value = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
             document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
         }
 
         async function initLogisticsDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            
             currentAdminId = user.id;
             currentUserEmail = user.email;
             
-            const { data: profile } = await supabaseClient
-                .from('profiles')
-                .select('role, username, inventory_access, inv_quantity_access')
-                .eq('id', user.id)
-                .single();
+            const { data: profile } = await supabaseClient.from('profiles').select('role, username, inventory_access, inv_quantity_access').eq('id', user.id).single();
             
             if (profile && profile.role === 'Admin') {
-                permissions.isAdmin = true;
-                permissions.hasMasterAccess = true;
-                permissions.canRelease = true;
-                
+                permissions = { isAdmin: true, hasMasterAccess: true, canRelease: true };
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
-                document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
             } else {
-                const masterAccess = profile ? profile.inventory_access !== false : false;
-                if (!masterAccess) {
-                    alert("Unauthorized access framework exception. Redirecting to hub dashboard.");
-                    window.location.href = "employee-dashboard.html";
-                    return;
-                }
-                permissions.isAdmin = false;
-                permissions.hasMasterAccess = true;
-                permissions.canRelease = profile ? profile.inv_quantity_access === true : false;
-
+                permissions.canRelease = profile?.inv_quantity_access === true;
                 document.getElementById('adminEmail').className = "employee-badge";
-                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
-                document.getElementById('sidebarTitle').textContent = "JMP Terminal";
+                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile?.username || user.email.split('@')[0]}`;
             }
-            
             applyFormUIRestrictions();
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
-            setupSessionCrossCheckListener();
         }
 
         function applyFormUIRestrictions() {
@@ -400,115 +363,60 @@
                 const container = document.getElementById('formContainerPanel');
                 const lockMask = document.createElement('div');
                 lockMask.className = "form-lock-message";
-                lockMask.innerHTML = `<span>🔒 Account profiles do not allow outbound logistics clearance authorization capabilities.</span>`;
+                lockMask.innerHTML = `<span>🔒 Insufficient permissions to authorize outbound logistics.</span>`;
                 container.appendChild(lockMask);
             }
         }
 
         async function fetchDropdownInventoryPool() {
-            const { data, error } = await supabaseClient
-                .from('transactions')
-                .select('*')
-                .eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.')
-                .order('created_at', { ascending: true });
-
-            if (error) return;
-
+            const { data } = await supabaseClient.from('transactions').select('*').eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.');
             const itemBalances = {};
             data.forEach(tx => {
-                const code = tx.item_code;
-                if (!code) return;
-
-                if (!itemBalances[code]) {
-                    itemBalances[code] = { data: tx, runningBalance: 0 };
-                }
-                const ins = parseInt(tx.in_quantity) || 0;
-                const outs = parseInt(tx.out_quantity) || 0;
-                itemBalances[code].runningBalance += (ins - outs);
-                itemBalances[code].data = tx;
+                if (!itemBalances[tx.item_code]) itemBalances[tx.item_code] = { data: tx, balance: 0 };
+                itemBalances[tx.item_code].balance += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
             });
-
-            const distinctItems = [];
-            for (const code in itemBalances) {
-                if (itemBalances[code].runningBalance > 0) {
-                    const itemEntry = itemBalances[code].data;
-                    itemEntry.calculated_balance = itemBalances[code].runningBalance;
-                    distinctItems.push(itemEntry);
-                }
-            }
-
-            globallyAvailableStock = distinctItems;
-            populateStockDropdown(globallyAvailableStock);
+            globallyAvailableStock = Object.values(itemBalances).filter(i => i.balance > 0).map(i => ({...i.data, calculated_balance: i.balance}));
+            const dropdown = document.getElementById('inventorySearchQuery');
+            dropdown.innerHTML = `<option value="">-- Select Item Code --</option>` + globallyAvailableStock.map(i => `<option value="${i.item_code}">${i.item_code}</option>`).join('');
         }
 
         async function fetchTransactionsDataset() {
-            const { data, error } = await supabaseClient
-                .from('transactions')
-                .select('*')
-                .eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                showAlert("System error syncing warehouse transactions matrix: " + error.message, "error");
-                return;
-            }
-
+            const { data } = await supabaseClient.from('transactions').select('*').eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.').order('created_at', { ascending: false });
             globallyFetchedHistory = data || [];
             renderLedgerTable(globallyFetchedHistory);
         }
 
-        function populateStockDropdown(items) {
-            const dropdown = document.getElementById('inventorySearchQuery');
-            let optionsHtml = `<option value="">-- Select Item Code --</option>`;
-            items.forEach(item => {
-                optionsHtml += `<option value="${item.item_code}">${item.item_code || 'UNNAMED SKU'}</option>`;
-            });
-            dropdown.innerHTML = optionsHtml;
-        }
-
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
-            
-            // Sort by date to calculate running balance
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-            
-            // Calculate running balance PER ITEM CODE
             const balanceMap = new Map();
-            const itemRunningBalances = {};
-
+            const running = {};
             allSorted.forEach(tx => {
-                const code = tx.item_code;
-                if (!itemRunningBalances[code]) itemRunningBalances[code] = 0;
-                
-                itemRunningBalances[code] += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
-                balanceMap.set(tx.id, itemRunningBalances[code]);
+                running[tx.item_code] = (running[tx.item_code] || 0) + (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                balanceMap.set(tx.id, running[tx.item_code]);
             });
 
-            tbody.innerHTML = items.map((item, index) => {
-                return `
-                    <tr>
-                        <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
-                        <td>${item.date || '—'}</td>
-                        <td style="color:#b45309; font-weight:700;">${item.sales_order_no || '—'}</td>
-                        <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.item_code || ''}</td>
-                        <td style="font-weight: 600;">${item.item_name || ''}</td>
-                        <td style="color: #475569;">${item.sizes || '—'}</td>
-                        <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
-                        <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
-                        <td><span class="qty-bal">${balanceMap.get(item.id)}</span></td>
-                        <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
-                        <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
-                        <td style="text-align: center;">
-                            <div class="action-btn-group">
-                                <button type="button" class="btn-action-return" onclick="prepareEdit(${index})">Edit</button>
-                                <button type="button" class="btn-action-cancel" onclick="openReasonModal('Cancel', ${index})">Cancel</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            tbody.innerHTML = items.map((item, index) => `
+                <tr>
+                    <td>${item.spsic_number || '—'}</td>
+                    <td>${item.date || '—'}</td>
+                    <td>${item.sales_order_no || '—'}</td>
+                    <td>${item.item_code || ''}</td>
+                    <td>${item.item_name || ''}</td>
+                    <td>${item.sizes || '—'}</td>
+                    <td><span class="qty-in">${item.in_quantity ? '+'+item.in_quantity : '—'}</span></td>
+                    <td><span class="qty-val">${item.out_quantity ? '-'+item.out_quantity : '—'}</span></td>
+                    <td><span class="qty-bal">${balanceMap.get(item.id)}</span></td>
+                    <td>${item.buyer_name || '—'}</td>
+                    <td>${item.remarks || '—'}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-action-return" onclick="prepareEdit(${index})">Edit</button>
+                        <button class="btn-action-cancel" onclick="openReasonModal('Cancel', ${index})">Cancel</button>
+                    </td>
+                </tr>
+            `).join('');
         }
-        
+
         function prepareEdit(index) {
             const item = globallyFetchedHistory[index];
             document.getElementById('selectedTransactionRowId').value = item.id;
@@ -523,12 +431,12 @@
             document.getElementById('activeSpsicNumber').value = item.spsic_number;
             document.getElementById('itemId').value = item.item_id;
             document.getElementById('rawUnitPrice').value = item.unit_price;
-            document.getElementById('formTitle').textContent = "Editing Transaction: " + item.sales_order_no;
+            document.getElementById('formTitle').textContent = "Editing SO#: " + item.sales_order_no;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function openReasonModal(type, index) {
-            pendingAdjustment = { type: type, item: globallyFetchedHistory[index] };
+            pendingAdjustment = { type, item: globallyFetchedHistory[index] };
             document.getElementById('modalTitle').textContent = `Reason for ${type}`;
             document.getElementById('adjustmentReason').value = '';
             document.getElementById('reasonModal').showModal();
@@ -536,104 +444,51 @@
 
         async function submitAdjustment() {
             const reason = document.getElementById('adjustmentReason').value.trim();
+            if (!reason) { alert("Reason required."); return; }
             const { type, item } = pendingAdjustment;
-            const modal = document.getElementById('reasonModal');
-
-            if (!reason) { alert("Please provide a reason before submitting."); return; }
+            let updatePayload = { remarks: reason };
 
             if (type === 'Cancel') {
-                const { error } = await supabaseClient
-                    .from('transactions')
-                    .update({ 
-                        out_quantity: 0, 
-                        remarks: `CANCELLED: ${reason}` 
-                    })
-                    .eq('id', item.id);
-
-                if (error) { showAlert("Error cancelling: " + error.message, "error"); return; }
-                showAlert("Transaction successfully cancelled (Quantity set to 0).", "success");
+                updatePayload.out_quantity = 0;
+                updatePayload.remarks = `CANCELLED: ${reason}`;
+            } else if (type === 'Edit') {
+                const newQty = parseInt(document.getElementById('dispatchQuantity').value);
+                const status = newQty < parseInt(item.out_quantity) ? "Return Item" : "Additional Item";
+                updatePayload.out_quantity = newQty;
+                updatePayload.remarks = `${status}: ${reason}`;
             }
-            
-            modal.close();
+
+            await supabaseClient.from('transactions').update(updatePayload).eq('id', item.id);
+            document.getElementById('reasonModal').close();
+            resetFormState();
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
+            showAlert("Update Successful", "success");
         }
 
         async function handleOutboundSubmit(e) {
             e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = "Processing Transaction...";
-            
-            const targetRowId = document.getElementById('selectedTransactionRowId').value;
-            const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
+            const rowId = document.getElementById('selectedTransactionRowId').value;
+            if (rowId) { openReasonModal('Edit', globallyFetchedHistory.findIndex(i => i.id === rowId)); return; }
 
             const payload = {
                 item_id: document.getElementById('itemId').value,
                 item_code: document.getElementById('itemCode').value,
                 item_name: document.getElementById('itemName').value,
-                sizes: document.getElementById('itemSizes').value,
-                commodity: document.getElementById('itemCommodity').value,
-                in_quantity: 0,
-                out_quantity: targetDispatchQuantity,
-                unit_price: parseFloat(document.getElementById('rawUnitPrice').value) || 0,
-                transactions_type: "Outbound",
+                out_quantity: parseInt(document.getElementById('dispatchQuantity').value),
                 processed_by: currentUserEmail,
                 storage_facility: 'VVS COLD STORAGE & PROCESSING PLANT CORP.',
                 date: document.getElementById('dateReleased').value,
                 buyer_name: document.getElementById('buyerName').value.trim().toUpperCase(),
-                spsic_number: document.getElementById('activeSpsicNumber').value,
                 sales_order_no: document.getElementById('salesOrderNo').value
             };
-
-            if (targetRowId) {
-                payload.id = targetRowId;
-            }
-
-            try {
-                const { error } = await supabaseClient.from('transactions').upsert([payload]);
-                
-                if (error) throw error;
-                
-                showAlert("Success: Ledger updated.", "success");
-                resetFormState();
-                await fetchDropdownInventoryPool();
-                await fetchTransactionsDataset();
-            } catch (err) {
-                showAlert("Error: " + err.message, "error");
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = "Upload Outbound Transactions";
-            }
+            await supabaseClient.from('transactions').insert([payload]);
+            resetFormState();
+            await fetchTransactionsDataset();
+            showAlert("Transaction Logged", "success");
         }
 
-        function filterLedgerByDescription() {
-            const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
-            const filtered = globallyFetchedHistory.filter(item => (item.item_name || "").toLowerCase().includes(filterQuery));
-            renderLedgerTable(filtered);
-        }
-
-        function clearDescriptionFilter() {
-            document.getElementById('descSearchQuery').value = "";
-            renderLedgerTable(globallyFetchedHistory);
-        }
-
-        function setupSessionCrossCheckListener() {
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                if (bypassAuthListener) return;
-                if (session && session.user && session.user.id !== currentAdminId) {
-                    bypassAuthListener = true; 
-                    await supabaseClient.auth.signOut();
-                    window.location.href = "login.html";
-                }
-            });
-        }
-
-        async function handleLogout() {
-            bypassAuthListener = true;
-            await supabaseClient.auth.signOut();
-            window.location.href = "login.html";
-        }
+        async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
 
         initLogisticsDashboard();
     </script>
