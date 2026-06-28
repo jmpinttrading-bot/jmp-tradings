@@ -286,7 +286,8 @@
 
         function generateSalesOrderNumber() {
             const now = new Date();
-            const year = now.getFullYear();
+            // Shortened date: YYMMDD
+            const year = String(now.getFullYear()).slice(-2);
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
             const hour = String(now.getHours()).padStart(2, '0');
@@ -470,10 +471,8 @@
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
             
-            // Sort by date to calculate running balance
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             
-            // Calculate running balance PER ITEM CODE
             const balanceMap = new Map();
             const itemRunningBalances = {};
 
