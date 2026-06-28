@@ -102,6 +102,10 @@
         .btn-qty-adj:hover { background: #e0853c; }
         .btn-qty-adj:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
+        .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
+        .alert.success { background: #d1fae5; color: #065f46; }
+        .alert.error { background: #fee2e2; color: #991b1b; }
+
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
@@ -134,6 +138,8 @@
 
         <a href="inventory-management.html" class="back-link">⬅️ Back to Stock Dashboard</a>
         
+        <div id="alertBox" class="alert"></div>
+
         <div class="workspace-grid">
             
             <div class="card-panel" id="formContainerPanel">
@@ -240,15 +246,7 @@
                     </table>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Notification Modal -->
-    <div class="modal-overlay" id="notificationModal">
-        <div class="modal-card" style="text-align: center;">
-            <h3 id="modalNotifyTitle">Notification</h3>
-            <p id="modalNotifyMsg" style="margin: 20px 0; color: #475569;"></p>
-            <button class="btn-primary" onclick="closeNotificationModal()" style="width: 100%;">Dismiss</button>
         </div>
     </div>
 
@@ -257,6 +255,7 @@
             <h3>Manual Quantity Balancing</h3>
             <form id="qtyAdjustmentForm" onsubmit="handleQtyModalSubmit(event)">
                 <input type="hidden" id="modalItemId">
+                
                 <div class="form-row">
                     <div class="form-group">
                         <label>Old Quantity Balance</label>
@@ -267,10 +266,12 @@
                         <input type="number" id="modalNewQty" required min="0">
                     </div>
                 </div>
+                
                 <div class="form-group">
                     <label>Edit Remarks / Alteration Log Reason</label>
                     <textarea id="modalEditRemarks" required placeholder="Provide analytical adjustment parameters or descriptive reason details..."></textarea>
                 </div>
+                
                 <div class="form-actions">
                     <button type="submit" class="btn-primary">Save Balances</button>
                     <button type="button" class="btn-secondary" onclick="closeQtyModal()">Cancel</button>
@@ -327,50 +328,83 @@
         }
 
         function showAlert(msg, type) {
-            const modal = document.getElementById('notificationModal');
-            const title = document.getElementById('modalNotifyTitle');
-            const message = document.getElementById('modalNotifyMsg');
-            title.textContent = type === 'success' ? 'Operation Successful' : 'Attention Required';
-            title.style.color = type === 'success' ? '#065f46' : '#991b1b';
-            message.textContent = msg;
-            modal.style.display = 'flex';
-        }
-
-        function closeNotificationModal() {
-            document.getElementById('notificationModal').style.display = 'none';
+            const box = document.getElementById('alertBox');
+            box.textContent = msg;
+            box.className = `alert ${type}`;
+            box.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => { box.style.display = 'none'; }, 5000);
         }
 
         async function autoGenerateSkuCode() {
             const id = document.getElementById('itemId').value;
             if (id) return;
+
             const itemName = document.getElementById('itemName').value.trim();
             const spsicNum = document.getElementById('activeSpsicNumber').value.trim();
             const commodity = document.getElementById('itemCommodity').value.trim();
             const sizes = document.getElementById('itemSizes').value.trim();
             const skuInput = document.getElementById('itemCode');
+
             const itemWords = itemName.split(/\s+/);
             const firstWordClean = itemWords[0] ? itemWords[0].replace(/[^a-zA-Z]/g, '') : '';
+            
             if (firstWordClean.length < 3) { skuInput.value = ""; return; }
             const prefix = firstWordClean.substring(0, 3).toUpperCase();
+
             if (!spsicNum || !commodity || !sizes) { skuInput.value = "AWAITING REQUIRED PARAMETERS..."; return; }
+
             const commAbbr = commodity.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+
             try {
-                const { data, error } = await supabaseClient.from('inventory').select('sizes, item_code').eq('spsic_number', spsicNum).eq('commodity', commodity.toUpperCase());
+                const { data, error } = await supabaseClient
+                    .from('inventory')
+                    .select('sizes, item_code')
+                    .eq('spsic_number', spsicNum)
+                    .eq('commodity', commodity.toUpperCase());
+
                 if (error) throw error;
+
                 let matchedSizes = [];
-                if (data) { data.forEach(row => { if (row.item_code && row.item_code.startsWith(prefix + spsicNum)) { if (!matchedSizes.includes(row.sizes.trim().toLowerCase())) { matchedSizes.push(row.sizes.trim().toLowerCase()); } } }); }
+                if (data) {
+                    data.forEach(row => {
+                        if (row.item_code && row.item_code.startsWith(prefix + spsicNum)) {
+                            if (!matchedSizes.includes(row.sizes.trim().toLowerCase())) {
+                                matchedSizes.push(row.sizes.trim().toLowerCase());
+                            }
+                        }
+                    });
+                }
+
                 const currentSizeLower = sizes.toLowerCase();
                 let sizeIndex = matchedSizes.indexOf(currentSizeLower);
-                let sequenceNum = (sizeIndex !== -1) ? String(sizeIndex + 1).padStart(2, '0') : String(matchedSizes.length + 1).padStart(2, '0');
+
+                let sequenceNum;
+                if (sizeIndex !== -1) {
+                    sequenceNum = String(sizeIndex + 1).padStart(2, '0');
+                } else {
+                    sequenceNum = String(matchedSizes.length + 1).padStart(2, '0');
+                }
+
                 skuInput.value = `${prefix}${spsicNum}-${commAbbr}-${sequenceNum}`;
-            } catch (err) { skuInput.value = "GENERATION ERR"; }
+
+            } catch (err) {
+                skuInput.value = "GENERATION ENG ERROR";
+            }
         }
 
         async function querySpsicRecordDataset() {
             const queryVal = document.getElementById('spsicSearchQuery').value.trim().toUpperCase();
             if (!queryVal) { showAlert("Please enter a valid SPSIC Number.", "error"); return; }
-            const { data, error } = await supabaseClient.from('imported_shipment_docs').select('storage_location, commodity').eq('spsic_number', queryVal).maybeSingle();
-            if (error || !data) { showAlert(`No record found for SPSIC "${queryVal}".`, "error"); return; }
+
+            const { data, error } = await supabaseClient
+                .from('imported_shipment_docs')
+                .select('storage_location, commodity')
+                .eq('spsic_number', queryVal)
+                .maybeSingle();
+
+            if (error || !data) { showAlert(`No record found for SPSIC: ${queryVal}`, "error"); return; }
+
             document.getElementById('storageFacility').value = data.storage_location || "";
             document.getElementById('itemCommodity').value = data.commodity || "";
             document.getElementById('activeSpsicNumber').value = queryVal;
@@ -380,7 +414,9 @@
 
         function filterLedgerByDescription() {
             const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
-            const filteredArray = filterQuery ? globallyFetchedItems.filter(i => (i.item_name || "").toLowerCase().includes(filterQuery)) : globallyFetchedItems;
+            if (!filterQuery) { renderLedgerTable(globallyFetchedItems); return; }
+            
+            const filteredArray = globallyFetchedItems.filter(item => (item.item_name || "").toLowerCase().includes(filterQuery));
             renderLedgerTable(filteredArray);
             if (filteredArray.length === 0) showAlert("No matches found.", "error");
         }
@@ -393,54 +429,77 @@
         async function initRegistryDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            currentAdminId = user.id; currentUserEmail = user.email;
-            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
+            
+            currentAdminId = user.id;
+            currentUserEmail = user.email;
+            
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('role, username, inventory_access, inv_register_access, inv_edit_access, inv_quantity_access')
+                .eq('id', user.id)
+                .single();
+            
             if (profile && profile.role === 'Admin') {
                 permissions = { isAdmin: true, hasMasterAccess: true, canRegister: true, canEdit: true, canQuantity: true };
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
-                if (!profile || profile.inventory_access === false) { window.location.href = "employee-dashboard.html"; return; }
-                permissions.canRegister = profile.inv_register_access; permissions.canEdit = profile.inv_edit_access; permissions.canQuantity = profile.inv_quantity_access;
+                permissions.canRegister = profile?.inv_register_access === true;
+                permissions.canEdit = profile?.inv_edit_access === true;
+                permissions.canQuantity = profile?.inv_quantity_access === true;
                 document.getElementById('adminEmail').className = "employee-badge";
-                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile.username || user.email.split('@')[0]}`;
+                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile?.username || user.email.split('@')[0]}`;
             }
-            applyFormUIRestrictions(); fetchLedgerDataset();
+            
+            applyFormUIRestrictions();
+            fetchLedgerDataset();
+            
             document.getElementById('itemName').addEventListener('input', autoGenerateSkuCode);
             document.getElementById('itemSizes').addEventListener('input', autoGenerateSkuCode);
         }
 
         function applyFormUIRestrictions() {
-            const container = document.getElementById('formContainerPanel');
             if (!permissions.canRegister && !permissions.canEdit) {
-                const lockMask = document.createElement('div'); lockMask.className = "form-lock-message";
+                const lockMask = document.createElement('div');
+                lockMask.className = "form-lock-message";
                 lockMask.innerHTML = `<span>🔒 Unauthorized access.</span>`;
-                container.appendChild(lockMask);
+                document.getElementById('formContainerPanel').appendChild(lockMask);
             }
         }
 
         async function fetchLedgerDataset() {
             const { data } = await supabaseClient.from('inventory').select('*').order('created_at', { ascending: false });
-            globallyFetchedItems = data || []; renderLedgerTable(globallyFetchedItems);
+            globallyFetchedItems = data || [];
+            renderLedgerTable(globallyFetchedItems);
         }
 
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
-            tbody.innerHTML = items.length === 0 ? `<tr><td colspan="9" style="text-align:center;">No records found.</td></tr>` : items.map((item, index) => `
+            tbody.innerHTML = items.map((item, index) => `
                 <tr>
-                    <td>${item.spsic_number}</td><td>${item.item_code}</td><td>${item.item_name}</td><td>${item.sizes}</td>
-                    <td>${item.commodity}</td><td>${item.storage_facility}</td><td><span class="qty-val">${item.stock_quantity}</span></td>
+                    <td>${item.spsic_number || '—'}</td>
+                    <td style="font-weight: 700;">${item.item_code}</td>
+                    <td>${item.item_name}</td>
+                    <td>${item.sizes || '—'}</td>
+                    <td>${item.commodity}</td>
+                    <td>${item.storage_facility}</td>
+                    <td><span class="qty-val">${item.stock_quantity || 0}</span></td>
                     <td>${pesoFormatter.format(item.unit_price || 0)}</td>
-                    <td><div class="action-btn-group"><button class="btn-edit" onclick="populateFormByIndex(${index})">Edit</button><button class="btn-qty-adj" onclick="openQtyModalByIndex(${index})">Adj Qty</button></div></td>
+                    <td>
+                        <div class="action-btn-group">
+                            <button class="btn-edit" ${permissions.canEdit ? '' : 'disabled'} onclick="populateFormByIndex(${index})">Edit</button>
+                            <button class="btn-qty-adj" ${permissions.canQuantity ? '' : 'disabled'} onclick="openQtyModalByIndex(${index})">Adj Qty</button>
+                        </div>
+                    </td>
                 </tr>`).join('');
         }
 
         function openQtyModalByIndex(index) {
-            if (!permissions.canQuantity) { showAlert("Permission Denied.", "error"); return; }
             const item = globallyFetchedItems[index];
             document.getElementById('modalItemId').value = item.id;
-            document.getElementById('modalOldQty').value = item.stock_quantity;
-            document.getElementById('modalNewQty').value = item.stock_quantity;
+            document.getElementById('modalOldQty').value = item.stock_quantity || 0;
+            document.getElementById('modalNewQty').value = item.stock_quantity || 0;
+            document.getElementById('modalEditRemarks').value = '';
             document.getElementById('qtyModalOverlay').style.display = 'flex';
         }
 
@@ -449,19 +508,35 @@
         async function handleQtyModalSubmit(e) {
             e.preventDefault();
             const id = document.getElementById('modalItemId').value;
+            const oldQty = parseInt(document.getElementById('modalOldQty').value);
             const newQty = parseInt(document.getElementById('modalNewQty').value);
             const remarks = document.getElementById('modalEditRemarks').value;
+
+            const { data: item } = await supabaseClient.from('inventory').select('*').eq('id', id).single();
             const { error } = await supabaseClient.from('inventory').update({ stock_quantity: newQty, edit_remarks: remarks }).eq('id', id);
-            if (error) showAlert(error.message, "error");
-            else { showAlert("Balances updated successfully.", "success"); closeQtyModal(); fetchLedgerDataset(); }
+
+            if (error) { showAlert(error.message, "error"); return; }
+
+            // Log Transaction
+            await supabaseClient.from('transactions').insert([{
+                item_id: item.id, item_code: item.item_code, item_name: item.item_name,
+                commodity: item.commodity, in_quantity: Math.abs(newQty - oldQty),
+                transactions_type: newQty > oldQty ? "Adjustment In" : "Adjustment Out",
+                processed_by: currentUserEmail, remarks: `Qty Sync: ${remarks}`,
+                spsic_number: item.spsic_number
+            }]);
+
+            showAlert("Balances updated successfully.", "success");
+            closeQtyModal();
+            fetchLedgerDataset();
         }
 
         function populateFormByIndex(index) {
-            if (!permissions.canEdit) { showAlert("Permission Denied.", "error"); return; }
             const item = globallyFetchedItems[index];
             document.getElementById('itemId').value = item.id;
-            document.getElementById('itemName').value = item.item_name;
+            document.getElementById('activeSpsicNumber').value = item.spsic_number;
             document.getElementById('itemCode').value = item.item_code;
+            document.getElementById('itemName').value = item.item_name;
             document.getElementById('itemSizes').value = item.sizes;
             document.getElementById('itemCommodity').value = item.commodity;
             document.getElementById('storageFacility').value = item.storage_facility;
@@ -469,6 +544,7 @@
             document.getElementById('unitPrice').value = pesoFormatter.format(item.unit_price);
             document.getElementById('formRemarks').value = item.remarks;
             document.getElementById('initialQtyWrapper').style.display = "none";
+            document.getElementById('formTitle').textContent = "Modify Registered Parameters";
             document.getElementById('submitBtn').textContent = "Update Registry Log";
         }
 
@@ -485,9 +561,33 @@
             e.preventDefault();
             const id = document.getElementById('itemId').value;
             const remarks = document.getElementById('modalItemEditRemarks').value;
-            const { error } = await supabaseClient.from('inventory').update({ item_name: document.getElementById('itemName').value, edit_remarks: remarks }).eq('id', id);
-            if (error) showAlert(error.message, "error");
-            else { showAlert("Updated successfully.", "success"); closeEditRemarksModal(); resetFormState(); fetchLedgerDataset(); }
+
+            // Update Inventory
+            const { data: item, error } = await supabaseClient
+                .from('inventory')
+                .update({ 
+                    item_name: document.getElementById('itemName').value,
+                    edit_remarks: remarks,
+                    processed_by: currentUserEmail 
+                })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) { showAlert(error.message, "error"); return; }
+
+            // Log Transaction for Update
+            await supabaseClient.from('transactions').insert([{
+                item_id: item.id, item_code: item.item_code, item_name: item.item_name,
+                commodity: item.commodity, transactions_type: "Update",
+                processed_by: currentUserEmail, remarks: `Record Updated: ${remarks}`,
+                spsic_number: item.spsic_number
+            }]);
+
+            showAlert("Updated successfully.", "success");
+            closeEditRemarksModal();
+            resetFormState();
+            fetchLedgerDataset();
         }
 
         async function executeRegistration() {
@@ -503,9 +603,21 @@
                 stock_quantity: parseInt(document.getElementById('stockQuantity').value),
                 processed_by: currentUserEmail
             };
-            const { error } = await supabaseClient.from('inventory').insert([registryPayload]);
-            if (error) showAlert(error.message, "error");
-            else { showAlert("Registration successful.", "success"); resetFormState(); fetchLedgerDataset(); }
+
+            const { data: item, error } = await supabaseClient.from('inventory').insert([registryPayload]).select().single();
+            if (error) { showAlert(error.message, "error"); return; }
+
+            // Log Initial Inbound
+            await supabaseClient.from('transactions').insert([{
+                item_id: item.id, item_code: item.item_code, item_name: item.item_name,
+                commodity: item.commodity, in_quantity: item.stock_quantity,
+                transactions_type: "Inbound", processed_by: currentUserEmail,
+                remarks: "Initial Registration", spsic_number: item.spsic_number
+            }]);
+
+            showAlert("Registration successful.", "success");
+            resetFormState();
+            fetchLedgerDataset();
         }
 
         function resetFormState() {
@@ -513,10 +625,6 @@
             document.getElementById('inventoryForm').reset();
             document.getElementById('initialQtyWrapper').style.display = "flex";
             document.getElementById('submitBtn').textContent = "Process Gate Arrival & Register";
-        }
-
-        function setupSessionCrossCheckListener() {
-            supabaseClient.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') window.location.href = "login.html"; });
         }
 
         async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
