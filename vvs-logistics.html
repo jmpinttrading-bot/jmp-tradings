@@ -467,7 +467,20 @@
 
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
-            tbody.innerHTML = items.map((item, index) => {
+            
+            // 1. Sort all data by date (oldest to newest) to correctly calculate running balance
+            const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            
+            // 2. Map IDs to their calculated running balances
+            const balanceMap = new Map();
+            let running = 0;
+            allSorted.forEach(tx => {
+                running += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                balanceMap.set(tx.id, running);
+            });
+
+            // 3. Render items (using the provided list to respect filtering)
+            tbody.innerHTML = items.map((item) => {
                 return `
                     <tr>
                         <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
@@ -478,13 +491,13 @@
                         <td style="color: #475569;">${item.sizes || '—'}</td>
                         <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
                         <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
-                        <td><span class="qty-bal">${item.balance !== null ? item.balance : '—'}</span></td>
+                        <td><span class="qty-bal">${balanceMap.get(item.id)}</span></td>
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
                             <div class="action-btn-group">
-                                <button type="button" class="btn-action-return" onclick="openReasonModal('Return', ${index})">Return</button>
-                                <button type="button" class="btn-action-cancel" onclick="openReasonModal('Cancel', ${index})">Cancel</button>
+                                <button type="button" class="btn-action-return" onclick="openReasonModal('Return', ${globallyFetchedHistory.findIndex(i => i.id === item.id)})">Return</button>
+                                <button type="button" class="btn-action-cancel" onclick="openReasonModal('Cancel', ${globallyFetchedHistory.findIndex(i => i.id === item.id)})">Cancel</button>
                             </div>
                         </td>
                     </tr>
