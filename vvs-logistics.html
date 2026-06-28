@@ -417,7 +417,6 @@
             const distinctItems = [];
             for (const code in balanceTracker) {
                 const balance = balanceTracker[code].runningBalance;
-                // Only include items with a balance greater than 0
                 if (balance > 0) {
                     const target = balanceTracker[code].lastItem;
                     target.calculated_balance = balance;
@@ -518,27 +517,40 @@
         async function handleOutboundSubmit(e) {
             e.preventDefault();
             
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Processing Transaction...";
+            
             if (!permissions.canRelease) {
                 showAlert("Action Aborted: Account does not have cargo release verification clearances.", "error");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Clear Truck for Outbound Departure";
                 return;
             }
 
             const id = document.getElementById('itemId').value;
             const targetRowId = document.getElementById('selectedTransactionRowId').value;
+            
             if (!id) {
                 showAlert("Please explicitly select an option from the item dropdown menu.", "error");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Clear Truck for Outbound Departure";
                 return;
             }
 
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
             if (targetDispatchQuantity <= 0) {
                 showAlert("Outbound quantity must be at least 1 unit.", "error");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Clear Truck for Outbound Departure";
                 return;
             }
 
             const maxAvailable = parseInt(document.getElementById('maxAvailableQty').value) || 0;
             if (!targetRowId && targetDispatchQuantity > maxAvailable) {
                 showAlert(`Insufficient Stock! Only ${maxAvailable} total units remain available across running stock histories.`, "error");
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Clear Truck for Outbound Departure";
                 return;
             }
 
@@ -553,17 +565,15 @@
             const sales_order_number = document.getElementById('salesOrderNo').value;
             const input_buyer_name = document.getElementById('buyerName').value.trim();
 
-            if (targetRowId) {
-                const { error: cancelError } = await supabaseClient
-                    .from('transactions')
-                    .delete()
-                    .eq('id', targetRowId);
-
-                if (cancelError) {
-                    showAlert("Failed to clear original matrix row entry: " + cancelError.message, "error");
-                    return;
+            try {
+                if (targetRowId) {
+                    const { error: cancelError } = await supabaseClient
+                        .from('transactions')
+                        .delete()
+                        .eq('id', targetRowId);
+                    if (cancelError) throw cancelError;
                 }
-            } else {
+                
                 const transactionPayload = {
                     item_id: id,
                     item_code: item_code,
@@ -587,16 +597,18 @@
                     .from('transactions')
                     .insert([transactionPayload]);
 
-                if (txError) {
-                    showAlert("Transaction tracking assignment failed: " + txError.message, "error");
-                    return;
-                }
-            }
+                if (txError) throw txError;
 
-            showAlert(`Success: Documented parameters for "${item_code}". Running balance updated seamlessly.`, "success");
-            resetFormState();
-            await fetchDropdownInventoryPool();
-            await fetchTransactionsDataset();
+                showAlert(`Success: Documented parameters for "${item_code}". Running balance updated seamlessly.`, "success");
+                resetFormState();
+                await fetchDropdownInventoryPool();
+                await fetchTransactionsDataset();
+            } catch (err) {
+                showAlert("Transaction error: " + err.message, "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Clear Truck for Outbound Departure";
+            }
         }
 
         function resetFormState() {
