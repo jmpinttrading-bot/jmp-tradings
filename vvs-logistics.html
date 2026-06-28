@@ -393,8 +393,7 @@
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('*')
-                .eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.')
-                .order('created_at', { ascending: true });
+                .eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.');
 
             if (error) {
                 console.error("Error loading search pool:", error.message);
@@ -413,18 +412,17 @@
                 balanceTracker[code].lastItem = tx;
             });
 
-            const distinctItems = [];
+            // Filter for positive balance ONLY
+            const availableItems = [];
             for (const code in balanceTracker) {
-                const balance = balanceTracker[code].runningBalance;
-                // Only include items with a balance greater than 0
-                if (balance > 0) {
-                    const target = balanceTracker[code].lastItem;
-                    target.calculated_balance = balance;
-                    distinctItems.push(target);
+                if (balanceTracker[code].runningBalance > 0) {
+                    const item = balanceTracker[code].lastItem;
+                    item.calculated_balance = balanceTracker[code].runningBalance;
+                    availableItems.push(item);
                 }
             }
 
-            globallyAvailableStock = distinctItems;
+            globallyAvailableStock = availableItems;
             populateStockDropdown(globallyAvailableStock);
         }
 
