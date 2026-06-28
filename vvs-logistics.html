@@ -60,6 +60,9 @@
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
         .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
         
+        /* New style for emphasized auto-filled inputs */
+        .auto-filled-text { color: #64748b !important; font-style: italic; }
+
         #storageFacility, #itemCode, #itemCommodity, #buyerName { text-transform: uppercase; }
         #dispatchQuantity { position: relative; z-index: 5; background-color: white !important; }
 
@@ -69,13 +72,6 @@
         .btn-primary:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
         .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
         .btn-secondary:hover { background: #b8c5d6; }
-
-        .search-engine-block { display: flex; gap: 12px; width: 100%; max-width: 500px; margin-bottom: 25px; align-items: flex-end; }
-        .search-engine-block .form-group { margin-bottom: 0; flex: 1; }
-        .btn-search { background: #0f172a; color: white; border: none; height: 42px; padding: 0 24px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: background 0.2s; white-space: nowrap; }
-        .btn-search:hover { background: #1e293b; }
-        .btn-search.clear-filter { background: #64748b; padding: 0 16px; }
-        .btn-search.clear-filter:hover { background: #475569; }
 
         .ledger-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 25px; flex-wrap: wrap; gap: 15px; }
         .ledger-header-wrapper h3 { border-bottom: none !important; padding-bottom: 0 !important; margin: 0 !important; }
@@ -159,7 +155,7 @@
                     <div class="form-row">
                         <div class="form-group flex-1">
                             <label>Sales Order No. (SO#)</label>
-                            <input type="text" id="salesOrderNo" style="font-weight: 700; color: #b45309; background: #fffbeb;" readonly placeholder="Auto-generated on selection">
+                            <input type="text" id="salesOrderNo" style="font-weight: 700; color: #b45309; background: #fffbeb;" readonly placeholder="Auto-filled">
                         </div>
                         <div class="form-group flex-1">
                             <label>Date Released</label>
@@ -170,21 +166,21 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Unique SKU Code / Item Code</label>
-                            <input type="text" id="itemCode" readonly placeholder="Auto-filled via Selection">
+                            <input type="text" id="itemCode" readonly placeholder="Auto-filled">
                         </div>
                         <div class="form-group">
                             <label>Sizes</label>
-                            <input type="text" id="itemSizes" readonly placeholder="Auto-filled via Selection">
+                            <input type="text" id="itemSizes" readonly placeholder="Auto-filled">
                         </div>
                         <div class="form-group">
                             <label>Commodity</label>
-                            <input type="text" id="itemCommodity" placeholder="Auto-filled via Registry Match" readonly>
+                            <input type="text" id="itemCommodity" placeholder="Auto-filled" readonly>
                         </div>
                     </div>
                     
                     <div class="form-group">
                         <label>Item Description</label>
-                        <input type="text" id="itemName" readonly placeholder="Auto-filled via Selection">
+                        <input type="text" id="itemName" readonly placeholder="Auto-filled">
                     </div>
 
                     <div class="form-row">
@@ -267,6 +263,13 @@
             canRelease: false
         };
 
+        // Helper to update field style
+        function setAutoFilledStyle(elementId, isActive) {
+            const el = document.getElementById(elementId);
+            if (isActive) el.classList.add('auto-filled-text');
+            else el.classList.remove('auto-filled-text');
+        }
+
         function generateSalesOrderNumber() {
             const now = new Date();
             const year = now.getFullYear();
@@ -302,11 +305,15 @@
                 document.getElementById('selectedTransactionRowId').value = '';
                 document.getElementById('itemId').value = stockItem.item_id || stockItem.id;
                 document.getElementById('activeSpsicNumber').value = stockItem.spsic_number || '';
+                
                 document.getElementById('itemCode').value = stockItem.item_code || '';
                 document.getElementById('itemSizes').value = stockItem.sizes || '—';
                 document.getElementById('itemName').value = stockItem.item_name || '';
                 document.getElementById('itemCommodity').value = stockItem.commodity || '';
                 
+                // Add gray style
+                ['itemCode', 'itemSizes', 'itemCommodity', 'itemName', 'salesOrderNo'].forEach(id => setAutoFilledStyle(id, true));
+
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
@@ -318,24 +325,26 @@
             }
         }
 
-        function filterLedgerByDescription() {
-            const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
-            if (!filterQuery) {
-                renderLedgerTable(globallyFetchedHistory);
-                return;
-            }
+        function resetFormState() {
+            document.getElementById('selectedTransactionRowId').value = '';
+            document.getElementById('itemId').value = '';
+            document.getElementById('activeSpsicNumber').value = '';
+            document.getElementById('maxAvailableQty').value = '';
+            document.getElementById('rawUnitPrice').value = '';
+            document.getElementById('outboundForm').reset();
             
-            const filteredArray = globallyFetchedHistory.filter(item => {
-                return (item.item_name || "").toLowerCase().includes(filterQuery);
-            });
+            // Remove gray styles
+            ['itemCode', 'itemSizes', 'itemCommodity', 'itemName', 'salesOrderNo'].forEach(id => setAutoFilledStyle(id, false));
             
-            renderLedgerTable(filteredArray);
+            document.getElementById('inventorySearchQuery').value = '';
+            document.getElementById('descSearchQuery').value = '';
+            document.getElementById('salesOrderNo').value = '';
+            document.getElementById('displayAvailableQty').value = '0 Units Available';
+            document.getElementById('storageFacility').value = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
+            document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
         }
 
-        function clearDescriptionFilter() {
-            document.getElementById('descSearchQuery').value = "";
-            renderLedgerTable(globallyFetchedHistory);
-        }
+        // ... [Rest of your existing script functions remain unchanged]
 
         async function initLogisticsDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -500,6 +509,9 @@
             document.getElementById('itemName').value = historyItem.item_name || '';
             document.getElementById('itemCommodity').value = historyItem.commodity || '';
             
+            // Add gray style
+            ['itemCode', 'itemSizes', 'itemCommodity', 'itemName', 'salesOrderNo'].forEach(id => setAutoFilledStyle(id, true));
+            
             document.getElementById('maxAvailableQty').value = historyItem.balance || 0;
             document.getElementById('displayAvailableQty').value = `${historyItem.balance || 0} Units In Dynamic Tx Context`;
             document.getElementById('rawUnitPrice').value = historyItem.unit_price || 0;
@@ -611,19 +623,23 @@
             }
         }
 
-        function resetFormState() {
-            document.getElementById('selectedTransactionRowId').value = '';
-            document.getElementById('itemId').value = '';
-            document.getElementById('activeSpsicNumber').value = '';
-            document.getElementById('maxAvailableQty').value = '';
-            document.getElementById('rawUnitPrice').value = '';
-            document.getElementById('outboundForm').reset();
-            document.getElementById('inventorySearchQuery').value = '';
-            document.getElementById('descSearchQuery').value = '';
-            document.getElementById('salesOrderNo').value = '';
-            document.getElementById('displayAvailableQty').value = '0 Units Available';
-            document.getElementById('storageFacility').value = 'VVS COLD STORAGE & PROCESSING PLANT CORP.';
-            document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
+        function filterLedgerByDescription() {
+            const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
+            if (!filterQuery) {
+                renderLedgerTable(globallyFetchedHistory);
+                return;
+            }
+            
+            const filteredArray = globallyFetchedHistory.filter(item => {
+                return (item.item_name || "").toLowerCase().includes(filterQuery);
+            });
+            
+            renderLedgerTable(filteredArray);
+        }
+
+        function clearDescriptionFilter() {
+            document.getElementById('descSearchQuery').value = "";
+            renderLedgerTable(globallyFetchedHistory);
         }
 
         function setupSessionCrossCheckListener() {
