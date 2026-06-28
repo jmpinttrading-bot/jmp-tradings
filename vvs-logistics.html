@@ -414,25 +414,26 @@
 
             if (error) return;
 
-            const balanceTracker = {};
+            const itemBalances = {};
             data.forEach(tx => {
                 const code = tx.item_code;
-                if (!balanceTracker[code]) {
-                    balanceTracker[code] = { lastItem: tx, runningBalance: 0 };
+                if (!code) return;
+
+                if (!itemBalances[code]) {
+                    itemBalances[code] = { data: tx, runningBalance: 0 };
                 }
                 const ins = parseInt(tx.in_quantity) || 0;
                 const outs = parseInt(tx.out_quantity) || 0;
-                balanceTracker[code].runningBalance += (ins - outs);
-                balanceTracker[code].lastItem = tx;
+                itemBalances[code].runningBalance += (ins - outs);
+                itemBalances[code].data = tx;
             });
 
             const distinctItems = [];
-            for (const code in balanceTracker) {
-                const balance = balanceTracker[code].runningBalance;
-                if (balance > 0) {
-                    const target = balanceTracker[code].lastItem;
-                    target.calculated_balance = balance;
-                    distinctItems.push(target);
+            for (const code in itemBalances) {
+                if (itemBalances[code].runningBalance > 0) {
+                    const itemEntry = itemBalances[code].data;
+                    itemEntry.calculated_balance = itemBalances[code].runningBalance;
+                    distinctItems.push(itemEntry);
                 }
             }
 
@@ -468,18 +469,21 @@
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
             
-            // 1. Sort all data by date (oldest to newest) to correctly calculate running balance
+            // Sort by date to calculate running balance
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             
-            // 2. Map IDs to their calculated running balances
+            // Calculate running balance PER ITEM CODE
             const balanceMap = new Map();
-            let running = 0;
+            const itemRunningBalances = {};
+
             allSorted.forEach(tx => {
-                running += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
-                balanceMap.set(tx.id, running);
+                const code = tx.item_code;
+                if (!itemRunningBalances[code]) itemRunningBalances[code] = 0;
+                
+                itemRunningBalances[code] += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                balanceMap.set(tx.id, itemRunningBalances[code]);
             });
 
-            // 3. Render items (using the provided list to respect filtering)
             tbody.innerHTML = items.map((item) => {
                 return `
                     <tr>
