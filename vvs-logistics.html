@@ -509,7 +509,6 @@
             }).join('');
         }
         
-        // New helper to populate form for editing
         function prepareEdit(index) {
             const item = globallyFetchedHistory[index];
             document.getElementById('selectedTransactionRowId').value = item.id;
@@ -543,9 +542,16 @@
             if (!reason) { alert("Please provide a reason before submitting."); return; }
 
             if (type === 'Cancel') {
-                const { error } = await supabaseClient.from('transactions').delete().eq('id', item.id);
-                if (error) { showAlert("Error: " + error.message, "error"); return; }
-                showAlert("Transaction cancelled successfully.", "success");
+                const { error } = await supabaseClient
+                    .from('transactions')
+                    .update({ 
+                        out_quantity: 0, 
+                        remarks: `CANCELLED: ${reason}` 
+                    })
+                    .eq('id', item.id);
+
+                if (error) { showAlert("Error cancelling: " + error.message, "error"); return; }
+                showAlert("Transaction successfully cancelled (Quantity set to 0).", "success");
             }
             
             modal.close();
@@ -580,13 +586,11 @@
                 sales_order_no: document.getElementById('salesOrderNo').value
             };
 
-            // If editing an existing row, include the ID
             if (targetRowId) {
                 payload.id = targetRowId;
             }
 
             try {
-                // Upsert handles both update (if id exists) and insert (if new)
                 const { error } = await supabaseClient.from('transactions').upsert([payload]);
                 
                 if (error) throw error;
