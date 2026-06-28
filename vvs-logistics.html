@@ -200,7 +200,7 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="btn-primary" id="submitBtn">Clear Truck for Outbound Departure</button>
+                        <button type="submit" class="btn-primary" id="submitBtn">Upload Outbound Transactions</button>
                         <button type="button" class="btn-secondary" id="clearBtn" onclick="resetFormState()">Clear Entry Fields</button>
                     </div>
                 </form>
@@ -534,7 +534,7 @@
                 showAlert("Error: " + err.message, "error");
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = "Clear Truck for Outbound Departure";
+                submitBtn.textContent = "Upload Outbound Transactions";
             }
         }
 
