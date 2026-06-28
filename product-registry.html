@@ -286,7 +286,7 @@
             <form id="editRemarksForm" onsubmit="handleEditRemarksModalSubmit(event)">
                 <div class="form-group">
                     <label style="color: #d9534f;">Reason / Edit Remarks (Required)</label>
-                    <textarea id="modalItemEditRemarks" placeholder="You must supply a change log parameter modification description to proceed..."></textarea>
+                    <textarea id="modalItemEditRemarks" required placeholder="You must supply a change log parameter modification description to proceed..."></textarea>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-primary" style="background: #1e293b; color: white;">Confirm Changes</button>
@@ -611,7 +611,7 @@
             document.getElementById('modalItemId').value = item.id;
             document.getElementById('modalOldQty').value = item.stock_quantity || 0;
             document.getElementById('modalNewQty').value = item.stock_quantity || 0;
-            document.getElementById('modalEditRemarks').value = item.edit_remarks || '';
+            document.getElementById('modalEditRemarks').value = '';
             document.getElementById('qtyModalOverlay').style.display = 'flex';
         }
 
@@ -627,14 +627,20 @@
             const newQty = parseInt(document.getElementById('modalNewQty').value) || 0;
             const trackingRemarks = document.getElementById('modalEditRemarks').value.trim();
             
-            if (trackingRemarks === "") {
-                alert("Action Aborted: A tracking entry record change explanation is required.");
-                return;
-            }
-
+            const delta = newQty - oldQty;
             const currentTimestampISO = new Date().toISOString();
 
-            // 1. Update the 'inventory' table
+            const { data: currentItem, error: fetchErr } = await supabaseClient
+                .from('inventory')
+                .select('id, item_code, item_name, sizes, commodity, storage_facility, spsic_number')
+                .eq('id', id)
+                .single();
+                
+            if (fetchErr) { 
+                showAlert("Update tracking verification configuration error: " + fetchErr.message, "error"); 
+                return; 
+            }
+
             const { error: invError } = await supabaseClient
                 .from('inventory')
                 .update({ 
@@ -645,42 +651,40 @@
                 })
                 .eq('id', id);
 
-            if (invError) { 
-                showAlert("Inventory Update Failed: " + invError.message, "error"); 
-                return; 
-            }
-
-            // 2. Find the most recent transaction row for this item to update
-            const { data: lastTx, error: txFetchErr } = await supabaseClient
-                .from('transactions')
-                .select('id')
-                .eq('item_id', id)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-
-            if (txFetchErr || !lastTx) {
-                showAlert("No transaction record found to update.", "error");
+            if (invError) {
+                showAlert(invError.message, "error");
                 return;
             }
 
-            // 3. Update the existing transaction row
-            const { error: txUpdateErr } = await supabaseClient
-                .from('transactions')
-                .update({ 
-                    in_quantity: newQty,
-                    balance: newQty,
-                    remarks: `ADJUSTMENT: ${trackingRemarks}`,
+            if (delta !== 0) {
+                const transactionPayload = {
+                    item_id: currentItem.id,
+                    item_code: currentItem.item_code.toUpperCase(),
+                    item_name: currentItem.item_name.toUpperCase(),
+                    sizes: currentItem.sizes,
+                    commodity: currentItem.commodity.toUpperCase(),
+                    in_quantity: Math.abs(delta), 
+                    sales_order_no: "Shipment",
+                    transactions_type: delta > 0 ? "Adjustment In" : "Adjustment Out", 
                     processed_by: currentUserEmail,
-                    date: currentTimestampISO.split('T')[0]
-                })
-                .eq('id', lastTx.id);
+                    storage_facility: currentItem.storage_facility.toUpperCase(),
+                    date: currentTimestampISO.split('T')[0], 
+                    status: `Modal Quantity Sync (From ${oldQty} to ${newQty}): ${trackingRemarks}`,
+                    spsic_number: currentItem.spsic_number
+                };
 
-            if (txUpdateErr) {
-                console.error("Ledger Update Error: ", txUpdateErr.message);
-                showAlert("Inventory updated, but failed to sync transaction ledger.", "error");
+                const { error: txError } = await supabaseClient
+                    .from('transactions')
+                    .insert([transactionPayload]);
+
+                if (txError) {
+                    console.error("Audit log failed to save record payload: ", txError.message);
+                    showAlert("Balances modified inside active registry, but transactions audit subtrace log generation failed.", "error");
+                } else {
+                    showAlert("Quantity stock parameters updated and transaction audit tracking successfully generated.", "success");
+                }
             } else {
-                showAlert("Quantity and Transaction ledger updated.", "success");
+                showAlert("Inventory information metadata saved successfully without balance fluctuations.", "success");
             }
 
             closeQtyModal();
@@ -761,12 +765,6 @@
         async function handleEditRemarksModalSubmit(e) {
             e.preventDefault();
             const editRemarksText = document.getElementById('modalItemEditRemarks').value.trim();
-
-            if (editRemarksText === "") {
-                alert("Editing aborted: You must supply valid edit remarks documentation reasons to apply modifications.");
-                return;
-            }
-
             const id = document.getElementById('itemId').value;
             const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
             const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
@@ -798,6 +796,22 @@
             
             if (error) {
                 showAlert(error.message, "error");
+                return;
+            }
+
+            const { error: txError } = await supabaseClient.from('transactions').insert([{
+                item_id: id,
+                item_code: item_code,
+                item_name: item_name,
+                transactions_type: "Edit",
+                status: editRemarksText, 
+                processed_by: currentUserEmail,
+                date: currentTimestampISO.split('T')[0],
+                spsic_number: spsic_number
+            }]);
+
+            if (txError) {
+                showAlert("Updated inventory, but failed to log transaction status: " + txError.message, "error");
             } else {
                 showAlert("Master log file parameters updated successfully.", "success");
                 closeEditRemarksModal();
@@ -843,11 +857,6 @@
                 return;
             }
 
-            if (!newInventoryItem || !newInventoryItem.id) {
-                showAlert("Error: Inventory record created, but system could not retrieve the generated ID token.", "error");
-                return;
-            }
-
             const transactionPayload = {
                 item_id: newInventoryItem.id, 
                 item_code: item_code,
@@ -861,7 +870,7 @@
                 processed_by: currentUserEmail,
                 storage_facility: storage_facility,
                 date: chosen_date, 
-                remarks: input_remarks || "",
+                status: input_remarks || "New Inbound Arrival",
                 spsic_number: spsic_number
             };
 
@@ -870,7 +879,6 @@
                 .insert([transactionPayload]);
 
             if (txError) {
-                console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
                 showAlert("Inventory registered, but transaction history failed to write: " + txError.message, "error");
                 return;
             }
