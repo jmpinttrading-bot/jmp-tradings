@@ -93,7 +93,6 @@
 
         .action-btn-group { display: flex; gap: 6px; justify-content: center; }
         
-        /* New Action Buttons */
         .btn-action-return { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
         .btn-action-return:hover { background: #0369a1; }
         .btn-action-cancel { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
@@ -105,7 +104,6 @@
 
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
 
-        /* Modal Styles */
         dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
@@ -130,7 +128,6 @@
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </div>
     
-    <!-- Modal for Return/Cancel Reasons -->
     <dialog id="reasonModal">
         <h3 id="modalTitle">Reason for Adjustment</h3>
         <textarea id="adjustmentReason" placeholder="Enter detailed reason here..."></textarea>
@@ -252,12 +249,13 @@
                                 <th>Out Qty</th>
                                 <th>Rolling Balance</th>
                                 <th>Buyer Name</th>
+                                <th>Remarks</th>
                                 <th style="text-align: center;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="11" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -278,7 +276,7 @@
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
-        let pendingAdjustment = { type: '', item: null }; // Tracks currently adjusted item
+        let pendingAdjustment = { type: '', item: null };
         
         let permissions = {
             isAdmin: false,
@@ -482,6 +480,7 @@
                         <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
                         <td><span class="qty-bal">${item.balance !== null ? item.balance : '—'}</span></td>
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
+                        <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
                             <div class="action-btn-group">
                                 <button type="button" class="btn-action-return" onclick="openReasonModal('Return', ${index})">Return</button>
@@ -512,7 +511,7 @@
                 newOutQty = 0;
             } else if (type === 'Return') {
                 const promptVal = prompt(`Current Outbound Quantity is ${item.out_quantity || 0}.\nEnter the NEW deducted quantity:`, item.out_quantity);
-                if (promptVal === null) return; // User pressed cancel on the prompt
+                if (promptVal === null) return;
                 newOutQty = parseInt(promptVal);
                 if (isNaN(newOutQty) || newOutQty < 0) {
                     alert("Invalid quantity entered.");
@@ -520,9 +519,8 @@
                 }
             }
             
-            // Build the updated payload (remove ID to let Supabase auto-generate, or remove metadata fields)
             const payload = { ...item };
-            delete payload.id; // Removed so a fresh corrected entry is generated.
+            delete payload.id;
             delete payload.balance; 
             delete payload.calculated_balance;
 
@@ -530,14 +528,12 @@
             payload.remarks = `${type} item - ${reason}`;
             
             try {
-                // Delete old entry, Insert corrected entry to process adjustments in DB
                 await supabaseClient.from('transactions').delete().eq('id', item.id);
                 await supabaseClient.from('transactions').insert([payload]);
                 
                 showAlert(`Transaction ${type} processed successfully.`, "success");
                 modal.close();
                 
-                // Refresh views
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
             } catch (err) {
