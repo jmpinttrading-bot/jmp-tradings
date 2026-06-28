@@ -286,7 +286,7 @@
             <form id="editRemarksForm" onsubmit="handleEditRemarksModalSubmit(event)">
                 <div class="form-group">
                     <label style="color: #d9534f;">Reason / Edit Remarks (Required)</label>
-                    <textarea id="modalItemEditRemarks" required placeholder="You must supply a change log parameter modification description to proceed..."></textarea>
+                    <textarea id="modalItemEditRemarks" placeholder="You must supply a change log parameter modification description to proceed..."></textarea>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn-primary" style="background: #1e293b; color: white;">Confirm Changes</button>
@@ -611,7 +611,7 @@
             document.getElementById('modalItemId').value = item.id;
             document.getElementById('modalOldQty').value = item.stock_quantity || 0;
             document.getElementById('modalNewQty').value = item.stock_quantity || 0;
-            document.getElementById('modalEditRemarks').value = '';
+            document.getElementById('modalEditRemarks').value = item.edit_remarks || '';
             document.getElementById('qtyModalOverlay').style.display = 'flex';
         }
 
@@ -627,6 +627,11 @@
             const newQty = parseInt(document.getElementById('modalNewQty').value) || 0;
             const trackingRemarks = document.getElementById('modalEditRemarks').value.trim();
             
+            if (trackingRemarks === "") {
+                alert("Action Aborted: A tracking entry record change explanation is required.");
+                return;
+            }
+
             const delta = newQty - oldQty;
             const currentTimestampISO = new Date().toISOString();
 
@@ -669,7 +674,7 @@
                     processed_by: currentUserEmail,
                     storage_facility: currentItem.storage_facility.toUpperCase(),
                     date: currentTimestampISO.split('T')[0], 
-                    status: `Modal Quantity Sync (From ${oldQty} to ${newQty}): ${trackingRemarks}`,
+                    remarks: `Modal Quantity Sync (From ${oldQty} to ${newQty}): ${trackingRemarks}`,
                     spsic_number: currentItem.spsic_number
                 };
 
@@ -765,6 +770,12 @@
         async function handleEditRemarksModalSubmit(e) {
             e.preventDefault();
             const editRemarksText = document.getElementById('modalItemEditRemarks').value.trim();
+
+            if (editRemarksText === "") {
+                alert("Editing aborted: You must supply valid edit remarks documentation reasons to apply modifications.");
+                return;
+            }
+
             const id = document.getElementById('itemId').value;
             const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
             const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
@@ -796,22 +807,6 @@
             
             if (error) {
                 showAlert(error.message, "error");
-                return;
-            }
-
-            const { error: txError } = await supabaseClient.from('transactions').insert([{
-                item_id: id,
-                item_code: item_code,
-                item_name: item_name,
-                transactions_type: "Edit",
-                status: editRemarksText, 
-                processed_by: currentUserEmail,
-                date: currentTimestampISO.split('T')[0],
-                spsic_number: spsic_number
-            }]);
-
-            if (txError) {
-                showAlert("Updated inventory, but failed to log transaction status: " + txError.message, "error");
             } else {
                 showAlert("Master log file parameters updated successfully.", "success");
                 closeEditRemarksModal();
@@ -857,6 +852,11 @@
                 return;
             }
 
+            if (!newInventoryItem || !newInventoryItem.id) {
+                showAlert("Error: Inventory record created, but system could not retrieve the generated ID token.", "error");
+                return;
+            }
+
             const transactionPayload = {
                 item_id: newInventoryItem.id, 
                 item_code: item_code,
@@ -870,7 +870,7 @@
                 processed_by: currentUserEmail,
                 storage_facility: storage_facility,
                 date: chosen_date, 
-                status: input_remarks || "New Inbound Arrival",
+                remarks: input_remarks || "",
                 spsic_number: spsic_number
             };
 
@@ -879,6 +879,7 @@
                 .insert([transactionPayload]);
 
             if (txError) {
+                console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
                 showAlert("Inventory registered, but transaction history failed to write: " + txError.message, "error");
                 return;
             }
