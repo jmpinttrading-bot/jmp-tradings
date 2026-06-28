@@ -203,7 +203,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label id="remarksLabel">Damage Item Quantity</label>
+                        <label id="remarksLabel">Additional Note/Remarks</label>
                         <textarea id="formRemarks" placeholder="Enter transaction parameters, notes, or justification metrics..."></textarea>
                     </div>
                     
@@ -734,7 +734,7 @@
             document.getElementById('initialQtyWrapper').style.display = "none";
             document.getElementById('stockQuantity').required = false;
 
-            document.getElementById('remarksLabel').textContent = "Damage Item Quantity";
+            document.getElementById('remarksLabel').textContent = "Additional Note/Remarks";
             document.getElementById('formTitle').textContent = "Modify Registered Parameters";
             document.getElementById('submitBtn').textContent = "Update Registry Log";
         }
@@ -900,7 +900,7 @@
             document.getElementById('stockQuantity').required = true;
             document.getElementById('stockQuantity').value = "1";
             document.getElementById('unitPrice').value = "";
-            document.getElementById('remarksLabel').textContent = "Damage Item Quantity";
+            document.getElementById('remarksLabel').textContent = "Additional Note/Remarks";
             document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
             document.getElementById('submitBtn').textContent = "Process Gate Arrival & Register";
             
