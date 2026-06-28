@@ -92,14 +92,26 @@
         .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
 
         .action-btn-group { display: flex; gap: 6px; justify-content: center; }
-        .btn-action-cancel { background: #ea580c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
-        .btn-action-cancel:hover { background: #c2410c; }
+        
+        /* New Action Buttons */
+        .btn-action-return { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
+        .btn-action-return:hover { background: #0369a1; }
+        .btn-action-cancel { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
+        .btn-action-cancel:hover { background: #c9302c; }
         
         .alert { padding: 12px; margin-bottom: 20px; border-radius: 6px; font-size: 0.9rem; display: none; }
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
+
+        /* Modal Styles */
+        dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
+        dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
+        dialog textarea { width: 100%; height: 90px; margin-bottom: 20px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; resize: vertical; }
+        dialog textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
         @media (max-width: 768px) {
             .topbar { padding: 15px 20px; flex-direction: column; gap: 10px; text-align: center; }
@@ -117,6 +129,16 @@
         <h2 id="sidebarTitle">JMP System</h2>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </div>
+    
+    <!-- Modal for Return/Cancel Reasons -->
+    <dialog id="reasonModal">
+        <h3 id="modalTitle">Reason for Adjustment</h3>
+        <textarea id="adjustmentReason" placeholder="Enter detailed reason here..."></textarea>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="document.getElementById('reasonModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Close</button>
+            <button class="btn-primary" onclick="submitAdjustment()" style="padding: 8px 16px; font-size: 0.9rem;">Confirm</button>
+        </div>
+    </dialog>
 
     <div class="main-content">
         <div class="header">
@@ -256,6 +278,7 @@
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
+        let pendingAdjustment = { type: '', item: null }; // Tracks currently adjusted item
         
         let permissions = {
             isAdmin: false,
@@ -461,7 +484,8 @@
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
                         <td style="text-align: center;">
                             <div class="action-btn-group">
-                                <button type="button" class="btn-action-cancel" onclick="initiateReturnCancel(${index})">Correction Modification</button>
+                                <button type="button" class="btn-action-return" onclick="openReasonModal('Return', ${index})">Return</button>
+                                <button type="button" class="btn-action-cancel" onclick="openReasonModal('Cancel', ${index})">Cancel</button>
                             </div>
                         </td>
                     </tr>
@@ -469,27 +493,56 @@
             }).join('');
         }
 
-        function initiateReturnCancel(index) {
-            const historyItem = globallyFetchedHistory[index];
-            if (!historyItem) return;
+        function openReasonModal(type, index) {
+            pendingAdjustment = { type: type, item: globallyFetchedHistory[index] };
+            document.getElementById('modalTitle').textContent = `Reason for ${type}`;
+            document.getElementById('adjustmentReason').value = '';
+            document.getElementById('reasonModal').showModal();
+        }
 
-            document.getElementById('selectedTransactionRowId').value = historyItem.id; 
-            document.getElementById('itemId').value = historyItem.item_id || historyItem.id;
-            document.getElementById('activeSpsicNumber').value = historyItem.spsic_number || '';
-            document.getElementById('itemCode').value = historyItem.item_code || '';
-            document.getElementById('itemSizes').value = historyItem.sizes || '—';
-            document.getElementById('itemName').value = historyItem.item_name || '';
-            document.getElementById('itemCommodity').value = historyItem.commodity || '';
-            document.getElementById('maxAvailableQty').value = historyItem.balance || 0;
-            document.getElementById('displayAvailableQty').value = `${historyItem.balance || 0} Units In Dynamic Tx Context`;
-            document.getElementById('rawUnitPrice').value = historyItem.unit_price || 0;
-            document.getElementById('dispatchQuantity').value = historyItem.out_quantity || historyItem.in_quantity || '';
-            document.getElementById('buyerName').value = historyItem.buyer_name || '';
-            document.getElementById('formTitle').textContent = `Correct Ledger Entry [ID Ref: ${historyItem.item_code}]`;
-            document.getElementById('dateReleased').value = historyItem.date || new Date().toISOString().split('T')[0];
-            document.getElementById('salesOrderNo').value = historyItem.sales_order_no || generateSalesOrderNumber();
+        async function submitAdjustment() {
+            const reason = document.getElementById('adjustmentReason').value.trim();
+            const { type, item } = pendingAdjustment;
+            const modal = document.getElementById('reasonModal');
 
-            showAlert("Transaction values loaded into configuration window above for ledger correction modifications.", "success");
+            if (!reason) { alert("Please provide a reason before submitting."); return; }
+
+            let newOutQty = 0;
+            if (type === 'Cancel') {
+                newOutQty = 0;
+            } else if (type === 'Return') {
+                const promptVal = prompt(`Current Outbound Quantity is ${item.out_quantity || 0}.\nEnter the NEW deducted quantity:`, item.out_quantity);
+                if (promptVal === null) return; // User pressed cancel on the prompt
+                newOutQty = parseInt(promptVal);
+                if (isNaN(newOutQty) || newOutQty < 0) {
+                    alert("Invalid quantity entered.");
+                    return;
+                }
+            }
+            
+            // Build the updated payload (remove ID to let Supabase auto-generate, or remove metadata fields)
+            const payload = { ...item };
+            delete payload.id; // Removed so a fresh corrected entry is generated.
+            delete payload.balance; 
+            delete payload.calculated_balance;
+
+            payload.out_quantity = newOutQty;
+            payload.remarks = `${type} item - ${reason}`;
+            
+            try {
+                // Delete old entry, Insert corrected entry to process adjustments in DB
+                await supabaseClient.from('transactions').delete().eq('id', item.id);
+                await supabaseClient.from('transactions').insert([payload]);
+                
+                showAlert(`Transaction ${type} processed successfully.`, "success");
+                modal.close();
+                
+                // Refresh views
+                await fetchDropdownInventoryPool();
+                await fetchTransactionsDataset();
+            } catch (err) {
+                showAlert("Error: " + err.message, "error");
+            }
         }
 
         async function handleOutboundSubmit(e) {
