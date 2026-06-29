@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outbound Logistics Clearance Node - JMP System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        .topbar { width: 100%; background-color: #0f172a; color: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #ee964b; }
+        .topbar h2 { font-size: 1.2rem; color: #ee964b; font-weight: 700; }
+        .logout-btn { background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .logout-btn:hover { background-color: #c9302c; }
+        
+        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+
+        .back-link { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            background-color: #ffffff; 
+            color: #475569; 
+            text-decoration: none; 
+            font-weight: 700; 
+            font-size: 0.9rem; 
+            margin-bottom: 25px; 
+            padding: 10px 18px; 
+            border-radius: 8px; 
+            border: 1px solid #cbd5e1; 
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out; 
+        }
+        .back-link:hover { 
+            background-color: #f8fafc; 
+            color: #ee964b; 
+            border-color: #ee964b; 
+            transform: translateX(-2px);
+        }
+
+        .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
+        
+        .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
+        .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
+        
+        .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
+        .form-row .form-group { flex: 1; margin-bottom: 0; }
+        .form-row .flex-2 { flex: 2; }
+        .form-row .flex-1 { flex: 1; }
+        
+        .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; height: 42px; }
+        .form-group textarea { height: 80px; resize: vertical; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        
+        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { 
+            background: #cbd5e1; 
+            color: #475569; 
+            cursor: not-allowed; 
+        }
+
+        #storageFacility, #itemCode, #itemCommodity, #buyerName { text-transform: uppercase; }
+
+        .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-primary { flex: 1; background: #0f172a; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; transition: 0.2s; }
+        .btn-primary:hover { background: #ee964b; color: #0f172a; }
+        .btn-primary:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .btn-secondary:hover { background: #b8c5d6; }
+        .btn-danger { background: #d9534f; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .btn-danger:hover { background: #c9302c; }
+        .btn-transfer { background: #6366f1; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: 0.2s; }
+        .btn-transfer:hover { background: #4f46e5; }
+
+        .ledger-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 25px; flex-wrap: wrap; gap: 15px; }
+        .ledger-header-wrapper h3 { border-bottom: none !important; padding-bottom: 0 !important; margin: 0 !important; }
+        .ledger-search-box { display: flex; gap: 10px; align-items: center; }
+        .ledger-search-box input { height: 38px; width: 250px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+        .ledger-search-box input:focus { outline: none; border-color: #ee964b; }
+        .ledger-search-box .btn-search { height: 38px; padding: 0 16px; font-size: 0.85rem; }
+
+        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; }
+        
+        .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; table-layout: auto; }
+        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
+        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        .master-table tr:hover td { background-color: #f8fafc; }
+        
+        .qty-val { font-weight: 700; color: #d9534f; font-size: 0.95rem; }
+        .qty-in { font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
+        .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
+
+        .action-btn-group { display: flex; gap: 6px; justify-content: center; }
+        
+        .btn-action-return { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
+        .btn-action-return:hover { background: #0369a1; }
+        .btn-action-cancel { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
+        .btn-action-cancel:hover { background: #c9302c; }
+        
+        .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
+
+        dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
+        dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+        @media (max-width: 768px) {
+            .topbar { padding: 15px 20px; flex-direction: column; gap: 10px; text-align: center; }
+            .form-row { flex-direction: column; gap: 0; }
+            .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
+            .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .ledger-search-box { width: 100%; }
+            .ledger-search-box input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <dialog id="alertModal">
+        <h3 id="alertModalTitle">Notification</h3>
+        <p id="alertModalBody" style="margin-bottom: 20px; color: #475569;"></p>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="document.getElementById('alertModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Close</button>
+        </div>
+    </dialog>
+
+    <dialog id="cancelModal">
+        <h3>Confirm Cancellation</h3>
+        <p style="margin-bottom: 20px; color: #475569;">Are you sure you want to cancel this order? This action will set the quantity to 0 and cannot be undone.</p>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="document.getElementById('cancelModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Keep Order</button>
+            <button class="btn-danger" id="confirmCancelBtn" style="padding: 8px 16px; font-size: 0.9rem;">Yes, Cancel Order</button>
+        </div>
+    </dialog>
+
+    <dialog id="transferModal">
+        <h3>Internal Cargo Transfer</h3>
+        <p style="margin-bottom: 20px; color: #475569;">Initiate transfer request to a secondary storage node. Please ensure the target facility is authorized.</p>
+        <div class="form-group">
+            <label>Target Facility</label>
+            <select id="targetFacility">
+                <option value="VVS COLD STORAGE & PROCESSING PLANT CORP.">VVS Cold Storage & Processing Plant Corp.</option>
+                <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">Hightower Storage & Trading Centre, Inc.</option>
+                <option value="EISBERG COLD LOGISTICS INC.">Eisberg Cold Logistics Inc.</option>
+                <option value="CRYSTAL COLD STORAGE, INC.">Crystal Cold Storage, Inc.</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="document.getElementById('transferModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Cancel</button>
+            <button class="btn-primary" onclick="executeActualTransfer()" style="padding: 8px 16px; font-size: 0.9rem;">Confirm Transfer</button>
+        </div>
+    </dialog>
+
+    <div class="topbar">
+        <h2 id="sidebarTitle">JMP System</h2>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Outbound Cargo Clearance & Truck Release Node</h1>
+            <div class="admin-badge" id="adminEmail">Loading Context...</div>
+        </div>
+
+        <a href="inventory-management.html" class="back-link">⬅️ Back to Stock Dashboard</a>
+        
+        <div class="workspace-grid">
+
+            <div class="card-panel" id="formContainerPanel">
+                <h3 id="formTitle">Authorize Fleet Dispatch & Release Cargo</h3>
+                <form id="outboundForm" onsubmit="handleOutboundSubmit(event)">
+                    <input type="hidden" id="selectedTransactionRowId">
+                    <input type="hidden" id="itemId">
+                    <input type="hidden" id="activeSpsicNumber">
+                    <input type="hidden" id="maxAvailableQty">
+                    <input type="hidden" id="rawUnitPrice">
+                    
+                    <div class="form-row" style="margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
+                        <div class="form-group flex-2">
+                            <label for="inventorySearchQuery" style="color: #0f172a; font-weight: 700;">Search Unique SKU Code / Item Code</label>
+                            <select id="inventorySearchQuery" onchange="handleDropdownSelection(this)">
+                                <option value="">-- Synchronizing Available Stock Codes --</option>
+                            </select>
+                        </div>
+                        <div class="form-group flex-2">
+                            <label style="color: #0f172a; font-weight: 700;">Dispatching Cold Storage Hub Facility</label>
+                            <input type="text" id="storageFacility" value="CRYSTAL COLD STORAGE, INC." readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group flex-1">
+                            <label>Sales Order No. (SO#)</label>
+                            <input type="text" id="salesOrderNo" readonly placeholder="AUTO-FILLED">
+                        </div>
+                        <div class="form-group flex-1">
+                            <label>Date Released</label>
+                            <input type="date" id="dateReleased" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Unique SKU Code / Item Code</label>
+                            <input type="text" id="itemCode" readonly placeholder="AUTO-FILLED">
+                        </div>
+                        <div class="form-group">
+                            <label>Sizes</label>
+                            <input type="text" id="itemSizes" readonly placeholder="AUTO-FILLED">
+                        </div>
+                        <div class="form-group">
+                            <label>Commodity</label>
+                            <input type="text" id="itemCommodity" placeholder="AUTO-FILLED" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Item Description</label>
+                        <input type="text" id="itemName" readonly placeholder="AUTO-FILLED">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Balance</label>
+                            <input type="text" id="displayAvailableQty" placeholder="0 Units Available" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Outbound Quantity</label>
+                            <input type="number" id="dispatchQuantity" required min="1" placeholder="Enter quantity to release" autocomplete="off" inputmode="numeric">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Buyer Name</label>
+                        <input type="text" id="buyerName" required placeholder="Enter individual or corporate buyer designation...">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="submitBtn">Upload Outbound Transactions</button>
+                        <button type="button" class="btn-transfer" onclick="document.getElementById('transferModal').showModal()">Transfer Storage</button>
+                        <button type="button" class="btn-secondary" id="clearBtn" onclick="resetFormState()">Clear Entry Fields</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-panel" style="padding: 20px 0px;">
+                <div class="ledger-header-wrapper">
+                    <h3>Transaction Running Ledger</h3>
+                    <div class="ledger-search-box">
+                        <input type="text" id="descSearchQuery" placeholder="Filter by Item Description...">
+                        <button type="button" class="btn-search" onclick="filterLedgerByDescription()">Search</button>
+                        <button type="button" class="btn-search clear-filter" onclick="clearDescriptionFilter()">Reset</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>SPSIC</th>
+                                <th>Date Processed</th>
+                                <th>SO#</th>
+                                <th>Item Code</th>
+                                <th>Item Description</th>
+                                <th>Sizes</th>
+                                <th>In Qty</th>
+                                <th>Out Qty</th>
+                                <th>Rolling Balance</th>
+                                <th>Buyer Name</th>
+                                <th>Remarks</th>
+                                <th style="text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerTableBody">
+                            <tr>
+                                <td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentAdminId = null;
+        let currentUserEmail = "";
+        let bypassAuthListener = false;
+        
+        let globallyAvailableStock = [];
+        let globallyFetchedHistory = [];
+        
+        let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
+
+        function generateSalesOrderNumber(isTransfer = false, direction = "", targetFacility = "") {
+            const dispatchFacility = document.getElementById('storageFacility').value || "";
+            const sourceFirstWord = dispatchFacility.trim().split(' ')[0].toUpperCase();
+            
+            if (isTransfer) {
+                const targetFirstWord = targetFacility.trim().split(' ')[0].toUpperCase();
+                return direction === "TRANSFER TO" 
+                    ? `TRANSFER TO ${targetFirstWord}` 
+                    : `TRANSFER FROM ${sourceFirstWord}`;
+            }
+            
+            const now = new Date();
+            const year = String(now.getFullYear()).slice(-2);
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hour = String(now.getHours()).padStart(2, '0');
+            const minute = String(now.getMinutes()).padStart(2, '0');
+            const second = String(now.getSeconds()).padStart(2, '0');
+            return `SO#${sourceFirstWord.charAt(0)}${year}${month}${day}-${hour}${minute}${second}`;
+        }
+
+        function showAlert(msg, type) {
+            const modal = document.getElementById('alertModal');
+            const title = document.getElementById('alertModalTitle');
+            const body = document.getElementById('alertModalBody');
+            title.textContent = type === 'error' ? 'System Error' : 'Success';
+            body.textContent = msg;
+            modal.style.borderColor = type === 'error' ? '#d9534f' : '#d1fae5';
+            modal.showModal();
+        }
+
+        async function executeActualTransfer() {
+            const targetFacility = document.getElementById('targetFacility').value;
+            const itemId = document.getElementById('itemId').value;
+            const currentQty = parseInt(document.getElementById('dispatchQuantity').value) || 0;
+            const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
+            const spsic = document.getElementById('activeSpsicNumber').value;
+            const unitPrice = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
+            
+            if (!itemId || currentQty <= 0) {
+                showAlert("Please select an item and ensure a valid quantity is set.", "error");
+                return;
+            }
+
+            if (currentQty > maxQty) {
+                showAlert(`Transfer quantity (${currentQty}) cannot exceed current available quantity (${maxQty}).`, "error");
+                return;
+            }
+
+            const transferPayload = [
+                {
+                    item_id: itemId,
+                    item_code: document.getElementById('itemCode').value,
+                    item_name: document.getElementById('itemName').value,
+                    sizes: document.getElementById('itemSizes').value,
+                    commodity: document.getElementById('itemCommodity').value,
+                    out_quantity: currentQty,
+                    in_quantity: 0,
+                    storage_facility: document.getElementById('storageFacility').value,
+                    remarks: "TRANSFER ITEM - OUT",
+                    transactions_type: "Outbound",
+                    processed_by: currentUserEmail,
+                    date: new Date().toISOString().split('T')[0],
+                    spsic_number: spsic,
+                    unit_price: unitPrice,
+                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
+                },
+                {
+                    item_id: itemId,
+                    item_code: document.getElementById('itemCode').value,
+                    item_name: document.getElementById('itemName').value,
+                    sizes: document.getElementById('itemSizes').value,
+                    commodity: document.getElementById('itemCommodity').value,
+                    out_quantity: 0,
+                    in_quantity: currentQty,
+                    storage_facility: targetFacility,
+                    remarks: "TRANSFER ITEM - IN",
+                    transactions_type: "Inbound",
+                    processed_by: currentUserEmail,
+                    date: new Date().toISOString().split('T')[0],
+                    spsic_number: spsic,
+                    unit_price: unitPrice,
+                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
+                }
+            ];
+
+            const { error } = await supabaseClient.from('transactions').insert(transferPayload);
+
+            if (error) {
+                showAlert("Error during transfer: " + error.message, "error");
+            } else {
+                showAlert("Transfer successful! Cargo moved to " + targetFacility, "success");
+                document.getElementById('transferModal').close();
+                await fetchDropdownInventoryPool();
+                await fetchTransactionsDataset();
+            }
+        }
+
+        function handleDropdownSelection(selectElement) {
+            const selectedItemCode = selectElement.value;
+            if (!selectedItemCode) { resetFormState(); return; }
+
+            const stockItem = globallyAvailableStock.find(item => item.item_code === selectedItemCode);
+            if (stockItem) {
+                document.getElementById('selectedTransactionRowId').value = '';
+                document.getElementById('itemId').value = stockItem.item_id || stockItem.id;
+                document.getElementById('activeSpsicNumber').value = stockItem.spsic_number || '';
+                document.getElementById('itemCode').value = stockItem.item_code || '';
+                document.getElementById('itemSizes').value = stockItem.sizes || '—';
+                document.getElementById('itemName').value = stockItem.item_name || '';
+                document.getElementById('itemCommodity').value = stockItem.commodity || '';
+                document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
+                document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
+                document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
+                document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
+                document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
+                showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
+            }
+        }
+
+        function resetFormState() {
+            document.getElementById('selectedTransactionRowId').value = '';
+            document.getElementById('itemId').value = '';
+            document.getElementById('activeSpsicNumber').value = '';
+            document.getElementById('maxAvailableQty').value = '';
+            document.getElementById('rawUnitPrice').value = '';
+            document.getElementById('outboundForm').reset();
+            document.getElementById('inventorySearchQuery').value = '';
+            document.getElementById('descSearchQuery').value = '';
+            document.getElementById('salesOrderNo').value = '';
+            document.getElementById('displayAvailableQty').value = '0 Units Available';
+            document.getElementById('storageFacility').value = 'CRYSTAL COLD STORAGE, INC.';
+            document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
+        }
+
+        async function initLogisticsDashboard() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            currentAdminId = user.id;
+            currentUserEmail = user.email;
+            
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('role, username, inventory_access, inv_quantity_access')
+                .eq('id', user.id)
+                .single();
+            
+            if (profile && profile.role === 'Admin') {
+                permissions.isAdmin = true;
+                permissions.hasMasterAccess = true;
+                permissions.canRelease = true;
+                document.getElementById('adminEmail').className = "admin-badge";
+                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
+                document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
+            } else {
+                const masterAccess = profile ? profile.inventory_access !== false : false;
+                if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
+                permissions.isAdmin = false;
+                permissions.hasMasterAccess = true;
+                permissions.canRelease = profile ? profile.inv_quantity_access === true : false;
+                document.getElementById('adminEmail').className = "employee-badge";
+                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
+                document.getElementById('sidebarTitle').textContent = "JMP Terminal";
+            }
+            applyFormUIRestrictions();
+            await fetchDropdownInventoryPool();
+            await fetchTransactionsDataset();
+            setupSessionCrossCheckListener();
+        }
+
+        function applyFormUIRestrictions() {
+            if (!permissions.canRelease) {
+                const container = document.getElementById('formContainerPanel');
+                const lockMask = document.createElement('div');
+                lockMask.className = "form-lock-message";
+                lockMask.innerHTML = `<span>🔒 Account profiles do not allow outbound logistics clearance authorization capabilities.</span>`;
+                container.appendChild(lockMask);
+            }
+        }
+
+        async function fetchDropdownInventoryPool() {
+            const { data, error } = await supabaseClient
+                .from('transactions')
+                .select('*')
+                .eq('storage_facility', 'CRYSTAL COLD STORAGE, INC.')
+                .order('created_at', { ascending: true });
+            if (error) return;
+
+            const itemBalances = {};
+            data.forEach(tx => {
+                const code = tx.item_code;
+                if (!code) return;
+                if (!itemBalances[code]) { itemBalances[code] = { data: tx, runningBalance: 0 }; }
+                itemBalances[code].runningBalance += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                itemBalances[code].data = tx;
+            });
+
+            const distinctItems = [];
+            for (const code in itemBalances) {
+                if (itemBalances[code].runningBalance > 0) {
+                    const itemEntry = itemBalances[code].data;
+                    itemEntry.calculated_balance = itemBalances[code].runningBalance;
+                    distinctItems.push(itemEntry);
+                }
+            }
+            globallyAvailableStock = distinctItems;
+            populateStockDropdown(globallyAvailableStock);
+        }
+
+        async function fetchTransactionsDataset() {
+            const { data, error } = await supabaseClient
+                .from('transactions')
+                .select('*')
+                .eq('storage_facility', 'CRYSTAL COLD STORAGE, INC.')
+                .order('created_at', { ascending: false });
+            if (error) { showAlert("System error: " + error.message, "error"); return; }
+            globallyFetchedHistory = data || [];
+            renderLedgerTable(globallyFetchedHistory);
+        }
+
+        function populateStockDropdown(items) {
+            const dropdown = document.getElementById('inventorySearchQuery');
+            let optionsHtml = `<option value="">-- Select Item Code --</option>`;
+            items.forEach(item => { optionsHtml += `<option value="${item.item_code}">${item.item_code || 'UNNAMED SKU'}</option>`; });
+            dropdown.innerHTML = optionsHtml;
+        }
+
+        function renderLedgerTable(items) {
+            const tbody = document.getElementById('ledgerTableBody');
+            const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            const balanceMap = new Map();
+            const itemRunningBalances = {};
+            allSorted.forEach(tx => {
+                const code = tx.item_code;
+                if (!itemRunningBalances[code]) itemRunningBalances[code] = 0;
+                itemRunningBalances[code] += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                balanceMap.set(tx.id, itemRunningBalances[code]);
+            });
+
+            tbody.innerHTML = items.map((item, index) => {
+                return `
+                    <tr>
+                        <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
+                        <td>${item.date || '—'}</td>
+                        <td style="color:#b45309; font-weight:700;">${item.sales_order_no || '—'}</td>
+                        <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.item_code || ''}</td>
+                        <td style="font-weight: 600;">${item.item_name || ''}</td>
+                        <td style="color: #475569;">${item.sizes || '—'}</td>
+                        <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
+                        <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
+                        <td><span class="qty-bal">${balanceMap.get(item.id)}</span></td>
+                        <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
+                        <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
+                        <td style="text-align: center;">
+                            <div class="action-btn-group">
+                                <button type="button" class="btn-action-return" onclick="prepareEdit(${index})">Edit</button>
+                                <button type="button" class="btn-action-cancel" onclick="showCancelDialog(${index})">Cancel</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function prepareEdit(index) {
+            const item = globallyFetchedHistory[index];
+            document.getElementById('selectedTransactionRowId').value = item.id;
+            document.getElementById('itemCode').value = item.item_code;
+            document.getElementById('itemName').value = item.item_name;
+            document.getElementById('itemSizes').value = item.sizes;
+            document.getElementById('itemCommodity').value = item.commodity;
+            document.getElementById('dispatchQuantity').value = item.out_quantity;
+            document.getElementById('buyerName').value = item.buyer_name;
+            document.getElementById('salesOrderNo').value = item.sales_order_no;
+            document.getElementById('dateReleased').value = item.date;
+            document.getElementById('activeSpsicNumber').value = item.spsic_number;
+            document.getElementById('itemId').value = item.item_id;
+            document.getElementById('rawUnitPrice').value = item.unit_price;
+            document.getElementById('formTitle').textContent = "Editing Transaction: " + item.sales_order_no;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function showCancelDialog(index) {
+            const modal = document.getElementById('cancelModal');
+            const confirmBtn = document.getElementById('confirmCancelBtn');
+            confirmBtn.onclick = () => {
+                modal.close();
+                executeCancel(index);
+            };
+            modal.showModal();
+        }
+
+        async function executeCancel(index) {
+            const item = globallyFetchedHistory[index];
+            const { error } = await supabaseClient
+                .from('transactions')
+                .update({ out_quantity: 0, remarks: "CANCELLED ORDER" })
+                .eq('id', item.id);
+
+            if (error) { showAlert("Error cancelling: " + error.message, "error"); }
+            else {
+                showAlert("Transaction successfully cancelled.", "success");
+                await fetchDropdownInventoryPool();
+                await fetchTransactionsDataset();
+            }
+        }
+
+        async function handleOutboundSubmit(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
+            const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
+
+            if (targetDispatchQuantity > maxQty) {
+                showAlert(`Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).`, "error");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Processing Transaction...";
+            
+            const targetRowId = document.getElementById('selectedTransactionRowId').value;
+            const targetBuyerName = document.getElementById('buyerName').value.trim().toUpperCase();
+
+            let remark = "";
+            if (targetRowId) {
+                const originalRecord = globallyFetchedHistory.find(row => row.id == targetRowId);
+                if (originalRecord) {
+                    if (targetBuyerName !== originalRecord.buyer_name) { remark = "EDIT BUYER"; }
+                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSSITIVE ADJ."; }
+                    else if (targetDispatchQuantity < originalRecord.out_quantity) { remark = "NEGATIVE ADJ."; }
+                }
+            }
+
+            const payload = {
+                item_id: document.getElementById('itemId').value,
+                item_code: document.getElementById('itemCode').value,
+                item_name: document.getElementById('itemName').value,
+                sizes: document.getElementById('itemSizes').value,
+                commodity: document.getElementById('itemCommodity').value,
+                in_quantity: 0,
+                out_quantity: targetDispatchQuantity,
+                unit_price: parseFloat(document.getElementById('rawUnitPrice').value) || 0,
+                transactions_type: "Outbound",
+                processed_by: currentUserEmail,
+                storage_facility: 'CRYSTAL COLD STORAGE, INC.',
+                date: document.getElementById('dateReleased').value,
+                buyer_name: targetBuyerName,
+                spsic_number: document.getElementById('activeSpsicNumber').value,
+                sales_order_no: document.getElementById('salesOrderNo').value,
+                remarks: remark.toUpperCase()
+            };
+            if (targetRowId) payload.id = targetRowId;
+
+            try {
+                const { error } = await supabaseClient.from('transactions').upsert([payload]);
+                if (error) throw error;
+                showAlert("Success: Ledger updated.", "success");
+                resetFormState();
+                await fetchDropdownInventoryPool();
+                await fetchTransactionsDataset();
+            } catch (err) { showAlert("Error: " + err.message, "error"); }
+            finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Upload Outbound Transactions";
+            }
+        }
+
+        function filterLedgerByDescription() {
+            const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
+            const filtered = globallyFetchedHistory.filter(item => (item.item_name || "").toLowerCase().includes(filterQuery));
+            renderLedgerTable(filtered);
+        }
+
+        function clearDescriptionFilter() {
+            document.getElementById('descSearchQuery').value = "";
+            renderLedgerTable(globallyFetchedHistory);
+        }
+
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (bypassAuthListener) return;
+                if (session && session.user && session.user.id !== currentAdminId) {
+                    bypassAuthListener = true; 
+                    await supabaseClient.auth.signOut();
+                    window.location.href = "login.html";
+                }
+            });
+        }
+
+        async function handleLogout() {
+            bypassAuthListener = true;
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        initLogisticsDashboard();
+    </script>
+</body>
+</html>
