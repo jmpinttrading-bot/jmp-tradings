@@ -131,15 +131,6 @@
         <h2 id="sidebarTitle">JMP System</h2>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </div>
-    
-    <dialog id="reasonModal">
-        <h3 id="modalTitle">Reason for Adjustment</h3>
-        <textarea id="adjustmentReason" placeholder="Enter detailed reason here..."></textarea>
-        <div class="modal-actions">
-            <button class="btn-secondary" onclick="document.getElementById('reasonModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Close</button>
-            <button class="btn-primary" onclick="submitAdjustment()" style="padding: 8px 16px; font-size: 0.9rem;">Confirm</button>
-        </div>
-    </dialog>
 
     <div class="main-content">
         <div class="header">
@@ -278,7 +269,6 @@
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
-        let pendingAdjustment = { type: '', item: null };
         
         let permissions = {
             isAdmin: false,
@@ -504,7 +494,7 @@
                         <td style="text-align: center;">
                             <div class="action-btn-group">
                                 <button type="button" class="btn-action-return" onclick="prepareEdit(${index})">Edit</button>
-                                <button type="button" class="btn-action-cancel" onclick="openReasonModal('Cancel', ${index})">Cancel</button>
+                                <button type="button" class="btn-action-cancel" onclick="cancelTransaction(${index})">Cancel</button>
                             </div>
                         </td>
                     </tr>
@@ -530,36 +520,26 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function openReasonModal(type, index) {
-            pendingAdjustment = { type: type, item: globallyFetchedHistory[index] };
-            document.getElementById('modalTitle').textContent = `Reason for ${type}`;
-            document.getElementById('adjustmentReason').value = '';
-            document.getElementById('reasonModal').showModal();
-        }
-
-        async function submitAdjustment() {
-            const reason = document.getElementById('adjustmentReason').value.trim();
-            const { type, item } = pendingAdjustment;
-            const modal = document.getElementById('reasonModal');
-
-            if (!reason) { alert("Please provide a reason before submitting."); return; }
-
-            if (type === 'Cancel') {
-                const { error } = await supabaseClient
-                    .from('transactions')
-                    .update({ 
-                        out_quantity: 0, 
-                        remarks: `CANCELLED: ${reason}` 
-                    })
-                    .eq('id', item.id);
-
-                if (error) { showAlert("Error cancelling: " + error.message, "error"); return; }
-                showAlert("Transaction successfully cancelled (Quantity set to 0).", "success");
-            }
+        async function cancelTransaction(index) {
+            if(!confirm("Are you sure you want to cancel this order?")) return;
             
-            modal.close();
-            await fetchDropdownInventoryPool();
-            await fetchTransactionsDataset();
+            const item = globallyFetchedHistory[index];
+            
+            const { error } = await supabaseClient
+                .from('transactions')
+                .update({ 
+                    out_quantity: 0, 
+                    remarks: "CANCELLED ORDER" 
+                })
+                .eq('id', item.id);
+
+            if (error) { 
+                showAlert("Error cancelling: " + error.message, "error"); 
+            } else {
+                showAlert("Transaction successfully cancelled.", "success");
+                await fetchDropdownInventoryPool();
+                await fetchTransactionsDataset();
+            }
         }
 
         async function handleOutboundSubmit(e) {
@@ -574,7 +554,6 @@
 
             let remark = "";
 
-            // LOGIC FOR REMARKS
             if (targetRowId) {
                 const originalRecord = globallyFetchedHistory.find(row => row.id == targetRowId);
                 if (originalRecord) {
@@ -604,7 +583,7 @@
                 buyer_name: targetBuyerName,
                 spsic_number: document.getElementById('activeSpsicNumber').value,
                 sales_order_no: document.getElementById('salesOrderNo').value,
-                remarks: remark // Apply the generated remark
+                remarks: remark
             };
 
             if (targetRowId) {
