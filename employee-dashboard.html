@@ -44,7 +44,6 @@
         .card:last-of-type { margin-bottom: 0; }
         .card h3 { color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
         
-        /* Profile Image Container Layout */
         .profile-pic-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; }
         .profile-pic-frame { width: 160px; height: 160px; border-radius: 50%; border: 4px solid #f4f6f9; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; position: relative; }
         .profile-pic-frame img { width: 100%; height: 100%; object-fit: cover; }
@@ -72,13 +71,11 @@
         .btn.secondary:hover { background: #cbd5e1; }
         .btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
-        /* Inline Block Banner Area when initial workspace loads locked out */
         .roadblock-panel { display: none; background: white; padding: 40px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; max-width: 600px; margin: 40px auto; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .roadblock-panel .icon { font-size: 3.5rem; margin-bottom: 15px; color: #ef4444; display: inline-block; }
         .roadblock-panel h2 { color: #0b2545; font-size: 1.5rem; margin-bottom: 12px; }
         .roadblock-panel p { color: #64748b; line-height: 1.6; font-size: 1rem; }
 
-        /* Access Blocker Warning Popup Modal Design */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 100%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; transform: scale(0.9); transition: transform 0.25s ease; }
@@ -113,8 +110,8 @@
         <h2>JMP Workspace</h2>
         <a id="navMyProfile" class="active" onclick="verifyNavigationPrivilege('Profile Management', '#')">👤 My Account Profile</a>
         <a id="navImportDocs" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">📄 Import Doc File Management</a>
-        <!-- ADDED: Inventory Management Sidebar Node Link Element -->
         <a id="navInventoryManagement" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">📦 Inventory Management</a>
+        <a id="navSalesInvoice" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">🧾 Sales Invoice Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout System</button>
     </div>
 
@@ -270,11 +267,11 @@
         let currentEmployeeId = null;
         let bypassAuthListener = false;
         
-        // UPDATED: Added structural mapping reference column parameter tracking state defaults
         let permissionsMatrix = {
             profile_access: true,
             import_access: true,
-            inventory_access: true
+            inventory_access: true,
+            sales_invoice_access: true
         };
 
         function showAlert(msg, type) {
@@ -297,10 +294,9 @@
         }
 
         async function fetchEmployeeSystemPermissions(authUser) {
-            // UPDATED: Added inventory_access parameter lookup query parameter string context mapping rules
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
-                .select('username, role, profile_access, import_access, inventory_access')
+                .select('username, role, profile_access, import_access, inventory_access, sales_invoice_access')
                 .eq('id', currentEmployeeId)
                 .maybeSingle();
 
@@ -316,8 +312,8 @@
                 const isAdminUser = profile.role === 'Admin';
                 permissionsMatrix.profile_access = isAdminUser || profile.profile_access !== false;
                 permissionsMatrix.import_access = isAdminUser || profile.import_access !== false;
-                // UPDATED: Bind structural fallback column properties mapping rules context values checks
                 permissionsMatrix.inventory_access = isAdminUser || profile.inventory_access !== false;
+                permissionsMatrix.sales_invoice_access = isAdminUser || profile.sales_invoice_access !== false;
 
                 if (!permissionsMatrix.profile_access) {
                     document.getElementById('profileDossierWorkspaceWrapper').style.display = 'none';
@@ -338,9 +334,10 @@
                 isAccessPermitted = permissionsMatrix.profile_access;
             } else if (moduleName === 'Import Doc File Management') {
                 isAccessPermitted = permissionsMatrix.import_access;
-            // UPDATED: Verify conditional switch evaluations constraints rules check
             } else if (moduleName === 'Inventory Management') {
                 isAccessPermitted = permissionsMatrix.inventory_access;
+            } else if (moduleName === 'Sales Invoice Management') {
+                isAccessPermitted = permissionsMatrix.sales_invoice_access;
             }
 
             if (isAccessPermitted) {
@@ -392,7 +389,6 @@
                 document.getElementById('pagibigNo').value = data.pagibig_no || '';
                 document.getElementById('philhealthNo').value = data.philhealth_no || '';
 
-                // Render dynamic avatar URL if available
                 renderAvatarView(data.avatar_url);
             }
         }
@@ -400,7 +396,6 @@
         function renderAvatarView(url) {
             const frame = document.getElementById('profilePicFrame');
             if (url && url.trim() !== '') {
-                // Append a unique query parameter to bust browser cache on updates
                 const cacheBusterUrl = `${url}?t=${new Date().getTime()}`;
                 frame.innerHTML = `<img src="${cacheBusterUrl}" alt="Employee Profile Picture Image">`;
             } else {
@@ -415,7 +410,6 @@
             const uploadBtn = document.getElementById('uploadAvatarBtn');
             const statusText = document.getElementById('uploadStatusText');
 
-            // Client side validation
             if (!file.type.startsWith('image/')) {
                 showAlert("Please select a valid image file format.", "error");
                 return;
@@ -425,11 +419,9 @@
                 uploadBtn.disabled = true;
                 statusText.textContent = "Processing upload sequence...";
 
-                // Establish clean file identifier parameters
                 const fileExtension = file.name.split('.').pop();
                 const filePath = `${currentEmployeeId}/avatar-${Date.now()}.${fileExtension}`;
 
-                // 1. Upload raw payload to Supabase Avatars storage bucket
                 const { data: storageData, error: storageError } = await supabaseClient
                     .storage
                     .from('avatars')
@@ -437,7 +429,6 @@
 
                 if (storageError) throw storageError;
 
-                // 2. Derive deterministic public retrieval URL endpoint
                 const { data: { publicUrl } } = supabaseClient
                     .storage
                     .from('avatars')
@@ -445,7 +436,6 @@
 
                 statusText.textContent = "Updating dossier schema data...";
 
-                // 3. Mutate target avatar_url text field row inside employee_201_docs table
                 const { error: dbError } = await supabaseClient
                     .from('employee_201_docs')
                     .update({ avatar_url: publicUrl })
@@ -453,7 +443,6 @@
 
                 if (dbError) throw dbError;
 
-                // Update visual frames
                 renderAvatarView(publicUrl);
                 statusText.textContent = "";
                 showAlert("Profile identification photo updated successfully!", "success");
@@ -464,7 +453,7 @@
                 showAlert(`Upload Failed: ${err.message}`, "error");
             } finally {
                 uploadBtn.disabled = false;
-                event.target.value = ''; // Flush input channel buffer
+                event.target.value = ''; 
             }
         }
 
