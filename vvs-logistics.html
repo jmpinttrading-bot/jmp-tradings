@@ -72,6 +72,8 @@
         .btn-primary:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
         .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
         .btn-secondary:hover { background: #b8c5d6; }
+        .btn-danger { background: #d9534f; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .btn-danger:hover { background: #c9302c; }
 
         .ledger-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 25px; flex-wrap: wrap; gap: 15px; }
         .ledger-header-wrapper h3 { border-bottom: none !important; padding-bottom: 0 !important; margin: 0 !important; }
@@ -103,8 +105,6 @@
         dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
-        dialog textarea { width: 100%; height: 90px; margin-bottom: 20px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; resize: vertical; }
-        dialog textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
         @media (max-width: 768px) {
@@ -124,6 +124,15 @@
         <p id="alertModalBody" style="margin-bottom: 20px; color: #475569;"></p>
         <div class="modal-actions">
             <button class="btn-primary" onclick="document.getElementById('alertModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Close</button>
+        </div>
+    </dialog>
+
+    <dialog id="cancelModal">
+        <h3>Confirm Cancellation</h3>
+        <p style="margin-bottom: 20px; color: #475569;">Are you sure you want to cancel this order? This action will set the quantity to 0 and cannot be undone.</p>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="document.getElementById('cancelModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Keep Order</button>
+            <button class="btn-danger" id="confirmCancelBtn" style="padding: 8px 16px; font-size: 0.9rem;">Yes, Cancel Order</button>
         </div>
     </dialog>
 
@@ -270,11 +279,7 @@
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
         
-        let permissions = {
-            isAdmin: false,
-            hasMasterAccess: false,
-            canRelease: false
-        };
+        let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
 
         function generateSalesOrderNumber() {
             const now = new Date();
@@ -284,10 +289,8 @@
             const hour = String(now.getHours()).padStart(2, '0');
             const minute = String(now.getMinutes()).padStart(2, '0');
             const second = String(now.getSeconds()).padStart(2, '0');
-            
             const facilityInput = document.getElementById('storageFacility').value || "";
             const facilityLetter = facilityInput.trim().charAt(0).toUpperCase() || "X";
-            
             return `SO#${facilityLetter}${year}${month}${day}-${hour}${minute}${second}`;
         }
 
@@ -295,7 +298,6 @@
             const modal = document.getElementById('alertModal');
             const title = document.getElementById('alertModalTitle');
             const body = document.getElementById('alertModalBody');
-            
             title.textContent = type === 'error' ? 'System Error' : 'Success';
             body.textContent = msg;
             modal.style.borderColor = type === 'error' ? '#d9534f' : '#d1fae5';
@@ -304,29 +306,22 @@
 
         function handleDropdownSelection(selectElement) {
             const selectedItemCode = selectElement.value;
-            if (!selectedItemCode) {
-                resetFormState();
-                return;
-            }
+            if (!selectedItemCode) { resetFormState(); return; }
 
             const stockItem = globallyAvailableStock.find(item => item.item_code === selectedItemCode);
             if (stockItem) {
                 document.getElementById('selectedTransactionRowId').value = '';
                 document.getElementById('itemId').value = stockItem.item_id || stockItem.id;
                 document.getElementById('activeSpsicNumber').value = stockItem.spsic_number || '';
-                
                 document.getElementById('itemCode').value = stockItem.item_code || '';
                 document.getElementById('itemSizes').value = stockItem.sizes || '—';
                 document.getElementById('itemName').value = stockItem.item_name || '';
                 document.getElementById('itemCommodity').value = stockItem.commodity || '';
-                
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
-                
                 document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
                 document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
-                
                 showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
             }
         }
@@ -338,7 +333,6 @@
             document.getElementById('maxAvailableQty').value = '';
             document.getElementById('rawUnitPrice').value = '';
             document.getElementById('outboundForm').reset();
-            
             document.getElementById('inventorySearchQuery').value = '';
             document.getElementById('descSearchQuery').value = '';
             document.getElementById('salesOrderNo').value = '';
@@ -350,7 +344,6 @@
         async function initLogisticsDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            
             currentAdminId = user.id;
             currentUserEmail = user.email;
             
@@ -364,26 +357,19 @@
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
                 permissions.canRelease = true;
-                
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
             } else {
                 const masterAccess = profile ? profile.inventory_access !== false : false;
-                if (!masterAccess) {
-                    alert("Unauthorized access framework exception. Redirecting to hub dashboard.");
-                    window.location.href = "employee-dashboard.html";
-                    return;
-                }
+                if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
                 permissions.canRelease = profile ? profile.inv_quantity_access === true : false;
-
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP Terminal";
             }
-            
             applyFormUIRestrictions();
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
@@ -406,20 +392,14 @@
                 .select('*')
                 .eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.')
                 .order('created_at', { ascending: true });
-
             if (error) return;
 
             const itemBalances = {};
             data.forEach(tx => {
                 const code = tx.item_code;
                 if (!code) return;
-
-                if (!itemBalances[code]) {
-                    itemBalances[code] = { data: tx, runningBalance: 0 };
-                }
-                const ins = parseInt(tx.in_quantity) || 0;
-                const outs = parseInt(tx.out_quantity) || 0;
-                itemBalances[code].runningBalance += (ins - outs);
+                if (!itemBalances[code]) { itemBalances[code] = { data: tx, runningBalance: 0 }; }
+                itemBalances[code].runningBalance += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
                 itemBalances[code].data = tx;
             });
 
@@ -431,7 +411,6 @@
                     distinctItems.push(itemEntry);
                 }
             }
-
             globallyAvailableStock = distinctItems;
             populateStockDropdown(globallyAvailableStock);
         }
@@ -442,12 +421,7 @@
                 .select('*')
                 .eq('storage_facility', 'VVS COLD STORAGE & PROCESSING PLANT CORP.')
                 .order('created_at', { ascending: false });
-
-            if (error) {
-                showAlert("System error syncing warehouse transactions matrix: " + error.message, "error");
-                return;
-            }
-
+            if (error) { showAlert("System error: " + error.message, "error"); return; }
             globallyFetchedHistory = data || [];
             renderLedgerTable(globallyFetchedHistory);
         }
@@ -455,24 +429,18 @@
         function populateStockDropdown(items) {
             const dropdown = document.getElementById('inventorySearchQuery');
             let optionsHtml = `<option value="">-- Select Item Code --</option>`;
-            items.forEach(item => {
-                optionsHtml += `<option value="${item.item_code}">${item.item_code || 'UNNAMED SKU'}</option>`;
-            });
+            items.forEach(item => { optionsHtml += `<option value="${item.item_code}">${item.item_code || 'UNNAMED SKU'}</option>`; });
             dropdown.innerHTML = optionsHtml;
         }
 
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
-            
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-            
             const balanceMap = new Map();
             const itemRunningBalances = {};
-
             allSorted.forEach(tx => {
                 const code = tx.item_code;
                 if (!itemRunningBalances[code]) itemRunningBalances[code] = 0;
-                
                 itemRunningBalances[code] += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
                 balanceMap.set(tx.id, itemRunningBalances[code]);
             });
@@ -494,7 +462,7 @@
                         <td style="text-align: center;">
                             <div class="action-btn-group">
                                 <button type="button" class="btn-action-return" onclick="prepareEdit(${index})">Edit</button>
-                                <button type="button" class="btn-action-cancel" onclick="cancelTransaction(${index})">Cancel</button>
+                                <button type="button" class="btn-action-cancel" onclick="showCancelDialog(${index})">Cancel</button>
                             </div>
                         </td>
                     </tr>
@@ -520,22 +488,25 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        async function cancelTransaction(index) {
-            if(!confirm("Are you sure you want to cancel this order?")) return;
-            
+        function showCancelDialog(index) {
+            const modal = document.getElementById('cancelModal');
+            const confirmBtn = document.getElementById('confirmCancelBtn');
+            confirmBtn.onclick = () => {
+                modal.close();
+                executeCancel(index);
+            };
+            modal.showModal();
+        }
+
+        async function executeCancel(index) {
             const item = globallyFetchedHistory[index];
-            
             const { error } = await supabaseClient
                 .from('transactions')
-                .update({ 
-                    out_quantity: 0, 
-                    remarks: "CANCELLED ORDER" 
-                })
+                .update({ out_quantity: 0, remarks: "CANCELLED ORDER" })
                 .eq('id', item.id);
 
-            if (error) { 
-                showAlert("Error cancelling: " + error.message, "error"); 
-            } else {
+            if (error) { showAlert("Error cancelling: " + error.message, "error"); }
+            else {
                 showAlert("Transaction successfully cancelled.", "success");
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
@@ -553,17 +524,12 @@
             const targetBuyerName = document.getElementById('buyerName').value.trim().toUpperCase();
 
             let remark = "";
-
             if (targetRowId) {
                 const originalRecord = globallyFetchedHistory.find(row => row.id == targetRowId);
                 if (originalRecord) {
-                    if (targetBuyerName !== originalRecord.buyer_name) {
-                        remark = "EDIT BUYER";
-                    } else if (targetDispatchQuantity > originalRecord.out_quantity) {
-                        remark = "POSSITIVE ADJ.";
-                    } else if (targetDispatchQuantity < originalRecord.out_quantity) {
-                        remark = "NEGATIVE ADJ.";
-                    }
+                    if (targetBuyerName !== originalRecord.buyer_name) { remark = "EDIT BUYER"; }
+                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSSITIVE ADJ."; }
+                    else if (targetDispatchQuantity < originalRecord.out_quantity) { remark = "NEGATIVE ADJ."; }
                 }
             }
 
@@ -585,23 +551,17 @@
                 sales_order_no: document.getElementById('salesOrderNo').value,
                 remarks: remark
             };
-
-            if (targetRowId) {
-                payload.id = targetRowId;
-            }
+            if (targetRowId) payload.id = targetRowId;
 
             try {
                 const { error } = await supabaseClient.from('transactions').upsert([payload]);
-                
                 if (error) throw error;
-                
                 showAlert("Success: Ledger updated.", "success");
                 resetFormState();
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
-            } catch (err) {
-                showAlert("Error: " + err.message, "error");
-            } finally {
+            } catch (err) { showAlert("Error: " + err.message, "error"); }
+            finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Upload Outbound Transactions";
             }
