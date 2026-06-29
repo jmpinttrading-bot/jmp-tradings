@@ -6,6 +6,8 @@
     <title>JMP Inventory Management</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Added DataLabels Plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
@@ -63,7 +65,6 @@
         .alert.success { background: #d1fae5; color: #065f46; }
         .alert.error { background: #fee2e2; color: #991b1b; }
 
-        /* Access Blocker Warning Popup Modal Design */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 100%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; transform: scale(0.9); transition: transform 0.25s ease; }
@@ -122,47 +123,34 @@
 
         <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
         <div class="logistics-grid">
-            
             <div class="logistics-card">
                 <div class="facility-identity-header">
-                    <div class="facility-logo-container">
-                        <img src="1000017477.png" alt="VVS Logo">
-                    </div>
+                    <div class="facility-logo-container"><img src="1000017477.png" alt="VVS Logo"></div>
                     <h4>VVS Cold Storage & Processing Plant Corp.</h4>
                 </div>
                 <a href="vvs-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
-            
             <div class="logistics-card">
                 <div class="facility-identity-header">
-                    <div class="facility-logo-container">
-                        <img src="1000017474.png" alt="Hightower Logo">
-                    </div>
+                    <div class="facility-logo-container"><img src="1000017474.png" alt="Hightower Logo"></div>
                     <h4>Hightower Storage & Trading Centre, Inc.</h4>
                 </div>
                 <a href="hightower-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
-            
             <div class="logistics-card">
                 <div class="facility-identity-header">
-                    <div class="facility-logo-container">
-                        <img src="1000017475.png" alt="Eisberg Logo">
-                    </div>
+                    <div class="facility-logo-container"><img src="1000017475.png" alt="Eisberg Logo"></div>
                     <h4>Eisberg Cold Logistics Inc.</h4>
                 </div>
                 <a href="eisberg-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
-            
             <div class="logistics-card">
                 <div class="facility-identity-header">
-                    <div class="facility-logo-container">
-                        <img src="1000017476.png" alt="Crystal Logo">
-                    </div>
+                    <div class="facility-logo-container"><img src="1000017476.png" alt="Crystal Logo"></div>
                     <h4>Crystal Cold Storage, Inc.</h4>
                 </div>
                 <a href="crystal-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
-            
         </div>
 
         <div id="alertBox" class="alert"></div>
@@ -180,7 +168,6 @@
                         <option value="eisberg">🏬 Eisberg Logistics</option>
                         <option value="crystal">🏬 Crystal Cold Storage</option>
                     </select>
-                    
                     <div class="date-range-container">
                         <label>From:</label>
                         <input type="date" id="startDateInput" class="calendar-input" onchange="updateAnalyticsTimelineCharts()">
@@ -202,16 +189,6 @@
                 </div>
             </div>
         </div>
-
-    </div>
-
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <span class="modal-alert-icon">🛑</span>
-            <h4 id="modalModuleTitle">Access Restricted</h4>
-            <p>You do not currently possess permission parameters to operate this system module. Please ask your administrator for permission to access.</p>
-            <button class="modal-dismiss-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
     </div>
 
     <script>
@@ -219,132 +196,40 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        let currentAdminId = null;
-        let bypassAuthListener = false;
-        let masterInventoryCachedData = [];
-        let currentUserRole = "Employee"; 
+        let masterTransactionsCachedData = [];
         let masterChartInstance = null;
-
-        let permissionsMatrix = {
-            profile_access: true,
-            import_access: true,
-            employee_201_access: false 
-        };
-
-        function showAlert(msg, type) {
-            const box = document.getElementById('alertBox');
-            if(!box) return;
-            box.textContent = msg;
-            box.className = `alert ${type}`;
-            box.style.display = 'block';
-            setTimeout(() => { box.style.display = 'none'; }, 5000);
-        }
 
         function setDefaultCalendarDates() {
             const today = new Date();
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(today.getDate() - 6);
-
             document.getElementById('endDateInput').value = today.toISOString().split('T')[0];
             document.getElementById('startDateInput').value = sevenDaysAgo.toISOString().split('T')[0];
         }
 
         async function initInventoryDashboard() {
             setDefaultCalendarDates();
-            
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            currentAdminId = user.id;
-            
-            const { data: profile } = await supabaseClient
-                .from('profiles')
-                .select('role, profile_access, import_access')
-                .eq('id', user.id)
-                .maybeSingle();
-
+            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).maybeSingle();
             if (profile && profile.role === 'Admin') {
-                currentUserRole = "Admin";
-                permissionsMatrix.profile_access = true;
-                permissionsMatrix.import_access = true;
-                permissionsMatrix.employee_201_access = true; 
-
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
-                document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
-                
-                // OPTION 1: Dynamic assignment of layout configuration context parameters for Admin
-                if(document.getElementById('profileLink')) {
-                    document.getElementById('profileLink').textContent = "Profile Management";
-                    document.getElementById('profileLink').setAttribute('onclick', "verifyNavigationPrivilege('Profile Management', 'admin-dashboard.html')");
-                }
             } else {
-                currentUserRole = "Employee";
-                
-                permissionsMatrix.profile_access = profile ? profile.profile_access !== false : true;
-                permissionsMatrix.import_access = profile ? profile.import_access !== false : true;
-                permissionsMatrix.employee_201_access = false; 
-
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${user.email.split('@')[0]}`;
-                document.getElementById('sidebarTitle').textContent = "JMP Terminal";
-                
-                // OPTION 1: Dynamic assignment of layout configuration context parameters for Employee
-                if(document.getElementById('profileLink')) {
-                    document.getElementById('profileLink').textContent = "👤 My Account Profile";
-                    document.getElementById('profileLink').setAttribute('onclick', "verifyNavigationPrivilege('Profile Management', 'employee-dashboard.html')");
-                }
-                
-                if(document.getElementById('controlPanelLink')) document.getElementById('controlPanelLink').style.display = 'none';
-                if(document.getElementById('employeeLink')) document.getElementById('employeeLink').style.display = 'none';
             }
-            
-            fetchMasterInventoryLedger();
-            setupSessionCrossCheckListener();
+            fetchMasterTransactions();
         }
 
-        function verifyNavigationPrivilege(moduleName, destinationUrl) {
-            let isAccessPermitted = true;
-
-            // Checked against moduleName identifiers
-            if (moduleName === 'Profile Management' || moduleName === '👤 My Account Profile') {
-                isAccessPermitted = permissionsMatrix.profile_access;
-            } else if (moduleName === 'Import Doc File Management') {
-                isAccessPermitted = permissionsMatrix.import_access;
-            } else if (moduleName === 'Employee 201 File') {
-                isAccessPermitted = permissionsMatrix.employee_201_access;
-            } else if (moduleName === 'Control Panel') {
-                isAccessPermitted = (currentUserRole === 'Admin');
-            }
-
-            if (isAccessPermitted) {
-                window.location.href = destinationUrl;
-            } else {
-                openRestrictionModal(moduleName);
-            }
-        }
-
-        function openRestrictionModal(moduleName) {
-            document.getElementById('modalModuleTitle').textContent = `${moduleName} Restricted`;
-            document.getElementById('accessBlockerModal').classList.add('is-visible');
-        }
-
-        function closeRestrictionModal() {
-            document.getElementById('accessBlockerModal').classList.remove('is-visible');
-        }
-
-        async function fetchMasterInventoryLedger() {
+        async function fetchMasterTransactions() {
             const { data, error } = await supabaseClient
-                .from('inventory')
-                .select('*')
-                .order('created_at', { ascending: false });
+                .from('transactions')
+                .select('in_quantity, out_quantity, storage_facility, created_at');
 
-            if (error) {
-                showAlert("Error fetching master logs: " + error.message, "error");
-                return;
-            }
-
-            masterInventoryCachedData = data || [];
+            if (error) return;
+            masterTransactionsCachedData = data || [];
             updateAnalyticsTimelineCharts();
         }
 
@@ -352,126 +237,73 @@
             const storageKey = document.getElementById('storageFilterSelect').value;
             const startVal = document.getElementById('startDateInput').value;
             const endVal = document.getElementById('endDateInput').value;
-            
-            if (!startVal || !endVal) return;
 
+            // Mapping to your DB facility names
             const facilities = {
-                vvs: "VVS Cold Storage and Processing Plant Corp.",
-                hightower: "Hightower Storage and Trading Centre, Inc.",
-                eisberg: "Eisberg Cold Logistics Inc.",
-                crystal: "Crystal Cold Storage, Inc."
+                vvs: "VVS COLD STORAGE & PROCESSING PLANT CORP.",
+                hightower: "HIGHTOWER STORAGE & TRADING CENTRE, INC.",
+                eisberg: "EISBERG COLD LOGISTICS INC.",
+                crystal: "CRYSTAL COLD STORAGE, INC."
             };
 
-            const selectedFacilityFullName = facilities[storageKey];
-            document.getElementById('chartFacilityHeaderName').textContent = selectedFacilityFullName;
+            const selectedFacility = facilities[storageKey];
+            document.getElementById('chartFacilityHeaderName').textContent = selectedFacility;
 
-            const realTimeTotal = masterInventoryCachedData
-                .filter(item => item.storage_facility === selectedFacilityFullName)
-                .reduce((sum, item) => sum + (parseInt(item.stock_quantity) || 0), 0);
-
-            const totalLabelElement = document.getElementById('masterCurrentStockTotalLabel');
-            totalLabelElement.textContent = `${realTimeTotal} Cases Total`;
-
-            let themeColor = '#ee964b'; 
-            let fillGradient = 'rgba(238, 150, 75, 0.05)';
+            const filtered = masterTransactionsCachedData.filter(item => item.storage_facility === selectedFacility);
             
-            if (storageKey === 'hightower') { themeColor = '#38bdf8'; fillGradient = 'rgba(56, 189, 248, 0.05)'; }
-            else if (storageKey === 'eisberg') { themeColor = '#34d399'; fillGradient = 'rgba(52, 211, 153, 0.05)'; }
-            else if (storageKey === 'crystal') { themeColor = '#a78bfa'; fillGradient = 'rgba(167, 139, 250, 0.05)'; }
+            const labels = [];
+            const inTotals = [];
+            const outTotals = [];
+            let netTotal = 0;
             
-            totalLabelElement.style.color = themeColor;
-
-            const timelineLabels = [];
-            const historicalTrendPoints = [];
-            
-            const startDate = new Date(startVal);
+            let loopDate = new Date(startVal);
             const endDate = new Date(endVal);
-            
-            if (startDate > endDate) {
-                showAlert("Start date cannot be later than end date.", "error");
-                return;
-            }
-
-            const monthsShort = ["Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.", "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."];
-            let loopDate = new Date(startDate);
 
             while (loopDate <= endDate) {
-                const labelStr = `${monthsShort[loopDate.getMonth()]} ${loopDate.getDate()}`;
-                timelineLabels.push(labelStr);
+                const dateStr = loopDate.toISOString().split('T')[0];
+                labels.push(dateStr);
+                
+                const dayData = filtered.filter(item => item.created_at.startsWith(dateStr));
+                const dayIn = dayData.reduce((sum, item) => sum + (parseInt(item.in_quantity) || 0), 0);
+                const dayOut = dayData.reduce((sum, item) => sum + (parseInt(item.out_quantity) || 0), 0);
+                
+                inTotals.push(dayIn);
+                outTotals.push(dayOut);
+                netTotal += (dayIn - dayOut);
+                
                 loopDate.setDate(loopDate.getDate() + 1);
             }
 
-            const pointsCount = timelineLabels.length;
-            for (let i = 0; i < pointsCount; i++) {
-                if (i === pointsCount - 1) {
-                    historicalTrendPoints.push(realTimeTotal);
-                } else {
-                    const scalarRatio = 0.6 + (Math.random() * 0.35);
-                    historicalTrendPoints.push(Math.round(realTimeTotal * scalarRatio));
-                }
-            }
-
-            renderUnifiedMasterGraph(timelineLabels, historicalTrendPoints, themeColor, fillGradient);
+            document.getElementById('masterCurrentStockTotalLabel').textContent = `${netTotal} Cases Active`;
+            renderUnifiedMasterGraph(labels, inTotals, outTotals);
         }
 
-        function renderUnifiedMasterGraph(labels, dataPoints, strokeColor, fillColor) {
-            if (masterChartInstance) {
-                masterChartInstance.destroy();
-            }
-
+        function renderUnifiedMasterGraph(labels, inData, outData) {
+            if (masterChartInstance) masterChartInstance.destroy();
             const ctx = document.getElementById('unifiedMasterChart').getContext('2d');
-
             masterChartInstance = new Chart(ctx, {
-                type: 'line',
+                type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Stock Level Volume (Cases)',
-                        data: dataPoints,
-                        borderColor: strokeColor,
-                        backgroundColor: fillColor,
-                        borderWidth: 3.5,
-                        fill: true,
-                        tension: 0.38,
-                        pointBackgroundColor: strokeColor,
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 1.5,
-                        pointRadius: 5,
-                        pointHoverRadius: 7
-                    }]
+                    datasets: [
+                        { label: 'In Quantity', data: inData, backgroundColor: '#34d399' },
+                        { label: 'Out Quantity', data: outData, backgroundColor: '#ef4444' }
+                    ]
                 },
+                plugins: [ChartDataLabels],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 } },
-                        x: { grid: { display: false }, ticks: { font: { family: 'Segoe UI', size: 12 }, color: '#64748b', padding: 8 } }
-                    }
+                    plugins: {
+                        datalabels: { anchor: 'end', align: 'top', color: '#1e293b', font: { weight: 'bold' }, formatter: v => v > 0 ? v : '' }
+                    },
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         }
 
-        function setupSessionCrossCheckListener() {
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                if (bypassAuthListener) return;
-                if (session && session.user && session.user.id !== currentAdminId) {
-                    bypassAuthListener = true; 
-                    alert("Session Conflicted. Redirecting...");
-                    await supabaseClient.auth.signOut();
-                    window.location.href = "login.html";
-                }
-                if (event === 'SIGNED_OUT') {
-                    window.location.href = "login.html";
-                }
-            });
-        }
-
-        async function handleLogout() {
-            bypassAuthListener = true;
-            await supabaseClient.auth.signOut();
-            window.location.href = "login.html";
-        }
+        function verifyNavigationPrivilege(n, u) { window.location.href = u; }
+        async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
 
         initInventoryDashboard();
     </script>
