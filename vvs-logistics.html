@@ -152,7 +152,7 @@
         </div>
         <div class="modal-actions">
             <button class="btn-secondary" onclick="document.getElementById('transferModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Cancel</button>
-            <button class="btn-primary" onclick="alert('Transfer functionality initiated.')" style="padding: 8px 16px; font-size: 0.9rem;">Confirm Transfer</button>
+            <button class="btn-primary" onclick="executeActualTransfer()" style="padding: 8px 16px; font-size: 0.9rem;">Confirm Transfer</button>
         </div>
     </dialog>
 
@@ -323,6 +323,59 @@
             body.textContent = msg;
             modal.style.borderColor = type === 'error' ? '#d9534f' : '#d1fae5';
             modal.showModal();
+        }
+
+        async function executeActualTransfer() {
+            const targetFacility = document.getElementById('targetFacility').value;
+            const itemId = document.getElementById('itemId').value;
+            const currentQty = parseInt(document.getElementById('dispatchQuantity').value) || 0;
+            
+            if (!itemId || currentQty <= 0) {
+                showAlert("Please select an item and ensure a valid quantity is set.", "error");
+                return;
+            }
+
+            const transferPayload = [
+                {
+                    item_id: itemId,
+                    item_code: document.getElementById('itemCode').value,
+                    item_name: document.getElementById('itemName').value,
+                    sizes: document.getElementById('itemSizes').value,
+                    commodity: document.getElementById('itemCommodity').value,
+                    out_quantity: currentQty,
+                    in_quantity: 0,
+                    storage_facility: document.getElementById('storageFacility').value,
+                    remarks: "Transfer Item - OUT",
+                    transactions_type: "Outbound",
+                    processed_by: currentUserEmail,
+                    date: new Date().toISOString().split('T')[0]
+                },
+                {
+                    item_id: itemId,
+                    item_code: document.getElementById('itemCode').value,
+                    item_name: document.getElementById('itemName').value,
+                    sizes: document.getElementById('itemSizes').value,
+                    commodity: document.getElementById('itemCommodity').value,
+                    out_quantity: 0,
+                    in_quantity: currentQty,
+                    storage_facility: targetFacility,
+                    remarks: "Transfer Item - IN",
+                    transactions_type: "Inbound",
+                    processed_by: currentUserEmail,
+                    date: new Date().toISOString().split('T')[0]
+                }
+            ];
+
+            const { error } = await supabaseClient.from('transactions').insert(transferPayload);
+
+            if (error) {
+                showAlert("Error during transfer: " + error.message, "error");
+            } else {
+                showAlert("Transfer successful! Cargo moved to " + targetFacility, "success");
+                document.getElementById('transferModal').close();
+                await fetchDropdownInventoryPool();
+                await fetchTransactionsDataset();
+            }
         }
 
         function handleDropdownSelection(selectElement) {
