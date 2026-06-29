@@ -139,7 +139,6 @@
         }
 
         async function fetchPlatformUserProfiles() {
-            // UPDATED: Added sales_invoice_access to query
             const { data: profiles, error } = await supabaseClient
                 .from('profiles')
                 .select('id, username, role, profile_access, import_access, employee_201_access, inventory_access, inv_register_access, inv_edit_access, inv_quantity_access, sales_invoice_access')
@@ -163,7 +162,7 @@
                 const isImportAllowed = profile.import_access !== false; 
                 const isEmployee201Allowed = profile.employee_201_access !== false;
                 const isInventoryAllowed = profile.inventory_access !== false;
-                const isSalesInvoiceAllowed = profile.sales_invoice_access !== false; // NEW
+                const isSalesInvoiceAllowed = profile.sales_invoice_access !== false;
 
                 const isRegAllowed = profile.inv_register_access === true;
                 const isEditAllowed = profile.inv_edit_access === true;
@@ -211,17 +210,6 @@
                             </div>
                         </div>
 
-                        <div class="permission-item">
-                            <span class="permission-label">Sales Invoice Management</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isSalesInvoiceAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'sales_invoice_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isSalesInvoiceAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
-
                         <div class="permission-item" style="background: #f1f5f9; border-color: #cbd5e1;">
                             <span class="permission-label" style="font-weight:700; color:#0f172a;">📦 Inventory Management (Master)</span>
                             <div class="toggle-switch-container">
@@ -230,6 +218,17 @@
                                     <span class="slider-rail"></span>
                                 </label>
                                 ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isInventoryAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                            </div>
+                        </div>
+
+                        <div class="permission-item permission-sub-item">
+                            <span class="permission-label">↳ Sales Invoice Management</span>
+                            <div class="toggle-switch-container">
+                                <label class="switch-input-element">
+                                    <input type="checkbox" ${isSalesInvoiceAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'sales_invoice_access', this.checked)">
+                                    <span class="slider-rail"></span>
+                                </label>
+                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isSalesInvoiceAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
                             </div>
                         </div>
 
