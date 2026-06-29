@@ -176,10 +176,34 @@
             if (!user) { window.location.href = "login.html"; return; }
             
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).maybeSingle();
-            document.getElementById('adminEmail').className = (profile?.role === 'Admin') ? "admin-badge" : "employee-badge";
-            document.getElementById('adminEmail').textContent = `${profile?.role || 'Staff'}: ${user.email.split('@')[0]}`;
+            
+            // Set badge and text
+            const badge = document.getElementById('adminEmail');
+            badge.className = (profile?.role === 'Admin') ? "admin-badge" : "employee-badge";
+            badge.textContent = `${profile?.role || 'Staff'}: ${user.email.split('@')[0]}`;
+            
+            // Adapt Sidebar
+            updateSidebarForUserRole(profile?.role);
             
             fetchMasterTransactions();
+        }
+
+        function updateSidebarForUserRole(role) {
+            const profileLink = document.getElementById('profileLink');
+            const controlPanel = document.getElementById('controlPanelLink');
+            const employeeLink = document.getElementById('employeeLink');
+
+            if (role === 'Admin') {
+                profileLink.textContent = "Profile Management";
+                profileLink.href = "admin-dashboard.html";
+                controlPanel.style.display = "block";
+                employeeLink.style.display = "block";
+            } else {
+                profileLink.textContent = "👤 My Account Profile";
+                profileLink.href = "employee-dashboard.html";
+                controlPanel.style.display = "none";
+                employeeLink.style.display = "none";
+            }
         }
 
         async function fetchMasterTransactions() {
@@ -207,7 +231,6 @@
             const selectedFacility = facilities[storageKey];
             document.getElementById('chartFacilityHeaderName').textContent = selectedFacility;
 
-            // Group by item_code
             const itemMap = {};
             masterTransactionsCachedData.forEach(item => {
                 const itemDate = item.created_at.split('T')[0];
@@ -218,7 +241,6 @@
                 }
             });
 
-            // Filter: Only include items where in > out
             const activeLabels = [];
             const activeInData = [];
             const activeOutData = [];
@@ -240,7 +262,6 @@
         function renderUnifiedMasterGraph(labels, inData, outData) {
             if (masterChartInstance) masterChartInstance.destroy();
             
-            // Calculate max value for headroom
             const maxVal = Math.max(...inData, ...outData, 0);
             const suggestedMax = maxVal * 1.25; 
 
