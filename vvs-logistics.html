@@ -303,6 +303,13 @@
         let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
 
         function generateSalesOrderNumber(isTransfer = false, direction = "") {
+            const facilityInput = document.getElementById('storageFacility').value || "";
+            const firstWord = facilityInput.trim().split(' ')[0].toUpperCase();
+            
+            if (isTransfer) {
+                return `${direction} ${firstWord}`;
+            }
+            
             const now = new Date();
             const year = String(now.getFullYear()).slice(-2);
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -310,14 +317,6 @@
             const hour = String(now.getHours()).padStart(2, '0');
             const minute = String(now.getMinutes()).padStart(2, '0');
             const second = String(now.getSeconds()).padStart(2, '0');
-            
-            const facilityInput = document.getElementById('storageFacility').value || "";
-            const firstWord = facilityInput.trim().split(' ')[0].toUpperCase();
-            
-            if (isTransfer) {
-                return `${direction} ${firstWord} ${year}${month}${day}-${hour}${minute}${second}`;
-            }
-            
             return `SO#${firstWord.charAt(0)}${year}${month}${day}-${hour}${minute}${second}`;
         }
 
