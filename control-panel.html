@@ -221,17 +221,6 @@
                             </div>
                         </div>
 
-                        <div class="permission-item">
-                            <span class="permission-label">Sales Invoice Management</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isSalesInvoiceAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'sales_invoice_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isSalesInvoiceAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
-
                         <div class="permission-item permission-sub-item">
                             <span class="permission-label">↳ Access "Our Product Item"</span>
                             <div class="toggle-switch-container">
@@ -262,6 +251,17 @@
                                     <span class="slider-rail"></span>
                                 </label>
                                 ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isQtyAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                            </div>
+                        </div>
+
+                        <div class="permission-item">
+                            <span class="permission-label">Sales Invoice Management</span>
+                            <div class="toggle-switch-container">
+                                <label class="switch-input-element">
+                                    <input type="checkbox" ${isSalesInvoiceAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'sales_invoice_access', this.checked)">
+                                    <span class="slider-rail"></span>
+                                </label>
+                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isSalesInvoiceAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
                             </div>
                         </div>
                     </div>
