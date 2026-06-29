@@ -158,15 +158,23 @@
                 const roleBadge = profile.role === 'Admin' ? `<span class="admin-pill-badge">Admin</span>` : `<span class="employee-badge">Employee</span>`;
                 const isAdmin = profile.role === 'Admin';
                 
-                const isProfileAllowed = profile.profile_access !== false; 
-                const isImportAllowed = profile.import_access !== false; 
-                const isEmployee201Allowed = profile.employee_201_access !== false;
-                const isInventoryAllowed = profile.inventory_access !== false;
-                const isSalesInvoiceAllowed = profile.sales_invoice_access !== false;
-
-                const isRegAllowed = profile.inv_register_access === true;
-                const isEditAllowed = profile.inv_edit_access === true;
-                const isQtyAllowed = profile.inv_quantity_access === true;
+                // Helper to create a toggle row
+                const createToggle = (label, accessKey, isAllowed, isSubItem = false) => `
+                    <div class="permission-item ${isSubItem ? 'permission-sub-item' : ''}">
+                        <span class="permission-label">${label}</span>
+                        <div class="toggle-switch-container">
+                            <label class="switch-input-element">
+                                <input type="checkbox" 
+                                       id="toggle-${profile.id}-${accessKey}" 
+                                       ${isAllowed ? 'checked' : ''} 
+                                       ${isAdmin ? 'disabled' : ''} 
+                                       onchange="updateDatabaseAccessClearance('${profile.id}', '${accessKey}', this)">
+                                <span class="slider-rail"></span>
+                            </label>
+                            ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
+                        </div>
+                    </div>
+                `;
 
                 const card = document.createElement('div');
                 card.className = "user-card";
@@ -177,100 +185,22 @@
                         ${roleBadge}
                     </div>
                     <div class="permission-vertical-list">
-                        <div class="permission-item">
-                            <span class="permission-label">Profile Management</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isProfileAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'profile_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isProfileAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
-
-                        <div class="permission-item">
-                            <span class="permission-label">Employee 201 File</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isEmployee201Allowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'employee_201_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isEmployee201Allowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
-
-                        <div class="permission-item">
-                            <span class="permission-label">Import Doc Management</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isImportAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'import_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isImportAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
-
-                        <div class="permission-item">
-                            <span class="permission-label">Inventory Management</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isInventoryAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inventory_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isInventoryAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
-
-                        <div class="permission-item permission-sub-item">
-                            <span class="permission-label">↳ Access "Our Product Item"</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isRegAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inv_register_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isRegAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
-
-                        <div class="permission-item permission-sub-item">
-                            <span class="permission-label">↳ Edit Product Info</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isEditAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inv_edit_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isEditAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
-
-                        <div class="permission-item permission-sub-item">
-                            <span class="permission-label">↳ Adjust Stock Quantities</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isQtyAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'inv_quantity_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isQtyAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
-
-                        <div class="permission-item">
-                            <span class="permission-label">Sales Invoice Management</span>
-                            <div class="toggle-switch-container">
-                                <label class="switch-input-element">
-                                    <input type="checkbox" ${isSalesInvoiceAllowed ? 'checked' : ''} ${isAdmin ? 'disabled' : ''} onchange="updateDatabaseAccessClearance('${profile.id}', 'sales_invoice_access', this.checked)">
-                                    <span class="slider-rail"></span>
-                                </label>
-                                ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isSalesInvoiceAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
-                            </div>
-                        </div>
+                        ${createToggle('Profile Management', 'profile_access', profile.profile_access !== false)}
+                        ${createToggle('Employee 201 File', 'employee_201_access', profile.employee_201_access !== false)}
+                        ${createToggle('Import Doc Management', 'import_access', profile.import_access !== false)}
+                        ${createToggle('Inventory Management', 'inventory_access', profile.inventory_access !== false)}
+                        ${createToggle('↳ Access "Our Product Item"', 'inv_register_access', profile.inv_register_access === true, true)}
+                        ${createToggle('↳ Edit Product Info', 'inv_edit_access', profile.inv_edit_access === true, true)}
+                        ${createToggle('↳ Adjust Stock Quantities', 'inv_quantity_access', profile.inv_quantity_access === true, true)}
+                        ${createToggle('Sales Invoice Management', 'sales_invoice_access', profile.sales_invoice_access !== false)}
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        async function updateDatabaseAccessClearance(userId, privilegeColumn, isGranted) {
+        async function updateDatabaseAccessClearance(userId, privilegeColumn, element) {
+            const isGranted = element.checked;
             const updatePayload = {};
             updatePayload[privilegeColumn] = isGranted;
 
@@ -284,6 +214,7 @@
                 alert("Error updating access clearance: " + error.message);
                 fetchPlatformUserProfiles(); 
             } else {
+                // Refresh UI state
                 setTimeout(() => {
                     fetchPlatformUserProfiles();
                 }, 300);
