@@ -74,6 +74,8 @@
         .btn-secondary:hover { background: #b8c5d6; }
         .btn-danger { background: #d9534f; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
         .btn-danger:hover { background: #c9302c; }
+        .btn-transfer { background: #6366f1; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: 0.2s; }
+        .btn-transfer:hover { background: #4f46e5; }
 
         .ledger-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 25px; flex-wrap: wrap; gap: 15px; }
         .ledger-header-wrapper h3 { border-bottom: none !important; padding-bottom: 0 !important; margin: 0 !important; }
@@ -133,6 +135,22 @@
         <div class="modal-actions">
             <button class="btn-secondary" onclick="document.getElementById('cancelModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Keep Order</button>
             <button class="btn-danger" id="confirmCancelBtn" style="padding: 8px 16px; font-size: 0.9rem;">Yes, Cancel Order</button>
+        </div>
+    </dialog>
+
+    <dialog id="transferModal">
+        <h3>Internal Cargo Transfer</h3>
+        <p style="margin-bottom: 20px; color: #475569;">Initiate transfer request to a secondary storage node. Please ensure the target facility is authorized.</p>
+        <div class="form-group">
+            <label>Target Facility</label>
+            <select id="targetFacility">
+                <option value="VVS-COLD-STORAGE-SITE-B">VVS COLD STORAGE SITE B</option>
+                <option value="VVS-PROCESSING-PLANT">VVS PROCESSING PLANT</option>
+            </select>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="document.getElementById('transferModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Cancel</button>
+            <button class="btn-primary" onclick="alert('Transfer functionality initiated.')" style="padding: 8px 16px; font-size: 0.9rem;">Confirm Transfer</button>
         </div>
     </dialog>
 
@@ -222,6 +240,7 @@
                     
                     <div class="form-actions">
                         <button type="submit" class="btn-primary" id="submitBtn">Upload Outbound Transactions</button>
+                        <button type="button" class="btn-transfer" onclick="document.getElementById('transferModal').showModal()">Transfer Cargo</button>
                         <button type="button" class="btn-secondary" id="clearBtn" onclick="resetFormState()">Clear Entry Fields</button>
                     </div>
                 </form>
