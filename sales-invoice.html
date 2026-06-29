@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JMP Sales Invoice Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
+        
+        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
+        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; cursor: pointer; }
+        .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
+        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        
+        .content-card { background: white; border: 1px solid #e2e8f0; padding: 25px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .content-card h3 { color: #0f172a; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>JMP System</h2>
+        <a id="profileLink">Profile Management</a>
+        <a onclick="window.location.href='control-panel.html'">🎛️ Control Panel</a>
+        <a onclick="window.location.href='employee-201.html'">📋 Employee 201 File</a>
+        <a onclick="window.location.href='import-docs.html'">📄 Import Doc File Management</a>
+        <a onclick="window.location.href='inventory-management.html'">📦 Inventory Management</a>
+        <a href="#" class="active">🧾 Sales Invoice Management</a>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Sales Invoice Processing</h1>
+            <div class="admin-badge" id="adminEmail">Loading...</div>
+        </div>
+
+        <div class="content-card">
+            <h3>Invoice Generation & Tracking</h3>
+            <p>Use this module to generate, view, and manage sales invoices for client transactions.</p>
+            <!-- Add your invoice form or table here -->
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function initSalesPage() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            document.getElementById('adminEmail').textContent = user.email.split('@')[0];
+        }
+
+        async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
+        
+        initSalesPage();
+    </script>
+</body>
+</html>
