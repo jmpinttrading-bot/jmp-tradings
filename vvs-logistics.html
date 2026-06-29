@@ -302,19 +302,15 @@
         
         let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
 
-        /**
-         * @param {boolean} isTransfer - Set to true for transfers.
-         * @param {string} direction - "TRANSFER FROM" or "TRANSFER TO".
-         * @param {string} targetFacility - The name of the receiving facility (only for transfers).
-         */
         function generateSalesOrderNumber(isTransfer = false, direction = "", targetFacility = "") {
             const dispatchFacility = document.getElementById('storageFacility').value || "";
             const sourceFirstWord = dispatchFacility.trim().split(' ')[0].toUpperCase();
             
             if (isTransfer) {
                 const targetFirstWord = targetFacility.trim().split(' ')[0].toUpperCase();
-                const identifier = (direction === "TRANSFER TO") ? targetFirstWord : sourceFirstWord;
-                return `${direction} ${identifier}`;
+                return direction === "TRANSFER TO" 
+                    ? `TRANSFER TO ${targetFirstWord}` 
+                    : `TRANSFER FROM ${sourceFirstWord}`;
             }
             
             const now = new Date();
@@ -341,11 +337,17 @@
             const targetFacility = document.getElementById('targetFacility').value;
             const itemId = document.getElementById('itemId').value;
             const currentQty = parseInt(document.getElementById('dispatchQuantity').value) || 0;
+            const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
             const spsic = document.getElementById('activeSpsicNumber').value;
             const unitPrice = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
             
             if (!itemId || currentQty <= 0) {
                 showAlert("Please select an item and ensure a valid quantity is set.", "error");
+                return;
+            }
+
+            if (currentQty > maxQty) {
+                showAlert(`Transfer quantity (${currentQty}) cannot exceed current available quantity (${maxQty}).`, "error");
                 return;
             }
 
@@ -365,7 +367,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
-                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
+                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
                 },
                 {
                     item_id: itemId,
@@ -382,7 +384,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
-                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
+                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
                 }
             ];
 
@@ -610,11 +612,18 @@
         async function handleOutboundSubmit(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
+            const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
+            const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
+
+            if (targetDispatchQuantity > maxQty) {
+                showAlert(`Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).`, "error");
+                return;
+            }
+
             submitBtn.disabled = true;
             submitBtn.textContent = "Processing Transaction...";
             
             const targetRowId = document.getElementById('selectedTransactionRowId').value;
-            const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
             const targetBuyerName = document.getElementById('buyerName').value.trim().toUpperCase();
 
             let remark = "";
