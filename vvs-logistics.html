@@ -302,12 +302,19 @@
         
         let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
 
-        function generateSalesOrderNumber(isTransfer = false, direction = "") {
-            const facilityInput = document.getElementById('storageFacility').value || "";
-            const firstWord = facilityInput.trim().split(' ')[0].toUpperCase();
+        /**
+         * @param {boolean} isTransfer - Set to true for transfers.
+         * @param {string} direction - "TRANSFER FROM" or "TRANSFER TO".
+         * @param {string} targetFacility - The name of the receiving facility (only for transfers).
+         */
+        function generateSalesOrderNumber(isTransfer = false, direction = "", targetFacility = "") {
+            const dispatchFacility = document.getElementById('storageFacility').value || "";
+            const sourceFirstWord = dispatchFacility.trim().split(' ')[0].toUpperCase();
             
             if (isTransfer) {
-                return `${direction} ${firstWord}`;
+                const targetFirstWord = targetFacility.trim().split(' ')[0].toUpperCase();
+                const identifier = (direction === "TRANSFER TO") ? targetFirstWord : sourceFirstWord;
+                return `${direction} ${identifier}`;
             }
             
             const now = new Date();
@@ -317,7 +324,7 @@
             const hour = String(now.getHours()).padStart(2, '0');
             const minute = String(now.getMinutes()).padStart(2, '0');
             const second = String(now.getSeconds()).padStart(2, '0');
-            return `SO#${firstWord.charAt(0)}${year}${month}${day}-${hour}${minute}${second}`;
+            return `SO#${sourceFirstWord.charAt(0)}${year}${month}${day}-${hour}${minute}${second}`;
         }
 
         function showAlert(msg, type) {
@@ -358,7 +365,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
-                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM")
+                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
                 },
                 {
                     item_id: itemId,
@@ -375,7 +382,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
-                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO")
+                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
                 }
             ];
 
