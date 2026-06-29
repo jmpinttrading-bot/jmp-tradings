@@ -570,6 +570,23 @@
             
             const targetRowId = document.getElementById('selectedTransactionRowId').value;
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
+            const targetBuyerName = document.getElementById('buyerName').value.trim().toUpperCase();
+
+            let remark = "";
+
+            // LOGIC FOR REMARKS
+            if (targetRowId) {
+                const originalRecord = globallyFetchedHistory.find(row => row.id == targetRowId);
+                if (originalRecord) {
+                    if (targetBuyerName !== originalRecord.buyer_name) {
+                        remark = "EDIT BUYER";
+                    } else if (targetDispatchQuantity > originalRecord.out_quantity) {
+                        remark = "POSSITIVE ADJ.";
+                    } else if (targetDispatchQuantity < originalRecord.out_quantity) {
+                        remark = "NEGATIVE ADJ.";
+                    }
+                }
+            }
 
             const payload = {
                 item_id: document.getElementById('itemId').value,
@@ -584,9 +601,10 @@
                 processed_by: currentUserEmail,
                 storage_facility: 'VVS COLD STORAGE & PROCESSING PLANT CORP.',
                 date: document.getElementById('dateReleased').value,
-                buyer_name: document.getElementById('buyerName').value.trim().toUpperCase(),
+                buyer_name: targetBuyerName,
                 spsic_number: document.getElementById('activeSpsicNumber').value,
-                sales_order_no: document.getElementById('salesOrderNo').value
+                sales_order_no: document.getElementById('salesOrderNo').value,
+                remarks: remark // Apply the generated remark
             };
 
             if (targetRowId) {
