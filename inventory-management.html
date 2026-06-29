@@ -10,34 +10,57 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
+        
         .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
         .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
         .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; cursor: pointer; }
         .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
         .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
         .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        
         .registration-box { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .registration-text-area h3 { color: #0f172a; font-size: 1.1rem; }
+        .registration-text-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
+
         .dashboard-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
         .report-controls { background: white; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .report-title-area { flex: 1; min-width: 250px; }
+        .report-title-area h3 { color: #0f172a; font-size: 1.1rem; }
+        .report-title-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
+        
+        .controls-selectors-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .time-filter-select { padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; font-weight: 600; background-color: white; color: #1e293b; cursor: pointer; min-width: 150px; outline: none; }
+        
         .date-range-container { display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1; }
+        .date-range-container label { font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; }
         .calendar-input { border: none; background: transparent; font-size: 0.85rem; font-weight: 600; color: #1e293b; outline: none; cursor: pointer; }
+        
         .register-trigger-btn { background: #ee964b; color: #0f172a; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; text-decoration: none; transition: background 0.2s; }
+
         .logistics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 30px; }
         .logistics-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between; gap: 15px; }
         .logistics-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
+        
+        .facility-identity-header { display: flex; align-items: center; gap: 15px; width: 100%; min-height: 65px; }
+        .facility-logo-container { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; overflow: hidden; shrink: 0; }
+        .facility-logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 4px; }
+
         .logistics-card h4 { font-size: 0.95rem; color: #0f172a; line-height: 1.3; font-weight: 600; flex: 1; margin: 0; }
         .logistics-route-btn { background: #1e293b; color: white; border: none; border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
         .logistics-route-btn:hover { background: #ee964b; color: #0f172a; }
+
         .analytics-full-width-container { width: 100%; margin-top: 5px; }
         .chart-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .chart-card h3 { font-size: 1.1rem; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .chart-container { position: relative; width: 100%; height: 380px; }
     </style>
 </head>
 <body>
+
     <div class="sidebar">
         <h2 id="sidebarTitle">JMP System</h2>
         <a id="profileLink">Profile Management</a>
@@ -47,38 +70,58 @@
         <a href="#" class="active">📦 Inventory Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </div>
+
     <div class="main-content">
         <div class="header">
             <h1>Stock & Asset Control Matrix</h1>
             <div class="admin-badge" id="adminEmail">Loading Context...</div>
         </div>
+
         <div class="registration-box">
-            <h3>Global Product Registry Catalog</h3>
+            <div class="registration-text-area">
+                <h3>Global Product Registry Catalog</h3>
+                <p>View, track, and configure master structural cargo entries by item code.</p>
+            </div>
             <a href="product-registry.html" class="register-trigger-btn"><span>📦</span> Our Product Item</a>
         </div>
+
+        <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
         <div class="logistics-grid">
             <div class="logistics-card">
-                <h4>VVS Cold Storage & Processing Plant Corp.</h4>
+                <div class="facility-identity-header">
+                    <div class="facility-logo-container"><img src="1000017477.png" alt="VVS Logo"></div>
+                    <h4>VVS Cold Storage & Processing Plant Corp.</h4>
+                </div>
                 <a href="vvs-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             <div class="logistics-card">
-                <h4>Hightower Storage & Trading Centre, Inc.</h4>
+                <div class="facility-identity-header">
+                    <div class="facility-logo-container"><img src="1000017474.png" alt="Hightower Logo"></div>
+                    <h4>Hightower Storage & Trading Centre, Inc.</h4>
+                </div>
                 <a href="hightower-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             <div class="logistics-card">
-                <h4>Eisberg Cold Logistics Inc.</h4>
+                <div class="facility-identity-header">
+                    <div class="facility-logo-container"><img src="1000017475.png" alt="Eisberg Logo"></div>
+                    <h4>Eisberg Cold Logistics Inc.</h4>
+                </div>
                 <a href="eisberg-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             <div class="logistics-card">
-                <h4>Crystal Cold Storage, Inc.</h4>
+                <div class="facility-identity-header">
+                    <div class="facility-logo-container"><img src="1000017476.png" alt="Crystal Logo"></div>
+                    <h4>Crystal Cold Storage, Inc.</h4>
+                </div>
                 <a href="crystal-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
         </div>
+
         <div class="dashboard-actions-row">
             <div class="report-controls">
                 <div class="report-title-area">
                     <h3>Item-Level Throughput Analysis</h3>
-                    <p>Items with active balance (In vs Out)</p>
+                    <p>Comparison of In/Out quantities per Item Code (Active Balance Only)</p>
                 </div>
                 <div class="controls-selectors-group">
                     <select id="storageFilterSelect" class="time-filter-select" onchange="updateAnalyticsTimelineCharts()">
@@ -88,26 +131,33 @@
                         <option value="crystal">🏬 Crystal Cold Storage</option>
                     </select>
                     <div class="date-range-container">
-                        <label>From:</label> <input type="date" id="startDateInput" class="calendar-input" onchange="updateAnalyticsTimelineCharts()">
-                        <label>To:</label> <input type="date" id="endDateInput" class="calendar-input" onchange="updateAnalyticsTimelineCharts()">
+                        <label>From:</label>
+                        <input type="date" id="startDateInput" class="calendar-input" onchange="updateAnalyticsTimelineCharts()">
+                        <label>To:</label>
+                        <input type="date" id="endDateInput" class="calendar-input" onchange="updateAnalyticsTimelineCharts()">
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="analytics-full-width-container">
             <div class="chart-card">
                 <h3>
                     <span id="chartFacilityHeaderName">VVS Cold Storage</span> 
                     <span id="masterCurrentStockTotalLabel" style="color:#ee964b; font-size:1rem; font-weight: 700;">0 Net Total Stock</span>
                 </h3>
-                <div class="chart-container"><canvas id="unifiedMasterChart"></canvas></div>
+                <div class="chart-container">
+                    <canvas id="unifiedMasterChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
+
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
         let masterTransactionsCachedData = [];
         let masterChartInstance = null;
 
@@ -123,13 +173,19 @@
             setDefaultCalendarDates();
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
+            
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).maybeSingle();
+            document.getElementById('adminEmail').className = (profile?.role === 'Admin') ? "admin-badge" : "employee-badge";
             document.getElementById('adminEmail').textContent = `${profile?.role || 'Staff'}: ${user.email.split('@')[0]}`;
+            
             fetchMasterTransactions();
         }
 
         async function fetchMasterTransactions() {
-            const { data, error } = await supabaseClient.from('transactions').select('item_code, in_quantity, out_quantity, storage_facility, created_at');
+            const { data, error } = await supabaseClient
+                .from('transactions')
+                .select('item_code, in_quantity, out_quantity, storage_facility, created_at');
+
             if (error) return;
             masterTransactionsCachedData = data || [];
             updateAnalyticsTimelineCharts();
@@ -139,15 +195,18 @@
             const storageKey = document.getElementById('storageFilterSelect').value;
             const startVal = document.getElementById('startDateInput').value;
             const endVal = document.getElementById('endDateInput').value;
+
             const facilities = {
                 vvs: "VVS COLD STORAGE & PROCESSING PLANT CORP.",
                 hightower: "HIGHTOWER STORAGE & TRADING CENTRE, INC.",
                 eisberg: "EISBERG COLD LOGISTICS INC.",
                 crystal: "CRYSTAL COLD STORAGE, INC."
             };
+
             const selectedFacility = facilities[storageKey];
             document.getElementById('chartFacilityHeaderName').textContent = selectedFacility;
 
+            // Group by item_code
             const itemMap = {};
             masterTransactionsCachedData.forEach(item => {
                 const itemDate = item.created_at.split('T')[0];
@@ -158,7 +217,7 @@
                 }
             });
 
-            // Filter for items that have a balance (in > out)
+            // Filter: Only include items where in > out
             const activeLabels = [];
             const activeInData = [];
             const activeOutData = [];
@@ -179,8 +238,11 @@
 
         function renderUnifiedMasterGraph(labels, inData, outData) {
             if (masterChartInstance) masterChartInstance.destroy();
+            
+            // Calculate max value for headroom
             const maxVal = Math.max(...inData, ...outData, 0);
             const suggestedMax = maxVal * 1.25; 
+
             const ctx = document.getElementById('unifiedMasterChart').getContext('2d');
             masterChartInstance = new Chart(ctx, {
                 type: 'bar',
@@ -193,14 +255,19 @@
                 },
                 plugins: [ChartDataLabels],
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { datalabels: { anchor: 'end', align: 'top', color: '#1e293b', font: { weight: 'bold' } } },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: { anchor: 'end', align: 'top', color: '#1e293b', font: { weight: 'bold' } }
+                    },
                     scales: { y: { beginAtZero: true, suggestedMax: suggestedMax } }
                 }
             });
         }
+
         function verifyNavigationPrivilege(n, u) { window.location.href = u; }
         async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
+
         initInventoryDashboard();
     </script>
 </body>
