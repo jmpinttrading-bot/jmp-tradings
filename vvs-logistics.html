@@ -302,7 +302,7 @@
         
         let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
 
-        function generateSalesOrderNumber() {
+        function generateSalesOrderNumber(isTransfer = false, direction = "") {
             const now = new Date();
             const year = String(now.getFullYear()).slice(-2);
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -310,9 +310,15 @@
             const hour = String(now.getHours()).padStart(2, '0');
             const minute = String(now.getMinutes()).padStart(2, '0');
             const second = String(now.getSeconds()).padStart(2, '0');
+            
             const facilityInput = document.getElementById('storageFacility').value || "";
-            const facilityLetter = facilityInput.trim().charAt(0).toUpperCase() || "X";
-            return `SO#${facilityLetter}${year}${month}${day}-${hour}${minute}${second}`;
+            const firstWord = facilityInput.trim().split(' ')[0].toUpperCase();
+            
+            if (isTransfer) {
+                return `${direction} ${firstWord} ${year}${month}${day}-${hour}${minute}${second}`;
+            }
+            
+            return `SO#${firstWord.charAt(0)}${year}${month}${day}-${hour}${minute}${second}`;
         }
 
         function showAlert(msg, type) {
@@ -329,6 +335,8 @@
             const targetFacility = document.getElementById('targetFacility').value;
             const itemId = document.getElementById('itemId').value;
             const currentQty = parseInt(document.getElementById('dispatchQuantity').value) || 0;
+            const spsic = document.getElementById('activeSpsicNumber').value;
+            const unitPrice = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
             
             if (!itemId || currentQty <= 0) {
                 showAlert("Please select an item and ensure a valid quantity is set.", "error");
@@ -345,10 +353,13 @@
                     out_quantity: currentQty,
                     in_quantity: 0,
                     storage_facility: document.getElementById('storageFacility').value,
-                    remarks: "Transfer Item - OUT",
+                    remarks: "TRANSFER ITEM - OUT",
                     transactions_type: "Outbound",
                     processed_by: currentUserEmail,
-                    date: new Date().toISOString().split('T')[0]
+                    date: new Date().toISOString().split('T')[0],
+                    spsic_number: spsic,
+                    unit_price: unitPrice,
+                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM")
                 },
                 {
                     item_id: itemId,
@@ -359,10 +370,13 @@
                     out_quantity: 0,
                     in_quantity: currentQty,
                     storage_facility: targetFacility,
-                    remarks: "Transfer Item - IN",
+                    remarks: "TRANSFER ITEM - IN",
                     transactions_type: "Inbound",
                     processed_by: currentUserEmail,
-                    date: new Date().toISOString().split('T')[0]
+                    date: new Date().toISOString().split('T')[0],
+                    spsic_number: spsic,
+                    unit_price: unitPrice,
+                    sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO")
                 }
             ];
 
@@ -623,7 +637,7 @@
                 buyer_name: targetBuyerName,
                 spsic_number: document.getElementById('activeSpsicNumber').value,
                 sales_order_no: document.getElementById('salesOrderNo').value,
-                remarks: remark
+                remarks: remark.toUpperCase()
             };
             if (targetRowId) payload.id = targetRowId;
 
