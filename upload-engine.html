@@ -10,12 +10,10 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* New Header Styling */
-        .top-nav { background-color: #0f172a; color: white; padding: 15px 40px; display: flex; align-items: center; gap: 20px; }
-        .top-nav h2 { font-size: 1.1rem; color: #ee964b; margin-right: 20px; }
-        .top-nav a { color: #94a3b8; text-decoration: none; padding: 8px 12px; border-radius: 6px; transition: 0.2s; font-size: 0.9rem; }
-        .top-nav a:hover, .top-nav a.active { background-color: #1e293b; color: white; }
-        .logout-btn { margin-left: auto; background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        /* Updated Top Nav */
+        .top-nav { background-color: #0f172a; color: white; padding: 15px 40px; display: flex; align-items: center; justify-content: space-between; }
+        .top-nav h2 { font-size: 1.1rem; color: #ee964b; }
+        .logout-btn { background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
 
         .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
@@ -60,8 +58,6 @@
 
     <nav class="top-nav">
         <h2>JMP Admin HQ</h2>
-        <a href="admin-dashboard.html">Profile Management</a>
-        <a href="import-docs.html" class="active">Import File Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </nav>
 
@@ -79,7 +75,7 @@
             <div class="live-lock-banner" id="lockStatusBanner"></div>
 
             <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
-                <!-- Form remains unchanged -->
+                <!-- Form content remains the same -->
                 <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                     <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                         <label>SPSIC NUMBER</label>
@@ -173,7 +169,7 @@
         </div>
     </div>
 
-    <!-- System Modal & Scripts (keep as they were) -->
+    <!-- Modals and scripts remain the same -->
     <div class="system-alert-overlay" id="systemAlertOverlay">
         <div class="system-alert-card">
             <div class="system-alert-header">
