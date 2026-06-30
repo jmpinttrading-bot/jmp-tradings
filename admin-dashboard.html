@@ -32,6 +32,7 @@
         .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
         
         .btn { background: #ee964b; color: #0f172a; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; text-align: center; display: block; text-decoration: none; margin-bottom: 10px; }
+        .action-card-btn { background: #334155; color: white; padding: 15px; text-decoration: none; display: block; border-radius: 6px; font-weight: bold; text-align: center; margin-bottom: 10px; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 14px; border-bottom: 1px solid #e2e8f0; text-align: left; }
@@ -47,12 +48,10 @@
         </div>
         <div class="nav-links">
             <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="admin-dashboard.html" class="nav-btn" style="background: #475569; color: white;">Settings</a>
-            <a href="control-panel.html" class="nav-btn">Control Panel</a>
-            <a href="employee-201.html" class="nav-btn">Employee 201</a>
             <a href="import-docs.html" class="nav-btn">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="admin-dashboard.html" class="nav-btn" style="background: #475569; color: white;">Settings</a>
         </div>
     </nav>
 
@@ -62,9 +61,14 @@
             <div class="admin-badge" id="adminEmail">Admin System</div>
         </div>
 
-        <div id="alertBox" style="display:none; padding: 12px; margin-bottom: 20px; border-radius: 6px;"></div>
-
         <div class="grid">
+            <!-- Access Points Moved from Navbar -->
+            <div class="card">
+                <h3>System Navigation</h3>
+                <a href="control-panel.html" class="action-card-btn">🎛️ Control Panel</a>
+                <a href="employee-201.html" class="action-card-btn">📋 Employee 201 File</a>
+            </div>
+
             <div class="card">
                 <h3>Update Credentials</h3>
                 <form onsubmit="handleAdminUpdate(event)">
@@ -72,16 +76,10 @@
                     <button type="submit" class="btn">Update Password</button>
                 </form>
             </div>
-            <div class="card">
-                <h3>Account Management</h3>
-                <form onsubmit="handleUsernameUpdate(event)">
-                    <div class="form-group"><label>Current Username</label><input type="text" id="adminCurrentUsername" readonly></div>
-                    <div class="form-group"><label>New Username</label><input type="text" id="adminNewUsername" required></div>
-                    <button type="submit" class="btn" style="background: #0f172a; color: white;">Save Username</button>
-                </form>
-            </div>
+
             <div class="card">
                 <h3>System Provisioning</h3>
+                <div class="form-group"><label>New Account</label></div>
                 <a href="register-employee.html" class="btn" style="background:#22c55e; color:white;">+ Register New Employee</a>
             </div>
         </div>
@@ -104,8 +102,6 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             document.getElementById('adminEmail').textContent = `⚙️ ${user.email}`;
-            const { data: profile } = await supabaseClient.from('profiles').select('username, role').eq('id', user.id).single();
-            if (profile) document.getElementById('adminCurrentUsername').value = profile.username;
             fetchDirectory();
         }
 
