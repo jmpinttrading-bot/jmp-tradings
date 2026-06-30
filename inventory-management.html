@@ -63,10 +63,10 @@
 
     <div class="sidebar">
         <h2 id="sidebarTitle">JMP System</h2>
-        <a id="profileLink">Profile Management</a>
+        <a id="profileLink">👤 Profile Management</a>
         <a id="controlPanelLink" onclick="verifyNavigationPrivilege('Control Panel', 'control-panel.html')">🎛️ Control Panel</a>
         <a id="employeeLink" onclick="verifyNavigationPrivilege('Employee 201 File', 'employee-201.html')">📋 Employee 201 File</a>
-        <a id="importLink" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">📄 Import Doc File Management</a>
+        <a id="importLink" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">📄 Import File Management</a>
         <a href="#" class="active">📦 Inventory Management</a>
         <a id="salesInvoiceLink" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">🧾 Sales Invoice Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
@@ -194,7 +194,7 @@
             const employeeLink = document.getElementById('employeeLink');
 
             if (role === 'Admin') {
-                profileLink.textContent = "Profile Management";
+                profileLink.textContent = "👤 Profile Management";
                 profileLink.href = "admin-dashboard.html";
                 controlPanel.style.display = "block";
                 employeeLink.style.display = "block";
