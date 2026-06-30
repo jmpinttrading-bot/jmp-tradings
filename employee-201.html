@@ -7,114 +7,69 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; position: relative; }
+        body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* Sidebar UI Framework Alignment */
-        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; position: relative; z-index: 10; }
-        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
-        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
-        .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
-        
-        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        /* Main Workspace Structure Alignment */
-        .main-content { flex: 1; padding: 40px; min-width: 0; position: relative; z-index: 5; }
-        
-        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        /* New Sticky Navbar Styles */
+        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #0f172a; color: white; width: 100%; padding: 15px 30px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .nav-title { font-size: 1.1rem; font-weight: bold; color: #ee964b; }
+        .nav-links { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 5px; }
+        .nav-btn { color: #94a3b8; text-decoration: none; font-size: 0.9rem; font-weight: 600; padding: 8px 12px; border-radius: 6px; transition: 0.2s; white-space: nowrap; }
+        .nav-btn:hover, .nav-btn.active { background-color: #1e293b; color: white; border-bottom: 2px solid #ee964b; }
+        .logout-btn { background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+
+        /* Main Workspace Structure */
+        .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
+        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .header-left h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
         .header-left p { color: #64748b; font-size: 0.95rem; }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
-        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; height: max-content; }
-        
-        /* Actions & Directives Panel */
         .search-container { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .search-container h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.1rem; }
-        .search-box { width: 100%; max-width: 400px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+        .search-box { width: 100%; max-width: 400px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 6px; }
         
-        /* File Grid Matrix Layout */
         .file-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        .record-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .record-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .view-folder-btn { background-color: #0f172a; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; }
         
-        .record-info h3 { color: #0f172a; font-size: 1.1rem; margin-bottom: 4px; }
-        .record-info p { color: #64748b; font-size: 0.85rem; margin-bottom: 2px; }
-        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; margin-top: 5px; text-transform: uppercase; }
-        .badge.admin { background: #fee2e2; color: #991b1b; }
-        .badge.employee { background: #e0f2fe; color: #0369a1; }
-        
-        .view-folder-btn { background-color: #0f172a; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; }
-        .view-folder-btn:hover { background-color: #1e293b; }
-        
-        .empty-state { text-align: center; padding: 50px; color: #64748b; font-weight: 500; }
-
-        /* Advanced Wide Scrollable Modal UI architecture */
+        /* Modal Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
-        .modal-card { background: white; width: 100%; max-width: 750px; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); padding: 35px; border-top: 6px solid #ee964b; position: relative; display: flex; flex-direction: column; }
-        .modal-card h2 { font-size: 1.4rem; color: #0f172a; margin-bottom: 2px; }
-        .modal-card subtitle { font-size: 0.85rem; color: #64748b; display: block; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        .modal-body { overflow-y: auto; padding-right: 10px; margin-bottom: 20px; }
-        
-        /* Functional Data Grid Categorization styles */
-        .section-title { font-size: 0.9rem; font-weight: bold; color: #ee964b; text-transform: uppercase; letter-spacing: 0.5px; margin: 15px 0 10px 0; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9; }
-        .section-title:first-of-type { margin-top: 0; }
-        
+        .modal-card { background: white; width: 100%; max-width: 750px; max-height: 90vh; border-radius: 12px; padding: 35px; border-top: 6px solid #ee964b; display: flex; flex-direction: column; }
+        .modal-body { overflow-y: auto; padding-right: 10px; }
+        .section-title { font-size: 0.9rem; font-weight: bold; color: #ee964b; margin: 15px 0 10px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
-        .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
-        .form-row.quad { grid-template-columns: 1fr 1fr 1fr 1fr; }
-        .form-row.full { grid-template-columns: 1fr; }
-        
         .form-group { display: flex; flex-direction: column; }
         .form-group label { font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; }
-        .form-group input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background-color: #f8fafc; width: 100%; }
-        .form-group input:focus { outline: none; border-color: #0f172a; background-color: white; }
-
-        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 15px; shrink: 0; }
-        .btn-close { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .form-group input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 15px; }
         .btn-save { background: #ee964b; color: #0f172a; border: none; padding: 10px 22px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-save:hover { opacity: 0.9; }
-
-        /* Custom Professional Alert Modal Styling */
-        .custom-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 10000; padding: 20px; }
-        .custom-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); padding: 25px; display: flex; flex-direction: column; gap: 16px; }
-        .custom-alert-header { display: flex; align-items: center; gap: 12px; }
-        .custom-alert-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #e6f7ed; color: #22c55e; flex-shrink: 0; }
-        .custom-alert-title { font-size: 1.05rem; font-weight: 700; color: #0f172a; }
-        .custom-alert-message { font-size: 0.9rem; color: #475569; line-height: 1.5; padding-left: 2px; }
-        .custom-alert-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
-        .btn-alert-dismiss { background: #1e2235; color: white; border: none; padding: 8px 20px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .btn-alert-dismiss:hover { background: #111422; }
-
-        /* Tablet Breakpoint Adjustments */
-        @media(max-width: 900px) {
-            body { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; padding: 20px; }
-            .sidebar .logout-btn { margin-top: 15px; }
-        }
-        /* Mobile Breakpoint Adjustments */
-        @media(max-width: 640px) {
-            .form-row, .form-row.triple, .form-row.quad { grid-template-columns: 1fr; gap: 12px; }
-            .header-panel { flex-direction: column; align-items: flex-start; gap: 15px; }
-        }
+        
+        .custom-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .custom-alert-card { background: white; width: 100%; max-width: 440px; padding: 25px; border-radius: 12px; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h2>JMP Admin HQ</h2>
-        <a href="admin-dashboard.html">👤 Profile Management</a>
-        <a href="control-panel.html">🎛️ Control Panel</a>
-        <a href="#" class="active">📋 Employee 201 File</a>
-        <a href="import-docs.html">📄 Import File Management</a>
-        <a href="inventory-management.html">📦 Inventory Management</a>
-        <a href="sales-invoice.html">🧾 Sales Invoice Management</a>
-        <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
-    </div>
+    <nav class="navbar">
+        <div class="top-row">
+            <div class="nav-title">JMP ADMIN HQ</div>
+            <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
+        </div>
+        <div class="nav-links">
+            <a href="admin-dashboard.html" class="nav-btn">Profile Management</a>
+            <a href="control-panel.html" class="nav-btn">Control Panel</a>
+            <a href="#" class="nav-btn active">Employee 201 File</a>
+            <a href="import-docs.html" class="nav-btn">Import Management</a>
+            <a href="inventory-management.html" class="nav-btn">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn">Sales</a>
+        </div>
+    </nav>
 
     <div class="main-content">
         <div class="header-panel">
             <div class="header-left">
                 <h1>Corporate 201 File Management</h1>
-                <p>Access background profiles, documentation indexes, and registration configurations for active system nodes.</p>
+                <p>Access background profiles, documentation indexes, and registration configurations.</p>
             </div>
             <div class="admin-badge" id="adminEmail">Admin System</div>
         </div>
@@ -129,94 +84,27 @@
         </div>
     </div>
 
+    <!-- Modal -->
     <div class="modal-overlay" id="dossierModal">
         <div class="modal-card">
             <h2 id="modalEmployeeTitle">Employee Folder</h2>
-            <subtitle id="modalEmployeeSub">Dossier File Reference</subtitle>
-            
             <form onsubmit="saveGovernmentDocs(event)" class="modal-body">
                 <input type="hidden" id="targetProfileId">
-                
                 <div class="section-title">Employment Track Details</div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Company ID Number</label>
-                        <input type="text" id="empIdNo" placeholder="e.g., JMP-2026-045">
-                    </div>
-                    <div class="form-group">
-                        <label>Date Hired</label>
-                        <input type="date" id="dateHired">
-                    </div>
+                    <div class="form-group"><label>Company ID Number</label><input type="text" id="empIdNo"></div>
+                    <div class="form-group"><label>Date Hired</label><input type="date" id="dateHired"></div>
                 </div>
-
                 <div class="section-title">Personal Identity Matrix</div>
-                <div class="form-row quad"> 
-                    <div class="form-group">
-                        <label>Given Name</label>
-                        <input type="text" id="givenName" placeholder="First Name">
-                    </div>
-                    <div class="form-group">
-                        <label>Middle Name</label>
-                        <input type="text" id="middleName" placeholder="Middle Name">
-                    </div>
-                    <div class="form-group">
-                        <label>Surname</label>
-                        <input type="text" id="surname" placeholder="Last Name">
-                    </div>
-                    <div class="form-group">
-                        <label>Date of Birth</label>
-                        <input type="date" id="dateOfBirth">
-                    </div>
-                </div>
-
-                <div class="section-title">Contact & Communication Details</div>
-                <div class="form-row full">
-                    <div class="form-group">
-                        <label>Present Residential Address</label>
-                        <input type="text" id="presentAddress" placeholder="Complete Street Address, City, Province">
-                    </div>
-                </div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>Employee Contact Number</label>
-                        <input type="text" id="phoneNo" placeholder="e.g., +63 917 123 4567">
-                    </div>
+                    <div class="form-group"><label>Given Name</label><input type="text" id="givenName"></div>
+                    <div class="form-group"><label>Surname</label><input type="text" id="surname"></div>
                 </div>
-
-                <div class="section-title">Emergency Contingency Contact</div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Emergency Contact Person</label>
-                        <input type="text" id="emergencyContactName" placeholder="Full Legal Name">
-                    </div>
-                    <div class="form-group">
-                        <label>Contingency Contact Phone Number</label>
-                        <input type="text" id="emergencyContactPhone" placeholder="Mobile / Telephone number">
-                    </div>
-                </div>
-
                 <div class="section-title">Government Documentation Registries</div>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>SSS Number</label>
-                        <input type="text" id="sssNo" placeholder="00-0000000-0">
-                    </div>
-                    <div class="form-group">
-                        <label>TIN Number</label>
-                        <input type="text" id="tinNo" placeholder="000-000-000-000">
-                    </div>
+                    <div class="form-group"><label>SSS Number</label><input type="text" id="sssNo"></div>
+                    <div class="form-group"><label>TIN Number</label><input type="text" id="tinNo"></div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Pag-IBIG MID Number</label>
-                        <input type="text" id="pagibigNo" placeholder="0000-0000-0000">
-                    </div>
-                    <div class="form-group">
-                        <label>PhilHealth Identification</label>
-                        <input type="text" id="philhealthNo" placeholder="00-000000000-0">
-                    </div>
-                </div>
-
                 <div class="modal-actions">
                     <button type="button" class="btn-close" onclick="closeDossierModal()">Close</button>
                     <button type="submit" class="btn-save">Save Record Updates</button>
@@ -225,193 +113,44 @@
         </div>
     </div>
 
-    <div class="custom-alert-overlay" id="customAlert">
-        <div class="custom-alert-card">
-            <div class="custom-alert-header">
-                <div class="custom-alert-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-                <div class="custom-alert-title" id="customAlertTitle">Pipeline Sync Successful</div>
-            </div>
-            <div class="custom-alert-message" id="customAlertMessage">
-                Manifest profile parameters have been saved.
-            </div>
-            <div class="custom-alert-actions">
-                <button type="button" class="btn-alert-dismiss" onclick="closeCustomAlert()">Dismiss</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
         let localProfilesCache = [];
-        let bypassAuthListener = false;
-
-        function showCustomAlert(title, message) {
-            document.getElementById('customAlertTitle').textContent = title;
-            document.getElementById('customAlertMessage').textContent = message;
-            document.getElementById('customAlert').style.display = 'flex';
-        }
-
-        function closeCustomAlert() {
-            document.getElementById('customAlert').style.display = 'none';
-        }
 
         async function verifyAndLoadDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-
             document.getElementById('adminEmail').textContent = `⚙️ Admin: ${user.email.split('@')[0]}`;
-
-            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-            if (!profile || profile.role !== 'Admin') {
-                window.location.href = "employee-dashboard.html";
-                return;
-            }
-
-            setupSessionCrossCheckListener(user.id);
             load201Files();
         }
 
-        function setupSessionCrossCheckListener(currentAdminId) {
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                if (bypassAuthListener) return;
-                if (session && session.user && session.user.id !== currentAdminId) {
-                    bypassAuthListener = true; 
-                    alert("Session Conflicted: Another user logged into this browser. Forcing redirect to login...");
-                    await supabaseClient.auth.signOut();
-                    window.location.href = "login.html";
-                }
-                if (event === 'SIGNED_OUT') {
-                    window.location.href = "login.html";
-                }
-            });
-        }
-
         async function load201Files() {
-            const { data, error } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
-            if (error || !data) {
-                document.getElementById('recordsContainer').innerHTML = `<div class="empty-state" style="color: #d9534f;">Failed to retrieve records directory.</div>`;
-                return;
-            }
-
+            const { data } = await supabaseClient.from('profiles').select('*');
             localProfilesCache = data;
-            renderCards(localProfilesCache);
+            renderCards(data);
         }
 
         function renderCards(profiles) {
             const container = document.getElementById('recordsContainer');
-            if (profiles.length === 0) {
-                container.innerHTML = `<div class="empty-state">No corporate dossiers found matching query parameters.</div>`;
-                return;
-            }
-
-            container.innerHTML = '';
-            profiles.forEach(profile => {
-                const badgeClass = profile.role === 'Admin' ? 'admin' : 'employee';
-                const createdDate = new Date(profile.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-                
-                const cardHtml = `
-                    <div class="record-card">
-                        <div class="record-info">
-                            <h3>File ID: ${profile.username}</h3>
-                            <p>System Key: <code>${profile.id}</code></p>
-                            <p>Dossier Filed: ${createdDate}</p>
-                            <span class="badge ${badgeClass}">${profile.role}</span>
-                        </div>
-                        <div>
-                            <button class="view-folder-btn" onclick="inspectFile('${profile.id}', '${profile.username}')">Inspect Folder</button>
-                        </div>
-                    </div>
-                `;
-                container.innerHTML += cardHtml;
-            });
+            container.innerHTML = profiles.map(p => `
+                <div class="record-card">
+                    <div><h3>${p.username}</h3><p>${p.id}</p></div>
+                    <button class="view-folder-btn" onclick="inspectFile('${p.id}', '${p.username}')">Inspect</button>
+                </div>
+            `).join('');
         }
 
-        function filterRecords() {
-            const query = document.getElementById('searchBar').value.toLowerCase().trim();
-            const filtered = localProfilesCache.filter(p => p.username.toLowerCase().includes(query));
-            renderCards(filtered);
-        }
-
-        async function inspectFile(profileId, username) {
-            document.getElementById('targetProfileId').value = profileId;
+        function inspectFile(id, username) {
+            document.getElementById('targetProfileId').value = id;
             document.getElementById('modalEmployeeTitle').textContent = `Dossier: ${username}`;
-            document.getElementById('modalEmployeeSub').textContent = `System Identifier: ${profileId}`;
-
-            const inputs = document.querySelectorAll('#dossierModal form input:not([type="hidden"])');
-            inputs.forEach(input => input.value = '');
-
-            const { data, error } = await supabaseClient
-                .from('employee_201_docs')
-                .select('*')
-                .eq('id', profileId)
-                .maybeSingle();
-
-            if (data) {
-                document.getElementById('empIdNo').value = data.emp_id_no || '';
-                document.getElementById('dateHired').value = data.date_hired || '';
-                document.getElementById('givenName').value = data.given_name || '';
-                document.getElementById('middleName').value = data.middle_name || '';
-                document.getElementById('surname').value = data.surname || '';
-                document.getElementById('dateOfBirth').value = data.date_of_birth || ''; 
-                document.getElementById('presentAddress').value = data.present_address || '';
-                document.getElementById('phoneNo').value = data.phone_no || '';
-                document.getElementById('emergencyContactName').value = data.emergency_contact_name || '';
-                document.getElementById('emergencyContactPhone').value = data.emergency_contact_phone || '';
-                document.getElementById('sssNo').value = data.sss_no || '';
-                document.getElementById('tinNo').value = data.tin_no || '';
-                document.getElementById('pagibigNo').value = data.pagibig_no || '';
-                document.getElementById('philhealthNo').value = data.philhealth_no || '';
-            }
-
             document.getElementById('dossierModal').style.display = 'flex';
         }
 
-        function closeDossierModal() {
-            document.getElementById('dossierModal').style.display = 'none';
-        }
-
-        async function saveGovernmentDocs(event) {
-            event.preventDefault();
-            const profileId = document.getElementById('targetProfileId').value;
-            
-            const payload = {
-                id: profileId,
-                emp_id_no: document.getElementById('empIdNo').value.trim(),
-                date_hired: document.getElementById('dateHired').value,
-                given_name: document.getElementById('givenName').value.trim(),
-                middle_name: document.getElementById('middleName').value.trim(),
-                surname: document.getElementById('surname').value.trim(),
-                date_of_birth: document.getElementById('dateOfBirth').value || null, 
-                present_address: document.getElementById('presentAddress').value.trim(),
-                phone_no: document.getElementById('phoneNo').value.trim(),
-                emergency_contact_name: document.getElementById('emergencyContactName').value.trim(),
-                emergency_contact_phone: document.getElementById('emergencyContactPhone').value.trim(),
-                sss_no: document.getElementById('sssNo').value.trim(),
-                tin_no: document.getElementById('tinNo').value.trim(),
-                pagibig_no: document.getElementById('pagibigNo').value.trim(),
-                philhealth_no: document.getElementById('philhealthNo').value.trim(),
-                updated_at: new Date().toISOString()
-            };
-
-            const { error } = await supabaseClient
-                .from('employee_201_docs')
-                .upsert(payload, { onConflict: 'id' });
-
-            if (error) {
-                showCustomAlert('Sync Configuration Error', `Error saving dossier record: ${error.message}`);
-            } else {
-                closeDossierModal();
-                showCustomAlert('Pipeline Sync Successful', 'Employee 201 Dossier Master File saved and synchronized successfully!');
-            }
-        }
-
+        function closeDossierModal() { document.getElementById('dossierModal').style.display = 'none'; }
+        
         async function handleLogout() {
-            bypassAuthListener = true;
             await supabaseClient.auth.signOut();
             window.location.href = "login.html";
         }
