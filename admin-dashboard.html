@@ -67,6 +67,11 @@
             <div class="form-group">
                 <label>New Password</label>
                 <input type="password" id="newPasswordInput" placeholder="Enter new password">
+                <!-- Show Password Toggle -->
+                <label style="font-weight:normal; margin-top: 8px; cursor: pointer; display: flex; align-items: center;">
+                    <input type="checkbox" onclick="togglePasswordVisibility()" style="width: auto; margin-right: 8px;"> 
+                    Show Password
+                </label>
             </div>
             <div style="display:flex; justify-content: flex-end; gap: 10px;">
                 <button class="btn-close" onclick="document.getElementById('resetModal').style.display='none'">Cancel</button>
@@ -134,6 +139,12 @@
             document.getElementById('notificationModal').style.display = 'flex';
         }
 
+        // Toggles visibility of the reset password input
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('newPasswordInput');
+            passwordInput.type = (passwordInput.type === "password") ? "text" : "password";
+        }
+
         function openResetModal(userId) {
             document.getElementById('resetUserId').value = userId;
             document.getElementById('resetModal').style.display = 'flex';
@@ -145,10 +156,8 @@
 
             if(!newPassword) return showNotification("Please enter a password.");
 
-            // Retrieve the current session to get the auth token
             const { data: { session } } = await supabaseClient.auth.getSession();
 
-            // Updated: Now calls the secure Edge Function with Authorization header
             const { data, error } = await supabaseClient.functions.invoke('bright-endpoint', {
                 body: { userId, newPassword },
                 headers: {
