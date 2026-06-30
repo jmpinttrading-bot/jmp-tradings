@@ -9,11 +9,19 @@
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; }
         
-        /* Modal Overlay & Notification Styles */
+        /* Modal Overlay Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
+        
+        /* Notification Modal Card */
         .notify-card { background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 25px; text-align: center; border-top: 6px solid #f97316; }
         .notify-card h3 { margin-top: 0; color: #1e293b; }
-        .btn-close-notify { background: #334155; color: white; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; margin-top: 20px; }
+        
+        /* Reset Password Modal Card */
+        .reset-card { background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 25px; border-top: 6px solid #3b82f6; }
+        .reset-card h3 { margin-top: 0; color: #1e293b; margin-bottom: 20px; }
+
+        .btn-close { background: #334155; color: white; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; margin-top: 20px; }
+        .btn-action { background: #3b82f6; color: white; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; }
 
         /* Existing Styles */
         .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -47,7 +55,23 @@
         <div class="notify-card">
             <h3>System Notification</h3>
             <p id="notifyMessage"></p>
-            <button class="btn-close-notify" onclick="document.getElementById('notificationModal').style.display='none'">Dismiss</button>
+            <button class="btn-close" onclick="document.getElementById('notificationModal').style.display='none'">Dismiss</button>
+        </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div class="modal-overlay" id="resetModal">
+        <div class="reset-card">
+            <h3>Reset User Password</h3>
+            <input type="hidden" id="resetUserId">
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="newPasswordInput" placeholder="Enter new password">
+            </div>
+            <div style="display:flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn-close" onclick="document.getElementById('resetModal').style.display='none'">Cancel</button>
+                <button class="btn-action" onclick="confirmPasswordReset()">Update</button>
+            </div>
         </div>
     </div>
 
@@ -110,6 +134,28 @@
             document.getElementById('notificationModal').style.display = 'flex';
         }
 
+        function openResetModal(userId) {
+            document.getElementById('resetUserId').value = userId;
+            document.getElementById('resetModal').style.display = 'flex';
+        }
+
+        async function confirmPasswordReset() {
+            const userId = document.getElementById('resetUserId').value;
+            const newPassword = document.getElementById('newPasswordInput').value;
+
+            if(!newPassword) return showNotification("Please enter a password.");
+
+            // Update user password
+            const { error } = await supabaseClient.auth.admin.updateUserById(userId, { password: newPassword });
+            
+            if (error) showNotification("Error: " + error.message);
+            else {
+                showNotification("Password successfully updated.");
+                document.getElementById('resetModal').style.display = 'none';
+                document.getElementById('newPasswordInput').value = '';
+            }
+        }
+
         async function initAdmin() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
@@ -123,7 +169,7 @@
             tbody.innerHTML = '';
             data.forEach(p => {
                 tbody.innerHTML += `<tr><td>${p.username}</td><td>${p.role}</td><td>${new Date(p.created_at).toLocaleDateString()}</td>
-                <td><button class="reset-btn" onclick="showNotification('Reset function active for ${p.username}')">Reset</button></td></tr>`;
+                <td><button class="reset-btn" onclick="openResetModal('${p.id}')">Reset</button></td></tr>`;
             });
         }
 
