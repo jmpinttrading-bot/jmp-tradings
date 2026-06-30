@@ -10,7 +10,7 @@
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; }
         
         /* Navigation Styles */
-        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; }
+        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
@@ -60,6 +60,7 @@
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">Imports</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">Inventory</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Settings', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -129,7 +130,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentEmployeeId = null;
-        let permissionsMatrix = { profile_access: true, import_access: true, inventory_access: true, sales_invoice_access: true };
+        let permissionsMatrix = { profile_access: true, import_access: true, inventory_access: true, sales_invoice_access: true, settings_access: false };
 
         async function initDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -143,10 +144,11 @@
             if (profile) {
                 document.getElementById('userEmail').textContent = `👤 ${profile.username || authUser.email}`;
                 permissionsMatrix = { 
-                    profile_access: profile.role === 'Admin' || profile.profile_access !== false,
+                    profile_access: true,
                     import_access: profile.role === 'Admin' || profile.import_access !== false,
                     inventory_access: profile.role === 'Admin' || profile.inventory_access !== false,
-                    sales_invoice_access: profile.role === 'Admin' || profile.sales_invoice_access !== false
+                    sales_invoice_access: profile.role === 'Admin' || profile.sales_invoice_access !== false,
+                    settings_access: profile.role === 'Admin'
                 };
             }
             fetchMy201Dossier();
@@ -156,7 +158,9 @@
             const allowed = (moduleName.includes('Profile') && permissionsMatrix.profile_access) ||
                             (moduleName.includes('Import') && permissionsMatrix.import_access) ||
                             (moduleName.includes('Inventory') && permissionsMatrix.inventory_access) ||
-                            (moduleName.includes('Sales') && permissionsMatrix.sales_invoice_access);
+                            (moduleName.includes('Sales') && permissionsMatrix.sales_invoice_access) ||
+                            (moduleName === 'Settings' && permissionsMatrix.settings_access);
+            
             allowed ? window.location.href = url : document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
