@@ -177,23 +177,25 @@
                     <label style="font-size: 0.75rem; font-weight: 600; color: #475569;">TO DATE</label>
                     <input type="date" id="dateTo" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
                 </div>
-                <div style="display: flex; align-items: flex-end;">
+                <div style="display: flex; align-items: flex-end; gap: 10px;">
                     <button onclick="fetchSpsicReports()" class="submit-btn" style="width: auto; padding: 10px 20px;">Generate Report</button>
+                    <button onclick="exportTableToExcel()" class="submit-btn" style="width: auto; padding: 10px 20px; background: #16a34a; color: white;">Download Excel</button>
                 </div>
             </div>
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            
+            <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding-bottom: 5px;">
+                <table id="reportTable" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1000px;">
                     <thead>
                         <tr style="background: #f1f5f9; text-align: left;">
-                            <th style="padding: 12px; border: 1px solid #e2e8f0;">SPSIC #</th>
-                            <th style="padding: 12px; border: 1px solid #e2e8f0;">Created</th>
-                            <th style="padding: 12px; border: 1px solid #e2e8f0;">Approved</th>
-                            <th style="padding: 12px; border: 1px solid #e2e8f0;">Expiration</th>
-                            <th style="padding: 12px; border: 1px solid #e2e8f0;">Storage</th>
-                            <th style="padding: 12px; border: 1px solid #e2e8f0;">Commodity</th>
-                            <th style="padding: 12px; border: 1px solid #e2e8f0;">Arrival</th>
-                            <th style="padding: 12px; border: 1px solid #e2e8f0;">Client</th>
-                            <th style="padding: 12px; border: 1px solid #e2e8f0;">CV #</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">SPSIC Number</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Created Date</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Approved Date</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Expiration Date</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Storage</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Commodity</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Storage Arrival Date</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Client Name</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">CV Number</th>
                         </tr>
                     </thead>
                     <tbody id="reportTableBody">
@@ -406,17 +408,29 @@
             if (!data || data.length === 0) { tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">No records found for this period.</td></tr>'; return; }
             tableBody.innerHTML = data.map(row => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 10px;">${row.spsic_number}</td>
-                    <td style="padding: 10px;">${row.s_date}</td>
-                    <td style="padding: 10px;">${row.approved_date || '-'}</td>
-                    <td style="padding: 10px;">${row.expiration_date || '-'}</td>
-                    <td style="padding: 10px;">${row.storage_location || '-'}</td>
-                    <td style="padding: 10px;">${row.commodity || '-'}</td>
-                    <td style="padding: 10px;">${row.storage_arrival_date || '-'}</td>
-                    <td style="padding: 10px;">${row.client_name || '-'}</td>
-                    <td style="padding: 10px;">${row.cv_number || '-'}</td>
+                    <td style="padding: 10px; white-space: nowrap;">${row.spsic_number}</td>
+                    <td style="padding: 10px; white-space: nowrap;">${row.s_date}</td>
+                    <td style="padding: 10px; white-space: nowrap;">${row.approved_date || '-'}</td>
+                    <td style="padding: 10px; white-space: nowrap;">${row.expiration_date || '-'}</td>
+                    <td style="padding: 10px; white-space: nowrap;">${row.storage_location || '-'}</td>
+                    <td style="padding: 10px; white-space: nowrap;">${row.commodity || '-'}</td>
+                    <td style="padding: 10px; white-space: nowrap;">${row.storage_arrival_date || '-'}</td>
+                    <td style="padding: 10px; white-space: nowrap;">${row.client_name || '-'}</td>
+                    <td style="padding: 10px; white-space: nowrap;">${row.cv_number || '-'}</td>
                 </tr>
             `).join('');
+        }
+
+        function exportTableToExcel() {
+            let table = document.getElementById("reportTable");
+            let rows = Array.from(table.rows);
+            let csv = rows.map(row => Array.from(row.cells).map(cell => `"${cell.textContent.replace(/"/g, '""')}"`).join(",")).join("\n");
+            let blob = new Blob([csv], { type: 'text/csv' });
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement("a");
+            a.setAttribute("href", url);
+            a.setAttribute("download", `SPSIC_Report_${new Date().toISOString().slice(0,10)}.csv`);
+            a.click();
         }
 
         async function handleLogout() { await clearLockHeartbeat(); await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
