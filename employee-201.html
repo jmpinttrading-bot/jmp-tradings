@@ -10,71 +10,76 @@
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
         /* Horizontal Sticky Navbar */
-        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #0f172a; color: white; padding: 15px 30px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .nav-title { font-size: 1.1rem; font-weight: bold; color: #ee964b; letter-spacing: 0.5px; }
-        .nav-links { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .nav-btn { color: #94a3b8; text-decoration: none; font-size: 0.9rem; font-weight: 600; padding: 8px 12px; border-radius: 6px; transition: 0.2s; white-space: nowrap; }
-        .nav-btn:hover, .nav-btn.active { background-color: #1e293b; color: white; border-bottom: 2px solid #ee964b; }
-        .logout-btn { background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #0f172a; color: white; padding: 15px 40px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .nav-brand { font-size: 1.2rem; font-weight: bold; color: #ee964b; }
+        .nav-links { display: flex; gap: 10px; }
+        .nav-links a { color: #94a3b8; text-decoration: none; padding: 10px 15px; border-radius: 6px; font-size: 0.9rem; transition: 0.2s; }
+        .nav-links a:hover, .nav-links a.active { background-color: #1e293b; color: white; border-bottom: 2px solid #ee964b; }
+        .logout-btn { background-color: #d9534f; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
         /* Main Workspace */
         .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
-        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .header-left h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
+        .header-left p { color: #64748b; font-size: 0.95rem; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
-        /* Search & Grid */
         .search-container { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; }
         .search-box { width: 100%; max-width: 400px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        
         .file-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
         .record-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .view-folder-btn { background-color: #0f172a; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .badge.admin { background: #fee2e2; color: #991b1b; }
+        .badge.employee { background: #e0f2fe; color: #0369a1; }
 
-        /* Modal Styles */
+        /* Modal & Alerts */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
-        .modal-card { background: white; width: 100%; max-width: 750px; max-height: 90vh; border-radius: 12px; padding: 35px; border-top: 6px solid #ee964b; display: flex; flex-direction: column; overflow: hidden; }
-        .modal-body { overflow-y: auto; padding-right: 10px; }
-        .section-title { font-size: 0.85rem; font-weight: bold; color: #ee964b; margin: 20px 0 10px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; text-transform: uppercase; }
+        .modal-card { background: white; width: 100%; max-width: 750px; max-height: 90vh; border-radius: 12px; padding: 35px; border-top: 6px solid #ee964b; display: flex; flex-direction: column; }
+        .modal-body { overflow-y: auto; padding-right: 10px; margin-bottom: 20px; }
+        .section-title { font-size: 0.9rem; font-weight: bold; color: #ee964b; text-transform: uppercase; margin: 15px 0 10px 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
-        .form-row.quad { grid-template-columns: repeat(4, 1fr); }
+        .form-row.quad { grid-template-columns: 1fr 1fr 1fr 1fr; }
         .form-group { display: flex; flex-direction: column; }
-        .form-group label { font-size: 0.75rem; font-weight: 700; color: #475569; margin-bottom: 4px; }
-        .form-group input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 15px; margin-top: 15px; }
+        .form-group label { font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; }
+        .form-group input { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; background-color: #f8fafc; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 15px; }
         .btn-save { background: #ee964b; color: #0f172a; border: none; padding: 10px 22px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .custom-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .custom-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; padding: 25px; }
     </style>
 </head>
 <body>
 
-    <!-- Horizontal Navbar -->
     <nav class="navbar">
-        <div class="top-row">
-            <div class="nav-title">JMP ADMIN HQ</div>
-            <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
-        </div>
+        <div class="nav-brand">JMP ADMIN HQ</div>
         <div class="nav-links">
-            <a href="admin-dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="my-profile.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="control-panel.html" class="nav-btn">Settings</a>
+            <a href="admin-dashboard.html">Dashboard</a>
+            <a href="control-panel.html">Control Panel</a>
+            <a href="#" class="active">201 File</a>
+            <a href="import-docs.html">Imports</a>
+            <a href="inventory-management.html">Inventory</a>
+            <a href="sales-invoice.html">Sales</a>
         </div>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </nav>
 
     <div class="main-content">
         <div class="header-panel">
-            <div><h1>Corporate 201 File Management</h1></div>
+            <div class="header-left">
+                <h1>Corporate 201 File Management</h1>
+                <p>Access background profiles and registration configurations.</p>
+            </div>
             <div class="admin-badge" id="adminEmail">Admin System</div>
         </div>
 
         <div class="search-container">
-            <h3>Dossier Search</h3>
-            <input type="text" id="searchBar" class="search-box" placeholder="Filter profiles..." oninput="filterRecords()">
+            <input type="text" id="searchBar" class="search-box" placeholder="Filter profiles by username..." oninput="filterRecords()">
         </div>
 
         <div class="file-grid" id="recordsContainer">
-            <div class="empty-state">Loading dossiers...</div>
+            <div class="empty-state">Loading digital 201 dossiers...</div>
         </div>
     </div>
 
@@ -86,69 +91,61 @@
                 <input type="hidden" id="targetProfileId">
                 <div class="section-title">Employment Details</div>
                 <div class="form-row">
-                    <div class="form-group"><label>Company ID Number</label><input type="text" id="empIdNo"></div>
+                    <div class="form-group"><label>Company ID</label><input type="text" id="empIdNo"></div>
                     <div class="form-group"><label>Date Hired</label><input type="date" id="dateHired"></div>
                 </div>
                 <div class="section-title">Identity</div>
                 <div class="form-row quad">
                     <div class="form-group"><label>Given Name</label><input type="text" id="givenName"></div>
-                    <div class="form-group"><label>Middle Name</label><input type="text" id="middleName"></div>
+                    <div class="form-group"><label>Middle</label><input type="text" id="middleName"></div>
                     <div class="form-group"><label>Surname</label><input type="text" id="surname"></div>
                     <div class="form-group"><label>DOB</label><input type="date" id="dateOfBirth"></div>
                 </div>
-                <div class="section-title">Contact</div>
-                <div class="form-row">
-                    <div class="form-group"><label>Address</label><input type="text" id="presentAddress"></div>
-                    <div class="form-group"><label>Phone</label><input type="text" id="phoneNo"></div>
-                </div>
-                <div class="section-title">Government IDs</div>
-                <div class="form-row">
-                    <div class="form-group"><label>SSS</label><input type="text" id="sssNo"></div>
-                    <div class="form-group"><label>TIN</label><input type="text" id="tinNo"></div>
-                    <div class="form-group"><label>Pag-IBIG</label><input type="text" id="pagibigNo"></div>
-                    <div class="form-group"><label>PhilHealth</label><input type="text" id="philhealthNo"></div>
-                </div>
                 <div class="modal-actions">
                     <button type="button" onclick="closeDossierModal()">Close</button>
-                    <button type="submit" class="btn-save">Save Record Updates</button>
+                    <button type="submit" class="btn-save">Save Updates</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        const supabase = supabase.createClient("https://ebicabxnzeexucggrmbo.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8");
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        async function verifyAndLoad() {
-            const { data: { user } } = await supabase.auth.getUser();
+        let localProfilesCache = [];
+
+        async function verifyAndLoadDashboard() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             document.getElementById('adminEmail').textContent = `Admin: ${user.email}`;
-            const { data } = await supabase.from('profiles').select('*').order('username');
+            load201Files();
+        }
+
+        async function load201Files() {
+            const { data } = await supabaseClient.from('profiles').select('*').order('username');
+            localProfilesCache = data || [];
+            renderCards(localProfilesCache);
+        }
+
+        function renderCards(profiles) {
             const container = document.getElementById('recordsContainer');
-            container.innerHTML = (data || []).map(p => `
+            container.innerHTML = profiles.map(p => `
                 <div class="record-card">
-                    <h3>${p.username}</h3>
-                    <button class="view-folder-btn" onclick="inspectFile('${p.id}', '${p.username}')">Inspect Folder</button>
+                    <div><h3>${p.username}</h3><p>${p.id}</p></div>
+                    <button class="view-folder-btn" onclick="inspectFile('${p.id}', '${p.username}')">Inspect</button>
                 </div>`).join('');
         }
 
         async function inspectFile(id, username) {
             document.getElementById('targetProfileId').value = id;
             document.getElementById('modalEmployeeTitle').textContent = `Dossier: ${username}`;
-            const { data } = await supabase.from('employee_201_docs').select('*').eq('id', id).maybeSingle();
+            const { data } = await supabaseClient.from('employee_201_docs').select('*').eq('id', id).maybeSingle();
             if (data) {
                 document.getElementById('empIdNo').value = data.emp_id_no || '';
-                document.getElementById('dateHired').value = data.date_hired || '';
                 document.getElementById('givenName').value = data.given_name || '';
-                document.getElementById('middleName').value = data.middle_name || '';
                 document.getElementById('surname').value = data.surname || '';
-                document.getElementById('dateOfBirth').value = data.date_of_birth || '';
-                document.getElementById('presentAddress').value = data.present_address || '';
-                document.getElementById('phoneNo').value = data.phone_no || '';
-                document.getElementById('sssNo').value = data.sss_no || '';
-                document.getElementById('tinNo').value = data.tin_no || '';
-                document.getElementById('pagibigNo').value = data.pagibig_no || '';
-                document.getElementById('philhealthNo').value = data.philhealth_no || '';
             }
             document.getElementById('dossierModal').style.display = 'flex';
         }
@@ -157,28 +154,18 @@
 
         async function saveGovernmentDocs(e) {
             e.preventDefault();
-            const payload = {
+            await supabaseClient.from('employee_201_docs').upsert({
                 id: document.getElementById('targetProfileId').value,
                 emp_id_no: document.getElementById('empIdNo').value,
-                date_hired: document.getElementById('dateHired').value,
                 given_name: document.getElementById('givenName').value,
-                middle_name: document.getElementById('middleName').value,
-                surname: document.getElementById('surname').value,
-                date_of_birth: document.getElementById('dateOfBirth').value,
-                present_address: document.getElementById('presentAddress').value,
-                phone_no: document.getElementById('phoneNo').value,
-                sss_no: document.getElementById('sssNo').value,
-                tin_no: document.getElementById('tinNo').value,
-                pagibig_no: document.getElementById('pagibigNo').value,
-                philhealth_no: document.getElementById('philhealthNo').value
-            };
-            await supabase.from('employee_201_docs').upsert(payload);
+                surname: document.getElementById('surname').value
+            });
+            alert('Saved');
             closeDossierModal();
-            alert('Updated!');
         }
 
-        function handleLogout() { supabase.auth.signOut(); window.location.href = "login.html"; }
-        verifyAndLoad();
+        function handleLogout() { supabaseClient.auth.signOut(); window.location.href = "login.html"; }
+        verifyAndLoadDashboard();
     </script>
 </body>
 </html>
