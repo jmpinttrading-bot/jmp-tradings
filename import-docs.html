@@ -2,35 +2,87 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Import Document Manager | JMP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import Document Manager | JMP HQ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* Navbar Styles from Admin Dashboard */
-        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        /* Navbar Design */
+        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #0f172a; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .nav-title { font-size: 0.75rem; color: #ee964b; font-weight: bold; text-transform: uppercase; }
         .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
-        .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn { background-color: #1e293b; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; transition: 0.2s; }
+        .nav-btn:hover { background-color: #334155; color: white; }
+        .logout-btn { background-color: #d9534f; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
 
-        .main-content { padding: 40px; }
-        .card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        .card h3 { margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .main-content { flex: 1; padding: 40px; min-width: 0; }
+        .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
         
-        /* Directory specific styles */
-        .directory-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
-        .month-folder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 10px; }
-        .folder-node { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 15px; text-align: center; cursor: pointer; border-radius: 8px; font-weight: 600; font-size: 0.85rem; }
-        .folder-node:hover, .folder-node.active { background: #1e293b; color: white; }
+        .panel-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; align-items: start; width: 100%; }
+        .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); min-width: 0; }
+        .panel-card h3 { color: #0f172a; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9; }
+
+        .engine-launch-box { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 6px; }
+        .launch-btn { display: inline-block; background: #ee964b; color: #0f172a; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; transition: 0.2s; text-align: center; }
+        .launch-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .directory-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .year-btn { background: #0f172a; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .download-year-btn { background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .export-excel-btn { background: #10b981; color: white; border: none; padding: 12px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: 0.2s; }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 14px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
+        .search-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+        
+        .month-folder-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
+        .folder-node { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px 5px; text-align: center; cursor: pointer; transition: 0.2s; font-size: 0.85rem; font-weight: 600; }
+        .folder-node:hover, .folder-node.active { background: #0f172a; color: white; border-color: #0f172a; }
+        .folder-node .icon { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+        
+        .folder-workspace { background: #ffffff; border: 1px solid #cbd5e1; padding: 25px; border-radius: 8px; margin-bottom: 30px; display: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); min-width: 0; }
+        .folder-workspace.active { display: block; }
+        .workspace-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .status-badge.pending { background: #fef3c7; color: #b45309; }
+        .status-badge.incomplete { background: #fee2e2; color: #991b1b; }
+        .status-badge.for-approval { background: #e0f2fe; color: #0369a1; }
+        .status-badge.completed { background: #d1fae5; color: #065f46; }
+
+        .table-responsive-wrapper { width: 100%; overflow-x: auto; display: block; margin-bottom: 15px; border: 1px solid #e2e8f0; border-radius: 6px; }
+        .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; white-space: nowrap; }
+        .item-list-table th { background: #f8fafc; color: #64748b; }
+        
+        .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
+        .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; padding: 20px; }
+        .empty-placeholder { text-align: center; color: #64748b; padding: 30px; border: 1px dashed #cbd5e1; border-radius: 8px; font-size: 0.95rem; margin-top: 10px; }
+        .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); }
+        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; }
+        .system-alert-header { padding: 20px 24px 10px; display: flex; align-items: center; gap: 12px; }
+        .system-alert-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; }
+        .system-alert-icon.success { background: #d1fae5; color: #065f46; }
+        .system-alert-icon.error { background: #fee2e2; color: #991b1b; }
+        .system-alert-icon.confirm { background: #e0f2fe; color: #0369a1; }
+        .system-alert-content { padding: 10px 24px 24px; color: #475569; font-size: 0.95rem; }
+        .system-alert-actions { padding: 12px 24px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 10px; }
+        .alert-btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+        .alert-btn-primary { background: #0f172a; color: white; }
+        .alert-btn-danger { background: #dc2626; color: white; }
+        .alert-btn-secondary { background: #e2e8f0; color: #475569; }
+
+        @media print { body.employee-secure-lockout { display: none !important; } }
+        @media (max-width: 900px) {
+            .month-folder-grid { grid-template-columns: repeat(3, 1fr); }
+            .directory-controls { flex-direction: column; align-items: stretch; }
+        }
     </style>
 </head>
 <body>
@@ -38,7 +90,7 @@
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
-            <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
+            <button class="logout-btn" id="sidebarLogoutBtn" onclick="handleLogout()">Logout Admin</button>
         </div>
         <div class="nav-links">
             <a href="dashboard.html" class="nav-btn">Dashboard</a>
@@ -51,60 +103,229 @@
     </nav>
 
     <div class="main-content">
-        <div class="card">
-            <h3>Monthly Directories</h3>
-            <div class="directory-controls">
-                <select id="directoryYearSelect" onchange="buildMonthlyFolders()"></select>
-                <button onclick="exportToExcel()">📊 Export Table</button>
-            </div>
-            <div class="month-folder-grid" id="monthFolderContainer"></div>
+        <div class="header-panel">
+            <h1>Shipment Importation Documentation Hub</h1>
+            <p>Process, search, review state loops, and view complete compiled document groups safely.</p>
         </div>
 
-        <div class="card" id="folderWorkspaceWrapper" style="display:none;">
-            <h3 id="workspaceTitleDisplay">📂 Folder Data</h3>
-            <table id="documentLogsTable">
-                <thead><tr><th>SPSIC Ref</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody id="documentLogsTableBody"></tbody>
-            </table>
+        <div class="panel-grid">
+            <div class="panel-card">
+                <h3>Document Upload Engine</h3>
+                <div class="engine-launch-box">
+                    <p style="font-size: 0.9rem; color: #64748b;">Add new parameters, update tracking records, and process digital shipment file pairs securely.</p>
+                    <a href="upload-engine.html" class="launch-btn">⚙️ Open Upload Engine Workspace</a>
+                </div>
+            </div>
+
+            <div class="panel-card" id="globalUncompletedLogsWrapper">
+                <h3>Documentation Log Data Table (Action Required)</h3>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
+                <div class="table-responsive-wrapper">
+                    <table class="item-list-table">
+                        <thead>
+                            <tr>
+                                <th>SPSIC Ref</th>
+                                <th>Created Date</th>
+                                <th>Current Status</th>
+                                <th>Control Interfaces</th>
+                            </tr>
+                        </thead>
+                        <tbody id="globalUncompletedLogsTableBody">
+                            <tr><td colspan="4" style="text-align:center; color:#64748b;">Loading actionable logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <h3>Monthly Directories & Consolidated Logs</h3>
+                <div class="directory-controls">
+                    <select id="directoryYearSelect" onchange="buildMonthlyFolders(); toggleWorkspaceView();" style="flex:1; padding:10px; border-radius:6px;"></select>
+                    <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
+                    <button class="download-year-btn" id="downloadYearArchiveBtn" onclick="downloadEntireYearDirectory()">📥 Download Year Package</button>
+                </div>
+                <div class="month-folder-grid" id="monthFolderContainer"></div>
+                <div id="emptyDirectoryPlaceholder" class="empty-placeholder">
+                    📁 Select a monthly archive folder above to review parameters, search documents, and access local storage records.
+                </div>
+            </div>
+
+            <div class="folder-workspace" id="folderWorkspaceWrapper">
+                <div class="workspace-title" id="workspaceTitleDisplay">📂 Folder Context</div>
+                <div class="search-container">
+                    <input type="text" id="docSearchBox" class="search-box" placeholder="Search entries in this folder by exact SPSIC Number sequence..." oninput="fetchDocuments()">
+                    <button class="export-excel-btn" onclick="exportWorkspaceTableToExcel()">📊 Export to Excel</button>
+                </div>
+                <div class="table-responsive-wrapper">
+                    <table class="item-list-table">
+                        <thead>
+                            <tr>
+                                <th>SPSIC Number</th>
+                                <th>Created Date</th>
+                                <th>Approved Date</th>
+                                <th>Expiration Date</th>
+                                <th>Storage</th>
+                                <th>Commodity</th>
+                                <th>Storage Arrival Date</th>
+                                <th>Client Name</th>
+                                <th>CV Number</th>
+                                <th>Current Status</th>
+                                <th>Control Interfaces</th>
+                            </tr>
+                        </thead>
+                        <tbody id="documentLogsTableBody">
+                            <tr><td colspan="11" style="text-align:center; color:#64748b;">Initializing items...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="viewer-overlay" id="documentViewerOverlay">
+        <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent;"></iframe>
+    </div>
+
+    <div class="system-alert-overlay" id="systemAlertOverlay">
+        <div class="system-alert-card">
+            <div class="system-alert-header">
+                <div class="system-alert-icon" id="systemAlertIcon">✓</div>
+                <div class="system-alert-title" id="systemAlertTitle">Notification Window</div>
+            </div>
+            <div class="system-alert-content" id="systemAlertContent"></div>
+            <div class="system-alert-actions" id="systemAlertActions"></div>
         </div>
     </div>
 
     <script>
-        const supabaseClient = supabase.createClient("https://ebicabxnzeexucggrmbo.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8");
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
+        let selectedFolderMonth = ""; 
+        let availableYears = [2026, 2027]; 
+        const STORAGE_BUCKET_NAME = "shipment-documents";
+        let currentUserRole = "employee"; 
+        let activeInspectingRecordId = null;
+
+        const monthsLabels = [
+            { text: "Jan", value: "01" }, { text: "Feb", value: "02" }, { text: "Mar", value: "03" }, { text: "Apr", value: "04" },
+            { text: "May", value: "05" }, { text: "Jun", value: "06" }, { text: "Jul", value: "07" }, { text: "Aug", value: "08" },
+            { text: "Sep", value: "09" }, { text: "Oct", value: "10" }, { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
+        ];
+
+        function showSystemModal(options = {}) {
+            const type = options.type || 'success'; 
+            const overlay = document.getElementById('systemAlertOverlay');
+            document.getElementById('systemAlertTitle').textContent = options.title || 'Notification';
+            document.getElementById('systemAlertContent').textContent = options.message || '';
+            const iconEl = document.getElementById('systemAlertIcon');
+            iconEl.className = `system-alert-icon ${type}`;
+            iconEl.textContent = type === 'success' ? '✓' : (type === 'error' ? '✕' : '❓');
+            const actionsEl = document.getElementById('systemAlertActions');
+            actionsEl.innerHTML = '';
+            
+            if (type === 'confirm') {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'alert-btn alert-btn-secondary';
+                cancelBtn.textContent = 'Cancel';
+                cancelBtn.onclick = closeSystemModal;
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'alert-btn alert-btn-danger';
+                confirmBtn.textContent = 'Proceed';
+                confirmBtn.onclick = () => { closeSystemModal(); if (options.onConfirm) options.onConfirm(); };
+                actionsEl.appendChild(cancelBtn);
+                actionsEl.appendChild(confirmBtn);
+            } else {
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'alert-btn alert-btn-primary';
+                closeBtn.textContent = 'Dismiss';
+                closeBtn.onclick = closeSystemModal;
+                actionsEl.appendChild(closeBtn);
+            }
+            overlay.style.display = 'flex';
+        }
+
+        function closeSystemModal() { document.getElementById('systemAlertOverlay').style.display = 'none'; }
+
+        async function initModule() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+            if (profile) currentUserRole = profile.role.toLowerCase().trim();
+            
+            initYearSelectOptions(new Date().getFullYear());
+            buildMonthlyFolders();
+            toggleWorkspaceView();
+            fetchDocuments();
+        }
+
+        function initYearSelectOptions(defaultYear) {
+            const select = document.getElementById('directoryYearSelect');
+            select.innerHTML = "";
+            availableYears.forEach(yr => {
+                const opt = document.createElement('option');
+                opt.value = yr; opt.textContent = `${yr} Directory Folder`;
+                if (yr === defaultYear) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
         function buildMonthlyFolders() {
             const container = document.getElementById('monthFolderContainer');
             container.innerHTML = "";
-            const year = document.getElementById('directoryYearSelect').value;
-            ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"].forEach(m => {
+            const currentYear = document.getElementById('directoryYearSelect').value;
+            monthsLabels.forEach(m => {
+                const queryStr = `${currentYear}-${m.value}`;
                 const folder = document.createElement('div');
-                folder.className = 'folder-node';
-                folder.textContent = m;
-                folder.onclick = () => {
-                    document.getElementById('folderWorkspaceWrapper').style.display = 'block';
-                    document.getElementById('workspaceTitleDisplay').textContent = `📂 ${year}-${m} Directory`;
-                };
+                folder.className = `folder-node ${selectedFolderMonth === queryStr ? 'active' : ''}`;
+                folder.onclick = () => { selectedFolderMonth = (selectedFolderMonth === queryStr) ? "" : queryStr; buildMonthlyFolders(); toggleWorkspaceView(); };
+                folder.innerHTML = `<span class="icon">${selectedFolderMonth === queryStr ? '📂' : '📁'}</span> ${m.text.toUpperCase()}`;
                 container.appendChild(folder);
             });
         }
 
-        function init() {
-            const select = document.getElementById('directoryYearSelect');
-            [2026, 2027].forEach(yr => {
-                const opt = document.createElement('option');
-                opt.value = yr; opt.textContent = yr;
-                select.appendChild(opt);
-            });
-            buildMonthlyFolders();
+        function toggleWorkspaceView() {
+            const wrapper = document.getElementById('folderWorkspaceWrapper');
+            const placeholder = document.getElementById('emptyDirectoryPlaceholder');
+            if (selectedFolderMonth) {
+                placeholder.style.display = "none";
+                wrapper.classList.add('active');
+                fetchDocuments();
+            } else {
+                wrapper.classList.remove('active');
+                placeholder.style.display = "block";
+            }
         }
 
-        function exportToExcel() {
-            const wb = XLSX.utils.table_to_book(document.getElementById('documentLogsTable'));
-            XLSX.writeFile(wb, "Import_Report.xlsx");
+        async function fetchDocuments() {
+            // Uncompleted Logs
+            const { data: actionableData } = await supabaseClient.from('imported_shipment_docs').select('*').in('status', ['Pending', 'Incomplete', 'For Approval']).order('s_date', { ascending: false });
+            const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
+            globalTbody.innerHTML = actionableData?.length ? "" : "<tr><td colspan='4'>No actionable logs.</td></tr>";
+            actionableData?.forEach(doc => {
+                globalTbody.innerHTML += `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${new Date(doc.s_date).toLocaleDateString()}</td><td>${doc.status}</td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect</button></td></tr>`;
+            });
+
+            // Workspace Docs
+            if (!selectedFolderMonth) return;
+            const { data } = await supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed').order('created_at', { ascending: false });
+            const tbody = document.getElementById('documentLogsTableBody');
+            tbody.innerHTML = data?.length ? "" : "<tr><td colspan='11'>No items found.</td></tr>";
+            data?.forEach(doc => {
+                tbody.innerHTML += `<tr><td>${doc.spsic_number}</td><td>${doc.s_date}</td><td>${doc.approved_date || 'N/A'}</td><td>${doc.expiration_date || 'N/A'}</td><td>${doc.storage_location || 'N/A'}</td><td>${doc.commodity || 'N/A'}</td><td>${doc.storage_arrival_date || 'N/A'}</td><td>${doc.client_name || 'N/A'}</td><td>${doc.cv_no || 'N/A'}</td><td>${doc.status}</td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">View</button></td></tr>`;
+            });
+        }
+
+        function exportWorkspaceTableToExcel() {
+            const table = document.querySelector("#folderWorkspaceWrapper table");
+            const workbook = XLSX.utils.table_to_book(table);
+            XLSX.writeFile(workbook, "WorkspaceExport.xlsx");
         }
 
         async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
-        init();
+        
+        initModule();
     </script>
 </body>
 </html>
