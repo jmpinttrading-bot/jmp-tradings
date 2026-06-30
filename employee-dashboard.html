@@ -4,103 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JMP Employee Workspace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f4f6f9; color: #333; display: flex; min-height: 100vh; }
-        
-        .sidebar { width: 260px; background-color: #0b2545; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
-        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #133a6f; padding-bottom: 15px; color: #ee964b; }
-        .sidebar a { color: #cbd5e1; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; cursor: pointer; }
-        .sidebar a:hover, .sidebar a.active { background-color: #133a6f; color: white; }
-        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        .main-content { flex: 1; padding: 40px; min-width: 0; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .user-badge { background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: 600; }
-        
-        .dashboard-layout-wrapper { display: flex; gap: 30px; align-items: flex-start; }
-
-        .logo-display-container {
-            width: 340px;
-            height: 340px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            padding: 0;
-            shrink: 0;
-        }
-        .logo-display-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
+        :root {
+            --primary-navy: #0f172a;
+            --sidebar-bg: #1e293b;
+            --accent-orange: #f97316;
+            --bg-gray: #f8fafc;
+            --border-color: #e2e8f0;
         }
 
-        .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; flex: 1; min-width: 0; }
-        .card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); height: fit-content; margin-bottom: 30px; }
-        .card:last-of-type { margin-bottom: 0; }
-        .card h3 { color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+        body { background-color: var(--bg-gray); color: #334155; display: flex; min-height: 100vh; }
         
-        .profile-pic-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; }
-        .profile-pic-frame { width: 160px; height: 160px; border-radius: 50%; border: 4px solid #f4f6f9; box-shadow: 0 4px 10px rgba(0,0,0,0.08); overflow: hidden; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; position: relative; }
-        .profile-pic-frame img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-pic-frame .fallback-avatar { font-size: 5rem; color: #94a3b8; user-select: none; }
+        /* Sidebar Styling */
+        .sidebar { width: 280px; background-color: var(--sidebar-bg); color: #f1f5f9; padding: 40px 20px; display: flex; flex-direction: column; }
+        .sidebar h2 { font-size: 1rem; color: var(--accent-orange); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 40px; padding-left: 10px; }
+        .sidebar a { color: #94a3b8; text-decoration: none; padding: 14px 16px; display: block; border-radius: 8px; margin-bottom: 6px; transition: 0.3s; font-weight: 500; cursor: pointer; }
+        .sidebar a:hover, .sidebar a.active { background-color: #334155; color: white; }
+        .logout-btn { margin-top: auto; background-color: #ef4444; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
         
-        .upload-status-text { font-size: 0.8rem; color: #64748b; margin-top: 5px; text-align: center; font-weight: 500; }
+        /* Layout */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .user-badge { background: white; padding: 10px 20px; border-radius: 50px; border: 1px solid var(--border-color); font-size: 0.9rem; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        
+        .dashboard-layout-wrapper { display: flex; gap: 40px; }
+        .grid { display: grid; grid-template-columns: 1fr 320px; gap: 30px; width: 100%; }
+        .card { background: white; padding: 30px; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card h3 { font-size: 1.1rem; color: var(--primary-navy); margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #f1f5f9; }
 
-        .section-title { font-size: 0.85rem; font-weight: bold; color: #ee964b; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 10px 0; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9; }
-        .section-title:first-of-type { margin-top: 0; }
-        
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 12px; }
+        /* Form Controls */
+        .section-title { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 30px 0 15px 0; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
         .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
-        .form-row.quad { grid-template-columns: 1fr 1fr 1fr 1fr; }
-        .form-row.full { grid-template-columns: 1fr; }
-
-        .form-group { display: flex; flex-direction: column; margin-bottom: 5px; }
-        .form-group label { font-size: 0.8rem; font-weight: 700; color: #475569; margin-bottom: 4px; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #64748b; margin-bottom: 6px; }
+        .form-group input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: #f8fafc; transition: border 0.2s; }
+        .form-group input:focus { outline: none; border-color: #3b82f6; }
+        .form-group input[readonly] { background-color: #f1f5f9; color: #64748b; cursor: not-allowed; }
         
-        .form-group input[readonly] { background-color: #f1f5f9; color: #64748b; cursor: not-allowed; border-color: #e2e8f0; }
-        
-        .btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
-        .btn:hover { background: #133a6f; }
-        .btn.secondary { background: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; margin-top: 10px; }
-        .btn.secondary:hover { background: #cbd5e1; }
-        .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+        .btn { background: var(--primary-navy); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; }
+        .btn:hover { background: #1e293b; }
+        .btn.secondary { background: white; color: var(--primary-navy); border: 1px solid var(--border-color); margin-top: 10px; }
+        .btn.secondary:hover { background: #f1f5f9; }
 
-        .roadblock-panel { display: none; background: white; padding: 40px; border-radius: 10px; border: 1px solid #e2e8f0; text-align: center; max-width: 600px; margin: 40px auto; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .roadblock-panel .icon { font-size: 3.5rem; margin-bottom: 15px; color: #ef4444; display: inline-block; }
-        .roadblock-panel h2 { color: #0b2545; font-size: 1.5rem; margin-bottom: 12px; }
-        .roadblock-panel p { color: #64748b; line-height: 1.6; font-size: 1rem; }
+        /* Profile & Modals */
+        .profile-pic-frame { width: 160px; height: 160px; border-radius: 50%; border: 4px solid var(--bg-gray); margin: 0 auto 20px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #e2e8f0; }
+        .profile-pic-frame img { width: 100%; height: 100%; object-fit: cover; }
+        .restriction-modal-container { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        .restriction-modal-container.is-visible { display: flex; }
+        .restriction-modal-card { background: white; border-radius: 16px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .roadblock-panel { display: none; background: white; padding: 40px; border-radius: 16px; text-align: center; border: 1px solid var(--border-color); }
 
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
-        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 100%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; transform: scale(0.9); transition: transform 0.25s ease; }
-        .restriction-modal-container.is-visible .restriction-modal-card { transform: scale(1); }
-        .modal-alert-icon { font-size: 3rem; margin-bottom: 15px; color: #ef4444; display: inline-block; animation: shakeEffect 0.5s ease-in-out; }
-        .restriction-modal-card h4 { font-size: 1.3rem; color: #0b2545; margin-bottom: 10px; }
-        .restriction-modal-card p { color: #64748b; font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px; }
-        .modal-dismiss-btn { background: #0b2545; color: white; border: none; padding: 10px 24px; font-weight: 600; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; }
-        .modal-dismiss-btn:hover { background: #133a6f; }
-
-        @media (max-width: 1200px) {
-            .dashboard-layout-wrapper { flex-direction: column; align-items: center; }
-            .logo-display-container { width: 260px; height: 260px; }
-        }
-        @media (max-width: 850px) {
-            body { flex-direction: column; }
-            .sidebar { width: 100%; min-height: auto; padding: 20px; }
-            .main-content { padding: 15px; }
-            .grid { grid-template-columns: 1fr; width: 100%; }
-            .form-row, .form-row.triple, .form-row.quad { grid-template-columns: 1fr; gap: 12px; }
-        }
-        @keyframes shakeEffect {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-6px); }
-            40%, 80% { transform: translateX(6px); }
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: 1fr; }
+            .dashboard-layout-wrapper { flex-direction: column; }
         }
     </style>
 </head>
@@ -108,10 +67,10 @@
 
     <div class="sidebar">
         <h2>JMP Workspace</h2>
-        <a id="navMyProfile" class="active" onclick="verifyNavigationPrivilege('Profile Management', '#')">👤 My Account Profile</a>
-        <a id="navImportDocs" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">📄 Import File Management</a>
-        <a id="navInventoryManagement" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">📦 Inventory Management</a>
-        <a id="navSalesInvoice" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">🧾 Sales Invoice Management</a>
+        <a class="active" onclick="verifyNavigationPrivilege('Profile Management', '#')">👤 My Account Profile</a>
+        <a onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">📄 Import File Management</a>
+        <a onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">📦 Inventory Management</a>
+        <a onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">🧾 Sales Invoice Management</a>
         <button class="logout-btn" onclick="handleLogout()">Logout System</button>
     </div>
 
@@ -121,128 +80,47 @@
             <div class="user-badge" id="userEmail">Loading User...</div>
         </div>
 
-        <div id="alertBox" class="alert"></div>
+        <div id="alertBox"></div>
 
         <div class="roadblock-panel" id="profileRoadblockView">
-            <span class="icon">🛑</span>
             <h2>Profile Access Restricted</h2>
-            <p>Your authorization parameters to access your dossier master records have been suspended. If this is an error, contact your operations center administrator.</p>
+            <p>Your authorization parameters have been suspended. Contact your administrator.</p>
         </div>
 
         <div class="dashboard-layout-wrapper" id="profileDossierWorkspaceWrapper">
-            
-            <div class="logo-display-container">
-                <img src="circle-logo.png" alt="JMP Corporate Brand Identity Logo">
-            </div>
-
             <div class="grid">
                 <div class="card">
                     <h3>My 201 Dossier Master File</h3>
-                    
-                    <div class="section-title">Employment Track Details</div>
+                    <div class="section-title">Employment Details</div>
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Company ID Number</label>
-                            <input type="text" id="empIdNo" readonly placeholder="Not Assigned">
-                        </div>
-                        <div class="form-group">
-                            <label>Date Hired</label>
-                            <input type="text" id="dateHired" readonly placeholder="YYYY-MM-DD">
-                        </div>
+                        <div class="form-group"><label>Company ID Number</label><input type="text" id="empIdNo" readonly></div>
+                        <div class="form-group"><label>Date Hired</label><input type="text" id="dateHired" readonly></div>
                     </div>
-
-                    <div class="section-title">Personal Identity Matrix</div>
+                    <div class="section-title">Personal Identity</div>
                     <div class="form-row triple">
-                        <div class="form-group">
-                            <label>Given Name</label>
-                            <input type="text" id="givenName" readonly placeholder="None">
-                        </div>
-                        <div class="form-group">
-                            <label>Middle Name</label>
-                            <input type="text" id="middleName" readonly placeholder="None">
-                        </div>
-                        <div class="form-group">
-                            <label>Surname</label>
-                            <input type="text" id="surname" readonly placeholder="None">
-                        </div>
+                        <div class="form-group"><label>Given Name</label><input type="text" id="givenName" readonly></div>
+                        <div class="form-group"><label>Middle Name</label><input type="text" id="middleName" readonly></div>
+                        <div class="form-group"><label>Surname</label><input type="text" id="surname" readonly></div>
                     </div>
+                    <div class="section-title">Contact Information</div>
+                    <div class="form-group"><label>Present Address</label><input type="text" id="presentAddress" readonly></div>
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Date of Birth</label>
-                            <input type="text" id="dateOfBirth" readonly placeholder="YYYY-MM-DD">
-                        </div>
-                    </div>
-
-                    <div class="section-title">Contact & Communication Details</div>
-                    <div class="form-row full">
-                        <div class="form-group">
-                            <label>Present Residential Address</label>
-                            <input type="text" id="presentAddress" readonly placeholder="No registered permanent residential record on system file">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Employee Contact Number</label>
-                            <input type="text" id="phoneNo" readonly placeholder="None">
-                        </div>
-                    </div>
-
-                    <div class="section-title">Emergency Contingency Contact</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Emergency Contact Person</label>
-                            <input type="text" id="emergencyContactName" readonly placeholder="None">
-                        </div>
-                        <div class="form-group">
-                            <label>Contingency Contact Phone Number</label>
-                            <input type="text" id="emergencyContactPhone" readonly placeholder="None">
-                        </div>
-                    </div>
-
-                    <div class="section-title">Government Documentation Registries</div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>SSS Number</label>
-                            <input type="text" id="sssNo" readonly placeholder="00-0000000-0">
-                        </div>
-                        <div class="form-group">
-                            <label>TIN Number</label>
-                            <input type="text" id="tinNo" readonly placeholder="000-000-000-000">
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Pag-IBIG MID Number</label>
-                            <input type="text" id="pagibigNo" readonly placeholder="0000-0000-0000">
-                        </div>
-                        <div class="form-group">
-                            <label>PhilHealth Identification</label>
-                            <input type="text" id="philhealthNo" readonly placeholder="00-000000000-0">
-                        </div>
+                        <div class="form-group"><label>Contact Number</label><input type="text" id="phoneNo" readonly></div>
                     </div>
                 </div>
 
                 <div>
                     <div class="card">
-                        <h3>Dossier Photo Identification</h3>
-                        <div class="profile-pic-container">
-                            <div class="profile-pic-frame" id="profilePicFrame">
-                                <span class="fallback-avatar" id="fallbackAvatar">👤</span>
-                            </div>
-                            <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
-                            <button class="btn secondary" id="uploadAvatarBtn" onclick="document.getElementById('avatarFileInput').click()">Choose & Upload Photo</button>
-                            <div class="upload-status-text" id="uploadStatusText"></div>
-                        </div>
+                        <h3>Photo Identification</h3>
+                        <div class="profile-pic-frame" id="profilePicFrame">👤</div>
+                        <input type="file" id="avatarFileInput" hidden accept="image/*" onchange="handleAvatarUpload(event)">
+                        <button class="btn secondary" id="uploadAvatarBtn" onclick="document.getElementById('avatarFileInput').click()">Upload New Photo</button>
                     </div>
-
                     <div class="card">
                         <h3>Account Security</h3>
                         <form onsubmit="handleChangePassword(event)">
-                            <div class="form-group">
-                                <label>New Secure Password</label>
-                                <input type="password" id="newPassword" required placeholder="••••••••">
-                            </div>
-                            <button type="submit" class="btn">Update Account Password</button>
+                            <div class="form-group"><label>New Password</label><input type="password" id="newPassword" required placeholder="••••••••"></div>
+                            <button type="submit" class="btn">Update Password</button>
                         </form>
                     </div>
                 </div>
@@ -252,10 +130,9 @@
 
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
-            <span class="modal-alert-icon">🛑</span>
-            <h4 id="modalModuleTitle">Access Restricted</h4>
-            <p>You do not currently possess permission parameters to operate this system module. Please ask your administrator for permission to access.</p>
-            <button class="modal-dismiss-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+            <h4>Access Restricted</h4>
+            <p>You do not have the required permissions to access this module.</p>
+            <button class="btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
 
@@ -266,19 +143,17 @@
 
         let currentEmployeeId = null;
         let bypassAuthListener = false;
-        
-        let permissionsMatrix = {
-            profile_access: true,
-            import_access: true,
-            inventory_access: true,
-            sales_invoice_access: true
-        };
+        let permissionsMatrix = { profile_access: true, import_access: true, inventory_access: true, sales_invoice_access: true };
 
         function showAlert(msg, type) {
             const box = document.getElementById('alertBox');
             if(!box) return;
             box.textContent = msg;
-            box.className = `alert ${type}`;
+            box.style.padding = "15px";
+            box.style.marginBottom = "20px";
+            box.style.borderRadius = "8px";
+            box.style.background = type === 'error' ? '#fee2e2' : '#dcfce7';
+            box.style.color = type === 'error' ? '#991b1b' : '#166534';
             box.style.display = 'block';
             setTimeout(() => { box.style.display = 'none'; }, 5000);
         }
@@ -286,9 +161,7 @@
         async function initDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            
             currentEmployeeId = user.id;
-            
             await fetchEmployeeSystemPermissions(user);
             setupSessionCrossCheckListener();
         }
@@ -300,189 +173,77 @@
                 .eq('id', currentEmployeeId)
                 .maybeSingle();
 
-            if (error) {
-                console.error("Failed to gather identity permissions columns:", error.message);
-                document.getElementById('userEmail').textContent = `👤 User: ${authUser.email.split('@')[0]}`;
-                return;
-            }
-
             if (profile) {
-                document.getElementById('userEmail').textContent = `👤 User: ${profile.username || authUser.email.split('@')[0]}`;
-                
+                document.getElementById('userEmail').textContent = `👤 ${profile.username || authUser.email.split('@')[0]}`;
                 const isAdminUser = profile.role === 'Admin';
-                permissionsMatrix.profile_access = isAdminUser || profile.profile_access !== false;
-                permissionsMatrix.import_access = isAdminUser || profile.import_access !== false;
-                permissionsMatrix.inventory_access = isAdminUser || profile.inventory_access !== false;
-                permissionsMatrix.sales_invoice_access = isAdminUser || profile.sales_invoice_access !== false;
-
+                permissionsMatrix = {
+                    profile_access: isAdminUser || profile.profile_access !== false,
+                    import_access: isAdminUser || profile.import_access !== false,
+                    inventory_access: isAdminUser || profile.inventory_access !== false,
+                    sales_invoice_access: isAdminUser || profile.sales_invoice_access !== false
+                };
                 if (!permissionsMatrix.profile_access) {
                     document.getElementById('profileDossierWorkspaceWrapper').style.display = 'none';
                     document.getElementById('profileRoadblockView').style.display = 'block';
-                } else {
-                    fetchMy201Dossier();
-                }
-            } else {
-                document.getElementById('userEmail').textContent = `👤 User: ${authUser.email.split('@')[0]}`;
-                fetchMy201Dossier();
-            }
+                } else { fetchMy201Dossier(); }
+            } else { fetchMy201Dossier(); }
         }
 
         function verifyNavigationPrivilege(moduleName, destinationUrl) {
             let isAccessPermitted = true;
-
-            if (moduleName === 'Profile Management') {
-                isAccessPermitted = permissionsMatrix.profile_access;
-            } else if (moduleName === 'Import Doc File Management') {
-                isAccessPermitted = permissionsMatrix.import_access;
-            } else if (moduleName === 'Inventory Management') {
-                isAccessPermitted = permissionsMatrix.inventory_access;
-            } else if (moduleName === 'Sales Invoice Management') {
-                isAccessPermitted = permissionsMatrix.sales_invoice_access;
-            }
+            if (moduleName === 'Profile Management') isAccessPermitted = permissionsMatrix.profile_access;
+            else if (moduleName === 'Import Doc File Management') isAccessPermitted = permissionsMatrix.import_access;
+            else if (moduleName === 'Inventory Management') isAccessPermitted = permissionsMatrix.inventory_access;
+            else if (moduleName === 'Sales Invoice Management') isAccessPermitted = permissionsMatrix.sales_invoice_access;
 
             if (isAccessPermitted) {
-                if (destinationUrl !== '#') {
-                    window.location.href = destinationUrl;
-                } else {
-                    document.getElementById('profileRoadblockView').style.display = 'none';
-                    document.getElementById('profileDossierWorkspaceWrapper').style.display = 'flex';
-                }
+                if (destinationUrl !== '#') window.location.href = destinationUrl;
             } else {
-                openRestrictionModal(moduleName);
+                document.getElementById('modalModuleTitle').textContent = `${moduleName} Restricted`;
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
             }
         }
 
-        function openRestrictionModal(moduleName) {
-            document.getElementById('modalModuleTitle').textContent = `${moduleName} Restricted`;
-            document.getElementById('accessBlockerModal').classList.add('is-visible');
-        }
-
-        function closeRestrictionModal() {
-            document.getElementById('accessBlockerModal').classList.remove('is-visible');
-        }
+        function closeRestrictionModal() { document.getElementById('accessBlockerModal').classList.remove('is-visible'); }
 
         async function fetchMy201Dossier() {
-            const { data, error } = await supabaseClient
-                .from('employee_201_docs')
-                .select('*')
-                .eq('id', currentEmployeeId)
-                .maybeSingle();
-
-            if (error) {
-                console.error("Error loading profile details:", error.message);
-                return;
-            }
-
+            const { data, error } = await supabaseClient.from('employee_201_docs').select('*').eq('id', currentEmployeeId).maybeSingle();
             if (data) {
                 document.getElementById('empIdNo').value = data.emp_id_no || '';
                 document.getElementById('dateHired').value = data.date_hired || '';
                 document.getElementById('givenName').value = data.given_name || '';
                 document.getElementById('middleName').value = data.middle_name || '';
                 document.getElementById('surname').value = data.surname || '';
-                document.getElementById('dateOfBirth').value = data.date_of_birth || '';
                 document.getElementById('presentAddress').value = data.present_address || '';
                 document.getElementById('phoneNo').value = data.phone_no || '';
-                document.getElementById('emergencyContactName').value = data.emergency_contact_name || '';
-                document.getElementById('emergencyContactPhone').value = data.emergency_contact_phone || '';
-                document.getElementById('sssNo').value = data.sss_no || '';
-                document.getElementById('tinNo').value = data.tin_no || '';
-                document.getElementById('pagibigNo').value = data.pagibig_no || '';
-                document.getElementById('philhealthNo').value = data.philhealth_no || '';
-
                 renderAvatarView(data.avatar_url);
             }
         }
 
         function renderAvatarView(url) {
             const frame = document.getElementById('profilePicFrame');
-            if (url && url.trim() !== '') {
-                const cacheBusterUrl = `${url}?t=${new Date().getTime()}`;
-                frame.innerHTML = `<img src="${cacheBusterUrl}" alt="Employee Profile Picture Image">`;
-            } else {
-                frame.innerHTML = `<span class="fallback-avatar" id="fallbackAvatar">👤</span>`;
-            }
+            if (url) frame.innerHTML = `<img src="${url}?t=${new Date().getTime()}">`;
         }
 
         async function handleAvatarUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-
-            const uploadBtn = document.getElementById('uploadAvatarBtn');
-            const statusText = document.getElementById('uploadStatusText');
-
-            if (!file.type.startsWith('image/')) {
-                showAlert("Please select a valid image file format.", "error");
-                return;
-            }
-
             try {
-                uploadBtn.disabled = true;
-                statusText.textContent = "Processing upload sequence...";
-
-                const fileExtension = file.name.split('.').pop();
-                const filePath = `${currentEmployeeId}/avatar-${Date.now()}.${fileExtension}`;
-
-                const { data: storageData, error: storageError } = await supabaseClient
-                    .storage
-                    .from('avatars')
-                    .upload(filePath, file, { cacheControl: '3600', upsert: true });
-
+                const filePath = `${currentEmployeeId}/avatar-${Date.now()}`;
+                const { error: storageError } = await supabaseClient.storage.from('avatars').upload(filePath, file);
                 if (storageError) throw storageError;
-
-                const { data: { publicUrl } } = supabaseClient
-                    .storage
-                    .from('avatars')
-                    .getPublicUrl(filePath);
-
-                statusText.textContent = "Updating dossier schema data...";
-
-                const { error: dbError } = await supabaseClient
-                    .from('employee_201_docs')
-                    .update({ avatar_url: publicUrl })
-                    .eq('id', currentEmployeeId);
-
-                if (dbError) throw dbError;
-
+                const { data: { publicUrl } } = supabaseClient.storage.from('avatars').getPublicUrl(filePath);
+                await supabaseClient.from('employee_201_docs').update({ avatar_url: publicUrl }).eq('id', currentEmployeeId);
                 renderAvatarView(publicUrl);
-                statusText.textContent = "";
-                showAlert("Profile identification photo updated successfully!", "success");
-
-            } catch (err) {
-                console.error("Dossier identity transmission failure:", err.message);
-                statusText.textContent = "";
-                showAlert(`Upload Failed: ${err.message}`, "error");
-            } finally {
-                uploadBtn.disabled = false;
-                event.target.value = ''; 
-            }
-        }
-
-        function setupSessionCrossCheckListener() {
-            supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                if (bypassAuthListener) return;
-                if (session && session.user && session.user.id !== currentEmployeeId) {
-                    bypassAuthListener = true;
-                    alert("Session Conflicted: Another user logged into this browser. Forcing redirect to login...");
-                    await supabaseClient.auth.signOut();
-                    window.location.href = "login.html";
-                }
-                if (event === 'SIGNED_OUT') {
-                    window.location.href = "login.html";
-                }
-            });
+                showAlert("Photo updated successfully!", "success");
+            } catch (err) { showAlert(`Upload Failed: ${err.message}`, "error"); }
         }
 
         async function handleChangePassword(e) {
             e.preventDefault();
-            const password = document.getElementById('newPassword').value;
-            const { data, error } = await supabaseClient.auth.updateUser({ password: password });
-
-            if (error) {
-                showAlert(error.message, "error");
-            } else {
-                showAlert("Your account password has been updated successfully!", "success");
-                document.getElementById('newPassword').value = '';
-            }
+            const { error } = await supabaseClient.auth.updateUser({ password: document.getElementById('newPassword').value });
+            if (error) showAlert(error.message, "error");
+            else { showAlert("Password updated successfully!", "success"); document.getElementById('newPassword').value = ''; }
         }
 
         async function handleLogout() {
@@ -490,6 +251,13 @@
             await supabaseClient.auth.signOut();
             window.location.href = "login.html";
         }
+
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_OUT') window.location.href = "login.html";
+            });
+        }
+
         initDashboard();
     </script>
 </body>
