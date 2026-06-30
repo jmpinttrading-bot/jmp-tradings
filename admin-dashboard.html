@@ -145,9 +145,15 @@
 
             if(!newPassword) return showNotification("Please enter a password.");
 
-            // UPDATED: Now calls the secure Edge Function
+            // Retrieve the current session to get the auth token
+            const { data: { session } } = await supabaseClient.auth.getSession();
+
+            // Updated: Now calls the secure Edge Function with Authorization header
             const { data, error } = await supabaseClient.functions.invoke('bright-endpoint', {
-                body: { userId, newPassword }
+                body: { userId, newPassword },
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`
+                }
             });
             
             if (error) {
