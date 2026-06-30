@@ -276,7 +276,6 @@
         </div>
     </div>
 
-    <!-- Notification Modal -->
     <div class="notification-modal" id="notificationModal">
         <div class="notification-card">
             <h3 id="notifTitle">System Notification</h3>
@@ -964,7 +963,7 @@
         async function handleLogout() {
             bypassAuthListener = true;
             await supabaseClient.auth.signOut();
-            window.location.html = "login.html";
+            window.location.href = "login.html";
         }
 
         initRegistryDashboard();
