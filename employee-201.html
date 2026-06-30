@@ -52,7 +52,6 @@
 </head>
 <body>
 
-    <!-- Notification Modal -->
     <div class="modal-overlay" id="notificationModal">
         <div class="notify-card">
             <h3>System Notification</h3>
@@ -77,14 +76,8 @@
     </nav>
 
     <div class="main-content">
-        <div class="header-panel">
-            <h1>Corporate 201 File Management</h1>
-        </div>
-
-        <div class="search-container">
-            <input type="text" id="searchBar" class="search-box" placeholder="Filter by username..." oninput="filterRecords()">
-        </div>
-
+        <div class="header-panel"><h1>Corporate 201 File Management</h1></div>
+        <div class="search-container"><input type="text" id="searchBar" class="search-box" placeholder="Filter by username..."></div>
         <div class="file-grid" id="recordsContainer"></div>
     </div>
 
@@ -93,16 +86,31 @@
             <h2 id="modalEmployeeTitle">Employee Folder</h2>
             <form id="dossierForm" onsubmit="saveGovernmentDocs(event)" class="modal-body">
                 <input type="hidden" id="targetProfileId">
+                
                 <div class="section-title">Employment Track Details</div>
                 <div class="form-row">
                     <div class="form-group"><label>Company ID Number</label><input type="text" id="empIdNo"></div>
                     <div class="form-group"><label>Date Hired</label><input type="date" id="dateHired"></div>
                 </div>
+
                 <div class="section-title">Personal Identity Matrix</div>
                 <div class="form-row"> 
                     <div class="form-group"><label>Given Name</label><input type="text" id="givenName"></div>
-                    <div class="form-group"><label>Surname</label><input type="text" id="surname"></div>
+                    <div class="form-group"><label>Middle Name</label><input type="text" id="middleName"></div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Surname</label><input type="text" id="surname"></div>
+                    <div class="form-group"><label>Date of Birth</label><input type="date" id="dob"></div>
+                </div>
+                <div class="form-group"><label>Home Address</label><input type="text" id="address"></div>
+                <div class="form-group"><label>Mobile Number</label><input type="text" id="phoneNo"></div>
+
+                <div class="section-title">Emergency Contact Details</div>
+                <div class="form-row">
+                    <div class="form-group"><label>Emergency Contact Person</label><input type="text" id="emergencyName"></div>
+                    <div class="form-group"><label>Contact Number</label><input type="text" id="emergencyPhone"></div>
+                </div>
+                
                 <div class="section-title">Government Documentation Registries</div>
                 <div class="form-row">
                     <div class="form-group"><label>SSS Number</label><input type="text" id="sssNo"></div>
@@ -112,6 +120,7 @@
                     <div class="form-group"><label>Pag-IBIG MID</label><input type="text" id="pagibigNo"></div>
                     <div class="form-group"><label>PhilHealth</label><input type="text" id="philhealthNo"></div>
                 </div>
+
                 <div class="modal-actions">
                     <button type="button" onclick="document.getElementById('dossierModal').style.display='none'">Close</button>
                     <button type="submit" class="btn-save">Save Records</button>
@@ -150,7 +159,13 @@
                 document.getElementById('empIdNo').value = data.emp_id_no || '';
                 document.getElementById('dateHired').value = data.date_hired || '';
                 document.getElementById('givenName').value = data.given_name || '';
+                document.getElementById('middleName').value = data.middle_name || '';
                 document.getElementById('surname').value = data.surname || '';
+                document.getElementById('dob').value = data.date_of_birth || '';
+                document.getElementById('address').value = data.present_address || '';
+                document.getElementById('phoneNo').value = data.phone_no || '';
+                document.getElementById('emergencyName').value = data.emergency_contact_name || '';
+                document.getElementById('emergencyPhone').value = data.emergency_contact_phone || '';
                 document.getElementById('sssNo').value = data.sss_no || '';
                 document.getElementById('tinNo').value = data.tin_no || '';
                 document.getElementById('pagibigNo').value = data.pagibig_no || '';
@@ -166,7 +181,13 @@
                 emp_id_no: document.getElementById('empIdNo').value,
                 date_hired: document.getElementById('dateHired').value,
                 given_name: document.getElementById('givenName').value,
+                middle_name: document.getElementById('middleName').value,
                 surname: document.getElementById('surname').value,
+                date_of_birth: document.getElementById('dob').value,
+                present_address: document.getElementById('address').value,
+                phone_no: document.getElementById('phoneNo').value,
+                emergency_contact_name: document.getElementById('emergencyName').value,
+                emergency_contact_phone: document.getElementById('emergencyPhone').value,
                 sss_no: document.getElementById('sssNo').value,
                 tin_no: document.getElementById('tinNo').value,
                 pagibig_no: document.getElementById('pagibigNo').value,
