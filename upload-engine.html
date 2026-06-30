@@ -166,12 +166,20 @@
             </form>
         </div>
 
-        <!-- New Report Panel -->
         <div class="panel-card" style="margin-top: 30px;">
             <h3>SPSIC Report Registry</h3>
-            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <input type="text" id="monthSearch" placeholder="Search by Month (e.g., 2026-06)" style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; flex: 1;">
-                <button onclick="fetchSpsicReports()" class="submit-btn" style="width: auto; padding: 10px 20px;">Search</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #475569;">FROM DATE</label>
+                    <input type="date" id="dateFrom" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #475569;">TO DATE</label>
+                    <input type="date" id="dateTo" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                </div>
+                <div style="display: flex; align-items: flex-end;">
+                    <button onclick="fetchSpsicReports()" class="submit-btn" style="width: auto; padding: 10px 20px;">Generate Report</button>
+                </div>
             </div>
             <div style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
@@ -189,7 +197,7 @@
                         </tr>
                     </thead>
                     <tbody id="reportTableBody">
-                        <tr><td colspan="9" style="padding: 20px; text-align: center; color: #94a3b8;">Enter a date/month (e.g., 2026-06) and search to view records...</td></tr>
+                        <tr><td colspan="9" style="padding: 20px; text-align: center; color: #94a3b8;">Select date range to view records...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -377,13 +385,25 @@
         }
 
         async function fetchSpsicReports() {
-            const query = document.getElementById('monthSearch').value.trim();
+            const from = document.getElementById('dateFrom').value;
+            const to = document.getElementById('dateTo').value;
             const tableBody = document.getElementById('reportTableBody');
-            if (!query) return alert("Please enter a month (YYYY-MM) or criteria.");
-            tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">Loading...</td></tr>';
-            const { data, error } = await supabaseClient.from('imported_shipment_docs').select('*').ilike('s_date', `%${query}%`);
+            
+            if (!from || !to) {
+                showSystemModal('error', 'Date Range Required', 'Please select both a Start Date and an End Date.');
+                return;
+            }
+            tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">Filtering records...</td></tr>';
+            
+            const { data, error } = await supabaseClient
+                .from('imported_shipment_docs')
+                .select('*')
+                .gte('s_date', from)
+                .lte('s_date', to)
+                .order('s_date', { ascending: false });
+
             if (error) { showSystemModal('error', 'Query Failed', error.message); return; }
-            if (!data || data.length === 0) { tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">No records found.</td></tr>'; return; }
+            if (!data || data.length === 0) { tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">No records found for this period.</td></tr>'; return; }
             tableBody.innerHTML = data.map(row => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 10px;">${row.spsic_number}</td>
