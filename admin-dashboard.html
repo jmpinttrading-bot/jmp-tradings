@@ -146,7 +146,7 @@
             if(!newPassword) return showNotification("Please enter a password.");
 
             // UPDATED: Now calls the secure Edge Function
-            const { data, error } = await supabaseClient.functions.invoke('reset-user-password', {
+            const { data, error } = await supabaseClient.functions.invoke('bright-endpoint', {
                 body: { userId, newPassword }
             });
             
