@@ -2,26 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JMP Control Panel</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; display: flex; min-height: 100vh; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
-        .sidebar { width: 280px; background-color: #0f172a; color: white; padding: 30px 20px; display: flex; flex-direction: column; shrink: 0; }
-        .sidebar h2 { font-size: 1.2rem; margin-bottom: 30px; border-bottom: 1px solid #334155; padding-bottom: 15px; color: #ee964b; }
-        .sidebar a { color: #94a3b8; text-decoration: none; padding: 12px; display: block; border-radius: 6px; margin-bottom: 8px; transition: 0.2s; }
-        .sidebar a:hover, .sidebar a.active { background-color: #1e293b; color: white; border-left: 4px solid #ee964b; }
-        .logout-btn { margin-top: auto; background-color: #d9534f; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        
-        .main-content { flex: 1; padding: 40px; min-width: 0; overflow: auto; }
+        /* Navbar Styles (Consistent with Employee/Admin Dashboards) */
+        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn.active { background-color: #475569; color: white; border-bottom: 2px solid #ee964b; }
+
+        /* Content Styles */
+        .main-content { padding: 40px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
         .online-users-panel { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 30px; display: flex; flex-direction: column; gap: 15px; }
-        .online-users-panel .roster-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
-        .online-users-panel h3 { color: #0f172a; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .roster-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
         .live-count-badge { background: #22c55e; color: white; border-radius: 12px; font-size: 0.75rem; padding: 3px 12px; font-weight: bold; }
         
         .user-presence-list { list-style: none; display: flex; flex-wrap: wrap; gap: 12px; max-height: 150px; overflow-y: auto; }
@@ -36,12 +40,9 @@
         .control-block p { color: #64748b; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5; }
         
         .user-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-top: 20px; }
-        .user-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); transition: transform 0.2s, box-shadow 0.2s; }
-        .user-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
-        
+        .user-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .user-card-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px; }
         .user-card-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
-        
         .employee-badge { background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; }
         .admin-pill-badge { background: #fef3c7; color: #b45309; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.8rem; }
 
@@ -49,38 +50,34 @@
         .permission-item { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #f1f5f9; }
         .permission-label { font-size: 0.85rem; color: #475569; font-weight: 600; }
         .permission-sub-item { margin-left: 20px; background: #fafafa; border-left: 3px solid #ee964b; }
-
         .toggle-switch-container { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; }
-        .toggle-switch-container span.allowed { color: #16a34a; }
-        .toggle-switch-container span.restricted { color: #94a3b8; }
-        .toggle-switch-container span.locked { color: #b45309; font-style: italic; }
-        
-        .switch-input-element { position: relative; display: inline-block; width: 40px; height: 22px; shrink: 0; }
+        .switch-input-element { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch-input-element input { opacity: 0; width: 0; height: 0; }
         .slider-rail { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 34px; }
         .slider-rail:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
         input:checked + .slider-rail { background-color: #22c55e; }
         input:checked + .slider-rail:before { transform: translateX(18px); }
 
-        @keyframes pulseTrackingEffect {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-        }
+        @keyframes pulseTrackingEffect { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h2>JMP Admin HQ</h2>
-        <a href="admin-dashboard.html">👤 Profile Management</a>
-        <a href="#" class="active">🎛️ Control Panel</a>
-        <a href="employee-201.html">📋 Employee 201 File</a>
-        <a href="import-docs.html">📄 Import File Management</a>
-        <a href="inventory-management.html">📦 Inventory Management</a>
-        <a href="sales-invoice.html">🧾 Sales Invoice Management</a>
-        <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
-    </div>
+    <nav class="navbar">
+        <div class="top-row">
+            <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-btn">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
+            <a href="import-docs.html" class="nav-btn">Imports</a>
+            <a href="inventory-management.html" class="nav-btn">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
+            <a href="control-panel.html" class="nav-btn active">Control Panel</a>
+        </div>
+    </nav>
 
     <div class="main-content">
         <div class="header">
@@ -100,12 +97,9 @@
 
         <div class="control-block">
             <h3>User Access Account</h3>
-            <p>Control routing permission parameters for employee workspace dashboard environments. Modifications sync instantly to user data records.</p>
-            
+            <p>Control routing permission parameters for employee workspace dashboard environments. Modifications sync instantly.</p>
             <div class="user-cards-grid" id="accessManagementCardsContainer">
-                <div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 40px;">
-                    Loading profile matrices from secure segment...
-                </div>
+                <div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 40px;">Loading profile matrices...</div>
             </div>
         </div>
     </div>
@@ -122,162 +116,68 @@
         async function initControlPanel() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            
             currentAdminId = user.id;
-            
             const { data: profile } = await supabaseClient.from('profiles').select('role, username').eq('id', user.id).single();
-            if (!profile || profile.role !== 'Admin') {
-                window.location.href = "employee-dashboard.html";
-                return;
-            }
-            
+            if (!profile || profile.role !== 'Admin') { window.location.href = "employee-dashboard.html"; return; }
             document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
-            
             setupSessionCrossCheckListener();
             initializePresenceSynchronization(user, profile.username, profile.role);
             fetchPlatformUserProfiles();
         }
 
         async function fetchPlatformUserProfiles() {
-            const { data: profiles, error } = await supabaseClient
-                .from('profiles')
-                .select('id, username, role, profile_access, import_access, employee_201_access, inventory_access, inv_register_access, inv_edit_access, inv_quantity_access, sales_invoice_access')
-                .order('role', { ascending: true });
-
+            const { data: profiles } = await supabaseClient.from('profiles').select('*').order('role', { ascending: true });
             const container = document.getElementById('accessManagementCardsContainer');
-            if (error || !profiles || profiles.length === 0) {
-                console.error("Supabase Query Error Context:", error);
-                container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 20px;">Failed to gather structural user profile matrices.</div>`;
-                return;
-            }
-
             container.innerHTML = "";
-
             profiles.forEach(profile => {
-                const displayName = profile.username || 'Unidentified Node';
-                const roleBadge = profile.role === 'Admin' ? `<span class="admin-pill-badge">Admin</span>` : `<span class="employee-badge">Employee</span>`;
                 const isAdmin = profile.role === 'Admin';
-                
-                // Helper to create a toggle row
-                const createToggle = (label, accessKey, isAllowed, isSubItem = false) => `
-                    <div class="permission-item ${isSubItem ? 'permission-sub-item' : ''}">
+                const createToggle = (label, accessKey, isAllowed, isSub = false) => `
+                    <div class="permission-item ${isSub ? 'permission-sub-item' : ''}">
                         <span class="permission-label">${label}</span>
                         <div class="toggle-switch-container">
-                            <label class="switch-input-element">
-                                <input type="checkbox" 
-                                       id="toggle-${profile.id}-${accessKey}" 
-                                       ${isAllowed ? 'checked' : ''} 
-                                       ${isAdmin ? 'disabled' : ''} 
-                                       onchange="updateDatabaseAccessClearance('${profile.id}', '${accessKey}', this)">
-                                <span class="slider-rail"></span>
-                            </label>
+                            <label class="switch-input-element"><input type="checkbox" ${isAllowed?'checked':''} ${isAdmin?'disabled':''} onchange="updateDatabaseAccessClearance('${profile.id}', '${accessKey}', this)"><span class="slider-rail"></span></label>
                             ${isAdmin ? '<span class="locked">Locked (ON)</span>' : (isAllowed ? '<span class="allowed">Allowed</span>' : '<span class="restricted">Restricted</span>')}
                         </div>
-                    </div>
-                `;
-
+                    </div>`;
                 const card = document.createElement('div');
                 card.className = "user-card";
-
                 card.innerHTML = `
-                    <div class="user-card-header">
-                        <div class="user-card-title" title="${displayName}">${displayName}</div>
-                        ${roleBadge}
-                    </div>
+                    <div class="user-card-header"><div class="user-card-title">${profile.username}</div>${isAdmin?'<span class="admin-pill-badge">Admin</span>':'<span class="employee-badge">Employee</span>'}</div>
                     <div class="permission-vertical-list">
                         ${createToggle('Profile Management', 'profile_access', profile.profile_access !== false)}
                         ${createToggle('Employee 201 File', 'employee_201_access', profile.employee_201_access !== false)}
-                        ${createToggle('Import Doc Management', 'import_access', profile.import_access !== false)}
+                        ${createToggle('Import Management', 'import_access', profile.import_access !== false)}
                         ${createToggle('Inventory Management', 'inventory_access', profile.inventory_access !== false)}
-                        ${createToggle('↳ Access "Our Product Item"', 'inv_register_access', profile.inv_register_access === true, true)}
-                        ${createToggle('↳ Edit Product Info', 'inv_edit_access', profile.inv_edit_access === true, true)}
-                        ${createToggle('↳ Adjust Stock Quantities', 'inv_quantity_access', profile.inv_quantity_access === true, true)}
+                        ${createToggle('↳ Register Item', 'inv_register_access', profile.inv_register_access === true, true)}
+                        ${createToggle('↳ Edit Info', 'inv_edit_access', profile.inv_edit_access === true, true)}
+                        ${createToggle('↳ Adjust Stock', 'inv_quantity_access', profile.inv_quantity_access === true, true)}
                         ${createToggle('Sales Invoice Management', 'sales_invoice_access', profile.sales_invoice_access !== false)}
-                    </div>
-                `;
+                    </div>`;
                 container.appendChild(card);
             });
         }
 
-        async function updateDatabaseAccessClearance(userId, privilegeColumn, element) {
-            const isGranted = element.checked;
-            const updatePayload = {};
-            updatePayload[privilegeColumn] = isGranted;
-
-            const { error } = await supabaseClient
-                .from('profiles')
-                .update(updatePayload)
-                .eq('id', userId);
-
-            if (error) {
-                console.error("Supabase privilege update conflict:", error.message);
-                alert("Error updating access clearance: " + error.message);
-                fetchPlatformUserProfiles(); 
-            } else {
-                // Refresh UI state
-                setTimeout(() => {
-                    fetchPlatformUserProfiles();
-                }, 300);
-            }
+        async function updateDatabaseAccessClearance(userId, col, el) {
+            await supabaseClient.from('profiles').update({[col]: el.checked}).eq('id', userId);
+            fetchPlatformUserProfiles();
         }
 
-        function initializePresenceSynchronization(authenticatedUser, usernameString, userRole) {
-            realTimePresenceChannel = supabaseClient.channel('jmp-global-presence', {
-                config: { presence: { key: authenticatedUser.id } }
-            });
-
-            realTimePresenceChannel
-                .on('presence', { event: 'sync' }, () => {
-                    const activeState = realTimePresenceChannel.presenceState();
-                    renderActivePresenceRoster(activeState);
-                });
-
-            realTimePresenceChannel.subscribe(async (status) => {
-                if (status === 'SUBSCRIBED') {
-                    await realTimePresenceChannel.track({
-                        username: usernameString || authenticatedUser.email.split('@')[0],
-                        role: userRole,
-                        online_since: new Date().toISOString()
-                    });
-                }
-            });
+        function initializePresenceSynchronization(u, name, role) {
+            realTimePresenceChannel = supabaseClient.channel('jmp-global-presence', { config: { presence: { key: u.id } } });
+            realTimePresenceChannel.on('presence', { event: 'sync' }, () => renderActivePresenceRoster(realTimePresenceChannel.presenceState()));
+            realTimePresenceChannel.subscribe(async (s) => { if (s === 'SUBSCRIBED') await realTimePresenceChannel.track({username: name, role: role}); });
         }
 
-        function renderActivePresenceRoster(presenceState) {
-            const listContainer = document.getElementById('activePresenceTrackerList');
-            listContainer.innerHTML = "";
-            
-            let consolidatedUsers = [];
-            for (const id in presenceState) {
-                const elements = presenceState[id];
-                if (elements && elements.length > 0) {
-                    consolidatedUsers.push(elements[0]);
-                }
-            }
-
-            const countValue = consolidatedUsers.length;
-            document.getElementById('rosterCountBadge').textContent = `${countValue} Live Users`;
-
-            if (countValue === 0) {
-                listContainer.innerHTML = `<li style="text-align: center; color: #94a3b8; padding: 10px; width: 100%; font-size: 0.85rem;">No active connections detected.</li>`;
-                return;
-            }
-
-            consolidatedUsers.forEach(userSessionData => {
-                const item = document.createElement('li');
-                item.className = "user-presence-item";
-                
-                const cleanName = userSessionData.username ? userSessionData.username : "Unknown Node";
-                const designatedRole = userSessionData.role ? userSessionData.role : "employee";
-
-                item.innerHTML = `
-                    <div class="pulse-indicator-dot"></div>
-                    <div class="user-meta-info">
-                        <span class="user-email-text">${cleanName}</span>
-                        <span class="user-role-lbl">${designatedRole}</span>
-                    </div>
-                `;
-                listContainer.appendChild(item);
+        function renderActivePresenceRoster(state) {
+            const container = document.getElementById('activePresenceTrackerList');
+            container.innerHTML = "";
+            const users = Object.values(state).flat();
+            document.getElementById('rosterCountBadge').textContent = `${users.length} Live Users`;
+            users.forEach(u => {
+                const li = document.createElement('li');
+                li.className = "user-presence-item";
+                li.innerHTML = `<div class="pulse-indicator-dot"></div><div class="user-meta-info"><span class="user-email-text">${u.username}</span><span class="user-role-lbl">${u.role}</span></div>`;
+                container.appendChild(li);
             });
         }
 
@@ -286,31 +186,13 @@
                 if (bypassAuthListener) return;
                 if (session && session.user && session.user.id !== currentAdminId) {
                     bypassAuthListener = true; 
-                    alert("Session Conflicted. Forcing redirect to login...");
-                    await disconnectPresenceChannel();
-                    await supabaseClient.auth.signOut();
-                    window.location.href = "login.html";
-                }
-                if (event === 'SIGNED_OUT') {
+                    alert("Session Conflicted.");
                     window.location.href = "login.html";
                 }
             });
         }
 
-        async function disconnectPresenceChannel() {
-            if (realTimePresenceChannel) {
-                await realTimePresenceChannel.untrack();
-                await supabaseClient.removeChannel(realTimePresenceChannel);
-            }
-        }
-
-        async function handleLogout() {
-            bypassAuthListener = true;
-            await disconnectPresenceChannel();
-            await supabaseClient.auth.signOut();
-            window.location.href = "login.html";
-        }
-
+        async function handleLogout() { bypassAuthListener = true; await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
         initControlPanel();
     </script>
 </body>
