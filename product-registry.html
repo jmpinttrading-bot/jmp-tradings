@@ -61,7 +61,7 @@
         
         .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { background: #cbd5e1; color: #475569; cursor: not-allowed; }
         
-        #storageFacility, #itemCode, #itemCommodity, #itemName { text-transform: uppercase; }
+        #storageFacility, #itemCode, #itemCommodity { text-transform: uppercase; }
 
         .form-actions { display: flex; gap: 10px; margin-top: 20px; }
         .btn-primary { flex: 1; background: #ee964b; color: #0f172a; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; }
@@ -108,7 +108,6 @@
         .modal-card { background: white; border-radius: 12px; max-width: 450px; width: 100%; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
         .modal-card h3 { font-size: 1.2rem; color: #0f172a; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
 
-        /* Notification Modal Styles */
         .notification-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
         .notification-card { background: white; border-radius: 12px; max-width: 400px; width: 100%; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .notification-card h3 { margin-bottom: 15px; color: #0f172a; }
@@ -182,7 +181,33 @@
                     
                     <div class="form-group">
                         <label>Item Description</label>
-                        <input type="text" id="itemName" required placeholder="e.g., FROZEN PREMIUM WHITE SHRIMP">
+                        <select id="itemName" required>
+                            <option value="" disabled selected>-- SELECT AN ITEM --</option>
+                            <option value="FROZEN BIGEYE SCAD WHOLE (MALAYSIA)">FROZEN BIGEYE SCAD WHOLE (MALAYSIA)</option>
+                            <option value="FROZEN BIGEYE SCAD WHOLE (VIETNAM)">FROZEN BIGEYE SCAD WHOLE (VIETNAM)</option>
+                            <option value="FROZEN GOLDEN POMFRET WHOLE ROUND">FROZEN GOLDEN POMFRET WHOLE ROUND</option>
+                            <option value="FROZEN LIAN - COMMON SCAD WHOLE">FROZEN LIAN - COMMON SCAD WHOLE</option>
+                            <option value="FROZEN MOONFISH WHOLE">FROZEN MOONFISH WHOLE</option>
+                            <option value="FROZEN NOBASHI SHRIMP">FROZEN NOBASHI SHRIMP</option>
+                            <option value="FROZEN PANGASIUS FILLET">FROZEN PANGASIUS FILLET</option>
+                            <option value="FROZEN PEELED SHRIMP">FROZEN PEELED SHRIMP</option>
+                            <option value="FROZEN ROUND SCAD">FROZEN ROUND SCAD</option>
+                            <option value="FROZEN SALMON BELLY">FROZEN SALMON BELLY</option>
+                            <option value="FROZEN SALMON HEAD">FROZEN SALMON HEAD</option>
+                            <option value="FROZEN SEABASS WHOLE ROUND">FROZEN SEABASS WHOLE ROUND</option>
+                            <option value="FROZEN SQUID WHOLE">FROZEN SQUID WHOLE</option>
+                            <option value="FROZEN SQUID WHOLE ROUND (ILLEX)">FROZEN SQUID WHOLE ROUND (ILLEX)</option>
+                            <option value="FROZEN SQUID WHOLE ROUND (TODARODES)">FROZEN SQUID WHOLE ROUND (TODARODES)</option>
+                            <option value="FROZEN TUNA BELLY">FROZEN TUNA BELLY</option>
+                            <option value="FROZEN TUNA CUBES">FROZEN TUNA CUBES</option>
+                            <option value="FROZEN TUNA KAMA">FROZEN TUNA KAMA</option>
+                            <option value="FROZEN TUNA PORTION CUT">FROZEN TUNA PORTION CUT</option>
+                            <option value="FROZEN TUNA SAKU BAR">FROZEN TUNA SAKU BAR</option>
+                            <option value="FROZEN TUNA STEAK">FROZEN TUNA STEAK</option>
+                            <option value="FROZEN YELLOWTAIL SCAD WHOLE (CHINA)">FROZEN YELLOWTAIL SCAD WHOLE (CHINA)</option>
+                            <option value="FROZEN YELLOWTAIL SCAD WHOLE (MALAYSIA)">FROZEN YELLOWTAIL SCAD WHOLE (MALAYSIA)</option>
+                            <option value="FROZEN YELLOWTAIL WHOLE ROUND">FROZEN YELLOWTAIL WHOLE ROUND</option>
+                        </select>
                     </div>
 
                     <div class="form-group">
@@ -534,7 +559,7 @@
             applyFormUIRestrictions();
             fetchLedgerDataset();
             
-            document.getElementById('itemName').addEventListener('input', autoGenerateSkuCode);
+            document.getElementById('itemName').addEventListener('change', autoGenerateSkuCode);
             document.getElementById('itemSizes').addEventListener('input', autoGenerateSkuCode);
 
             setupSessionCrossCheckListener();
@@ -939,7 +964,7 @@
         async function handleLogout() {
             bypassAuthListener = true;
             await supabaseClient.auth.signOut();
-            window.location.href = "login.html";
+            window.location.html = "login.html";
         }
 
         initRegistryDashboard();
