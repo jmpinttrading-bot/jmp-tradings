@@ -50,6 +50,7 @@
 </head>
 <body>
 
+    <!-- Notification Modal -->
     <div class="modal-overlay" id="notificationModal">
         <div class="notify-card">
             <h3>System Notification</h3>
@@ -58,6 +59,7 @@
         </div>
     </div>
 
+    <!-- Password Reset Modal -->
     <div class="modal-overlay" id="resetModal">
         <div class="reset-card">
             <h3>Reset User Password</h3>
@@ -125,7 +127,7 @@
     </div>
 
     <script>
-        const supabaseClient = supabase.createClient("https://ebicabxnzeexucggrmbo.supabase.co", "YOUR_ANON_KEY_HERE");
+        const supabaseClient = supabase.createClient("https://ebicabxnzeexucggrmbo.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8");
         
         function showNotification(msg) {
             document.getElementById('notifyMessage').textContent = msg;
@@ -143,20 +145,14 @@
 
             if(!newPassword) return showNotification("Please enter a password.");
 
-            try {
-                // Call the secure backend Edge Function
-                const { data, error } = await supabaseClient.functions.invoke('reset-user-password', {
-                    body: { userId, newPassword }
-                });
-
-                if (error) throw new Error(error.message);
-
+            // Update user password
+            const { error } = await supabaseClient.auth.admin.updateUserById(userId, { password: newPassword });
+            
+            if (error) showNotification("Error: " + error.message);
+            else {
                 showNotification("Password successfully updated.");
                 document.getElementById('resetModal').style.display = 'none';
                 document.getElementById('newPasswordInput').value = '';
-            } catch (err) {
-                console.error(err);
-                showNotification("Error: " + err.message);
             }
         }
 
@@ -171,7 +167,7 @@
             const { data } = await supabaseClient.from('profiles').select('*');
             const tbody = document.getElementById('directoryTableBody');
             tbody.innerHTML = '';
-            data?.forEach(p => {
+            data.forEach(p => {
                 tbody.innerHTML += `<tr><td>${p.username}</td><td>${p.role}</td><td>${new Date(p.created_at).toLocaleDateString()}</td>
                 <td><button class="reset-btn" onclick="openResetModal('${p.id}')">Reset</button></td></tr>`;
             });
