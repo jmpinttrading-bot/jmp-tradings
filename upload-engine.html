@@ -10,6 +10,13 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
+        /* New Header Styling */
+        .top-nav { background-color: #0f172a; color: white; padding: 15px 40px; display: flex; align-items: center; gap: 20px; }
+        .top-nav h2 { font-size: 1.1rem; color: #ee964b; margin-right: 20px; }
+        .top-nav a { color: #94a3b8; text-decoration: none; padding: 8px 12px; border-radius: 6px; transition: 0.2s; font-size: 0.9rem; }
+        .top-nav a:hover, .top-nav a.active { background-color: #1e293b; color: white; }
+        .logout-btn { margin-left: auto; background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+
         .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
@@ -24,7 +31,7 @@
         .form-group input[type="file"] { background: #f8fafc; padding: 6px; cursor: pointer; }
         
         .uppercase-input { text-transform: uppercase; }
-        .form-group input[disabled], .form-group select[disabled], .form-group file[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
+        .form-group input[disabled], .form-group select[disabled] { background: #e2e8f0 !important; cursor: not-allowed; opacity: 0.6; }
         
         .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
         .upload-progress-status { font-size: 0.75rem; font-weight: 500; margin-top: 4px; display: none; }
@@ -51,6 +58,13 @@
 </head>
 <body>
 
+    <nav class="top-nav">
+        <h2>JMP Admin HQ</h2>
+        <a href="admin-dashboard.html">Profile Management</a>
+        <a href="import-docs.html" class="active">Import File Management</a>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    </nav>
+
     <div class="main-content">
         <div class="header-panel">
             <div>
@@ -65,7 +79,7 @@
             <div class="live-lock-banner" id="lockStatusBanner"></div>
 
             <form id="uploadEngineForm" onsubmit="executeDocumentUpload(event)">
-                <!-- Form content remains the same -->
+                <!-- Form remains unchanged -->
                 <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
                     <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
                         <label>SPSIC NUMBER</label>
@@ -159,7 +173,7 @@
         </div>
     </div>
 
-    <!-- Modals and Scripts remain the same -->
+    <!-- System Modal & Scripts (keep as they were) -->
     <div class="system-alert-overlay" id="systemAlertOverlay">
         <div class="system-alert-card">
             <div class="system-alert-header">
@@ -174,7 +188,6 @@
     </div>
 
     <script>
-        // Keep all existing JS logic, but remove references to sidebar elements if they trigger errors (or simply ignore them)
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -364,6 +377,12 @@
                 showSystemModal('error', 'Sync Failed', err.message);
                 submitBtn.disabled = false;
             }
+        }
+
+        async function handleLogout() {
+            await clearLockHeartbeat();
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
         }
 
         window.addEventListener('beforeunload', () => { clearLockHeartbeat(); });
