@@ -145,11 +145,14 @@
 
             if(!newPassword) return showNotification("Please enter a password.");
 
-            // Update user password
-            const { error } = await supabaseClient.auth.admin.updateUserById(userId, { password: newPassword });
+            // UPDATED: Now calls the secure Edge Function
+            const { data, error } = await supabaseClient.functions.invoke('reset-user-password', {
+                body: { userId, newPassword }
+            });
             
-            if (error) showNotification("Error: " + error.message);
-            else {
+            if (error) {
+                showNotification("Error: " + error.message);
+            } else {
                 showNotification("Password successfully updated.");
                 document.getElementById('resetModal').style.display = 'none';
                 document.getElementById('newPasswordInput').value = '';
