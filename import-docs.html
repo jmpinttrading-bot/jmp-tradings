@@ -226,9 +226,37 @@
             document.getElementById('systemAlertOverlay').style.display = 'none';
         }
 
-        // --- NEW: Function to close the viewer overlay ---
         function closeViewer() {
             document.getElementById('documentViewerOverlay').style.display = 'none';
+        }
+
+        // --- NEW: Helper for Downloading Files ---
+        async function downloadCurrentDocumentPackage() {
+            if (!activeInspectingRecordId) return;
+
+            const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', activeInspectingRecordId).single();
+            if (!doc) return;
+
+            const files = [
+                { path: doc.spsic_file_path, name: "SPSIC_Document" },
+                { path: doc.arrival_notice_path, name: "Arrival_Notice" },
+                { path: doc.import_docs_path, name: "Import_Package" }
+            ].filter(f => f.path);
+
+            for (const file of files) {
+                const { data, error } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).download(file.path);
+                if (error) {
+                    console.error("Download failed", error);
+                    continue;
+                }
+                const url = window.URL.createObjectURL(data);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${file.name}_${doc.spsic_number}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
         }
 
         function registerSecurityInterceptors() {
@@ -386,9 +414,9 @@
             }
 
             const filesArray = [];
-            if(doc.spsic_file_path) filesArray.push({ name: "1. SPSIC Document", path: doc.spsic_file_path });
-            if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path });
-            if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path });
+            if(doc.spsic_file_path) filesArray.push({ name: "1. SPSIC Document", path: doc.spsic_file_path, uploadDate: doc.created_at });
+            if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path, uploadDate: doc.created_at });
+            if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path, uploadDate: doc.created_at });
 
             const isAdmin = (currentUserRole === 'admin');
             const overlay = document.getElementById('documentViewerOverlay');
