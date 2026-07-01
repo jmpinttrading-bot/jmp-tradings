@@ -369,9 +369,35 @@
 
         async function openDocCompiler(recordId) {
             activeInspectingRecordId = recordId;
+            
             const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
-            if(!doc) return;
-            document.getElementById('documentViewerOverlay').style.display = 'flex';
+            if (!doc) {
+                showSystemModal({ type: 'error', title: 'Error', message: 'Could not load document records.' });
+                return;
+            }
+
+            const filesArray = [];
+            if(doc.spsic_file_path) filesArray.push({ name: "1. SPSIC Document", path: doc.spsic_file_path });
+            if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path });
+            if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path });
+
+            const isAdmin = (currentUserRole === 'admin');
+            const overlay = document.getElementById('documentViewerOverlay');
+            const iframe = document.getElementById('viewerModuleIframe');
+
+            overlay.style.display = 'flex';
+
+            const initViewer = () => {
+                if (iframe.contentWindow && typeof iframe.contentWindow.setupViewerContent === 'function') {
+                    iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient);
+                }
+            };
+
+            if (iframe.contentWindow && iframe.contentWindow.document.readyState === 'complete') {
+                initViewer();
+            } else {
+                iframe.onload = initViewer;
+            }
         }
 
         async function handleLogout() {
