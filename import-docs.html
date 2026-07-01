@@ -207,22 +207,66 @@
             { text: "Sep", value: "09" }, { text: "Oct", value: "10" }, { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
-        // Updated function to handle viewer navigation
-        function openDocCompiler(recordId) {
+        // --- UPDATED VIEWER LAUNCHER ---
+        async function openDocCompiler(recordId) {
             const overlay = document.getElementById('documentViewerOverlay');
             const iframe = document.getElementById('viewerModuleIframe');
             
-            // Pass the ID to viewer.html
             iframe.src = `viewer.html?id=${recordId}`;
             overlay.style.display = 'flex';
             
-            // Close when clicking overlay background
+            iframe.onload = async () => {
+                const dataPackage = await fetchDocumentDataForViewer(recordId);
+                if (dataPackage && iframe.contentWindow) {
+                    iframe.contentWindow.setupViewerContent(
+                        dataPackage.doc, 
+                        dataPackage.files, 
+                        dataPackage.isAdmin, 
+                        STORAGE_BUCKET_NAME, 
+                        supabaseClient
+                    );
+                }
+            };
+            
             overlay.onclick = (e) => {
                 if (e.target === overlay) {
                     overlay.style.display = 'none';
-                    iframe.src = 'viewer.html'; // Clear iframe
+                    iframe.src = 'viewer.html';
                 }
             };
+        }
+
+        // --- NEW HELPER FOR IFRAME DATA ---
+        async function fetchDocumentDataForViewer(id) {
+            const { data: doc, error } = await supabaseClient
+                .from('imported_shipment_docs')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error || !doc) return null;
+
+            const { data: files } = await supabaseClient.storage
+                .from(STORAGE_BUCKET_NAME)
+                .list(`shipments/${doc.spsic_number}/`);
+
+            const filesArray = files ? files.map(f => ({
+                name: f.name,
+                path: `shipments/${doc.spsic_number}/${f.name}`,
+                uploadDate: f.created_at
+            })) : [];
+
+            return {
+                doc: doc,
+                files: filesArray,
+                isAdmin: (currentUserRole === 'admin')
+            };
+        }
+
+        function formatHumanReadableDate(dateString) {
+            return new Date(dateString).toLocaleDateString('en-US', { 
+                year: 'numeric', month: 'short', day: 'numeric' 
+            });
         }
 
         function showSystemModal(options = {}) {
@@ -310,7 +354,6 @@
         }
 
         async function fetchDocuments() {
-            // Uncompleted Logs
             const { data: actionableData } = await supabaseClient.from('imported_shipment_docs').select('*').in('status', ['Pending', 'Incomplete', 'For Approval']).order('s_date', { ascending: false });
             const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
             globalTbody.innerHTML = actionableData?.length ? "" : "<tr><td colspan='4'>No actionable logs.</td></tr>";
@@ -318,7 +361,6 @@
                 globalTbody.innerHTML += `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${new Date(doc.s_date).toLocaleDateString()}</td><td>${doc.status}</td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect</button></td></tr>`;
             });
 
-            // Workspace Docs
             if (!selectedFolderMonth) return;
             const { data } = await supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed').order('created_at', { ascending: false });
             const tbody = document.getElementById('documentLogsTableBody');
