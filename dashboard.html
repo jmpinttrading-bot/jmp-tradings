@@ -14,7 +14,7 @@
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; line-height: 1.2; flex: 1; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
         .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; white-space: nowrap; border: none; cursor: pointer; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn.active { background: #475569; color: white; }
 
         .main-content { padding: 20px; }
@@ -24,6 +24,12 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
         h2 { font-size: 1rem; margin-top: 0; padding: 10px; border-radius: 6px; color: white; }
+
+        /* Restriction Modal Styles */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
+        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
     </style>
 </head>
 <body>
@@ -39,7 +45,7 @@
             <a href="import-docs.html" class="nav-btn">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
+            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
         </div>
     </nav>
 
@@ -57,10 +63,20 @@
         <div id="reportContainer"></div>
     </div>
 
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="alertTitle">Notification</h4>
+            <p id="alertMessage">Execution status telemetry readout frame.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUserRole = "employee";
 
         const facilityThemes = {
             "VVS COLD STORAGE & PROCESSING PLANT CORP.": "#0f172a",
@@ -69,7 +85,6 @@
             "CRYSTAL COLD STORAGE, INC.": "#a16207"
         };
 
-        // Utility to format Date object to YYYY-MM-DD local string
         function toLocalDateString(date) {
             const y = date.getFullYear();
             const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -77,12 +92,35 @@
             return `${y}-${m}-${d}`;
         }
 
+        // Security / Restriction Logic
+        function checkAccess(event) {
+            if (currentUserRole !== 'admin') {
+                event.preventDefault();
+                showSystemModal({ title: 'Access Restricted', message: 'Administrative privileges are required to access the System Settings.' });
+            }
+        }
+
+        function showSystemModal(options = {}) {
+            document.getElementById('alertTitle').textContent = options.title || 'Notification';
+            document.getElementById('alertMessage').textContent = options.message || '';
+            document.getElementById('accessBlockerModal').classList.add('is-visible');
+        }
+
+        function closeRestrictionModal() {
+            document.getElementById('accessBlockerModal').classList.remove('is-visible');
+        }
+
         async function initDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
+            
+            // Get user role for restriction check
+            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+            if (profile) currentUserRole = profile.role.toLowerCase().trim();
+
             document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
 
-            const today = new Date(); // July 2, 2026
+            const today = new Date();
             const lastWeek = new Date();
             lastWeek.setDate(today.getDate() - 6);
             
@@ -97,7 +135,6 @@
             const end = document.getElementById('dateTo').value;
             const container = document.getElementById('reportContainer');
             
-            // We fetch up to the selected 'end' date.
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('item_code, date, balance, storage_facility')
@@ -116,7 +153,6 @@
             const itemsAtFacility = [...new Set(facilityData.map(d => d.item_code))].filter(Boolean);
             
             let dates = [];
-            // Parse start/end as local dates to avoid timezone shifting
             let curr = new Date(start + 'T00:00:00');
             let endDate = new Date(end + 'T00:00:00');
             
@@ -150,7 +186,7 @@
                 html += `</tr>`;
             });
             html += `</table></div>`;
-            document.getElementById('reportContainer').insertAdjacentHTML('beforeend', html);
+            document.getElementById('reportContainer').insertAdjacentHTML('beforeend', isVisible ? 'beforeend' : 'beforeend', html);
         }
 
         async function handleLogout() {
