@@ -84,7 +84,7 @@
             <a href="import-docs.html" class="nav-btn active">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
+            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
         </div>
     </nav>
 
@@ -205,16 +205,6 @@
             { text: "Sep", value: "09" }, { text: "Oct", value: "10" },
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
-
-        function checkAccess(event) {
-            if (currentUserRole !== 'admin') {
-                event.preventDefault();
-                showSystemModal({ 
-                    title: 'Access Restricted', 
-                    message: 'Administrative privileges are required to access the System Settings.' 
-                });
-            }
-        }
 
         async function approveCurrentDocument() {
             if (!activeInspectingRecordId) return;
