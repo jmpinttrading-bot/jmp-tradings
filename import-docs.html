@@ -226,6 +226,7 @@
             document.getElementById('systemAlertOverlay').style.display = 'none';
         }
 
+        // --- NEW: Function to close the viewer overlay ---
         function closeViewer() {
             document.getElementById('documentViewerOverlay').style.display = 'none';
         }
@@ -395,20 +396,17 @@
 
             overlay.style.display = 'flex';
 
-            const handleViewerReady = (event) => {
-                if (event.data === 'VIEWER_READY') {
-                    iframe.contentWindow.postMessage({
-                        type: 'INIT_VIEWER',
-                        doc,
-                        filesArray,
-                        isAdmin,
-                        bucket: STORAGE_BUCKET_NAME
-                    }, '*');
-                    window.removeEventListener('message', handleViewerReady);
+            const initViewer = () => {
+                if (iframe.contentWindow && typeof iframe.contentWindow.setupViewerContent === 'function') {
+                    iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient);
                 }
             };
 
-            window.addEventListener('message', handleViewerReady);
+            if (iframe.contentWindow && iframe.contentWindow.document.readyState === 'complete') {
+                initViewer();
+            } else {
+                iframe.onload = initViewer;
+            }
         }
 
         async function handleLogout() {
