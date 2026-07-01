@@ -49,8 +49,11 @@
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
         .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; white-space: nowrap; }
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
+        
+        /* Updated Z-Index for proper layering */
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; }
@@ -180,7 +183,7 @@
         let currentUserSession = null;
         let currentUserRole = "employee"; 
         let activeInspectingRecordId = null;
-        let activeFilesList = []; // Track active files for download
+        let activeFilesList = []; 
 
         const monthsLabels = [
             { text: "Jan", value: "01" }, { text: "Feb", value: "02" },
@@ -191,7 +194,6 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
-        // --- NEW SIGNED URL DOWNLOAD LOGIC ---
         async function downloadCurrentDocumentPackage() {
             checkAdminAccess(async () => {
                 showSystemModal({ title: 'Preparing', message: 'Generating secure download links...' });
