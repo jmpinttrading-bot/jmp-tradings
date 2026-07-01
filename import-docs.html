@@ -12,7 +12,7 @@
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; }
         
-        /* Navbar Styles from Admin Dashboard */
+        /* Navbar Styles */
         .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
@@ -80,14 +80,13 @@
         </div>
     </nav>
 
-        <div class="main-content">
+    <div class="main-content">
         <div class="header-panel">
             <h1>Shipment Importation Documentation Hub</h1>
             <p>Process, search, review state loops, and view complete compiled document groups safely.</p>
         </div>
 
         <div class="panel-grid">
-            
             <div class="panel-card">
                 <h3>Document Upload Engine</h3>
                 <div class="engine-launch-box">
@@ -118,18 +117,14 @@
 
             <div class="panel-card">
                 <h3>Monthly Directories & Consolidated Logs</h3>
-                
                 <div class="directory-controls">
                     <div class="form-group" style="margin-bottom:0; flex:1;">
-                        <select id="directoryYearSelect" onchange="buildMonthlyFolders(); toggleWorkspaceView();">
-                        </select>
+                        <select id="directoryYearSelect" onchange="buildMonthlyFolders(); toggleWorkspaceView();"></select>
                     </div>
                     <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
                     <button class="download-year-btn" id="downloadYearArchiveBtn" onclick="downloadEntireYearDirectory()">📥 Download Year Package</button>
                 </div>
-
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
-                
                 <div id="emptyDirectoryPlaceholder" class="empty-placeholder">
                     📁 Select a monthly archive folder above to review parameters, search documents, and access local storage records.
                 </div>
@@ -137,13 +132,10 @@
 
             <div class="folder-workspace" id="folderWorkspaceWrapper">
                 <div class="workspace-title" id="workspaceTitleDisplay">📂 Folder Context</div>
-
                 <div class="search-container">
                     <input type="text" id="docSearchBox" class="search-box" placeholder="Search entries in this folder by exact SPSIC Number sequence..." oninput="fetchDocuments()">
-                    <!-- Added Export Table Action Button -->
                     <button class="export-excel-btn" onclick="exportWorkspaceTableToExcel()">📊 Export to Excel</button>
                 </div>
-
                 <div class="table-responsive-wrapper">
                     <table class="item-list-table">
                         <thead>
@@ -167,7 +159,6 @@
                     </table>
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -181,9 +172,7 @@
                 <div class="system-alert-icon" id="systemAlertIcon">✓</div>
                 <div class="system-alert-title" id="systemAlertTitle">Notification Window</div>
             </div>
-            <div class="system-alert-content" id="systemAlertContent">
-                Execution status telemetry readout frame.
-            </div>
+            <div class="system-alert-content" id="systemAlertContent">Execution status telemetry readout frame.</div>
             <div class="system-alert-actions" id="systemAlertActions">
                 <button class="alert-btn alert-btn-primary" onclick="closeSystemModal()">Acknowledge</button>
             </div>
@@ -216,8 +205,6 @@
             const type = options.type || 'success'; 
             const title = options.title || 'Notification';
             const message = options.message || '';
-            const onConfirm = options.onConfirm || null;
-
             const overlay = document.getElementById('systemAlertOverlay');
             const iconEl = document.getElementById('systemAlertIcon');
             const titleEl = document.getElementById('systemAlertTitle');
@@ -226,38 +213,9 @@
 
             titleEl.textContent = title;
             contentEl.textContent = message;
-            
             iconEl.className = `system-alert-icon ${type}`;
-            if (type === 'success') iconEl.textContent = '✓';
-            else if (type === 'error') iconEl.textContent = '✕';
-            else if (type === 'confirm') iconEl.textContent = '❓';
-
-            actionsEl.innerHTML = '';
-
-            if (type === 'confirm') {
-                const cancelBtn = document.createElement('button');
-                cancelBtn.className = 'alert-btn alert-btn-secondary';
-                cancelBtn.textContent = 'Cancel';
-                cancelBtn.onclick = () => { closeSystemModal(); };
-                
-                const confirmBtn = document.createElement('button');
-                confirmBtn.className = 'alert-btn alert-btn-danger';
-                confirmBtn.textContent = 'Proceed Action';
-                confirmBtn.onclick = () => {
-                    closeSystemModal();
-                    if (onConfirm) onConfirm();
-                };
-                
-                actionsEl.appendChild(cancelBtn);
-                actionsEl.appendChild(confirmBtn);
-            } else {
-                const closeBtn = document.createElement('button');
-                closeBtn.className = 'alert-btn alert-btn-primary';
-                closeBtn.textContent = 'Dismiss';
-                closeBtn.onclick = () => { closeSystemModal(); };
-                actionsEl.appendChild(closeBtn);
-            }
-
+            
+            actionsEl.innerHTML = '<button class="alert-btn alert-btn-primary" onclick="closeSystemModal()">Dismiss</button>';
             overlay.style.display = 'flex';
         }
 
@@ -265,58 +223,8 @@
             document.getElementById('systemAlertOverlay').style.display = 'none';
         }
 
-        function handleIframeZoomToggle(isZoomedFull) {
-            const iframe = document.getElementById('viewerModuleIframe');
-            if (isZoomedFull) {
-                iframe.style.maxWidth = '100%';
-                iframe.style.height = '100vh';
-            } else {
-                iframe.style.maxWidth = '900px';
-                iframe.style.height = '90vh';
-            }
-        }
-
         function registerSecurityInterceptors() {
             document.body.classList.add('employee-secure-lockout');
-
-            window.addEventListener('keydown', (e) => {
-                if (currentUserRole !== 'admin') {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-                        e.preventDefault();
-                        triggerSecurityAlertNotice("Print Request Refused", "Printing document data parameters is blocked on non-administrative endpoints.");
-                    }
-                    if (e.key === 'PrintScreen') {
-                        e.preventDefault();
-                        navigator.clipboard.writeText(""); 
-                        triggerSecurityAlertNotice("Screen Capture Detected", "Screenshot actions violate local corporate compliance data protection loops.");
-                    }
-                }
-            });
-
-            document.addEventListener('copy', (e) => {
-                if (currentUserRole !== 'admin') {
-                    e.preventDefault();
-                    triggerSecurityAlertNotice("Data Extraction Interrupted", "Copy operations are restricted within this workspace window.");
-                }
-            });
-
-            window.addEventListener('blur', () => {
-                if (currentUserRole !== 'admin') {
-                    const overlay = document.getElementById('documentViewerOverlay');
-                    if (overlay && overlay.style.display === 'flex') {
-                        overlay.style.visibility = 'hidden'; 
-                        setTimeout(() => { overlay.style.visibility = 'visible'; }, 800);
-                    }
-                }
-            });
-        }
-
-        function triggerSecurityAlertNotice(title, text) {
-            showSystemModal({
-                type: 'error',
-                title: `🛡️ Security Alert: ${title}`,
-                message: `${text} This infraction log timestamp has been bound to account session context parameters.`
-            });
         }
 
         async function initModule() {
@@ -328,32 +236,15 @@
             if (profile && profile.role) {
                 currentUserRole = profile.role.toLowerCase().trim();
                 if (currentUserRole !== 'admin') {
-                    document.getElementById('sidebarPanelHeading').textContent = "JMP Employee";
-                    document.getElementById('backToDashboardBtn').href = "employee-dashboard.html";
-                    document.getElementById('backToDashboardBtn').textContent = "👤 My Account Profile";
-                    document.getElementById('adminControlPanelLink').style.display = "none";
-                    document.getElementById('adminEmployee201Link').style.display = "none";
                     document.getElementById('sidebarLogoutBtn').textContent = "Logout Employee";
-                    
                     registerSecurityInterceptors();
                 } else {
-                    document.getElementById('sidebarPanelHeading').textContent = "JMP Admin HQ";
-                    document.getElementById('backToDashboardBtn').href = "admin-dashboard.html";
-                    document.getElementById('backToDashboardBtn').textContent = "👤 Profile Management";
-                    document.getElementById('adminControlPanelLink').style.display = "block";
-                    document.getElementById('adminEmployee201Link').style.display = "block";
                     document.getElementById('sidebarLogoutBtn').textContent = "Logout Admin";
-                    
                     document.body.classList.remove('employee-secure-lockout');
                 }
             }
 
             const today = new Date();
-            if (!availableYears.includes(today.getFullYear())) {
-                availableYears.push(today.getFullYear());
-                availableYears.sort((a, b) => a - b);
-            }
-
             initYearSelectOptions(today.getFullYear());
             buildMonthlyFolders();
             toggleWorkspaceView();
@@ -370,25 +261,6 @@
                 if (yr === defaultYear) opt.selected = true;
                 select.appendChild(opt);
             });
-        }
-
-        function addNewYearFolder() {
-            const newYear = prompt("Enter custom year directory to provision (e.g., 2028):");
-            if (!newYear) return;
-            const parsedYear = parseInt(newYear.trim());
-            if (isNaN(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
-                showSystemModal({ type: 'error', title: 'Invalid Configuration', message: 'Invalid directory year configuration parameters provided.' });
-                return;
-            }
-            if (availableYears.includes(parsedYear)) {
-                showSystemModal({ type: 'error', title: 'Conflict Detected', message: 'Directory folder for this year node already exists.' });
-                return;
-            }
-            availableYears.push(parsedYear);
-            availableYears.sort((a, b) => a - b);
-            initYearSelectOptions(parsedYear);
-            buildMonthlyFolders();
-            fetchDocuments();
         }
 
         function buildMonthlyFolders() {
@@ -414,17 +286,9 @@
         function toggleWorkspaceView() {
             const wrapper = document.getElementById('folderWorkspaceWrapper');
             const placeholder = document.getElementById('emptyDirectoryPlaceholder');
-            const titleDisplay = document.getElementById('workspaceTitleDisplay');
-            
             if (selectedFolderMonth) {
                 placeholder.style.display = "none";
                 wrapper.classList.add('active');
-                
-                const [year, monthNum] = selectedFolderMonth.split('-');
-                const matchedMonth = monthsLabels.find(m => m.value === monthNum);
-                titleDisplay.innerHTML = `📂 Workspace Directory: <strong>${matchedMonth ? matchedMonth.text.toUpperCase() : monthNum} ${year}</strong> (Completed Archives Only)`;
-                
-                document.getElementById('docSearchBox').value = "";
                 fetchDocuments();
             } else {
                 wrapper.classList.remove('active');
@@ -450,11 +314,9 @@
                 } else {
                     actionableData.forEach(doc => {
                         const badgeClass = doc.status.toLowerCase().replace(" ", "-");
-                        const readableCreatedDate = formatHumanReadableDate(doc.s_date);
-                        
                         const row = `<tr>
                             <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
-                            <td>${readableCreatedDate}</td>
+                            <td>${formatHumanReadableDate(doc.s_date)}</td>
                             <td><span class="status-badge ${badgeClass}">${doc.status.toUpperCase()}</span></td>
                             <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                         </tr>`;
@@ -470,317 +332,46 @@
             const searchVal = document.getElementById('docSearchBox').value.trim().toUpperCase();
             let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed');
 
-            if (searchVal) { 
-                query = query.ilike('spsic_number', `%${searchVal}%`); 
-            }
+            if (searchVal) { query = query.ilike('spsic_number', `%${searchVal}%`); }
 
             const { data = [] } = await query.order('created_at', { ascending: false });
             const tbody = document.getElementById('documentLogsTableBody');
             tbody.innerHTML = "";
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#64748b;">No compiled 'Completed' archive entries found matching this directory folder path.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#64748b;">No completed entries found.</td></tr>`;
                 return;
             }
 
             data.forEach(doc => {
-                const badgeClass = doc.status.toLowerCase().replace(" ", "-");
-                
-                // Formatting dates safely
-                const createdDate = doc.s_date ? formatHumanReadableDate(doc.s_date) : 'N/A';
-                const approvedDate = doc.approved_date ? formatHumanReadableDate(doc.approved_date) : 'N/A';
-                const expirationDate = doc.expiration_date ? formatHumanReadableDate(doc.expiration_date) : 'N/A';
-                const storageArrivalDate = doc.storage_arrival_date ? formatHumanReadableDate(doc.storage_arrival_date) : 'N/A';
-
                 const row = `<tr>
                     <td><strong>SPSIC-${(doc.spsic_number || 'N/A').toUpperCase()}</strong></td>
-                    <td>${createdDate}</td>
-                    <td>${approvedDate}</td>
-                    <td>${expirationDate}</td>
+                    <td>${formatHumanReadableDate(doc.s_date)}</td>
+                    <td>${formatHumanReadableDate(doc.approved_date)}</td>
+                    <td>${formatHumanReadableDate(doc.expiration_date)}</td>
                     <td>${(doc.storage_location || 'N/A').toUpperCase()}</td>
                     <td>${(doc.commodity || 'N/A').toUpperCase()}</td>
-                    <td>${storageArrivalDate}</td>
+                    <td>${formatHumanReadableDate(doc.storage_arrival_date)}</td>
                     <td>${(doc.client_name || 'N/A').toUpperCase()}</td>
                     <td>${(doc.cv_no || 'N/A').toUpperCase()}</td>
-                    <td><span class="status-badge ${badgeClass}">${(doc.status || 'Pending').toUpperCase()}</span></td>
+                    <td><span class="status-badge ${doc.status.toLowerCase()}">${doc.status.toUpperCase()}</span></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
                 tbody.innerHTML += row;
             });
         }
 
-        // --- EXPORT TO EXCEL SYSTEM ENGINE ---
-        function exportWorkspaceTableToExcel() {
-            const table = document.querySelector("#folderWorkspaceWrapper table");
-            if (!table) return;
-
-            const rows = table.querySelectorAll("#documentLogsTableBody tr");
-            if (rows.length === 0 || (rows.length === 1 && rows[0].cells.length === 1 && rows[0].cells[0].textContent.includes("No compiled"))) {
-                showSystemModal({ type: 'error', title: 'Export Empty', message: 'There are no completed items inside this directory workspace track to compile.' });
-                return;
-            }
-
-            // Clean clone track setup to skip action interface buttons
-            const structuralCloneTable = table.cloneNode(true);
-            const targets = structuralCloneTable.querySelectorAll("tr");
-            targets.forEach(r => {
-                if (r.cells.length > 0) {
-                    r.deleteCell(-1); // Strips 'Control Interfaces' column out 
-                }
-            });
-
-            const workbookNode = XLSX.utils.table_to_book(structuralCloneTable, { sheet: "Workspace Log Sheet" });
-            const currentYearSelected = document.getElementById('directoryYearSelect').value;
-            const finalFilenameFormat = `Consolidated_Logs_${selectedFolderMonth || currentYearSelected}.xlsx`;
-            
-            XLSX.writeFile(workbookNode, finalFilenameFormat);
-        }
-
-        // --- BRIDGE UTILITY FUNCTIONS REQUIRED BY VIEWER.HTML FRAME ---
         function formatHumanReadableDate(dateString) {
             if (!dateString) return 'N/A';
             const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString;
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-
-        async function downloadCurrentDocumentPackage() {
-            if (!activeInspectingRecordId) return;
-            
-            if (currentUserRole !== 'admin') {
-                showSystemModal({
-                    type: 'error',
-                    title: 'Access Revoked',
-                    message: 'Your current role parameters do not authorize file package downloads.'
-                });
-                return;
-            }
-            
-            const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', activeInspectingRecordId).single();
-            if (!doc || !doc.import_docs_path) {
-                showSystemModal({ type: 'error', title: 'Error', message: 'No downloadable documentation package path found for this entry.' });
-                return;
-            }
-            
-            try {
-                const { data: blob, error } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).download(doc.import_docs_path);
-                if (error) throw error;
-                
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `SPSIC-${doc.spsic_number}_Package.${doc.import_docs_path.split('.').pop()}`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            } catch(err) {
-                showSystemModal({ type: 'error', title: 'Download Failed', message: err.message });
-            }
+            return isNaN(date.getTime()) ? dateString : date.toLocaleDateString('en-US');
         }
 
         async function openDocCompiler(recordId) {
             activeInspectingRecordId = recordId;
             const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
             if(!doc) return;
-
-            const filesArray = [];
-            if(doc.spsic_file_path) filesArray.push({ name: "1. SPSIC Document", path: doc.spsic_file_path, uploadDate: doc.updated_at });
-            if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path, uploadDate: doc.updated_at });
-            if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path, uploadDate: doc.updated_at });
-
-            const isAdmin = (currentUserRole === 'admin');
-            const overlay = document.getElementById('documentViewerOverlay');
-            const iframe = document.getElementById('viewerModuleIframe');
-
-            overlay.style.display = 'flex';
-
-            if (iframe.contentWindow && typeof iframe.contentWindow.setupViewerContent === 'function') {
-                iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient);
-            } else {
-                iframe.onload = function() {
-                    iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient);
-                };
-            }
-        }
-
-        async function approveCurrentDocument() {
-            if (!activeInspectingRecordId) return;
-            
-            showSystemModal({
-                type: 'confirm',
-                title: 'Confirm Authorization Approval',
-                message: 'Are you sure you want to approve this document package? This action freezes all associated parameters from future modification.',
-                onConfirm: async () => {
-                    try {
-                        const { error } = await supabaseClient
-                            .from('imported_shipment_docs')
-                            .update({ status: 'Completed', updated_at: new Date().toISOString() })
-                            .eq('id', activeInspectingRecordId);
-
-                        if (error) throw error;
-
-                        showSystemModal({ type: 'success', title: 'Package Approved', message: 'Document group approved successfully and locked into production records!' });
-                        closeViewer();
-                        fetchDocuments();
-                    } catch (err) {
-                        showSystemModal({ type: 'error', title: 'Transaction Failed', message: `Approval transaction failed: ${err.message}` });
-                    }
-                }
-            });
-        }
-
-        function closeViewer() {
-            document.getElementById('documentViewerOverlay').style.display = 'none';
-            const iframe = document.getElementById('viewerModuleIframe');
-            iframe.style.maxWidth = '900px';
-            iframe.style.height = '90vh';
-            
-            if(iframe.contentWindow && iframe.contentWindow.document.getElementById('interactiveViewerCard')) {
-                iframe.contentWindow.document.getElementById('interactiveViewerCard').classList.remove('zoomed-full');
-            }
-            activeInspectingRecordId = null;
-        }
-
-        async function downloadEntireYearDirectory() {
-            if (currentUserRole !== 'admin') {
-                showSystemModal({
-                    type: 'error',
-                    title: 'Access Revoked',
-                    message: 'Access Denied: Your employee security role configuration parameters do not authorize local binary extractions or documentation file downloads.'
-                });
-                return;
-            }
-
-            const currentYearSelected = document.getElementById('directoryYearSelect').value;
-            const btn = document.getElementById('downloadYearArchiveBtn');
-            
-            btn.setAttribute('disabled', 'true');
-            btn.textContent = "⏳ Fetching Metadata...";
-
-            try {
-                const startMonthRange = `${currentYearSelected}-01`;
-                const endMonthRange = `${currentYearSelected}-12`;
-                
-                const { data: records, error } = await supabaseClient
-                    .from('imported_shipment_docs')
-                    .select('*')
-                    .gte('target_month', startMonthRange)
-                    .lte('target_month', endMonthRange);
-
-                if (error) throw error;
-
-                if (!records || records.length === 0) {
-                    showSystemModal({ type: 'error', title: 'Empty Archive', message: `No uploaded document clusters found globally inside the ${currentYearSelected} directory.` });
-                    return;
-                }
-
-                btn.textContent = "📦 Compiling Package...";
-                const zip = new JSZip();
-                const baseYearFolder = zip.folder(`${currentYearSelected} Directory Folder`);
-                let compiledFilesCount = 0;
-
-                // Group database records by their specific target_month to generate dedicated excel records per month folder
-                const recordsGroupedByMonth = {};
-
-                for (let record of records) {
-                    const monthStringValue = record.target_month.split('-')[1];
-                    const matchedMonthLabelObj = monthsLabels.find(m => m.value === monthStringValue);
-                    const folderMonthHumanReadableName = matchedMonthLabelObj ? `${matchedMonthLabelObj.text.toUpperCase()} - ${monthStringValue}` : monthStringValue;
-                    
-                    if (!recordsGroupedByMonth[folderMonthHumanReadableName]) {
-                        recordsGroupedByMonth[folderMonthHumanReadableName] = [];
-                    }
-                    recordsGroupedByMonth[folderMonthHumanReadableName].push(record);
-
-                    const monthFolderNode = baseYearFolder.folder(folderMonthHumanReadableName);
-                    const spsicFolderNode = monthFolderNode.folder(`SPSIC-${record.spsic_number.toUpperCase()}`);
-
-                    const attachmentsToPull = [];
-                    if (record.spsic_file_path) attachmentsToPull.push({ field: 'SPSIC_Doc', path: record.spsic_file_path });
-                    if (record.arrival_notice_path) attachmentsToPull.push({ field: 'Arrival_Notice', path: record.arrival_notice_path });
-                    if (record.import_docs_path) attachmentsToPull.push({ field: 'Import_Docs', path: record.import_docs_path });
-
-                    for (let attachment of attachmentsToPull) {
-                        try {
-                            const { data: blob, error: storageErr } = await supabaseClient
-                                .storage
-                                .from(STORAGE_BUCKET_NAME)
-                                .download(attachment.path);
-
-                            if (storageErr) throw storageErr;
-
-                            const fileExtension = attachment.path.split('.').pop() || 'bin';
-                            const cleanOutputFileName = `${attachment.field}.${fileExtension}`;
-                            
-                            spsicFolderNode.file(cleanOutputFileName, blob);
-                            compiledFilesCount++;
-                        } catch (storagePullErr) {
-                            console.warn(`Could not pull file reference component at path: ${attachment.path}`, storagePullErr);
-                        }
-                    }
-                }
-
-                // Inject the filtered monthly Excel sheet into each month's root directory folder inside the ZIP structure
-                for (const [monthFolderName, monthRecords] of Object.entries(recordsGroupedByMonth)) {
-                    // Extract and format entries strictly matching the structural columns on Workspace Directory Table
-                    const formattedDataRows = monthRecords.map(doc => ({
-                        "SPSIC Number": `SPSIC-${(doc.spsic_number || 'N/A').toUpperCase()}`,
-                        "Created Date": doc.s_date ? formatHumanReadableDate(doc.s_date) : 'N/A',
-                        "Approved Date": doc.approved_date ? formatHumanReadableDate(doc.approved_date) : 'N/A',
-                        "Expiration Date": doc.expiration_date ? formatHumanReadableDate(doc.expiration_date) : 'N/A',
-                        "Storage": (doc.storage_location || 'N/A').toUpperCase(),
-                        "Commodity": (doc.commodity || 'N/A').toUpperCase(),
-                        "Storage Arrival Date": doc.storage_arrival_date ? formatHumanReadableDate(doc.storage_arrival_date) : 'N/A',
-                        "Client Name": (doc.client_name || 'N/A').toUpperCase(),
-                        "CV Number": (doc.cv_no || 'N/A').toUpperCase(),
-                        "Current Status": (doc.status || 'Pending').toUpperCase()
-                    }));
-
-                    const worksheet = XLSX.utils.json_to_sheet(formattedDataRows);
-                    const workbook = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(workbook, worksheet, "Workspace Log Sheet");
-                    
-                    // Generate raw array buffer stream matching native SheetJS standard outputs
-                    const excelBinaryData = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                    
-                    const monthFolderNode = baseYearFolder.folder(monthFolderName);
-                    monthFolderNode.file(`Consolidated_Logs_${monthFolderName.replace(/\s/g, "")}.xlsx`, excelBinaryData);
-                }
-
-                if (compiledFilesCount === 0) {
-                    showSystemModal({ type: 'error', title: 'Compilation Aborted', message: 'The database points to records, but the files could not be extracted from the storage bucket.' });
-                    return;
-                }
-
-                btn.textContent = "📦 Generating Zip...";
-                const generatedZipContentBlob = await zip.generateAsync({ type: "blob" });
-                
-                const tempDownloadAnchorUrl = window.URL.createObjectURL(generatedZipContentBlob);
-                const clickBridgeElement = document.createElement('a');
-                clickBridgeElement.href = tempDownloadAnchorUrl;
-                clickBridgeElement.download = `${currentYearSelected}_Directory_Complete_Archive.zip`;
-                document.body.appendChild(clickBridgeElement);
-                clickBridgeElement.click();
-                
-                window.URL.revokeObjectURL(tempDownloadAnchorUrl);
-                document.body.removeChild(clickBridgeElement);
-
-                showSystemModal({ type: 'success', title: 'Directory Extracted', message: `Successfully structured all available active entries for ${currentYearSelected} into a single download container.` });
-
-            } catch (err) {
-                console.error("Directory extraction stream compilation exception caught: ", err);
-                showSystemModal({ type: 'error', title: 'Extraction Error', message: err.message });
-            } finally {
-                btn.removeAttribute('disabled');
-                btn.textContent = "📥 Download Year Package";
-            }
+            document.getElementById('documentViewerOverlay').style.display = 'flex';
         }
 
         async function handleLogout() {
