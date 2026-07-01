@@ -207,7 +207,6 @@
             { text: "Sep", value: "09" }, { text: "Oct", value: "10" }, { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
-        // --- UPDATED VIEWER LAUNCHER ---
         async function openDocCompiler(recordId) {
             const overlay = document.getElementById('documentViewerOverlay');
             const iframe = document.getElementById('viewerModuleIframe');
@@ -236,7 +235,6 @@
             };
         }
 
-        // --- NEW HELPER FOR IFRAME DATA ---
         async function fetchDocumentDataForViewer(id) {
             const { data: doc, error } = await supabaseClient
                 .from('imported_shipment_docs')
@@ -262,46 +260,6 @@
                 isAdmin: (currentUserRole === 'admin')
             };
         }
-
-        function formatHumanReadableDate(dateString) {
-            return new Date(dateString).toLocaleDateString('en-US', { 
-                year: 'numeric', month: 'short', day: 'numeric' 
-            });
-        }
-
-        function showSystemModal(options = {}) {
-            const type = options.type || 'success'; 
-            const overlay = document.getElementById('systemAlertOverlay');
-            document.getElementById('systemAlertTitle').textContent = options.title || 'Notification';
-            document.getElementById('systemAlertContent').textContent = options.message || '';
-            const iconEl = document.getElementById('systemAlertIcon');
-            iconEl.className = `system-alert-icon ${type}`;
-            iconEl.textContent = type === 'success' ? '✓' : (type === 'error' ? '✕' : '❓');
-            const actionsEl = document.getElementById('systemAlertActions');
-            actionsEl.innerHTML = '';
-            
-            if (type === 'confirm') {
-                const cancelBtn = document.createElement('button');
-                cancelBtn.className = 'alert-btn alert-btn-secondary';
-                cancelBtn.textContent = 'Cancel';
-                cancelBtn.onclick = closeSystemModal;
-                const confirmBtn = document.createElement('button');
-                confirmBtn.className = 'alert-btn alert-btn-danger';
-                confirmBtn.textContent = 'Proceed';
-                confirmBtn.onclick = () => { closeSystemModal(); if (options.onConfirm) options.onConfirm(); };
-                actionsEl.appendChild(cancelBtn);
-                actionsEl.appendChild(confirmBtn);
-            } else {
-                const closeBtn = document.createElement('button');
-                closeBtn.className = 'alert-btn alert-btn-primary';
-                closeBtn.textContent = 'Dismiss';
-                closeBtn.onclick = closeSystemModal;
-                actionsEl.appendChild(closeBtn);
-            }
-            overlay.style.display = 'flex';
-        }
-
-        function closeSystemModal() { document.getElementById('systemAlertOverlay').style.display = 'none'; }
 
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -330,12 +288,20 @@
             const container = document.getElementById('monthFolderContainer');
             container.innerHTML = "";
             const currentYear = document.getElementById('directoryYearSelect').value;
+            
             monthsLabels.forEach(m => {
                 const queryStr = `${currentYear}-${m.value}`;
                 const folder = document.createElement('div');
                 folder.className = `folder-node ${selectedFolderMonth === queryStr ? 'active' : ''}`;
-                folder.onclick = () => { selectedFolderMonth = (selectedFolderMonth === queryStr) ? "" : queryStr; buildMonthlyFolders(); toggleWorkspaceView(); };
+                
+                folder.onclick = () => { 
+                    selectedFolderMonth = (selectedFolderMonth === queryStr) ? "" : queryStr; 
+                    buildMonthlyFolders(); 
+                    toggleWorkspaceView(); 
+                };
+
                 folder.innerHTML = `<span class="icon">${selectedFolderMonth === queryStr ? '📂' : '📁'}</span> ${m.text.toUpperCase()}`;
+                
                 container.appendChild(folder);
             });
         }
