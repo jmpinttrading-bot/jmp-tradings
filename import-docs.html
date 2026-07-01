@@ -63,6 +63,7 @@
         
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
         
+        /* Standardized Restriction Modal */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -104,10 +105,20 @@
 
             <div class="panel-card" id="globalUncompletedLogsWrapper">
                 <h3>Documentation Log Data Table (Action Required)</h3>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
                 <div class="table-responsive-wrapper">
                     <table class="item-list-table">
-                        <thead><tr><th>SPSIC Ref</th><th>Created Date</th><th>Current Status</th><th>Control Interfaces</th></tr></thead>
-                        <tbody id="globalUncompletedLogsTableBody"></tbody>
+                        <thead>
+                            <tr>
+                                <th>SPSIC Ref</th>
+                                <th>Created Date</th>
+                                <th>Current Status</th>
+                                <th>Control Interfaces</th>
+                            </tr>
+                        </thead>
+                        <tbody id="globalUncompletedLogsTableBody">
+                            <tr><td colspan="4" style="text-align:center; color:#64748b;">Loading actionable logs...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -115,29 +126,44 @@
             <div class="panel-card">
                 <h3>Monthly Directories & Consolidated Logs</h3>
                 <div class="directory-controls">
-                    <select id="directoryYearSelect" onchange="buildMonthlyFolders(); toggleWorkspaceView();"></select>
-                    <button class="download-year-btn" onclick="checkAdminAccess(downloadEntireYearDirectory)">📥 Download Year Package</button>
+                    <div class="form-group" style="margin-bottom:0; flex:1;">
+                        <select id="directoryYearSelect" onchange="buildMonthlyFolders(); toggleWorkspaceView();"></select>
+                    </div>
+                    <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
+                    <button class="download-year-btn" id="downloadYearArchiveBtn" onclick="checkAdminAccess(downloadEntireYearDirectory)">📥 Download Year Package</button>
                 </div>
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
-                <div id="emptyDirectoryPlaceholder" class="empty-placeholder">📁 Select a monthly archive folder to review parameters.</div>
+                <div id="emptyDirectoryPlaceholder" class="empty-placeholder">
+                    📁 Select a monthly archive folder above to review parameters, search documents, and access local storage records.
+                </div>
             </div>
 
             <div class="folder-workspace" id="folderWorkspaceWrapper">
                 <div class="workspace-title" id="workspaceTitleDisplay">📂 Folder Context</div>
                 <div class="search-container">
-                    <input type="text" id="docSearchBox" class="search-box" placeholder="Search entries..." oninput="fetchDocuments()">
+                    <input type="text" id="docSearchBox" class="search-box" placeholder="Search entries in this folder by exact SPSIC Number sequence..." oninput="fetchDocuments()">
                     <button class="export-excel-btn" onclick="checkAdminAccess(exportWorkspaceTableToExcel)">📊 Export to Excel</button>
                 </div>
                 <div class="table-responsive-wrapper">
                     <table class="item-list-table" id="folderDataTable">
                         <thead>
                             <tr>
-                                <th>SPSIC Number</th><th>Created Date</th><th>Approved Date</th><th>Expiration Date</th>
-                                <th>Storage</th><th>Commodity</th><th>Arrival</th><th>Client</th><th>CV Number</th>
-                                <th>Status</th><th>Control Interfaces</th>
+                                <th>SPSIC Number</th>
+                                <th>Created Date</th>
+                                <th>Approved Date</th>
+                                <th>Expiration Date</th>
+                                <th>Storage</th>
+                                <th>Commodity</th>
+                                <th>Storage Arrival Date</th>
+                                <th>Client Name</th>
+                                <th>CV Number</th>
+                                <th>Current Status</th>
+                                <th>Control Interfaces</th>
                             </tr>
                         </thead>
-                        <tbody id="documentLogsTableBody"></tbody>
+                        <tbody id="documentLogsTableBody">
+                            <tr><td colspan="11" style="text-align:center; color:#64748b;">Initializing items...</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -145,13 +171,13 @@
     </div>
 
     <div class="viewer-overlay" id="documentViewerOverlay">
-        <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none;"></iframe>
+        <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);"></iframe>
     </div>
 
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage"></p>
+            <p id="alertMessage">Execution status telemetry readout frame.</p>
             <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
@@ -163,14 +189,26 @@
         
         let selectedFolderMonth = ""; 
         let availableYears = [2026, 2027]; 
+        const STORAGE_BUCKET_NAME = "shipment-documents";
+        
+        let currentUserSession = null;
         let currentUserRole = "employee"; 
         let activeInspectingRecordId = null;
 
-        // --- NEW LOGIC ---
-        function exportWorkspaceTableToExcel() {
+        const monthsLabels = [
+            { text: "Jan", value: "01" }, { text: "Feb", value: "02" },
+            { text: "Mar", value: "03" }, { text: "Apr", value: "04" },
+            { text: "May", value: "05" }, { text: "Jun", value: "06" },
+            { text: "Jul", value: "07" }, { text: "Aug", value: "08" },
+            { text: "Sep", value: "09" }, { text: "Oct", value: "10" },
+            { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
+        ];
+
+        // --- NEW IMPLEMENTED FUNCTIONS ---
+        async function exportWorkspaceTableToExcel() {
             const table = document.getElementById("folderDataTable");
             const wb = XLSX.utils.table_to_book(table, { sheet: "Monthly Log" });
-            XLSX.writeFile(wb, `Shipment_Logs_${selectedFolderMonth}.xlsx`);
+            XLSX.writeFile(wb, `Shipment_Logs_${selectedFolderMonth || 'Archive'}.xlsx`);
         }
 
         async function downloadEntireYearDirectory() {
@@ -191,38 +229,97 @@
             }
         }
 
-        function checkAdminAccess(callback) {
+        // Restrict access for settings link
+        function checkAccess(event) {
             if (currentUserRole !== 'admin') {
-                showSystemModal({ title: 'Access Denied', message: 'Administrative privileges are required.' });
-                return;
+                event.preventDefault();
+                showSystemModal({ 
+                    title: 'Access Restricted', 
+                    message: 'Administrative privileges are required to access the System Settings.' 
+                });
             }
-            callback();
         }
 
-        function showSystemModal(options) {
-            document.getElementById('alertTitle').textContent = options.title || 'Notification';
-            document.getElementById('alertMessage').textContent = options.message || '';
+        // Restrict access for downloads/exports
+        function checkAdminAccess(callback) {
+            if (currentUserRole !== 'admin') {
+                showSystemModal({ 
+                    title: 'Access Denied', 
+                    message: 'You do not have permission to download or export confidential documentation. Please contact an administrator.' 
+                });
+                return;
+            }
+            if (typeof callback === 'function') callback();
+        }
+
+        async function approveCurrentDocument() {
+            if (!activeInspectingRecordId) return;
+            if (!confirm("Confirm approval of this document package?")) return;
+
+            const { error } = await supabaseClient
+                .from('imported_shipment_docs')
+                .update({ 
+                    status: 'Completed', 
+                    approved_date: new Date().toISOString() 
+                })
+                .eq('id', activeInspectingRecordId);
+
+            if (error) {
+                showSystemModal({ title: 'Approval Failed', message: error.message });
+            } else {
+                showSystemModal({ title: 'Success', message: 'Document approved and status updated.' });
+                closeViewer();
+                fetchDocuments();
+            }
+        }
+
+        function showSystemModal(options = {}) {
+            const title = options.title || 'Notification';
+            const message = options.message || '';
+            
+            document.getElementById('alertTitle').textContent = title;
+            document.getElementById('alertMessage').textContent = message;
+            
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
-        function closeRestrictionModal() { document.getElementById('accessBlockerModal').classList.remove('is-visible'); }
+        function closeRestrictionModal() {
+            document.getElementById('accessBlockerModal').classList.remove('is-visible');
+        }
+
+        function closeViewer() {
+            document.getElementById('documentViewerOverlay').style.display = 'none';
+        }
 
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
+            currentUserSession = user;
+
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-            currentUserRole = profile?.role?.toLowerCase() || 'employee';
-            
-            initYearSelectOptions(new Date().getFullYear());
+            if (profile && profile.role) {
+                currentUserRole = profile.role.toLowerCase().trim();
+                if (currentUserRole !== 'admin') {
+                    document.getElementById('sidebarLogoutBtn').textContent = "Logout Employee";
+                } else {
+                    document.getElementById('sidebarLogoutBtn').textContent = "Logout Admin";
+                }
+            }
+
+            const today = new Date();
+            initYearSelectOptions(today.getFullYear());
             buildMonthlyFolders();
+            toggleWorkspaceView();
             fetchDocuments();
         }
 
         function initYearSelectOptions(defaultYear) {
             const select = document.getElementById('directoryYearSelect');
+            select.innerHTML = "";
             availableYears.forEach(yr => {
                 const opt = document.createElement('option');
-                opt.value = yr; opt.textContent = `${yr} Directory`;
+                opt.value = yr;
+                opt.textContent = `${yr} Directory Folder`;
                 if (yr === defaultYear) opt.selected = true;
                 select.appendChild(opt);
             });
@@ -231,32 +328,145 @@
         function buildMonthlyFolders() {
             const container = document.getElementById('monthFolderContainer');
             container.innerHTML = "";
-            const yr = document.getElementById('directoryYearSelect').value;
-            const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-            months.forEach((m, idx) => {
-                const mVal = (idx + 1).toString().padStart(2, '0');
-                const div = document.createElement('div');
-                div.className = `folder-node ${selectedFolderMonth === `${yr}-${mVal}` ? 'active' : ''}`;
-                div.textContent = m;
-                div.onclick = () => { selectedFolderMonth = `${yr}-${mVal}`; buildMonthlyFolders(); toggleWorkspaceView(); };
-                container.appendChild(div);
+            const currentYearSelected = document.getElementById('directoryYearSelect').value;
+            
+            monthsLabels.forEach(m => {
+                const queryStr = `${currentYearSelected}-${m.value}`;
+                const isCurrentActive = (selectedFolderMonth === queryStr);
+                const folder = document.createElement('div');
+                folder.className = `folder-node ${isCurrentActive ? 'active' : ''}`;
+                folder.onclick = () => {
+                    selectedFolderMonth = isCurrentActive ? "" : queryStr;
+                    buildMonthlyFolders();
+                    toggleWorkspaceView();
+                };
+                folder.innerHTML = `<span class="icon">${isCurrentActive ? '📂' : '📁'}</span> ${m.text.toUpperCase()}`;
+                container.appendChild(folder);
             });
         }
 
         function toggleWorkspaceView() {
             const wrapper = document.getElementById('folderWorkspaceWrapper');
-            wrapper.classList.add('active');
-            fetchDocuments();
+            const placeholder = document.getElementById('emptyDirectoryPlaceholder');
+            if (selectedFolderMonth) {
+                placeholder.style.display = "none";
+                wrapper.classList.add('active');
+                fetchDocuments();
+            } else {
+                wrapper.classList.remove('active');
+                placeholder.style.display = "block";
+            }
         }
 
         async function fetchDocuments() {
+            try {
+                const { data: actionableData, error: actErr } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .select('*')
+                    .in('status', ['Pending', 'Incomplete', 'For Approval'])
+                    .order('s_date', { ascending: false });
+
+                const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
+                globalTbody.innerHTML = "";
+
+                if (actErr) throw actErr;
+
+                if (!actionableData || actionableData.length === 0) {
+                    globalTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No items currently require structural verification configurations.</td></tr>`;
+                } else {
+                    actionableData.forEach(doc => {
+                        const statusClass = (doc.status || 'unknown').toLowerCase().replace(/\s+/g, '-');
+                        const row = `<tr>
+                            <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
+                            <td>${formatHumanReadableDate(doc.s_date)}</td>
+                            <td><span class="status-badge ${statusClass}">${doc.status.toUpperCase()}</span></td>
+                            <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
+                        </tr>`;
+                        globalTbody.innerHTML += row;
+                    });
+                }
+            } catch (err) {
+                console.error("Error reading uncompleted queue items:", err);
+            }
+
+            if (!selectedFolderMonth) return;
+            
+            const searchVal = document.getElementById('docSearchBox').value.trim().toUpperCase();
+            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed');
+
+            if (searchVal) { query = query.ilike('spsic_number', `%${searchVal}%`); }
+
+            const { data = [] } = await query.order('created_at', { ascending: false });
             const tbody = document.getElementById('documentLogsTableBody');
-            if(!selectedFolderMonth) return;
-            const { data } = await supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth);
-            tbody.innerHTML = (data || []).map(doc => `<tr><td>SPSIC-${doc.spsic_number}</td><td>${doc.s_date}</td><td>${doc.approved_date || 'N/A'}</td><td>${doc.expiration_date || 'N/A'}</td><td>${doc.storage_location || 'N/A'}</td><td>${doc.commodity || 'N/A'}</td><td>${doc.storage_arrival_date || 'N/A'}</td><td>${doc.client_name || 'N/A'}</td><td>${doc.cv_no || 'N/A'}</td><td>${doc.status}</td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect</button></td></tr>`).join('');
+            tbody.innerHTML = "";
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#64748b;">No completed entries found.</td></tr>`;
+                return;
+            }
+
+            data.forEach(doc => {
+                const statusClass = (doc.status || 'unknown').toLowerCase().replace(/\s+/g, '-');
+                const row = `<tr>
+                    <td><strong>SPSIC-${(doc.spsic_number || 'N/A').toUpperCase()}</strong></td>
+                    <td>${formatHumanReadableDate(doc.s_date)}</td>
+                    <td>${formatHumanReadableDate(doc.approved_date)}</td>
+                    <td>${formatHumanReadableDate(doc.expiration_date)}</td>
+                    <td>${(doc.storage_location || 'N/A').toUpperCase()}</td>
+                    <td>${(doc.commodity || 'N/A').toUpperCase()}</td>
+                    <td>${formatHumanReadableDate(doc.storage_arrival_date)}</td>
+                    <td>${(doc.client_name || 'N/A').toUpperCase()}</td>
+                    <td>${(doc.cv_no || 'N/A').toUpperCase()}</td>
+                    <td><span class="status-badge ${statusClass}">${doc.status.toUpperCase()}</span></td>
+                    <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
         }
 
-        function handleLogout() { supabaseClient.auth.signOut().then(() => window.location.href = "login.html"); }
+        function formatHumanReadableDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return isNaN(date.getTime()) ? dateString : date.toLocaleDateString('en-US');
+        }
+
+        async function openDocCompiler(recordId) {
+            activeInspectingRecordId = recordId;
+            
+            const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
+            if (!doc) {
+                showSystemModal({ title: 'Error', message: 'Could not load document records.' });
+                return;
+            }
+
+            const filesArray = [];
+            if(doc.spsic_file_path) filesArray.push({ name: "1. SPSIC Document", path: doc.spsic_file_path, uploadDate: doc.created_at });
+            if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path, uploadDate: doc.created_at });
+            if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path, uploadDate: doc.created_at });
+
+            const isAdmin = (currentUserRole === 'admin');
+            const overlay = document.getElementById('documentViewerOverlay');
+            const iframe = document.getElementById('viewerModuleIframe');
+
+            overlay.style.display = 'flex';
+
+            const initViewer = () => {
+                if (iframe.contentWindow && typeof iframe.contentWindow.setupViewerContent === 'function') {
+                    iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient, approveCurrentDocument);
+                }
+            };
+
+            if (iframe.contentWindow && iframe.contentWindow.document.readyState === 'complete') {
+                initViewer();
+            } else {
+                iframe.onload = initViewer;
+            }
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
+        }
 
         initModule();
     </script>
