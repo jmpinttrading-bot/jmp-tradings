@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JMP Dashboard | Workspace</title>
+    <title>JMP Dashboard | Inventory View</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; overflow-x: hidden; font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
-        /* Navbar Styles */
         .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; line-height: 1.2; flex: 1; }
@@ -18,7 +17,6 @@
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; white-space: nowrap; border: none; cursor: pointer; }
         .nav-btn.active { background: #475569; color: white; }
 
-        /* Content & Report Styles */
         .main-content { padding: 20px; }
         .welcome-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
         .filter-section { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -76,16 +74,26 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
+
+            // Set default: 7 days ago to today
+            const today = new Date();
+            const lastWeek = new Date();
+            lastWeek.setDate(today.getDate() - 6);
+            
+            document.getElementById('dateFrom').value = lastWeek.toISOString().split('T')[0];
+            document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+            
+            updateReport();
         }
 
         async function updateReport() {
             const start = document.getElementById('dateFrom').value;
             const end = document.getElementById('dateTo').value;
-            if(!start || !end) return alert("Select date range");
-
+            
             const container = document.getElementById('reportContainer');
-            container.innerHTML = 'Loading report...';
+            container.innerHTML = 'Loading inventory data...';
 
+            // Fetch data
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('item_code, date, total_balance, storage_facility')
@@ -97,8 +105,6 @@
         }
 
         function renderFacility(name, allData, start, end) {
-            const container = document.getElementById('reportContainer');
-            
             let dates = [];
             let curr = new Date(start);
             while (curr <= new Date(end)) {
@@ -109,7 +115,7 @@
             const items = [...new Set(allData.map(d => d.item_code))];
             
             let html = `<div class="facility-container"><h2>${name}</h2><table><tr><th>Item Code</th>`;
-            dates.forEach(d => html += `<th>${d}</th>`);
+            dates.forEach(d => html += `<th>${d.substring(5)}</th>`); // Show MM-DD
             html += `</tr>`;
 
             items.forEach(code => {
@@ -124,7 +130,7 @@
             });
 
             html += `</table></div>`;
-            container.insertAdjacentHTML('beforeend', html);
+            document.getElementById('reportContainer').insertAdjacentHTML('beforeend', html);
         }
 
         async function handleLogout() {
