@@ -7,22 +7,34 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; overflow-x: hidden; font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
         .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; line-height: 1.2; flex: 1; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
+        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; }
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn.active { background: #475569; color: white; }
 
         .main-content { padding: 20px; }
-        .welcome-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
-        .filter-section { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        
+        /* Updated Welcome Box with Logo */
+        .welcome-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
+        .welcome-logo { width: 50px; height: 50px; object-fit: contain; }
+        
+        /* Modernized Filter Section */
+        .filter-section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
+        .filter-group input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; outline: none; }
+        .filter-group input:focus { border-color: #3b82f6; ring: 2px solid #bfdbfe; }
+        .generate-btn { background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .generate-btn:hover { background: #0f172a; }
+
         .facility-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
-        th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; }
         h2 { font-size: 1rem; margin-top: 0; padding: 10px; border-radius: 6px; color: white; }
 
         /* Restriction Modal Styles */
@@ -51,13 +63,20 @@
 
     <div class="main-content">
         <div class="welcome-box">
-            <h1 id="welcomeMsg" style="font-size: 1.2rem;">Welcome</h1>
+            <img src="circle-logo.png" alt="JMP Logo" class="welcome-logo">
+            <h1 id="welcomeMsg" style="font-size: 1.2rem; margin: 0;">Welcome back</h1>
         </div>
 
         <div class="filter-section">
-            <label>From: <input type="date" id="dateFrom"></label>
-            <label>To: <input type="date" id="dateTo"></label>
-            <button onclick="updateReport()">Generate Report</button>
+            <div class="filter-group">
+                <label>From Date</label>
+                <input type="date" id="dateFrom">
+            </div>
+            <div class="filter-group">
+                <label>To Date</label>
+                <input type="date" id="dateTo">
+            </div>
+            <button class="generate-btn" onclick="updateReport()">Generate Report</button>
         </div>
         
         <div id="reportContainer"></div>
