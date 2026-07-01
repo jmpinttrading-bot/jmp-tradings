@@ -92,7 +92,6 @@
             return `${y}-${m}-${d}`;
         }
 
-        // Security / Restriction Logic
         function checkAccess(event) {
             if (currentUserRole !== 'admin') {
                 event.preventDefault();
@@ -114,7 +113,6 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            // Get user role for restriction check
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
             if (profile) currentUserRole = profile.role.toLowerCase().trim();
 
@@ -141,7 +139,7 @@
                 .lte('date', end)
                 .order('date', { ascending: true });
 
-            if (error) { container.innerHTML = 'Error loading data.'; return; }
+            if (error) { container.innerHTML = 'Error loading data: ' + error.message; return; }
 
             container.innerHTML = '';
             Object.keys(facilityThemes).forEach(f => renderFacility(f, data || [], start, end));
@@ -186,7 +184,7 @@
                 html += `</tr>`;
             });
             html += `</table></div>`;
-            document.getElementById('reportContainer').insertAdjacentHTML('beforeend', isVisible ? 'beforeend' : 'beforeend', html);
+            document.getElementById('reportContainer').insertAdjacentHTML('beforeend', html);
         }
 
         async function handleLogout() {
