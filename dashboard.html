@@ -69,9 +69,12 @@
             "CRYSTAL COLD STORAGE, INC.": "#a16207"
         };
 
-        function parseLocalDate(dateStr) {
-            const [y, m, d] = dateStr.split('-').map(Number);
-            return new Date(y, m - 1, d);
+        // Utility to format Date object to YYYY-MM-DD local string
+        function toLocalDateString(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
         }
 
         async function initDashboard() {
@@ -79,14 +82,12 @@
             if (!user) { window.location.href = "login.html"; return; }
             document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
 
-            const today = new Date();
-            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const today = new Date(); // July 2, 2026
             const lastWeek = new Date();
             lastWeek.setDate(today.getDate() - 6);
-            const lwStr = `${lastWeek.getFullYear()}-${String(lastWeek.getMonth() + 1).padStart(2, '0')}-${String(lastWeek.getDate()).padStart(2, '0')}`;
             
-            document.getElementById('dateFrom').value = lwStr;
-            document.getElementById('dateTo').value = todayStr;
+            document.getElementById('dateFrom').value = toLocalDateString(lastWeek);
+            document.getElementById('dateTo').value = toLocalDateString(today);
             
             updateReport();
         }
@@ -95,15 +96,15 @@
             const start = document.getElementById('dateFrom').value;
             const end = document.getElementById('dateTo').value;
             const container = document.getElementById('reportContainer');
-            container.innerHTML = 'Loading inventory data...';
-
+            
+            // We fetch up to the selected 'end' date.
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('item_code, date, balance, storage_facility')
                 .lte('date', end)
                 .order('date', { ascending: true });
 
-            if (error) { container.innerHTML = 'Error: ' + error.message; return; }
+            if (error) { container.innerHTML = 'Error loading data.'; return; }
 
             container.innerHTML = '';
             Object.keys(facilityThemes).forEach(f => renderFacility(f, data || [], start, end));
@@ -115,8 +116,10 @@
             const itemsAtFacility = [...new Set(facilityData.map(d => d.item_code))].filter(Boolean);
             
             let dates = [];
-            let curr = parseLocalDate(start);
-            let endDate = parseLocalDate(end);
+            // Parse start/end as local dates to avoid timezone shifting
+            let curr = new Date(start + 'T00:00:00');
+            let endDate = new Date(end + 'T00:00:00');
+            
             while (curr <= endDate) {
                 dates.push(curr.toISOString().split('T')[0]);
                 curr.setDate(curr.getDate() + 1);
@@ -127,33 +130,25 @@
                 <table><tr><th style="background-color: ${color}; color: white;">Item Code</th>`;
             
             dates.forEach(d => {
-                const parts = d.split('-');
-                const formatted = new Date(parts[0], parts[1]-1, parts[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const [y, m, day] = d.split('-');
+                const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 html += `<th style="background-color: ${color}; color: white;">${formatted}</th>`;
             });
             html += `</tr>`;
 
             itemsAtFacility.forEach(code => {
                 html += `<tr><td>${code}</td>`;
-                // Initial balance: Find the very last transaction before the 'start' date
-                let runningBalance = 0;
-                const pastEntries = facilityData.filter(d => d.item_code === code && d.date < start);
-                if (pastEntries.length > 0) {
-                    runningBalance = pastEntries[pastEntries.length - 1].balance;
-                }
+                let lastBalance = 0;
+                const past = facilityData.filter(d => d.item_code === code && d.date < start);
+                if (past.length > 0) lastBalance = past[past.length - 1].balance;
 
                 dates.forEach(date => {
-                    // If a transaction exists for this day, update the running balance
-                    const todayMatch = facilityData.find(d => d.item_code === code && d.date === date);
-                    if (todayMatch) {
-                        runningBalance = todayMatch.balance;
-                    }
-                    // Otherwise, runningBalance stays exactly as it was the day before
-                    html += `<td>${runningBalance}</td>`;
+                    const match = facilityData.find(d => d.item_code === code && d.date === date);
+                    if (match) lastBalance = match.balance;
+                    html += `<td>${lastBalance}</td>`;
                 });
                 html += `</tr>`;
             });
-
             html += `</table></div>`;
             document.getElementById('reportContainer').insertAdjacentHTML('beforeend', html);
         }
