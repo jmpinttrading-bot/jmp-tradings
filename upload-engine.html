@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Document Upload Engine | JMP HQ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
@@ -10,9 +10,15 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        .top-nav { background-color: #0f172a; color: white; padding: 15px 40px; display: flex; align-items: center; justify-content: space-between; }
-        .top-nav h2 { font-size: 1.1rem; color: #ee964b; }
-        .logout-btn { background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        /* Navbar Styles (Synced) */
+        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn.active { background: #475569; color: white; }
 
         .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
@@ -55,9 +61,19 @@
 </head>
 <body>
 
-    <nav class="top-nav">
-        <h2>JMP Admin HQ</h2>
-        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+    <nav class="navbar">
+        <div class="top-row">
+            <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-btn">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
+            <a href="import-docs.html" class="nav-btn active">Imports</a>
+            <a href="inventory-management.html" class="nav-btn">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
+        </div>
     </nav>
 
     <div class="main-content">
