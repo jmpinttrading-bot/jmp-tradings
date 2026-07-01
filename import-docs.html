@@ -50,7 +50,6 @@
         .folder-workspace.active { display: block; }
         .workspace-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; margin-bottom: 15px; }
 
-        /* Status Badge Colors */
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         .status-badge.pending { background: #fef3c7; color: #b45309; }
         .status-badge.completed { background: #d1fae5; color: #065f46; }
@@ -165,10 +164,12 @@
         </div>
     </div>
 
+    <!-- Viewer Overlay -->
     <div class="viewer-overlay" id="documentViewerOverlay">
         <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);"></iframe>
     </div>
 
+    <!-- Alert Overlay -->
     <div class="system-alert-overlay" id="systemAlertOverlay">
         <div class="system-alert-card">
             <div class="system-alert-header">
@@ -204,6 +205,28 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
+        // --- NEW: Approval Logic ---
+        async function approveCurrentDocument() {
+            if (!activeInspectingRecordId) return;
+            if (!confirm("Confirm approval of this document package?")) return;
+
+            const { error } = await supabaseClient
+                .from('imported_shipment_docs')
+                .update({ 
+                    status: 'Completed', 
+                    approved_date: new Date().toISOString() 
+                })
+                .eq('id', activeInspectingRecordId);
+
+            if (error) {
+                showSystemModal({ type: 'error', title: 'Approval Failed', message: error.message });
+            } else {
+                showSystemModal({ type: 'success', title: 'Success', message: 'Document approved and status updated.' });
+                closeViewer();
+                fetchDocuments();
+            }
+        }
+
         function showSystemModal(options = {}) {
             const type = options.type || 'success'; 
             const title = options.title || 'Notification';
@@ -230,7 +253,6 @@
             document.getElementById('documentViewerOverlay').style.display = 'none';
         }
 
-        // --- NEW: Helper for Downloading Files ---
         async function downloadCurrentDocumentPackage() {
             if (!activeInspectingRecordId) return;
 
@@ -426,7 +448,7 @@
 
             const initViewer = () => {
                 if (iframe.contentWindow && typeof iframe.contentWindow.setupViewerContent === 'function') {
-                    iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient);
+                    iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient, approveCurrentDocument);
                 }
             };
 
