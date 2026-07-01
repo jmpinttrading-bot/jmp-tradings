@@ -60,15 +60,17 @@
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Initialized as supabaseClient for consistency
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let currentUserRole = "employee";
 
         async function initDashboard() {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            // Fetch role to determine access level
-            const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+            // Fetch role using consistent client
+            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
             if (profile) currentUserRole = profile.role.toLowerCase().trim();
             
             document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
@@ -93,11 +95,11 @@
 
         async function handleLogout() {
             try {
-                await supabase.auth.signOut();
+                // Using consistent supabaseClient reference
+                await supabaseClient.auth.signOut();
                 window.location.href = "login.html";
             } catch (err) {
                 console.error("Logout Error:", err);
-                // Force redirect even if sign out call hits a network error
                 window.location.href = "login.html";
             }
         }
