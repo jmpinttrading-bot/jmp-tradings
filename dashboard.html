@@ -88,48 +88,52 @@
         async function updateReport() {
             const start = document.getElementById('dateFrom').value;
             const end = document.getElementById('dateTo').value;
-            
             const container = document.getElementById('reportContainer');
             container.innerHTML = 'Loading inventory data...';
 
+            // Fetch everything up to the 'To' date so we have the running balance history
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('item_code, date, total_balance, storage_facility')
-                .gte('date', start)
-                .lte('date', end);
+                .lte('date', end)
+                .order('date', { ascending: true });
 
-            console.log("Raw Data from Supabase:", data); // Check this in F12
+            if (error) { console.error(error); container.innerHTML = 'Error loading data.'; return; }
 
             container.innerHTML = '';
             facilities.forEach(f => renderFacility(f, data || [], start, end));
         }
 
         function renderFacility(name, allData, start, end) {
-            // Filter by name and trim whitespace just in case
             const facilityData = allData.filter(d => d.storage_facility && d.storage_facility.trim() === name.trim());
             
             let dates = [];
-            let curr = new Date(start);
-            while (curr <= new Date(end)) {
+            let curr = new Date(start + 'T00:00:00');
+            let endDate = new Date(end + 'T00:00:00');
+            while (curr <= endDate) {
                 dates.push(curr.toISOString().split('T')[0]);
                 curr.setDate(curr.getDate() + 1);
             }
 
             const items = [...new Set(facilityData.map(d => d.item_code))];
-            
+            if (items.length === 0) return;
+
             let html = `<div class="facility-container"><h2>${name}</h2><table><tr><th>Item Code</th>`;
-            
-            // Format dates as "July 01, 2026"
             dates.forEach(d => {
-                const dateObj = new Date(d + 'T00:00:00');
-                const formatted = dateObj.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
+                const formatted = new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
                 html += `<th>${formatted}</th>`;
             });
             html += `</tr>`;
 
             items.forEach(code => {
                 html += `<tr><td>${code}</td>`;
-                let lastBalance = 0; 
+                // Find last balance BEFORE the start date
+                let lastBalance = 0;
+                const previousEntries = facilityData.filter(d => d.item_code === code && d.date < start);
+                if (previousEntries.length > 0) {
+                    lastBalance = previousEntries[previousEntries.length - 1].total_balance;
+                }
+
                 dates.forEach(date => {
                     const match = facilityData.find(d => d.item_code === code && d.date === date);
                     if (match) lastBalance = match.total_balance;
