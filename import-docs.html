@@ -11,8 +11,6 @@
     <style>
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; }
-        
-        /* Navbar Styles */
         .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
@@ -21,49 +19,37 @@
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
-
         .main-content { padding: 40px; }
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
-        
         .panel-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; align-items: start; width: 100%; }
         .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); min-width: 0; }
         .panel-card h3 { color: #0f172a; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9; }
-
         .engine-launch-box { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 6px; }
         .launch-btn { display: inline-block; background: #ee964b; color: #0f172a; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; transition: 0.2s; text-align: center; }
         .launch-btn:hover { opacity: 0.9; }
-
         .directory-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; }
         .year-btn { background: #0f172a; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
         .download-year-btn { background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .export-excel-btn { background: #10b981; color: white; border: none; padding: 12px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
-
         .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .search-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
-        
         .month-folder-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
         .folder-node { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px 5px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
         .folder-node:hover, .folder-node.active { background: #0f172a; color: white; }
-        
         .folder-workspace { background: #ffffff; border: 1px solid #cbd5e1; padding: 25px; border-radius: 8px; margin-bottom: 30px; display: none; }
         .folder-workspace.active { display: block; }
         .workspace-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; margin-bottom: 15px; }
-
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         .status-badge.pending { background: #fef3c7; color: #b45309; }
         .status-badge.completed { background: #d1fae5; color: #065f46; }
         .status-badge.incomplete { background: #fee2e2; color: #991b1b; }
         .status-badge.for-approval { background: #e0e7ff; color: #3730a3; }
-
         .table-responsive-wrapper { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
         .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; white-space: nowrap; }
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
-        
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
-        
-        /* Standardized Restriction Modal */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -194,6 +180,7 @@
         let currentUserSession = null;
         let currentUserRole = "employee"; 
         let activeInspectingRecordId = null;
+        let activeFilesList = []; // Track active files for download
 
         const monthsLabels = [
             { text: "Jan", value: "01" }, { text: "Feb", value: "02" },
@@ -204,7 +191,30 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
-        // --- NEW IMPLEMENTED FUNCTIONS ---
+        // --- NEW SIGNED URL DOWNLOAD LOGIC ---
+        async function downloadCurrentDocumentPackage() {
+            checkAdminAccess(async () => {
+                showSystemModal({ title: 'Preparing', message: 'Generating secure download links...' });
+                try {
+                    for (const file of activeFilesList) {
+                        const { data, error } = await supabaseClient.storage
+                            .from(STORAGE_BUCKET_NAME)
+                            .createSignedUrl(file.path, 60);
+                        if (error) throw error;
+                        window.open(data.signedUrl, '_blank');
+                    }
+                    closeRestrictionModal();
+                } catch (err) {
+                    showSystemModal({ title: 'Download Error', message: err.message });
+                }
+            });
+        }
+
+        function handleIframeZoomToggle(isZoomed) {
+            const iframe = document.getElementById('viewerModuleIframe');
+            iframe.style.maxWidth = isZoomed ? "100%" : "900px";
+        }
+
         async function exportWorkspaceTableToExcel() {
             const table = document.getElementById("folderDataTable");
             const wb = XLSX.utils.table_to_book(table, { sheet: "Monthly Log" });
@@ -229,24 +239,16 @@
             }
         }
 
-        // Restrict access for settings link
         function checkAccess(event) {
             if (currentUserRole !== 'admin') {
                 event.preventDefault();
-                showSystemModal({ 
-                    title: 'Access Restricted', 
-                    message: 'Administrative privileges are required to access the System Settings.' 
-                });
+                showSystemModal({ title: 'Access Restricted', message: 'Administrative privileges are required to access the System Settings.' });
             }
         }
 
-        // Restrict access for downloads/exports
         function checkAdminAccess(callback) {
             if (currentUserRole !== 'admin') {
-                showSystemModal({ 
-                    title: 'Access Denied', 
-                    message: 'You do not have permission to download or export confidential documentation. Please contact an administrator.' 
-                });
+                showSystemModal({ title: 'Access Denied', message: 'You do not have permission to download or export confidential documentation.' });
                 return;
             }
             if (typeof callback === 'function') callback();
@@ -258,10 +260,7 @@
 
             const { error } = await supabaseClient
                 .from('imported_shipment_docs')
-                .update({ 
-                    status: 'Completed', 
-                    approved_date: new Date().toISOString() 
-                })
+                .update({ status: 'Completed', approved_date: new Date().toISOString() })
                 .eq('id', activeInspectingRecordId);
 
             if (error) {
@@ -274,12 +273,8 @@
         }
 
         function showSystemModal(options = {}) {
-            const title = options.title || 'Notification';
-            const message = options.message || '';
-            
-            document.getElementById('alertTitle').textContent = title;
-            document.getElementById('alertMessage').textContent = message;
-            
+            document.getElementById('alertTitle').textContent = options.title || 'Notification';
+            document.getElementById('alertMessage').textContent = options.message || '';
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
@@ -294,28 +289,16 @@
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            currentUserSession = user;
-
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-            if (profile && profile.role) {
-                currentUserRole = profile.role.toLowerCase().trim();
-                if (currentUserRole !== 'admin') {
-                    document.getElementById('sidebarLogoutBtn').textContent = "Logout Employee";
-                } else {
-                    document.getElementById('sidebarLogoutBtn').textContent = "Logout Admin";
-                }
-            }
-
-            const today = new Date();
-            initYearSelectOptions(today.getFullYear());
+            if (profile) currentUserRole = profile.role.toLowerCase().trim();
+            
+            initYearSelectOptions(new Date().getFullYear());
             buildMonthlyFolders();
-            toggleWorkspaceView();
             fetchDocuments();
         }
 
         function initYearSelectOptions(defaultYear) {
             const select = document.getElementById('directoryYearSelect');
-            select.innerHTML = "";
             availableYears.forEach(yr => {
                 const opt = document.createElement('option');
                 opt.value = yr;
@@ -329,7 +312,6 @@
             const container = document.getElementById('monthFolderContainer');
             container.innerHTML = "";
             const currentYearSelected = document.getElementById('directoryYearSelect').value;
-            
             monthsLabels.forEach(m => {
                 const queryStr = `${currentYearSelected}-${m.value}`;
                 const isCurrentActive = (selectedFolderMonth === queryStr);
@@ -340,7 +322,7 @@
                     buildMonthlyFolders();
                     toggleWorkspaceView();
                 };
-                folder.innerHTML = `<span class="icon">${isCurrentActive ? '📂' : '📁'}</span> ${m.text.toUpperCase()}`;
+                folder.innerHTML = `${isCurrentActive ? '📂' : '📁'} ${m.text.toUpperCase()}`;
                 container.appendChild(folder);
             });
         }
@@ -359,69 +341,20 @@
         }
 
         async function fetchDocuments() {
-            try {
-                const { data: actionableData, error: actErr } = await supabaseClient
-                    .from('imported_shipment_docs')
-                    .select('*')
-                    .in('status', ['Pending', 'Incomplete', 'For Approval'])
-                    .order('s_date', { ascending: false });
+            const { data: actionableData } = await supabaseClient
+                .from('imported_shipment_docs')
+                .select('*')
+                .in('status', ['Pending', 'Incomplete', 'For Approval'])
+                .order('s_date', { ascending: false });
 
-                const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
-                globalTbody.innerHTML = "";
-
-                if (actErr) throw actErr;
-
-                if (!actionableData || actionableData.length === 0) {
-                    globalTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No items currently require structural verification configurations.</td></tr>`;
-                } else {
-                    actionableData.forEach(doc => {
-                        const statusClass = (doc.status || 'unknown').toLowerCase().replace(/\s+/g, '-');
-                        const row = `<tr>
-                            <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
-                            <td>${formatHumanReadableDate(doc.s_date)}</td>
-                            <td><span class="status-badge ${statusClass}">${doc.status.toUpperCase()}</span></td>
-                            <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
-                        </tr>`;
-                        globalTbody.innerHTML += row;
-                    });
-                }
-            } catch (err) {
-                console.error("Error reading uncompleted queue items:", err);
-            }
+            const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
+            globalTbody.innerHTML = actionableData?.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td><span class="status-badge ${doc.status.toLowerCase().replace(' ', '-')}">${doc.status.toUpperCase()}</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
 
             if (!selectedFolderMonth) return;
+            const { data } = await supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed').order('created_at', { ascending: false });
             
-            const searchVal = document.getElementById('docSearchBox').value.trim().toUpperCase();
-            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed');
-
-            if (searchVal) { query = query.ilike('spsic_number', `%${searchVal}%`); }
-
-            const { data = [] } = await query.order('created_at', { ascending: false });
             const tbody = document.getElementById('documentLogsTableBody');
-            tbody.innerHTML = "";
-
-            if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#64748b;">No completed entries found.</td></tr>`;
-                return;
-            }
-
-            data.forEach(doc => {
-                const statusClass = (doc.status || 'unknown').toLowerCase().replace(/\s+/g, '-');
-                const row = `<tr>
-                    <td><strong>SPSIC-${(doc.spsic_number || 'N/A').toUpperCase()}</strong></td>
-                    <td>${formatHumanReadableDate(doc.s_date)}</td>
-                    <td>${formatHumanReadableDate(doc.approved_date)}</td>
-                    <td>${formatHumanReadableDate(doc.expiration_date)}</td>
-                    <td>${(doc.storage_location || 'N/A').toUpperCase()}</td>
-                    <td>${(doc.commodity || 'N/A').toUpperCase()}</td>
-                    <td>${formatHumanReadableDate(doc.storage_arrival_date)}</td>
-                    <td>${(doc.client_name || 'N/A').toUpperCase()}</td>
-                    <td>${(doc.cv_no || 'N/A').toUpperCase()}</td>
-                    <td><span class="status-badge ${statusClass}">${doc.status.toUpperCase()}</span></td>
-                    <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
-                </tr>`;
-                tbody.innerHTML += row;
-            });
+            tbody.innerHTML = data?.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td>${formatHumanReadableDate(doc.approved_date)}</td><td>${formatHumanReadableDate(doc.expiration_date)}</td><td>${doc.storage_location.toUpperCase()}</td><td>${doc.commodity.toUpperCase()}</td><td>${formatHumanReadableDate(doc.storage_arrival_date)}</td><td>${doc.client_name.toUpperCase()}</td><td>${doc.cv_no.toUpperCase()}</td><td><span class="status-badge completed">COMPLETED</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="11" style="text-align:center;">No entries found.</td></tr>';
         }
 
         function formatHumanReadableDate(dateString) {
@@ -432,42 +365,21 @@
 
         async function openDocCompiler(recordId) {
             activeInspectingRecordId = recordId;
-            
             const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
-            if (!doc) {
-                showSystemModal({ title: 'Error', message: 'Could not load document records.' });
-                return;
-            }
+            activeFilesList = [];
+            if(doc.spsic_file_path) activeFilesList.push({ name: "1. SPSIC Document", path: doc.spsic_file_path, uploadDate: doc.created_at });
+            if(doc.arrival_notice_path) activeFilesList.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path, uploadDate: doc.created_at });
+            if(doc.import_docs_path) activeFilesList.push({ name: "3. Import Documentation Package", path: doc.import_docs_path, uploadDate: doc.created_at });
 
-            const filesArray = [];
-            if(doc.spsic_file_path) filesArray.push({ name: "1. SPSIC Document", path: doc.spsic_file_path, uploadDate: doc.created_at });
-            if(doc.arrival_notice_path) filesArray.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path, uploadDate: doc.created_at });
-            if(doc.import_docs_path) filesArray.push({ name: "3. Import Documentation Package", path: doc.import_docs_path, uploadDate: doc.created_at });
-
-            const isAdmin = (currentUserRole === 'admin');
-            const overlay = document.getElementById('documentViewerOverlay');
+            document.getElementById('documentViewerOverlay').style.display = 'flex';
             const iframe = document.getElementById('viewerModuleIframe');
-
-            overlay.style.display = 'flex';
-
-            const initViewer = () => {
-                if (iframe.contentWindow && typeof iframe.contentWindow.setupViewerContent === 'function') {
-                    iframe.contentWindow.setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, supabaseClient, approveCurrentDocument);
-                }
-            };
-
-            if (iframe.contentWindow && iframe.contentWindow.document.readyState === 'complete') {
-                initViewer();
-            } else {
-                iframe.onload = initViewer;
-            }
+            const initViewer = () => iframe.contentWindow.setupViewerContent(doc, activeFilesList, (currentUserRole === 'admin'), STORAGE_BUCKET_NAME, supabaseClient, approveCurrentDocument);
+            
+            if (iframe.contentWindow.document.readyState === 'complete') initViewer();
+            else iframe.onload = initViewer;
         }
 
-        async function handleLogout() {
-            await supabaseClient.auth.signOut();
-            window.location.href = "login.html";
-        }
-
+        function handleLogout() { supabaseClient.auth.signOut(); window.location.href = "login.html"; }
         initModule();
     </script>
 </body>
