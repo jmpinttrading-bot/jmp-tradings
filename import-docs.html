@@ -50,9 +50,12 @@
         .folder-workspace.active { display: block; }
         .workspace-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; margin-bottom: 15px; }
 
+        /* Status Badge Colors */
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         .status-badge.pending { background: #fef3c7; color: #b45309; }
         .status-badge.completed { background: #d1fae5; color: #065f46; }
+        .status-badge.incomplete { background: #fee2e2; color: #991b1b; }
+        .status-badge.for-approval { background: #e0e7ff; color: #3730a3; }
 
         .table-responsive-wrapper { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -313,11 +316,11 @@
                     globalTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">No items currently require structural verification configurations.</td></tr>`;
                 } else {
                     actionableData.forEach(doc => {
-                        const badgeClass = doc.status.toLowerCase().replace(" ", "-");
+                        const statusClass = (doc.status || 'unknown').toLowerCase().replace(/\s+/g, '-');
                         const row = `<tr>
                             <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
                             <td>${formatHumanReadableDate(doc.s_date)}</td>
-                            <td><span class="status-badge ${badgeClass}">${doc.status.toUpperCase()}</span></td>
+                            <td><span class="status-badge ${statusClass}">${doc.status.toUpperCase()}</span></td>
                             <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                         </tr>`;
                         globalTbody.innerHTML += row;
@@ -344,6 +347,7 @@
             }
 
             data.forEach(doc => {
+                const statusClass = (doc.status || 'unknown').toLowerCase().replace(/\s+/g, '-');
                 const row = `<tr>
                     <td><strong>SPSIC-${(doc.spsic_number || 'N/A').toUpperCase()}</strong></td>
                     <td>${formatHumanReadableDate(doc.s_date)}</td>
@@ -354,7 +358,7 @@
                     <td>${formatHumanReadableDate(doc.storage_arrival_date)}</td>
                     <td>${(doc.client_name || 'N/A').toUpperCase()}</td>
                     <td>${(doc.cv_no || 'N/A').toUpperCase()}</td>
-                    <td><span class="status-badge ${doc.status.toLowerCase()}">${doc.status.toUpperCase()}</span></td>
+                    <td><span class="status-badge ${statusClass}">${doc.status.toUpperCase()}</span></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
                 tbody.innerHTML += row;
