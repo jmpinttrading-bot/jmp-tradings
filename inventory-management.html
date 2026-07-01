@@ -21,11 +21,12 @@
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
-        /* Modal Styles */
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 8px; max-width: 400px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .modal-content h3 { margin-bottom: 15px; color: #ef4444; }
-        .close-btn { background: #1e293b; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-top: 15px; cursor: pointer; }
+        /* Standardized Modal Styles */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
+        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
 
         .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
@@ -70,12 +71,12 @@
 </head>
 <body>
 
-    <!-- Access Denied Modal -->
-    <div id="accessModal" class="modal">
-        <div class="modal-content">
-            <h3>Access Denied</h3>
-            <p>You do not have administrative privileges to access the Settings panel.</p>
-            <button class="close-btn" onclick="document.getElementById('accessModal').style.display='none'">Close</button>
+    <!-- Access Restricted Modal -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4>Access Restricted</h4>
+            <p>You do not have administrative privileges to access this module.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
 
@@ -90,12 +91,11 @@
             <a href="import-docs.html" class="nav-btn">Imports</a>
             <a href="inventory-management.html" class="nav-btn active">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="#" class="nav-btn" onclick="checkAdminAccess()">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Settings', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
     <div class="main-content">
-        <!-- Main content remains unchanged -->
         <div class="header">
             <h1>Stock & Asset Control Matrix</h1>
             <div class="user-badge" id="adminEmail">Loading Context...</div>
@@ -184,7 +184,7 @@
         
         let masterTransactionsCachedData = [];
         let masterChartInstance = null;
-        let currentUserRole = 'Staff';
+        let settingsAccess = false;
 
         function setDefaultCalendarDates() {
             const today = new Date();
@@ -200,20 +200,24 @@
             if (!user) { window.location.href = "login.html"; return; }
             
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).maybeSingle();
-            currentUserRole = profile?.role || 'Staff';
+            settingsAccess = (profile?.role === 'Admin');
             
             const badge = document.getElementById('adminEmail');
-            badge.textContent = `${currentUserRole}: ${user.email.split('@')[0]}`;
+            badge.textContent = `${profile?.role || 'Staff'}: ${user.email.split('@')[0]}`;
             
             fetchMasterTransactions();
         }
 
-        function checkAdminAccess() {
-            if (currentUserRole === 'Admin') {
-                window.location.href = "admin-dashboard.html";
+        function verifyNavigationPrivilege(moduleName, url) {
+            if (moduleName === 'Settings' && !settingsAccess) {
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
             } else {
-                document.getElementById('accessModal').style.display = 'flex';
+                window.location.href = url;
             }
+        }
+
+        function closeRestrictionModal() { 
+            document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
         }
 
         async function fetchMasterTransactions() {
