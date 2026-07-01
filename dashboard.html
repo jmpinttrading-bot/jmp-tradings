@@ -23,8 +23,7 @@
         .facility-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
-        th { background: #f1f5f9; }
-        h2 { font-size: 1rem; color: #1e293b; margin-top: 0; }
+        h2 { font-size: 1rem; margin-top: 0; padding: 10px; border-radius: 6px; color: white; }
     </style>
 </head>
 <body>
@@ -63,12 +62,13 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const facilities = [
-            "VVS COLD STORAGE & PROCESSING PLANT CORP.",
-            "HIGHTOWER STORAGE & TRADING CENTRE, INC.",
-            "EISBERG COLD LOGISTICS INC.",
-            "CRYSTAL COLD STORAGE, INC."
-        ];
+        // Map facilities to specific header colors
+        const facilityThemes = {
+            "VVS COLD STORAGE & PROCESSING PLANT CORP.": "#0f172a",
+            "HIGHTOWER STORAGE & TRADING CENTRE, INC.": "#15803d",
+            "EISBERG COLD LOGISTICS INC.": "#0369a1",
+            "CRYSTAL COLD STORAGE, INC.": "#a16207"
+        };
 
         async function initDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -98,20 +98,18 @@
                 .order('date', { ascending: true });
 
             if (error) { 
-                console.error("Supabase Query Error:", error); 
                 container.innerHTML = 'Error: ' + error.message; 
                 return; 
             }
 
-            // Get a master list of all items that have ever existed
-            const allItemCodes = [...new Set(data.map(d => d.item_code))].filter(Boolean);
-
             container.innerHTML = '';
-            facilities.forEach(f => renderFacility(f, data || [], start, end, allItemCodes));
+            Object.keys(facilityThemes).forEach(f => renderFacility(f, data || [], start, end));
         }
 
-        function renderFacility(name, allData, start, end, allItemCodes) {
+        function renderFacility(name, allData, start, end) {
+            const color = facilityThemes[name] || "#475569";
             const facilityData = allData.filter(d => d.storage_facility && d.storage_facility.trim() === name.trim());
+            const itemsAtFacility = [...new Set(facilityData.map(d => d.item_code))].filter(Boolean);
             
             let dates = [];
             let curr = new Date(start + 'T00:00:00');
@@ -121,14 +119,18 @@
                 curr.setDate(curr.getDate() + 1);
             }
 
-            let html = `<div class="facility-container"><h2>${name}</h2><table><tr><th>Item Code</th>`;
+            let html = `<div class="facility-container">
+                <h2 style="background-color: ${color};">${name}</h2>
+                <table>
+                <tr><th style="background-color: ${color}; color: white;">Item Code</th>`;
+            
             dates.forEach(d => {
-                const formatted = new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
-                html += `<th>${formatted}</th>`;
+                const formatted = new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                html += `<th style="background-color: ${color}; color: white;">${formatted}</th>`;
             });
             html += `</tr>`;
 
-            allItemCodes.forEach(code => {
+            itemsAtFacility.forEach(code => {
                 html += `<tr><td>${code}</td>`;
                 let lastBalance = 0;
                 const previousEntries = facilityData.filter(d => d.item_code === code && d.date < start);
