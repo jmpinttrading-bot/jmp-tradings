@@ -84,7 +84,7 @@
             <a href="import-docs.html" class="nav-btn active">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
+            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
         </div>
     </nav>
 
@@ -130,8 +130,7 @@
                         <select id="directoryYearSelect" onchange="buildMonthlyFolders(); toggleWorkspaceView();"></select>
                     </div>
                     <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
-                    <!-- Added access check to download button -->
-                    <button class="download-year-btn" id="downloadYearArchiveBtn" onclick="checkAdminAccess(downloadEntireYearDirectory)">📥 Download Year Package</button>
+                    <button class="download-year-btn" id="downloadYearArchiveBtn" onclick="downloadEntireYearDirectory()">📥 Download Year Package</button>
                 </div>
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
                 <div id="emptyDirectoryPlaceholder" class="empty-placeholder">
@@ -143,8 +142,7 @@
                 <div class="workspace-title" id="workspaceTitleDisplay">📂 Folder Context</div>
                 <div class="search-container">
                     <input type="text" id="docSearchBox" class="search-box" placeholder="Search entries in this folder by exact SPSIC Number sequence..." oninput="fetchDocuments()">
-                    <!-- Added access check to export button -->
-                    <button class="export-excel-btn" onclick="checkAdminAccess(exportWorkspaceTableToExcel)">📊 Export to Excel</button>
+                    <button class="export-excel-btn" onclick="exportWorkspaceTableToExcel()">📊 Export to Excel</button>
                 </div>
                 <div class="table-responsive-wrapper">
                     <table class="item-list-table">
@@ -207,33 +205,6 @@
             { text: "Sep", value: "09" }, { text: "Oct", value: "10" },
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
-
-        // Restrict access for settings link
-        function checkAccess(event) {
-            if (currentUserRole !== 'admin') {
-                event.preventDefault();
-                showSystemModal({ 
-                    title: 'Access Restricted', 
-                    message: 'Administrative privileges are required to access the System Settings.' 
-                });
-            }
-        }
-
-        // Restrict access for downloads/exports
-        function checkAdminAccess(callback) {
-            if (currentUserRole !== 'admin') {
-                showSystemModal({ 
-                    title: 'Access Denied', 
-                    message: 'You do not have permission to download or export confidential documentation. Please contact an administrator.' 
-                });
-                return;
-            }
-            if (typeof callback === 'function') callback();
-        }
-
-        // Placeholder functions for actual logic
-        function downloadEntireYearDirectory() { console.log("Initiating year download..."); }
-        function exportWorkspaceTableToExcel() { console.log("Initiating Excel export..."); }
 
         async function approveCurrentDocument() {
             if (!activeInspectingRecordId) return;
