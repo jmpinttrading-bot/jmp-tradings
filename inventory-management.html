@@ -21,8 +21,13 @@
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 8px; max-width: 400px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .modal-content h3 { margin-bottom: 15px; color: #ef4444; }
+        .close-btn { background: #1e293b; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-top: 15px; cursor: pointer; }
+
         .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
-        
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .user-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
@@ -65,6 +70,15 @@
 </head>
 <body>
 
+    <!-- Access Denied Modal -->
+    <div id="accessModal" class="modal">
+        <div class="modal-content">
+            <h3>Access Denied</h3>
+            <p>You do not have administrative privileges to access the Settings panel.</p>
+            <button class="close-btn" onclick="document.getElementById('accessModal').style.display='none'">Close</button>
+        </div>
+    </div>
+
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
@@ -73,15 +87,15 @@
         <div class="nav-links">
             <a href="dashboard.html" class="nav-btn">Dashboard</a>
             <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="control-panel.html" class="nav-btn">Control Panel</a>
-            <a href="employee-201.html" class="nav-btn">Employee 201</a>
             <a href="import-docs.html" class="nav-btn">Imports</a>
             <a href="inventory-management.html" class="nav-btn active">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="#" class="nav-btn" onclick="checkAdminAccess()">Settings</a>
         </div>
     </nav>
 
     <div class="main-content">
+        <!-- Main content remains unchanged -->
         <div class="header">
             <h1>Stock & Asset Control Matrix</h1>
             <div class="user-badge" id="adminEmail">Loading Context...</div>
@@ -170,6 +184,7 @@
         
         let masterTransactionsCachedData = [];
         let masterChartInstance = null;
+        let currentUserRole = 'Staff';
 
         function setDefaultCalendarDates() {
             const today = new Date();
@@ -185,11 +200,20 @@
             if (!user) { window.location.href = "login.html"; return; }
             
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).maybeSingle();
+            currentUserRole = profile?.role || 'Staff';
             
             const badge = document.getElementById('adminEmail');
-            badge.textContent = `${profile?.role || 'Staff'}: ${user.email.split('@')[0]}`;
+            badge.textContent = `${currentUserRole}: ${user.email.split('@')[0]}`;
             
             fetchMasterTransactions();
+        }
+
+        function checkAdminAccess() {
+            if (currentUserRole === 'Admin') {
+                window.location.href = "admin-dashboard.html";
+            } else {
+                document.getElementById('accessModal').style.display = 'flex';
+            }
         }
 
         async function fetchMasterTransactions() {
