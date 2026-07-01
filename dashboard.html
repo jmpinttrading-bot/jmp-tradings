@@ -91,14 +91,17 @@
             const container = document.getElementById('reportContainer');
             container.innerHTML = 'Loading inventory data...';
 
-            // Fetch everything up to the 'To' date so we have the running balance history
             const { data, error } = await supabaseClient
                 .from('transactions')
-                .select('item_code, date, total_balance, storage_facility')
+                .select('item_code, date, balance, storage_facility') // Corrected column name
                 .lte('date', end)
                 .order('date', { ascending: true });
 
-            if (error) { console.error(error); container.innerHTML = 'Error loading data.'; return; }
+            if (error) { 
+                console.error("Supabase Query Error:", error); 
+                container.innerHTML = 'Error: ' + error.message; 
+                return; 
+            }
 
             container.innerHTML = '';
             facilities.forEach(f => renderFacility(f, data || [], start, end));
@@ -127,16 +130,15 @@
 
             items.forEach(code => {
                 html += `<tr><td>${code}</td>`;
-                // Find last balance BEFORE the start date
                 let lastBalance = 0;
                 const previousEntries = facilityData.filter(d => d.item_code === code && d.date < start);
                 if (previousEntries.length > 0) {
-                    lastBalance = previousEntries[previousEntries.length - 1].total_balance;
+                    lastBalance = previousEntries[previousEntries.length - 1].balance; // Corrected column name
                 }
 
                 dates.forEach(date => {
                     const match = facilityData.find(d => d.item_code === code && d.date === date);
-                    if (match) lastBalance = match.total_balance;
+                    if (match) lastBalance = match.balance; // Corrected column name
                     html += `<td>${lastBalance}</td>`;
                 });
                 html += `</tr>`;
