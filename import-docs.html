@@ -61,8 +61,14 @@
         .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; white-space: nowrap; }
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
         
-        .viewer-overlay, .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
-        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; }
+        .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        
+        /* Standardized Restriction Modal */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
+        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
     </style>
 </head>
 <body>
@@ -78,7 +84,7 @@
             <a href="import-docs.html" class="nav-btn active">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
+            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
         </div>
     </nav>
 
@@ -169,17 +175,12 @@
         <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);"></iframe>
     </div>
 
-    <!-- Alert Overlay -->
-    <div class="system-alert-overlay" id="systemAlertOverlay">
-        <div class="system-alert-card">
-            <div class="system-alert-header">
-                <div class="system-alert-icon" id="systemAlertIcon">✓</div>
-                <div class="system-alert-title" id="systemAlertTitle">Notification Window</div>
-            </div>
-            <div class="system-alert-content" id="systemAlertContent">Execution status telemetry readout frame.</div>
-            <div class="system-alert-actions" id="systemAlertActions">
-                <button class="alert-btn alert-btn-primary" onclick="closeSystemModal()">Acknowledge</button>
-            </div>
+    <!-- Standardized Restriction Modal -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="alertTitle">Notification</h4>
+            <p id="alertMessage">Execution status telemetry readout frame.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
 
@@ -205,7 +206,16 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
-        // --- NEW: Approval Logic ---
+        function checkAccess(event) {
+            if (currentUserRole !== 'admin') {
+                event.preventDefault();
+                showSystemModal({ 
+                    title: 'Access Restricted', 
+                    message: 'Administrative privileges are required to access the System Settings.' 
+                });
+            }
+        }
+
         async function approveCurrentDocument() {
             if (!activeInspectingRecordId) return;
             if (!confirm("Confirm approval of this document package?")) return;
@@ -219,70 +229,30 @@
                 .eq('id', activeInspectingRecordId);
 
             if (error) {
-                showSystemModal({ type: 'error', title: 'Approval Failed', message: error.message });
+                showSystemModal({ title: 'Approval Failed', message: error.message });
             } else {
-                showSystemModal({ type: 'success', title: 'Success', message: 'Document approved and status updated.' });
+                showSystemModal({ title: 'Success', message: 'Document approved and status updated.' });
                 closeViewer();
                 fetchDocuments();
             }
         }
 
         function showSystemModal(options = {}) {
-            const type = options.type || 'success'; 
             const title = options.title || 'Notification';
             const message = options.message || '';
-            const overlay = document.getElementById('systemAlertOverlay');
-            const iconEl = document.getElementById('systemAlertIcon');
-            const titleEl = document.getElementById('systemAlertTitle');
-            const contentEl = document.getElementById('systemAlertContent');
-            const actionsEl = document.getElementById('systemAlertActions');
-
-            titleEl.textContent = title;
-            contentEl.textContent = message;
-            iconEl.className = `system-alert-icon ${type}`;
             
-            actionsEl.innerHTML = '<button class="alert-btn alert-btn-primary" onclick="closeSystemModal()">Dismiss</button>';
-            overlay.style.display = 'flex';
+            document.getElementById('alertTitle').textContent = title;
+            document.getElementById('alertMessage').textContent = message;
+            
+            document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
-        function closeSystemModal() {
-            document.getElementById('systemAlertOverlay').style.display = 'none';
+        function closeRestrictionModal() {
+            document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
         function closeViewer() {
             document.getElementById('documentViewerOverlay').style.display = 'none';
-        }
-
-        async function downloadCurrentDocumentPackage() {
-            if (!activeInspectingRecordId) return;
-
-            const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', activeInspectingRecordId).single();
-            if (!doc) return;
-
-            const files = [
-                { path: doc.spsic_file_path, name: "SPSIC_Document" },
-                { path: doc.arrival_notice_path, name: "Arrival_Notice" },
-                { path: doc.import_docs_path, name: "Import_Package" }
-            ].filter(f => f.path);
-
-            for (const file of files) {
-                const { data, error } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).download(file.path);
-                if (error) {
-                    console.error("Download failed", error);
-                    continue;
-                }
-                const url = window.URL.createObjectURL(data);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${file.name}_${doc.spsic_number}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-            }
-        }
-
-        function registerSecurityInterceptors() {
-            document.body.classList.add('employee-secure-lockout');
         }
 
         async function initModule() {
@@ -295,10 +265,8 @@
                 currentUserRole = profile.role.toLowerCase().trim();
                 if (currentUserRole !== 'admin') {
                     document.getElementById('sidebarLogoutBtn').textContent = "Logout Employee";
-                    registerSecurityInterceptors();
                 } else {
                     document.getElementById('sidebarLogoutBtn').textContent = "Logout Admin";
-                    document.body.classList.remove('employee-secure-lockout');
                 }
             }
 
@@ -431,7 +399,7 @@
             
             const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
             if (!doc) {
-                showSystemModal({ type: 'error', title: 'Error', message: 'Could not load document records.' });
+                showSystemModal({ title: 'Error', message: 'Could not load document records.' });
                 return;
             }
 
