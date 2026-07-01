@@ -167,12 +167,11 @@
             document.getElementById('zoomModalContentWrapper').innerHTML = "";
         }
 
-        function setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, parentSupabaseClient) {
+        async function setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, parentSupabaseClient) {
             document.getElementById('viewerTitleDisplay').textContent = `Manifest Viewer: SPSIC-${doc.spsic_number}`;
             const targetBody = document.getElementById('viewerTargetBody');
             targetBody.innerHTML = "";
 
-            // Enable data policy triggers based on role configuration
             securityWatchActive = !isAdmin;
             if (securityWatchActive) {
                 document.body.classList.add('employee-restricted-mode');
@@ -180,17 +179,14 @@
                 document.body.classList.remove('employee-restricted-mode');
             }
 
-            // 1. Structural Addition: Synchronized Manifest Info Grid Dashboard (from import-docs)
             const metaPanel = document.createElement('div');
             metaPanel.className = "manifest-meta-panel";
             
-            // Format Status display logic style mapping
             let statusClass = "status-pending";
             if(doc.status === "For Approval") statusClass = "status-for-approval";
             if(doc.status === "Approved") statusClass = "status-approved";
             if(doc.status === "Completed") statusClass = "status-completed";
 
-            // Arranged precisely to: SPSIC Number | Created Date | Approved Date | Expiration Date | Storage | Commodity | Storage Arrival Date | Suppliers Name | CV Number | Verification Status
             metaPanel.innerHTML = `
                 <div class="meta-item">
                     <span class="meta-label">SPSIC Number</span>
@@ -235,11 +231,15 @@
             `;
             targetBody.appendChild(metaPanel);
 
-            // 2. Loop Through and Append Associated Document Engine Nodes
-            filesArray.forEach(file => {
+            for (const file of filesArray) {
                 const readableTimestamp = window.parent.formatHumanReadableDate(file.uploadDate);
-                const { data } = parentSupabaseClient.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(file.path);
-                let publicUrl = data.publicUrl;
+                
+                // Using Signed URL
+                const { data: signedData, error } = await parentSupabaseClient.storage
+                    .from(STORAGE_BUCKET_NAME)
+                    .createSignedUrl(file.path, 60);
+
+                const fileUrl = error ? "" : signedData.signedUrl;
 
                 const lowerPath = file.path.toLowerCase();
                 const isOfficeFile = lowerPath.endsWith('.doc') || lowerPath.endsWith('.docx') || lowerPath.endsWith('.xls') || lowerPath.endsWith('.xlsx');
@@ -250,7 +250,7 @@
                 
                 fileNode.ondblclick = (e) => {
                     e.stopPropagation(); 
-                    openFileZoomModal(file.name, publicUrl, isOfficeFile, isAdmin);
+                    openFileZoomModal(file.name, fileUrl, isOfficeFile, isAdmin);
                 };
 
                 const titleContainer = document.createElement('div');
@@ -262,20 +262,19 @@
                 iframe.className = "compiled-frame";
                 
                 if (isOfficeFile) {
-                    iframe.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`;
+                    iframe.src = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileUrl)}`;
                 } else {
-                    iframe.src = !isAdmin ? `${publicUrl}#toolbar=0&navpanes=0&scrollbar=0` : publicUrl;
+                    iframe.src = !isAdmin ? `${fileUrl}#toolbar=0&navpanes=0&scrollbar=0` : fileUrl;
                 }
                 
                 fileNode.appendChild(iframe);
                 targetBody.appendChild(fileNode);
-            });
+            }
 
             const approveBtn = document.getElementById('modalApproveActionBtn');
             approveBtn.style.display = (isAdmin && doc.status === 'For Approval') ? "block" : "none";
         }
 
-        // --- Hardware Intercept and Anti-Screenshot Engine Event Listeners ---
         document.addEventListener('contextmenu', function(e) {
             if (securityWatchActive) {
                 e.preventDefault();
