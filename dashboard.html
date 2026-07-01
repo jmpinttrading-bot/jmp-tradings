@@ -3,30 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JMP Dashboard | Inventory View</title>
+    <title>JMP Dashboard | Workspace</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; }
+        html, body { margin: 0; padding: 0; width: 100%; overflow-x: hidden; font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        
+        /* Navbar Styles */
+        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; line-height: 1.2; flex: 1; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; white-space: nowrap; border: none; cursor: pointer; }
+        .nav-btn.active { background: #475569; color: white; }
+
+        /* Content & Report Styles */
+        .main-content { padding: 20px; }
+        .welcome-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
         .filter-section { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .facility-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; }
         th { background: #f1f5f9; }
         h2 { font-size: 1rem; color: #1e293b; margin-top: 0; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="filter-section">
-        <label>From: <input type="date" id="dateFrom"></label>
-        <label>To: <input type="date" id="dateTo"></label>
-        <button onclick="updateReport()">Generate Report</button>
-        <button class="logout-btn" onclick="handleLogout()">Logout</button>
-    </div>
+    <nav class="navbar">
+        <div class="top-row">
+            <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-btn active">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
+            <a href="import-docs.html" class="nav-btn">Imports</a>
+            <a href="inventory.html" class="nav-btn">Inventory</a>
+            <a href="sales.html" class="nav-btn">Sales</a>
+            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
+        </div>
+    </nav>
 
-    <div id="reportContainer"></div>
+    <div class="main-content">
+        <div class="welcome-box">
+            <h1 id="welcomeMsg" style="font-size: 1.2rem;">Welcome</h1>
+        </div>
+
+        <div class="filter-section">
+            <label>From: <input type="date" id="dateFrom"></label>
+            <label>To: <input type="date" id="dateTo"></label>
+            <button onclick="updateReport()">Generate Report</button>
+        </div>
+        
+        <div id="reportContainer"></div>
+    </div>
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
@@ -40,18 +72,23 @@
             "CRYSTAL COLD STORAGE, INC."
         ];
 
+        async function initDashboard() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
+        }
+
         async function updateReport() {
             const start = document.getElementById('dateFrom').value;
             const end = document.getElementById('dateTo').value;
             if(!start || !end) return alert("Select date range");
 
             const container = document.getElementById('reportContainer');
-            container.innerHTML = 'Loading...';
+            container.innerHTML = 'Loading report...';
 
-            // Fetch all relevant data at once
             const { data, error } = await supabaseClient
                 .from('transactions')
-                .select('item_code, date, total_balance')
+                .select('item_code, date, total_balance, storage_facility')
                 .gte('date', start)
                 .lte('date', end);
 
@@ -60,7 +97,6 @@
         }
 
         function renderFacility(name, allData, start, end) {
-            const facilityData = allData.filter(d => d.storage_facility === name);
             const container = document.getElementById('reportContainer');
             
             let dates = [];
@@ -78,7 +114,7 @@
 
             items.forEach(code => {
                 html += `<tr><td>${code}</td>`;
-                let lastBalance = 0; // Carry forward variable
+                let lastBalance = 0; 
                 dates.forEach(date => {
                     const match = allData.find(d => d.item_code === code && d.date === date && d.storage_facility === name);
                     if (match) lastBalance = match.total_balance;
@@ -95,6 +131,8 @@
             await supabaseClient.auth.signOut();
             window.location.href = "login.html";
         }
+
+        initDashboard();
     </script>
 </body>
 </html>
