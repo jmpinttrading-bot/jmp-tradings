@@ -47,7 +47,7 @@
         .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
         .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); }
-        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; }
+        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         .system-alert-header { padding: 20px 24px 10px; display: flex; align-items: center; gap: 12px; }
         .system-alert-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; }
         .system-alert-icon.success { background: #d1fae5; color: #065f46; }
@@ -159,7 +159,7 @@
                     <label>1st Upload: SPSIC Document File (PDF / Image / Word / Excel)</label>
                     <input type="file" id="fileSpsic" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" onchange="handleFileSelection('fileSpsic', 'progressSpsic')">
                     <div id="progressSpsic" class="upload-progress-status"></div>
-                    <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
+                    <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;"></div>
                 </div>
                 
                 <div class="form-group">
@@ -167,7 +167,7 @@
                     <input type="file" id="fileArrival" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" onchange="handleFileSelection('fileArrival', 'progressArrival')">
                     <div id="progressArrival" class="upload-progress-status"></div>
                     <div id="noticeArrival" class="lock-notice">⚠️ Locked: Upload 1st File (SPSIC) first.</div>
-                    <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
+                    <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;"></div>
                 </div>
                 
                 <div class="form-group">
@@ -175,7 +175,7 @@
                     <input type="file" id="fileImportDocs" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" onchange="handleFileSelection('fileImportDocs', 'progressImport')">
                     <div id="progressImport" class="upload-progress-status"></div>
                     <div id="noticeImport" class="lock-notice">⚠️ Locked: Upload 1st and 2nd Files first.</div>
-                    <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
+                    <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;"></div>
                 </div>
                 
                 <button type="submit" id="submitSyncPipelineBtn" class="submit-btn">Execute Sync Pipeline</button>
@@ -283,6 +283,34 @@
 
         async function handleInputBlur() { if (!document.getElementById('spsicRawNumber').value.trim()) { await clearLockHeartbeat(); } }
 
+        function updateFormFields(data) {
+            if (!data) return;
+            document.getElementById('spsicDate').value = data.s_date || '';
+            document.getElementById('approvedDate').value = data.approved_date || '';
+            document.getElementById('expirationDate').value = data.expiration_date || '';
+            document.getElementById('storageLocation').value = data.storage_location || '';
+            document.getElementById('storageArrivalDate').value = data.storage_arrival_date || '';
+            document.getElementById('commodity').value = data.commodity || '';
+            document.getElementById('clientName').value = data.client_name || '';
+            document.getElementById('cvNumber').value = data.cv_number || '';
+            
+            renderFileStatus('statusSpsicUploaded', data.spsic_file_path);
+            renderFileStatus('statusArrivalUploaded', data.arrival_notice_path);
+            renderFileStatus('statusImportUploaded', data.import_docs_path);
+        }
+
+        async function renderFileStatus(elementId, filePath) {
+            const el = document.getElementById(elementId);
+            if (!filePath) { el.style.display = "none"; return; }
+            
+            const { data } = await supabaseClient.storage.from(STORAGE_BUCKET_NAME).createSignedUrl(filePath, 3600);
+            if (data?.signedUrl) {
+                const fileName = filePath.split('/').pop();
+                el.style.display = "block";
+                el.innerHTML = `✓ <b>Attached:</b> <a href="${data.signedUrl}" target="_blank" style="color: #059669; text-decoration: underline;">${fileName}</a>`;
+            }
+        }
+
         async function evaluateUploadSequenceLocks() {
             const numInput = document.getElementById('spsicRawNumber').value.trim().toUpperCase();
             const targetMonthInput = document.getElementById('spsicTargetMonth').value.toUpperCase();
@@ -293,9 +321,11 @@
             const banner = document.getElementById('lockStatusBanner');
 
             if (!numInput) { clearLockHeartbeat(); return; }
+            
             if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
                 const { data } = await supabaseClient.from('imported_shipment_docs').select('*').eq('spsic_number', numInput).eq('target_month', targetMonthInput).maybeSingle();
                 localFetchedRecord = data;
+                if (localFetchedRecord) updateFormFields(localFetchedRecord);
             }
 
             if (localFetchedRecord && localFetchedRecord.status === "Completed") {
@@ -308,10 +338,6 @@
 
             let hasSpsicInDb = !!(localFetchedRecord && localFetchedRecord.spsic_file_path);
             let hasArrivalInDb = !!(localFetchedRecord && localFetchedRecord.arrival_notice_path);
-
-            document.getElementById('statusSpsicUploaded').style.display = hasSpsicInDb ? "block" : "none";
-            document.getElementById('statusArrivalUploaded').style.display = hasArrivalInDb ? "block" : "none";
-            document.getElementById('statusImportUploaded').style.display = (localFetchedRecord && localFetchedRecord.import_docs_path) ? "block" : "none";
 
             fSpsic.disabled = hasSpsicInDb;
             fArrival.disabled = !hasSpsicInDb || hasArrivalInDb;
