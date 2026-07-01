@@ -93,7 +93,7 @@
 
             const { data, error } = await supabaseClient
                 .from('transactions')
-                .select('item_code, date, balance, storage_facility') // Corrected column name
+                .select('item_code, date, balance, storage_facility')
                 .lte('date', end)
                 .order('date', { ascending: true });
 
@@ -103,11 +103,14 @@
                 return; 
             }
 
+            // Get a master list of all items that have ever existed
+            const allItemCodes = [...new Set(data.map(d => d.item_code))].filter(Boolean);
+
             container.innerHTML = '';
-            facilities.forEach(f => renderFacility(f, data || [], start, end));
+            facilities.forEach(f => renderFacility(f, data || [], start, end, allItemCodes));
         }
 
-        function renderFacility(name, allData, start, end) {
+        function renderFacility(name, allData, start, end, allItemCodes) {
             const facilityData = allData.filter(d => d.storage_facility && d.storage_facility.trim() === name.trim());
             
             let dates = [];
@@ -118,9 +121,6 @@
                 curr.setDate(curr.getDate() + 1);
             }
 
-            const items = [...new Set(facilityData.map(d => d.item_code))];
-            if (items.length === 0) return;
-
             let html = `<div class="facility-container"><h2>${name}</h2><table><tr><th>Item Code</th>`;
             dates.forEach(d => {
                 const formatted = new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' });
@@ -128,17 +128,17 @@
             });
             html += `</tr>`;
 
-            items.forEach(code => {
+            allItemCodes.forEach(code => {
                 html += `<tr><td>${code}</td>`;
                 let lastBalance = 0;
                 const previousEntries = facilityData.filter(d => d.item_code === code && d.date < start);
                 if (previousEntries.length > 0) {
-                    lastBalance = previousEntries[previousEntries.length - 1].balance; // Corrected column name
+                    lastBalance = previousEntries[previousEntries.length - 1].balance;
                 }
 
                 dates.forEach(date => {
                     const match = facilityData.find(d => d.item_code === code && d.date === date);
-                    if (match) lastBalance = match.balance; // Corrected column name
+                    if (match) lastBalance = match.balance;
                     html += `<td>${lastBalance}</td>`;
                 });
                 html += `</tr>`;
