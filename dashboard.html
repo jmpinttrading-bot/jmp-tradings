@@ -9,12 +9,14 @@
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
-        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; }
+        /* Updated Navigation Styles to match Employee Dashboard */
+        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; }
+        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
         .main-content { padding: 20px; }
@@ -140,7 +142,7 @@
             const m = now.getMonth();
             const d = now.getDate();
 
-            // Added +1 to d to correct the one-day delay
+            // Shifted forward by 1 day to ensure current date is displayed
             const dateToday = new Date(y, m, d + 1);
             const dateLastWeek = new Date(y, m, d + 1 - 6);
             
