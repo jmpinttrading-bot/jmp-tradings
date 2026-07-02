@@ -138,12 +138,17 @@
 
             document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
 
-            const today = new Date();
-            const lastWeek = new Date();
-            lastWeek.setDate(today.getDate() - 6);
+            // Corrected Date Logic for Local Timezone (July 2, 2026)
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = now.getMonth();
+            const d = now.getDate();
+
+            const dateToday = new Date(y, m, d);
+            const dateLastWeek = new Date(y, m, d - 6);
             
-            document.getElementById('dateFrom').value = toLocalDateString(lastWeek);
-            document.getElementById('dateTo').value = toLocalDateString(today);
+            document.getElementById('dateFrom').value = toLocalDateString(dateLastWeek);
+            document.getElementById('dateTo').value = toLocalDateString(dateToday);
             
             updateReport();
         }
@@ -205,7 +210,6 @@
                 html += `<tr><td>${code}</td>`;
                 
                 dates.forEach(date => {
-                    // Logic to find the balance for the specific date
                     const match = facilityData.filter(d => d.item_code === code && d.date <= date)
                                               .sort((a,b) => b.date.localeCompare(a.date))[0];
                     const balance = match ? match.balance : 0;
