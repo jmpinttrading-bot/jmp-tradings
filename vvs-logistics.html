@@ -159,7 +159,7 @@
     <div class="topbar">
         <h2 id="sidebarTitle">JMP System</h2>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
-    </div>
+    </div>    
 
     <div class="main-content">
         <div class="header">
@@ -167,7 +167,7 @@
             <div class="admin-badge" id="adminEmail">Loading Context...</div>
         </div>
 
-        <a href="inventory-management.html" class="back-link">⬅️ Back to Stock Dashboard</a>
+        <a href="inventory-management.html" class="back-link">⬅️ Back to Inventory Dashboard</a>
         
         <div class="workspace-grid">
 
@@ -494,13 +494,25 @@
             data.forEach(tx => {
                 const code = tx.item_code;
                 if (!code) return;
-                if (!itemBalances[code]) { itemBalances[code] = { data: tx, runningBalance: 0 }; }
-                itemBalances[code].runningBalance += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                
+                // Ensure entry exists
+                if (!itemBalances[code]) { 
+                    itemBalances[code] = { 
+                        data: tx, 
+                        runningBalance: 0 
+                    }; 
+                }
+                
+                // Aggregate logic
+                const inQty = parseInt(tx.in_quantity) || 0;
+                const outQty = parseInt(tx.out_quantity) || 0;
+                itemBalances[code].runningBalance += (inQty - outQty);
                 itemBalances[code].data = tx;
             });
 
             const distinctItems = [];
             for (const code in itemBalances) {
+                // Keep if balance > 0
                 if (itemBalances[code].runningBalance > 0) {
                     const itemEntry = itemBalances[code].data;
                     itemEntry.calculated_balance = itemBalances[code].runningBalance;
@@ -531,7 +543,10 @@
 
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
+            // Sort by date for calculation
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            
+            // Map the balance to each transaction ID for rendering
             const balanceMap = new Map();
             const itemRunningBalances = {};
             allSorted.forEach(tx => {
