@@ -19,12 +19,10 @@
 
         .main-content { padding: 20px; }
         
-        /* Updated Welcome Box with Larger Logo and Text */
         .welcome-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
         .welcome-logo { width: 80px; height: 80px; object-fit: contain; }
         #welcomeMsg { font-size: 1.8rem; margin: 0; color: #1e293b; }
         
-        /* Modernized Filter Section */
         .filter-section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; }
         .filter-group label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
@@ -38,7 +36,6 @@
         th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; }
         h2 { font-size: 1rem; margin-top: 0; padding: 10px; border-radius: 6px; color: white; }
 
-        /* Restriction Modal Styles */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -138,14 +135,14 @@
 
             document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
 
-            // Corrected Date Logic for Local Timezone (July 2, 2026)
             const now = new Date();
             const y = now.getFullYear();
             const m = now.getMonth();
             const d = now.getDate();
 
-            const dateToday = new Date(y, m, d);
-            const dateLastWeek = new Date(y, m, d - 6);
+            // Added +1 to d to correct the one-day delay
+            const dateToday = new Date(y, m, d + 1);
+            const dateLastWeek = new Date(y, m, d + 1 - 6);
             
             document.getElementById('dateFrom').value = toLocalDateString(dateLastWeek);
             document.getElementById('dateTo').value = toLocalDateString(dateToday);
@@ -192,7 +189,6 @@
                 current.setDate(current.getDate() + 1);
             }
 
-            // Reverse dates to show newest on the left
             dates.reverse();
 
             let html = `<div class="facility-container">
