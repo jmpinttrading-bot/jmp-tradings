@@ -2,19 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Master Product Registry & Inbound Gate - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
+        body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        .topbar { width: 100%; background-color: #0f172a; color: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #ee964b; }
-        .topbar h2 { font-size: 1.2rem; color: #ee964b; font-weight: 700; }
-        .logout-btn { background-color: #d9534f; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .logout-btn:hover { background-color: #c9302c; }
-        
-        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        /* Navbar Styles (Synced) */
+        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn.active { background: #475569; color: white; }
+
+        .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
@@ -108,14 +113,20 @@
         .modal-card { background: white; border-radius: 12px; max-width: 450px; width: 100%; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
         .modal-card h3 { font-size: 1.2rem; color: #0f172a; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
 
-        .notification-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .notification-card { background: white; border-radius: 12px; max-width: 400px; width: 100%; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .notification-card h3 { margin-bottom: 15px; color: #0f172a; }
-        .notification-card p { margin-bottom: 25px; color: #475569; font-size: 1rem; }
-        .btn-close-notif { background: #0f172a; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        /* Synced System Modal Overlays */
+        .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); }
+        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; }
+        .system-alert-header { padding: 20px 24px 10px; display: flex; align-items: center; gap: 12px; }
+        .system-alert-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; }
+        .system-alert-icon.success { background: #d1fae5; color: #065f46; }
+        .system-alert-icon.error { background: #fee2e2; color: #991b1b; }
+        .system-alert-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
+        .system-alert-content { padding: 10px 24px 24px; color: #475569; font-size: 0.95rem; }
+        .system-alert-actions { padding: 12px 24px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; }
+        .alert-btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+        .alert-btn-primary { background: #0f172a; color: white; }
 
         @media (max-width: 768px) {
-            .topbar { padding: 15px 20px; flex-direction: column; gap: 10px; text-align: center; }
             .form-row { flex-direction: column; gap: 0; }
             .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
             .search-engine-block { max-width: 100%; }
@@ -127,10 +138,20 @@
 </head>
 <body>
 
-    <div class="topbar">
-        <h2 id="sidebarTitle">JMP System</h2>
-        <button class="logout-btn" onclick="handleLogout()">Logout</button>
-    </div>
+    <nav class="navbar">
+        <div class="top-row">
+            <div class="nav-title" id="sidebarTitle">JMP INTERNATIONAL FISH TRADING</div>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-btn">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
+            <a href="import-docs.html" class="nav-btn">Imports</a>
+            <a href="inventory-management.html" class="nav-btn active">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn">Settings</a>
+        </div>
+    </nav>
 
     <div class="main-content">
         <div class="header">
@@ -276,11 +297,16 @@
         </div>
     </div>
 
-    <div class="notification-modal" id="notificationModal">
-        <div class="notification-card">
-            <h3 id="notifTitle">System Notification</h3>
-            <p id="notifMessage"></p>
-            <button class="btn-close-notif" onclick="closeNotification()">Dismiss</button>
+    <div class="system-alert-overlay" id="systemAlertOverlay">
+        <div class="system-alert-card">
+            <div class="system-alert-header">
+                <div class="system-alert-icon success" id="systemAlertIcon">✓</div>
+                <div class="system-alert-title" id="systemAlertTitle">Notification</div>
+            </div>
+            <div class="system-alert-content" id="systemAlertContent">Message placeholder</div>
+            <div class="system-alert-actions">
+                <button class="alert-btn alert-btn-primary" onclick="closeSystemModal()">Dismiss</button>
+            </div>
         </div>
     </div>
 
@@ -339,6 +365,7 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let globallyFetchedItems = [];
+        let currentUserSessionData = null;
         
         let permissions = {
             isAdmin: false,
@@ -352,6 +379,17 @@
             style: 'currency',
             currency: 'PHP'
         });
+
+        // Synced Modals Core
+        function showSystemModal(type, title, message) {
+            document.getElementById('systemAlertTitle').textContent = title;
+            document.getElementById('systemAlertContent').textContent = message;
+            document.getElementById('systemAlertIcon').className = `system-alert-icon ${type}`;
+            document.getElementById('systemAlertIcon').textContent = type === 'success' ? '✓' : '✕';
+            document.getElementById('systemAlertOverlay').style.display = 'flex';
+        }
+
+        function closeSystemModal() { document.getElementById('systemAlertOverlay').style.display = 'none'; }
 
         function applyCurrencyFormatting(input) {
             const rawValue = input.value.replace(/[^0-9.-]+/g, "");
@@ -379,19 +417,7 @@
         }
 
         function showAlert(msg, type) {
-            const modal = document.getElementById('notificationModal');
-            const msgEl = document.getElementById('notifMessage');
-            const titleEl = document.getElementById('notifTitle');
-            
-            msgEl.textContent = msg;
-            titleEl.textContent = type === 'error' ? '⚠️ System Alert' : '✅ Success';
-            titleEl.style.color = type === 'error' ? '#d9534f' : '#059669';
-            
-            modal.style.display = 'flex';
-        }
-
-        function closeNotification() {
-            document.getElementById('notificationModal').style.display = 'none';
+            showSystemModal(type === 'error' ? 'error' : 'success', type === 'error' ? '⚠️ System Alert' : '✅ Success', msg);
         }
 
         async function autoGenerateSkuCode() {
@@ -453,7 +479,7 @@
                 skuInput.value = `${prefix}${spsicNum}-${commAbbr}-${sequenceNum}`;
 
             } catch (err) {
-                console.error("SKU tracking dynamic calculation exception layout fault: ", err.message);
+                console.error("SKU tracking dynamic calculation error: ", err.message);
                 skuInput.value = "GENERATION ENG ERROR";
             }
         }
@@ -518,6 +544,7 @@
             
             currentAdminId = user.id;
             currentUserEmail = user.email;
+            currentUserSessionData = user;
             
             const { data: profile } = await supabaseClient
                 .from('profiles')
@@ -525,6 +552,8 @@
                 .eq('id', user.id)
                 .single();
             
+            setupSettingsProtection();
+
             if (profile && profile.role === 'Admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
@@ -534,7 +563,7 @@
                 
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
-                document.getElementById('sidebarTitle').textContent = "JMP Admin HQ";
+                document.getElementById('sidebarTitle').textContent = "JMP ADMIN HQ";
             } else {
                 const masterAccess = profile ? profile.inventory_access !== false : false;
                 
@@ -552,17 +581,42 @@
 
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
-                document.getElementById('sidebarTitle').textContent = "JMP Terminal";
+                document.getElementById('sidebarTitle').textContent = "JMP TERMINAL";
             }
             
             applyFormUIRestrictions();
             fetchLedgerDataset();
             
-            // Updated event listeners
             document.getElementById('itemName').addEventListener('input', autoGenerateSkuCode);
             document.getElementById('itemSizes').addEventListener('input', autoGenerateSkuCode);
 
             setupSessionCrossCheckListener();
+        }
+
+        function setupSettingsProtection() {
+            const settingsBtn = document.getElementById('settingsBtn');
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const userRole = currentUserSessionData.user_metadata?.role || "";
+                    
+                    if (userRole.toUpperCase() === "ADMIN") {
+                        window.location.href = "admin-dashboard.html";
+                    } else {
+                        const { data: profile } = await supabaseClient
+                            .from('profiles')
+                            .select('role')
+                            .eq('id', currentUserSessionData.id)
+                            .maybeSingle();
+
+                        if (profile && profile.role?.toUpperCase() === "ADMIN") {
+                            window.location.href = "admin-dashboard.html";
+                        } else {
+                            showSystemModal('error', 'Access Denied', 'You do not hold the required Administrative privileges to access Control Settings.');
+                        }
+                    }
+                });
+            }
         }
 
         function applyFormUIRestrictions() {
@@ -725,8 +779,7 @@
                     .insert([transactionPayload]);
 
                 if (txError) {
-                    console.error("Audit log failed to save record payload: ", txError.message);
-                    showAlert("Balances modified inside active registry, but transactions audit subtrace log generation failed.", "error");
+                    showAlert("Balances modified inside active registry, but transactions audit trace log creation failed.", "error");
                 } else {
                     showAlert("Quantity stock parameters updated and transaction audit tracking successfully generated.", "success");
                 }
@@ -764,12 +817,10 @@
             document.getElementById('itemSizes').value = item.sizes || '';
             document.getElementById('itemCommodity').value = item.commodity || '';
             document.getElementById('storageFacility').value = item.storage_facility || '';
-            
             document.getElementById('dateReceived').value = item.date || ''; 
             
             const parsedPrice = parseFloat(item.unit_price || 0);
             document.getElementById('unitPrice').value = pesoFormatter.format(parsedPrice);
-            
             document.getElementById('formRemarks').value = item.remarks || '';
             
             document.getElementById('initialQtyWrapper').style.display = "none";
@@ -814,7 +865,7 @@
             const editRemarksText = document.getElementById('modalItemEditRemarks').value.trim();
 
             if (editRemarksText === "") {
-                showAlert("Editing aborted: You must supply valid edit remarks documentation reasons to apply modifications.", "error");
+                showAlert("Editing aborted: You must supply valid edit remarks reasons to apply modifications.", "error");
                 return;
             }
 
@@ -894,11 +945,6 @@
                 return;
             }
 
-            if (!newInventoryItem || !newInventoryItem.id) {
-                showAlert("Error: Inventory record created, but system could not retrieve the generated ID token.", "error");
-                return;
-            }
-
             const transactionPayload = {
                 item_id: newInventoryItem.id, 
                 item_code: item_code,
@@ -921,7 +967,6 @@
                 .insert([transactionPayload]);
 
             if (txError) {
-                console.error("Unified transactions sub-ledger audit trail log failed: ", txError.message);
                 showAlert("Inventory registered, but transaction history failed to write: " + txError.message, "error");
                 return;
             }
@@ -943,7 +988,7 @@
             document.getElementById('unitPrice').value = "";
             document.getElementById('remarksLabel').textContent = "Additional Note/Remarks";
             document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
-            document.getElementById('submitBtn').textContent = "Process Gate Arrival & Register";
+            document.getElementById('submitBtn').textContent = "Process Inbound & Item Register";
             
             applyFormUIRestrictions();
         }
