@@ -170,14 +170,25 @@
             const facilityData = allData.filter(d => d.storage_facility && d.storage_facility.trim() === name.trim());
             const itemsAtFacility = [...new Set(facilityData.map(d => d.item_code))].filter(Boolean);
             
+            const parseDate = (dStr) => {
+                const [y, m, d] = dStr.split('-');
+                return [parseInt(y), parseInt(m) - 1, parseInt(d)];
+            };
+
             let dates = [];
-            let curr = new Date(start + 'T00:00:00');
-            let endDate = new Date(end + 'T00:00:00');
+            let [currY, currM, currD] = parseDate(start);
+            let [endY, endM, endD] = parseDate(end);
             
-            while (curr <= endDate) {
-                dates.push(curr.toISOString().split('T')[0]);
-                curr.setDate(curr.getDate() + 1);
+            let current = new Date(currY, currM, currD);
+            let target = new Date(endY, endM, endD);
+            
+            while (current <= target) {
+                dates.push(current.toISOString().split('T')[0]);
+                current.setDate(current.getDate() + 1);
             }
+
+            // Reverse dates to show newest on the left
+            dates.reverse();
 
             let html = `<div class="facility-container">
                 <h2 style="background-color: ${color};">${name}</h2>
@@ -192,14 +203,13 @@
 
             itemsAtFacility.forEach(code => {
                 html += `<tr><td>${code}</td>`;
-                let lastBalance = 0;
-                const past = facilityData.filter(d => d.item_code === code && d.date < start);
-                if (past.length > 0) lastBalance = past[past.length - 1].balance;
-
+                
                 dates.forEach(date => {
-                    const match = facilityData.find(d => d.item_code === code && d.date === date);
-                    if (match) lastBalance = match.balance;
-                    html += `<td>${lastBalance}</td>`;
+                    // Logic to find the balance for the specific date
+                    const match = facilityData.filter(d => d.item_code === code && d.date <= date)
+                                              .sort((a,b) => b.date.localeCompare(a.date))[0];
+                    const balance = match ? match.balance : 0;
+                    html += `<td>${balance}</td>`;
                 });
                 html += `</tr>`;
             });
