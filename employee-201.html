@@ -183,7 +183,7 @@
                 given_name: document.getElementById('givenName').value,
                 middle_name: document.getElementById('middleName').value,
                 surname: document.getElementById('surname').value,
-                date_of_birth: document.getElementById('dob').value,
+                date_of_birth: document.getElementById('dob').value || null, // Format check for blank dates
                 present_address: document.getElementById('address').value,
                 phone_no: document.getElementById('phoneNo').value,
                 emergency_contact_name: document.getElementById('emergencyName').value,
@@ -193,9 +193,19 @@
                 pagibig_no: document.getElementById('pagibigNo').value,
                 philhealth_no: document.getElementById('philhealthNo').value
             };
-            await supabaseClient.from('employee_201_docs').upsert(payload);
-            showNotification("Records have been successfully updated.");
-            document.getElementById('dossierModal').style.display = 'none';
+
+            // Added error logging handling and targeted conflict mapping targeting the primary key 'id'
+            const { error } = await supabaseClient
+                .from('employee_201_docs')
+                .upsert(payload, { onConflict: 'id' });
+
+            if (error) {
+                console.error("Save Error Details: ", error);
+                showNotification("Error updating files: " + error.message);
+            } else {
+                showNotification("Records have been successfully updated.");
+                document.getElementById('dossierModal').style.display = 'none';
+            }
         }
 
         function handleLogout() { supabaseClient.auth.signOut(); window.location.href = "login.html"; }
