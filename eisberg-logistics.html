@@ -108,6 +108,13 @@
         .btn-action-return:hover { background: #0369a1; }
         .btn-action-cancel { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
         .btn-action-cancel:hover { background: #c9302c; }
+
+        /* --- Pagination Container Styles --- */
+        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 20px; padding: 10px; }
+        .btn-pagination { background: #1e293b; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; transition: 0.2s; }
+        .btn-pagination:hover:not(:disabled) { background: #ee964b; color: #0f172a; }
+        .btn-pagination:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .page-info { font-size: 0.9rem; font-weight: 600; color: #475569; }
         
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
 
@@ -305,6 +312,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="pagination-container" id="paginationControls"></div>
             </div>
 
         </div>
@@ -326,10 +335,15 @@
         let currentAdminId = null;
         let currentUserEmail = "";
         let bypassAuthListener = false;
-        let currentUserRole = "employee"; // Added role state handler tracking
+        let currentUserRole = "employee"; 
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
+
+        // Pagination Tracking Variables
+        let currentPage = 1;
+        const rowsPerPage = 15;
+        let currentLedgerItems = [];
         
         let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
 
@@ -578,8 +592,11 @@
                 .eq('storage_facility', 'EISBERG COLD LOGISTICS INC.')
                 .order('created_at', { ascending: false });
             if (error) { showAlert("System error: " + error.message, "error"); return; }
+            
             globallyFetchedHistory = data || [];
-            renderLedgerTable(globallyFetchedHistory);
+            currentLedgerItems = globallyFetchedHistory;
+            currentPage = 1; 
+            renderLedgerTable();
         }
 
         function populateStockDropdown(items) {
@@ -589,8 +606,15 @@
             dropdown.innerHTML = optionsHtml;
         }
 
-        function renderLedgerTable(items) {
+        function renderLedgerTable() {
             const tbody = document.getElementById('ledgerTableBody');
+            
+            if (currentLedgerItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">No records found.</td></tr>`;
+                document.getElementById('paginationControls').innerHTML = '';
+                return;
+            }
+
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             
             const balanceMap = new Map();
@@ -602,7 +626,15 @@
                 balanceMap.set(tx.id, itemRunningBalances[code]);
             });
 
-            tbody.innerHTML = items.map((item, index) => {
+            // Calculate Pagination Parameters
+            const totalPages = Math.ceil(currentLedgerItems.length / rowsPerPage);
+            if (currentPage > totalPages) currentPage = totalPages || 1;
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const paginatedItems = currentLedgerItems.slice(startIndex, endIndex);
+
+            tbody.innerHTML = paginatedItems.map((item) => {
                 return `
                     <tr>
                         <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
@@ -618,17 +650,35 @@
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
                             <div class="action-btn-group">
-                                <button type="button" class="btn-action-return" onclick="prepareEdit(${index})">Edit</button>
-                                <button type="button" class="btn-action-cancel" onclick="showCancelDialog(${index})">Cancel</button>
+                                <button type="button" class="btn-action-return" onclick="prepareEdit('${item.id}')">Edit</button>
+                                <button type="button" class="btn-action-cancel" onclick="showCancelDialog('${item.id}')">Cancel</button>
                             </div>
                         </td>
                     </tr>
                 `;
             }).join('');
+
+            renderPaginationControls(totalPages);
+        }
+
+        function renderPaginationControls(totalPages) {
+            const controlsContainer = document.getElementById('paginationControls');
+            controlsContainer.innerHTML = `
+                <button type="button" class="btn-pagination" id="prevPageBtn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(-1)">Previous</button>
+                <span class="page-info">Page ${currentPage} of ${totalPages}</span>
+                <button type="button" class="btn-pagination" id="nextPageBtn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(1)">Next</button>
+            `;
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderLedgerTable();
         }
         
-        function prepareEdit(index) {
-            const item = globallyFetchedHistory[index];
+        function prepareEdit(id) {
+            const item = globallyFetchedHistory.find(x => x.id == id);
+            if (!item) return;
+
             document.getElementById('selectedTransactionRowId').value = item.id;
             document.getElementById('itemCode').value = item.item_code;
             document.getElementById('itemName').value = item.item_name;
@@ -645,22 +695,21 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function showCancelDialog(index) {
+        function showCancelDialog(id) {
             const modal = document.getElementById('cancelModal');
             const confirmBtn = document.getElementById('confirmCancelBtn');
             confirmBtn.onclick = () => {
                 modal.close();
-                executeCancel(index);
+                executeCancel(id);
             };
             modal.showModal();
         }
 
-        async function executeCancel(index) {
-            const item = globallyFetchedHistory[index];
+        async function executeCancel(id) {
             const { error } = await supabaseClient
                 .from('transactions')
                 .update({ out_quantity: 0, remarks: "CANCELLED ORDER" })
-                .eq('id', item.id);
+                .eq('id', id);
 
             if (error) { showAlert("Error cancelling: " + error.message, "error"); }
             else {
@@ -734,12 +783,16 @@
         function filterLedgerByDescription() {
             const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
             const filtered = globallyFetchedHistory.filter(item => (item.item_name || "").toLowerCase().includes(filterQuery));
-            renderLedgerTable(filtered);
+            currentLedgerItems = filtered;
+            currentPage = 1; 
+            renderLedgerTable();
         }
 
         function clearDescriptionFilter() {
             document.getElementById('descSearchQuery').value = "";
-            renderLedgerTable(globallyFetchedHistory);
+            currentLedgerItems = globallyFetchedHistory;
+            currentPage = 1; 
+            renderLedgerTable();
         }
 
         function setupSessionCrossCheckListener() {
