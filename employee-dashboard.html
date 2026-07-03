@@ -214,8 +214,25 @@
 
         async function handleChangePassword(e) {
             e.preventDefault();
-            await supabaseClient.auth.updateUser({ password: document.getElementById('newPassword').value });
-            alert("Password updated!");
+            const newPasswordInput = document.getElementById('newPassword');
+            const newPasswordValue = newPasswordInput.value;
+
+            if (newPasswordValue.length < 6) {
+                alert("Password must be at least 6 characters long.");
+                return;
+            }
+
+            const { data, error } = await supabaseClient.auth.updateUser({ 
+                password: newPasswordValue 
+            });
+
+            if (error) {
+                console.error("Password Update Error:", error.message);
+                alert("Failed to update password: " + error.message);
+            } else {
+                alert("Password successfully updated!");
+                newPasswordInput.value = ""; 
+            }
         }
 
         async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
