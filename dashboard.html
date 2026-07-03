@@ -234,13 +234,8 @@
                 html += `</tr>`;
             });
 
-            // Injection of table row tracking individual day totals
-            html += `<tr style="background-color: #f1f5f9; font-weight: 700;">
-                        <td>DAILY TOTALS</td>`;
-            columnTotals.forEach(total => {
-                html += `<td>${total.toLocaleString()}</td>`;
-            });
-            html += `</tr></table>`;
+            // Close the table without rendering the DAILY TOTALS row
+            html += `</table>`;
 
             // Calculate active dynamic ending stock balance (index 0 is latest date column)
             const currentLiveFacilityTotal = columnTotals[0] || 0;
