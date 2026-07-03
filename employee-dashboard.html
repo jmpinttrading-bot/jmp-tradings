@@ -56,7 +56,7 @@
         </div>
         <div class="nav-links">
             <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Profile Management', '#')">My Profile</a>
+            <a href="#" class="nav-btn">My Profile</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">Imports</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">Inventory</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">Sales</a>
@@ -76,11 +76,13 @@
             <div class="grid">
                 <div class="card">
                     <h3>My 201 Dossier Master File</h3>
+                    
                     <div class="section-title">Employment Track Details</div>
                     <div class="form-row">
                         <div class="form-group"><label>Company ID Number</label><input type="text" id="empIdNo" readonly></div>
                         <div class="form-group"><label>Date Hired</label><input type="text" id="dateHired" readonly></div>
                     </div>
+                    
                     <div class="section-title">Personal Identity Matrix</div>
                     <div class="form-row triple">
                         <div class="form-group"><label>Given Name</label><input type="text" id="givenName" readonly></div>
@@ -88,13 +90,27 @@
                         <div class="form-group"><label>Surname</label><input type="text" id="surname" readonly></div>
                     </div>
                     <div class="form-group"><label>Date of Birth</label><input type="text" id="dateOfBirth" readonly></div>
+                    
                     <div class="section-title">Contact & Communication</div>
-                    <div class="form-row full"><div class="form-group"><label>Present Address</label><input type="text" id="presentAddress" readonly></div></div>
+                    <div class="form-row full">
+                        <div class="form-group"><label>Present Address</label><input type="text" id="presentAddress" readonly></div>
+                    </div>
                     <div class="form-group"><label>Employee Contact Number</label><input type="text" id="phoneNo" readonly></div>
+                    
+                    <div class="section-title">Emergency Contact Details</div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Emergency Contact Person</label><input type="text" id="emergencyName" readonly></div>
+                        <div class="form-group"><label>Contact Number</label><input type="text" id="emergencyPhone" readonly></div>
+                    </div>
+
                     <div class="section-title">Government Documentation</div>
                     <div class="form-row">
                         <div class="form-group"><label>SSS Number</label><input type="text" id="sssNo" readonly></div>
                         <div class="form-group"><label>TIN Number</label><input type="text" id="tinNo" readonly></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Pag-IBIG MID</label><input type="text" id="pagibigNo" readonly></div>
+                        <div class="form-group"><label>PhilHealth</label><input type="text" id="philhealthNo" readonly></div>
                     </div>
                 </div>
                 <div>
@@ -177,8 +193,12 @@
                 document.getElementById('dateOfBirth').value = data.date_of_birth || '';
                 document.getElementById('presentAddress').value = data.present_address || '';
                 document.getElementById('phoneNo').value = data.phone_no || '';
+                document.getElementById('emergencyName').value = data.emergency_contact_name || '';
+                document.getElementById('emergencyPhone').value = data.emergency_contact_phone || '';
                 document.getElementById('sssNo').value = data.sss_no || '';
                 document.getElementById('tinNo').value = data.tin_no || '';
+                document.getElementById('pagibigNo').value = data.pagibig_no || '';
+                document.getElementById('philhealthNo').value = data.philhealth_no || '';
                 if(data.avatar_url) document.getElementById('profilePicFrame').innerHTML = `<img src="${data.avatar_url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
             }
         }
