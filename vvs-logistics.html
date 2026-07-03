@@ -109,6 +109,13 @@
         .btn-action-cancel { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
         .btn-action-cancel:hover { background: #c9302c; }
         
+        /* --- Pagination Layout Styles --- */
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 20px; padding: 0 25px; }
+        .pagination-info { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+        .pagination-btn { background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+        .pagination-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #f8fafc; }
+
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
 
         dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
@@ -128,6 +135,7 @@
             .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
             .ledger-search-box { width: 100%; }
             .ledger-search-box input { width: 100%; }
+            .pagination-container { justify-content: center; width: 100%; }
         }
     </style>
 </head>
@@ -305,6 +313,12 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="pagination-container">
+                    <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+                    <button type="button" class="pagination-btn" id="prevPageBtn" onclick="changeLedgerPage(-1)" disabled>Previous</button>
+                    <button type="button" class="pagination-btn" id="nextPageBtn" onclick="changeLedgerPage(1)" disabled>Next</button>
+                </div>
             </div>
 
         </div>
@@ -326,14 +340,18 @@
         let currentAdminId = null;
         let currentUserEmail = "";
         let bypassAuthListener = false;
-        let currentUserRole = "employee"; // Added role state handler tracking
+        let currentUserRole = "employee"; 
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
+        let currentActiveFilteredList = []; // Track filtered vs complete history indices
+        
+        // --- Pagination Global Trackers ---
+        let currentPage = 1;
+        const rowsPerPage = 15;
         
         let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
 
-        /* --- Copied Dashboard Restriction Script Logic --- */
         function checkAccess(event) {
             if (currentUserRole !== 'admin') {
                 event.preventDefault();
@@ -579,7 +597,9 @@
                 .order('created_at', { ascending: false });
             if (error) { showAlert("System error: " + error.message, "error"); return; }
             globallyFetchedHistory = data || [];
-            renderLedgerTable(globallyFetchedHistory);
+            currentActiveFilteredList = [...globallyFetchedHistory];
+            currentPage = 1; // Reset back to initial index block
+            renderLedgerTable(currentActiveFilteredList);
         }
 
         function populateStockDropdown(items) {
@@ -591,10 +611,20 @@
 
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
-            const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             
+            if (!items || items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">No matching running history discovered.</td></tr>`;
+                document.getElementById('paginationInfo').textContent = "Page 1 of 1";
+                document.getElementById('prevPageBtn').disabled = true;
+                document.getElementById('nextPageBtn').disabled = true;
+                return;
+            }
+
+            // Always calculate accurate running cumulative balances across full history context
+            const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const balanceMap = new Map();
             const itemRunningBalances = {};
+            
             allSorted.forEach(tx => {
                 const code = tx.item_code;
                 if (!itemRunningBalances[code]) itemRunningBalances[code] = 0;
@@ -602,7 +632,24 @@
                 balanceMap.set(tx.id, itemRunningBalances[code]);
             });
 
-            tbody.innerHTML = items.map((item, index) => {
+            // Calculate pagination indices
+            const totalRows = items.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+            
+            if (currentPage > totalPages) currentPage = totalPages || 1;
+            
+            const startIdx = (currentPage - 1) * rowsPerPage;
+            const endIdx = startIdx + rowsPerPage;
+            const paginatedItems = items.slice(startIdx, endIdx);
+
+            // Update page pagination information indicators
+            document.getElementById('paginationInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prevPageBtn').disabled = currentPage === 1;
+            document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+
+            tbody.innerHTML = paginatedItems.map((item) => {
+                // Discover correct global history index structure for accurate data assignments inside modify prompts
+                const originalGlobalIndex = globallyFetchedHistory.findIndex(row => row.id === item.id);
                 return `
                     <tr>
                         <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
@@ -618,8 +665,8 @@
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
                             <div class="action-btn-group">
-                                <button type="button" class="btn-action-return" onclick="prepareEdit(${index})">Edit</button>
-                                <button type="button" class="btn-action-cancel" onclick="showCancelDialog(${index})">Cancel</button>
+                                <button type="button" class="btn-action-return" onclick="prepareEdit(${originalGlobalIndex})">Edit</button>
+                                <button type="button" class="btn-action-cancel" onclick="showCancelDialog(${originalGlobalIndex})">Cancel</button>
                             </div>
                         </td>
                     </tr>
@@ -627,6 +674,15 @@
             }).join('');
         }
         
+        // --- Page State Change Engine ---
+        function changeLedgerPage(direction) {
+            const totalPages = Math.ceil(currentActiveFilteredList.length / rowsPerPage);
+            currentPage += direction;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            renderLedgerTable(currentActiveFilteredList);
+        }
+
         function prepareEdit(index) {
             const item = globallyFetchedHistory[index];
             document.getElementById('selectedTransactionRowId').value = item.id;
@@ -733,13 +789,16 @@
 
         function filterLedgerByDescription() {
             const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
-            const filtered = globallyFetchedHistory.filter(item => (item.item_name || "").toLowerCase().includes(filterQuery));
-            renderLedgerTable(filtered);
+            currentActiveFilteredList = globallyFetchedHistory.filter(item => (item.item_name || "").toLowerCase().includes(filterQuery));
+            currentPage = 1; // Return to first dataset offset block
+            renderLedgerTable(currentActiveFilteredList);
         }
 
         function clearDescriptionFilter() {
             document.getElementById('descSearchQuery').value = "";
-            renderLedgerTable(globallyFetchedHistory);
+            currentActiveFilteredList = [...globallyFetchedHistory];
+            currentPage = 1; 
+            renderLedgerTable(currentActiveFilteredList);
         }
 
         function setupSessionCrossCheckListener() {
