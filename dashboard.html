@@ -9,7 +9,6 @@
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         
-        /* Updated Navigation Styles to match Employee Dashboard */
         .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
@@ -142,7 +141,6 @@
             const m = now.getMonth();
             const d = now.getDate();
 
-            // Shifted forward by 1 day to ensure current date is displayed
             const dateToday = new Date(y, m, d + 1);
             const dateLastWeek = new Date(y, m, d + 1 - 6);
             
@@ -157,9 +155,10 @@
             const end = document.getElementById('dateTo').value;
             const container = document.getElementById('reportContainer');
             
+            // Added unique row identification ('id') to handle precise transaction chronologies
             const { data, error } = await supabaseClient
                 .from('transactions')
-                .select('item_code, date, balance, storage_facility')
+                .select('id, item_code, date, balance, storage_facility')
                 .lte('date', end)
                 .order('date', { ascending: true });
 
@@ -208,8 +207,12 @@
                 html += `<tr><td>${code}</td>`;
                 
                 dates.forEach(date => {
+                    // Fixed logic: Sorted by date descending, falling back to ID descending to get the absolute latest balance entry
                     const match = facilityData.filter(d => d.item_code === code && d.date <= date)
-                                              .sort((a,b) => b.date.localeCompare(a.date))[0];
+                                              .sort((a, b) => {
+                                                  const dateCompare = b.date.localeCompare(a.date);
+                                                  return dateCompare !== 0 ? dateCompare : (b.id - a.id);
+                                              })[0];
                     const balance = match ? match.balance : 0;
                     html += `<td>${balance}</td>`;
                 });
