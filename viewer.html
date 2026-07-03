@@ -34,9 +34,6 @@
         
         .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .approve-action-btn { background: #22c55e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
-        .download-action-btn { background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .download-action-btn:hover { background: #1d4ed8; }
-        
         .doc-header-title { font-size: 1rem; color: #0f172a; margin: 5px 0 12px 0; display: flex; justify-content: space-between; align-items: center; user-select: none; }
         .upload-date-span { font-size: 0.85rem; color: #64748b; font-weight: normal; background: #e2e8f0; padding: 2px 8px; border-radius: 4px; }
         .double-click-badge { font-size: 0.75rem; color: #2563eb; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px dashed #2563eb; padding: 2px 6px; border-radius: 4px; background: #eff6ff; }
@@ -222,7 +219,7 @@
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">CV Number</span>
-                    <span class="meta-value">${(doc.cv_no || 'N/A').toUpperCase()}</span>
+                    <span class="meta-value">${(doc.cv_number || 'N/A').toUpperCase()}</span>
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">Verification Status</span>
