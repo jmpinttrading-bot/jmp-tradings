@@ -7,7 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; }
@@ -58,6 +57,7 @@
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; }
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
+        .empty-placeholder { background: #f8fafc; border: 2px dashed #e2e8f0; padding: 30px; text-align: center; border-radius: 8px; color: #64748b; font-size: 0.9rem; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -184,6 +184,7 @@
         let currentUserRole = "employee"; 
         let activeInspectingRecordId = null;
         let activeFilesList = []; 
+        let currentLoadedWorkspaceRows = [];
 
         const monthsLabels = [
             { text: "Jan", value: "01" }, { text: "Feb", value: "02" },
@@ -217,28 +218,153 @@
             iframe.style.maxWidth = isZoomed ? "100%" : "900px";
         }
 
+        // Shared native spreadsheet generation algorithm matching engine layout rules
+        function generateStyledExcelBlob(records) {
+            let excelTemplate = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                <style>
+                    td, th { white-space: nowrap !important; font-family: 'Segoe UI', sans-serif; font-size: 11pt; }
+                    .header-title { font-size: 16pt; font-weight: bold; color: #1e293b; vertical-align: middle; }
+                    .table-th { background-color: #f1f5f9; font-weight: bold; border: 0.5pt solid #cbd5e1; padding: 6px; text-align: left; }
+                    .table-td { border: 0.5pt solid #e2e8f0; padding: 6px; }
+                </style>
+                </head>
+                <body>
+                <table>
+                    <tr style="height: 45pt;">
+                        <td style="vertical-align: middle; text-align: center;">
+                            <img src="${window.location.origin}/circle-logo.png" width="50" height="50" style="display:block;" />
+                        </td>
+                        <td colspan="10" class="header-title" style="vertical-align: middle; padding-left: 10px;">
+                            JMP INTERNATIONAL FISH TRADINGS
+                        </td>
+                    </tr>
+                    <tr style="height: 15pt;"><td colspan="11"></td></tr>
+                    <tr>
+                        <th class="table-th">SPSIC Number</th>
+                        <th class="table-th">Created Date</th>
+                        <th class="table-th">Approved Date</th>
+                        <th class="table-th">Expiration Date</th>
+                        <th class="table-th">Storage</th>
+                        <th class="table-th">Commodity</th>
+                        <th class="table-th">Storage Arrival Date</th>
+                        <th class="table-th">Client Name</th>
+                        <th class="table-th">CV Number</th>
+                        <th class="table-th">Current Status</th>
+                    </tr>
+            `;
+
+            if (records && records.length > 0) {
+                records.forEach(row => {
+                    excelTemplate += `
+                        <tr>
+                            <td class="table-td">${row.spsic_number || ''}</td>
+                            <td class="table-td">${formatHumanReadableDate(row.s_date)}</td>
+                            <td class="table-td">${formatHumanReadableDate(row.approved_date)}</td>
+                            <td class="table-td">${formatHumanReadableDate(row.expiration_date)}</td>
+                            <td class="table-td">${(row.storage_location || '').toUpperCase()}</td>
+                            <td class="table-td">${(row.commodity || '').toUpperCase()}</td>
+                            <td class="table-td">${formatHumanReadableDate(row.storage_arrival_date)}</td>
+                            <td class="table-td">${(row.client_name || '').toUpperCase()}</td>
+                            <td class="table-td">${(row.cv_number || '').toUpperCase()}</td>
+                            <td class="table-td">${(row.status || '').toUpperCase()}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                excelTemplate += `<tr><td colspan="11" class="table-td" style="text-align:center; color:#94a3b8;">No records found for this period.</td></tr>`;
+            }
+
+            excelTemplate += `</table></body></html>`;
+            return new Blob([excelTemplate], { type: 'application/vnd.ms-excel' });
+        }
+
         async function exportWorkspaceTableToExcel() {
-            const table = document.getElementById("folderDataTable");
-            const wb = XLSX.utils.table_to_book(table, { sheet: "Monthly Log" });
-            XLSX.writeFile(wb, `Shipment_Logs_${selectedFolderMonth || 'Archive'}.xlsx`);
+            const blob = generateStyledExcelBlob(currentLoadedWorkspaceRows);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.setAttribute("href", url);
+            a.setAttribute("download", `Shipment_Logs_${selectedFolderMonth || 'Archive'}.xls`);
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
 
         async function downloadEntireYearDirectory() {
             const year = document.getElementById('directoryYearSelect').value;
-            showSystemModal({ title: 'Processing', message: 'Compiling files... Please wait.' });
+            showSystemModal({ title: 'Processing Package', message: 'Compiling all 12 monthly modules and remote repository documentation files. Please hold...' });
+            
             try {
-                const { data } = await supabaseClient.from('imported_shipment_docs').select('*').ilike('target_month', `${year}-%`);
+                // Fetch all data for the specified year
+                const { data: allYearRecords, error } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .select('*')
+                    .ilike('target_month', `${year}-%`);
+                
+                if (error) throw error;
                 const zip = new JSZip();
-                zip.file(`Archive_${year}.json`, JSON.stringify(data, null, 2));
+
+                // Process every single month sequentially (01 - 12)
+                for (const m of monthsLabels) {
+                    const targetMonthString = `${year}-${m.value}`;
+                    const folderName = `SPSIC ${year}/${m.value}_${m.text.toUpperCase()}`;
+                    
+                    // Filter down rows belonging strictly to this month segment
+                    const monthRecords = allYearRecords ? allYearRecords.filter(r => r.target_month === targetMonthString) : [];
+                    
+                    // 1. Write the custom styled corporate layout Excel sheet into the month directory
+                    const excelBlob = generateStyledExcelBlob(monthRecords);
+                    zip.file(`${folderName}/Monthly_Report_${m.value}.xls`, excelBlob);
+
+                    // 2. Download and include all attachment binary objects if they exist
+                    for (const doc of monthRecords) {
+                        const filePaths = [
+                            { path: doc.spsic_file_path, suffix: 'SPSIC' },
+                            { path: doc.arrival_notice_path, suffix: 'ArrivalNotice' },
+                            { path: doc.import_docs_path, suffix: 'ImportDocs' }
+                        ];
+
+                        for (const item of filePaths) {
+                            if (item.path) {
+                                try {
+                                    const { data: fileBlob, error: downloadError } = await supabaseClient.storage
+                                        .from(STORAGE_BUCKET_NAME)
+                                        .download(item.path);
+
+                                    if (!downloadError && fileBlob) {
+                                        const cleanFileName = item.path.split('/').pop();
+                                        zip.file(`${folderName}/SPSIC-${doc.spsic_number}/${cleanFileName}`, fileBlob);
+                                    }
+                                } catch (e) {
+                                    console.error(`Skipping an attachment reference due to stream payload interruption:`, e);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 const content = await zip.generateAsync({ type: "blob" });
                 const link = document.createElement("a");
                 link.href = URL.createObjectURL(content);
-                link.download = `JMP_Archive_${year}.zip`;
+                link.download = `SPSIC_${year}_Directory_Folder.zip`;
                 link.click();
                 closeRestrictionModal();
             } catch (err) {
-                showSystemModal({ title: 'Error', message: err.message });
+                showSystemModal({ title: 'Archive Generation Error', message: err.message });
             }
+        }
+
+        function addNewYearFolder() {
+            const nextYear = availableYears[availableYears.length - 1] + 1;
+            availableYears.push(nextYear);
+            const select = document.getElementById('directoryYearSelect');
+            const opt = document.createElement('option');
+            opt.value = nextYear;
+            opt.textContent = `${nextYear} Directory Folder`;
+            select.appendChild(opt);
+            select.value = nextYear;
+            buildMonthlyFolders();
+            toggleWorkspaceView();
         }
 
         function checkAccess(event) {
@@ -291,7 +417,7 @@
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
+            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).maybeSingle();
             if (profile) currentUserRole = profile.role.toLowerCase().trim();
             
             initYearSelectOptions(new Date().getFullYear());
@@ -301,6 +427,7 @@
 
         function initYearSelectOptions(defaultYear) {
             const select = document.getElementById('directoryYearSelect');
+            select.innerHTML = "";
             availableYears.forEach(yr => {
                 const opt = document.createElement('option');
                 opt.value = yr;
@@ -343,6 +470,8 @@
         }
 
         async function fetchDocuments() {
+            const searchQuery = document.getElementById('docSearchBox').value.trim();
+            
             const { data: actionableData } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
@@ -353,10 +482,17 @@
             globalTbody.innerHTML = actionableData?.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td><span class="status-badge ${doc.status.toLowerCase().replace(' ', '-')}">${doc.status.toUpperCase()}</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
 
             if (!selectedFolderMonth) return;
-            const { data } = await supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed').order('created_at', { ascending: false });
+            
+            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed');
+            if(searchQuery) {
+                query = query.ilike('spsic_number', `%${searchQuery}%`);
+            }
+            
+            const { data } = await query.order('updated_at', { ascending: false });
+            currentLoadedWorkspaceRows = data || [];
             
             const tbody = document.getElementById('documentLogsTableBody');
-            tbody.innerHTML = data?.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td>${formatHumanReadableDate(doc.approved_date)}</td><td>${formatHumanReadableDate(doc.expiration_date)}</td><td>${doc.storage_location.toUpperCase()}</td><td>${doc.commodity.toUpperCase()}</td><td>${formatHumanReadableDate(doc.storage_arrival_date)}</td><td>${doc.client_name.toUpperCase()}</td><td>${doc.cv_no.toUpperCase()}</td><td><span class="status-badge completed">COMPLETED</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="11" style="text-align:center;">No entries found.</td></tr>';
+            tbody.innerHTML = currentLoadedWorkspaceRows.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td>${formatHumanReadableDate(doc.approved_date)}</td><td>${formatHumanReadableDate(doc.expiration_date)}</td><td>${(doc.storage_location || '').toUpperCase()}</td><td>${(doc.commodity || '').toUpperCase()}</td><td>${formatHumanReadableDate(doc.storage_arrival_date)}</td><td>${(doc.client_name || '').toUpperCase()}</td><td>${(doc.cv_number || '').toUpperCase()}</td><td><span class="status-badge completed">COMPLETED</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="11" style="text-align:center; color:#64748b;">No entries found.</td></tr>';
         }
 
         function formatHumanReadableDate(dateString) {
