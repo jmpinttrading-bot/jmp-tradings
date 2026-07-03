@@ -25,10 +25,10 @@
         #welcomeMsg { font-size: 1.8rem; margin: 0; color: #1e293b; }
         
         .filter-section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
-        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-section .filter-group { display: flex; flex-direction: column; gap: 5px; }
         .filter-group label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
         .filter-group input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; outline: none; }
-        .filter-group input:focus { border-color: #3b82f6; ring: 2px solid #bfdbfe; }
+        .filter-group input:focus { border-color: #3b82f6; }
         .generate-btn { background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .generate-btn:hover { background: #0f172a; }
 
@@ -36,6 +36,11 @@
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
         th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; }
         h2 { font-size: 1rem; margin-top: 0; padding: 10px; border-radius: 6px; color: white; }
+
+        /* --- Storage Summary Metrics Layout --- */
+        .facility-summary-card { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px 18px; margin-top: 15px; border-radius: 8px; display: inline-flex; flex-direction: column; gap: 4px; min-width: 240px; }
+        .facility-summary-card span:first-child { font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
+        .facility-summary-card span:last-child { font-size: 1.35rem; font-weight: 800; color: #1e293b; }
 
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
@@ -155,7 +160,6 @@
             const end = document.getElementById('dateTo').value;
             const container = document.getElementById('reportContainer');
             
-            // Explicitly selecting sales_order_no along with id, date, balance, and storage_facility
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('id, item_code, date, balance, storage_facility, sales_order_no')
@@ -203,11 +207,13 @@
             });
             html += `</tr>`;
 
+            // Array tracking grand total summary per single column date
+            let columnTotals = new Array(dates.length).fill(0);
+
             itemsAtFacility.forEach(code => {
                 html += `<tr><td>${code}</td>`;
                 
-                dates.forEach(date => {
-                    // Sorting fallback chain using date, sales_order_no, and unique record ID
+                dates.forEach((date, index) => {
                     const match = facilityData.filter(d => d.item_code === code && d.date <= date)
                                               .sort((a, b) => {
                                                   const dateCompare = b.date.localeCompare(a.date);
@@ -221,12 +227,32 @@
                                                   return b.id - a.id;
                                               })[0];
                     
-                    const balance = match ? match.balance : 0;
-                    html += `<td>${balance}</td>`;
+                    const balance = match ? parseInt(match.balance) || 0 : 0;
+                    columnTotals[index] += balance; // Append item quantity to absolute day totals pool
+                    html += `<td>${balance.toLocaleString()}</td>`;
                 });
                 html += `</tr>`;
             });
-            html += `</table></div>`;
+
+            // Injection of table row tracking individual day totals
+            html += `<tr style="background-color: #f1f5f9; font-weight: 700;">
+                        <td>DAILY TOTALS</td>`;
+            columnTotals.forEach(total => {
+                html += `<td>${total.toLocaleString()}</td>`;
+            });
+            html += `</tr></table>`;
+
+            // Calculate active dynamic ending stock balance (index 0 is latest date column)
+            const currentLiveFacilityTotal = columnTotals[0] || 0;
+
+            // Summary block panel card placed below facility container
+            html += `
+                <div class="facility-summary-card">
+                    <span>Active Stock Volume (${dates[0] || 'Latest'})</span>
+                    <span>${currentLiveFacilityTotal.toLocaleString()} Units Total</span>
+                </div>
+            </div>`;
+
             document.getElementById('reportContainer').insertAdjacentHTML('beforeend', html);
         }
 
