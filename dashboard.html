@@ -155,10 +155,10 @@
             const end = document.getElementById('dateTo').value;
             const container = document.getElementById('reportContainer');
             
-            // Added unique row identification ('id') to handle precise transaction chronologies
+            // Explicitly selecting sales_order_no along with id, date, balance, and storage_facility
             const { data, error } = await supabaseClient
                 .from('transactions')
-                .select('id, item_code, date, balance, storage_facility')
+                .select('id, item_code, date, balance, storage_facility, sales_order_no')
                 .lte('date', end)
                 .order('date', { ascending: true });
 
@@ -207,12 +207,20 @@
                 html += `<tr><td>${code}</td>`;
                 
                 dates.forEach(date => {
-                    // Fixed logic: Sorted by date descending, falling back to ID descending to get the absolute latest balance entry
+                    // Sorting fallback chain using date, sales_order_no, and unique record ID
                     const match = facilityData.filter(d => d.item_code === code && d.date <= date)
                                               .sort((a, b) => {
                                                   const dateCompare = b.date.localeCompare(a.date);
-                                                  return dateCompare !== 0 ? dateCompare : (b.id - a.id);
+                                                  if (dateCompare !== 0) return dateCompare;
+                                                  
+                                                  const soA = a.sales_order_no ? String(a.sales_order_no) : '';
+                                                  const soB = b.sales_order_no ? String(b.sales_order_no) : '';
+                                                  const soCompare = soB.localeCompare(soA);
+                                                  if (soCompare !== 0) return soCompare;
+
+                                                  return b.id - a.id;
                                               })[0];
+                    
                     const balance = match ? match.balance : 0;
                     html += `<td>${balance}</td>`;
                 });
