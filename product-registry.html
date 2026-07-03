@@ -444,6 +444,8 @@
                 return;
             }
 
+            // Extract the last 4 digits of the SPSIC Number
+            const spsicLast4 = spsicNum.length >= 4 ? spsicNum.slice(-4) : spsicNum;
             const commAbbr = commodity.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
 
             try {
@@ -458,7 +460,8 @@
                 let matchedSizes = [];
                 if (data) {
                     data.forEach(row => {
-                        if (row.item_code && row.item_code.startsWith(prefix + spsicNum)) {
+                        // Look for item codes starting with the prefix and the 4-digit slice
+                        if (row.item_code && row.item_code.startsWith(prefix + spsicLast4)) {
                             if (!matchedSizes.includes(row.sizes.trim().toLowerCase())) {
                                 matchedSizes.push(row.sizes.trim().toLowerCase());
                             }
@@ -476,7 +479,8 @@
                     sequenceNum = String(matchedSizes.length + 1).padStart(2, '0');
                 }
 
-                skuInput.value = `${prefix}${spsicNum}-${commAbbr}-${sequenceNum}`;
+                // Generates SKU using only the last 4 digits of the SPSIC number
+                skuInput.value = `${prefix}${spsicLast4}-${commAbbr}-${sequenceNum}`;
 
             } catch (err) {
                 console.error("SKU tracking dynamic calculation error: ", err.message);
