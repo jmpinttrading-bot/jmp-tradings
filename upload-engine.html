@@ -528,13 +528,58 @@
         function exportTableToExcel() {
             let table = document.getElementById("reportTable");
             let rows = Array.from(table.rows);
-            let csv = rows.map(row => Array.from(row.cells).map(cell => `"${cell.textContent.replace(/"/g, '""')}"`).join(",")).join("\n");
-            let blob = new Blob([csv], { type: 'text/csv' });
+            
+            // Build the internal styled XML structure for the output spreadsheet
+            let excelTemplate = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                <style>
+                    td, th { white-space: nowrap !important; font-family: 'Segoe UI', sans-serif; font-size: 11pt; }
+                    .header-title { font-size: 16pt; font-weight: bold; color: #1e293b; vertical-align: middle; }
+                    .table-th { background-color: #f1f5f9; font-weight: bold; border: 0.5pt solid #cbd5e1; padding: 6px; }
+                    .table-td { border: 0.5pt solid #e2e8f0; padding: 6px; }
+                </style>
+                </head>
+                <body>
+                <table>
+                    <tr style="height: 45pt;">
+                        <td style="vertical-align: middle; text-align: center;">
+                            <img src="${window.location.origin}/circle-logo.png" width="50" height="50" style="display:block;" />
+                        </td>
+                        <td colspan="8" class="header-title" style="vertical-align: middle; padding-left: 10px;">
+                            JMP INTERNATIONAL FISH TRADINGS
+                        </td>
+                    </tr>
+                    <tr style="height: 15pt;"><td colspan="9"></td></tr>
+                    <tr>
+            `;
+
+            // Append headers dynamically from original elements
+            Array.from(rows[0].cells).forEach(cell => {
+                excelTemplate += `<th class="table-th">${cell.textContent}</th>`;
+            });
+            excelTemplate += `</tr>`;
+
+            // Append target row arrays skipping dummy values
+            for (let i = 1; i < rows.length; i++) {
+                if (rows[i].cells.length === 1) continue; // Skip default "Select date range" text string row
+                excelTemplate += `<tr>`;
+                Array.from(rows[i].cells).forEach(cell => {
+                    excelTemplate += `<td class="table-td">${cell.textContent}</td>`;
+                });
+                excelTemplate += `</tr>`;
+            }
+
+            excelTemplate += `</table></body></html>`;
+
+            // Generate clean transmission stream using application data Blob structures
+            let blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel' });
             let url = window.URL.createObjectURL(blob);
             let a = document.createElement("a");
             a.setAttribute("href", url);
-            a.setAttribute("download", `SPSIC_Report_${new Date().toISOString().slice(0,10)}.csv`);
+            a.setAttribute("download", `SPSIC_Report_${new Date().toISOString().slice(0,10)}.xls`);
             a.click();
+            window.URL.revokeObjectURL(url);
         }
 
         async function handleLogout() { await clearLockHeartbeat(); await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
