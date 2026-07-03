@@ -139,7 +139,19 @@
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
             if (profile) currentUserRole = profile.role.toLowerCase().trim();
 
-            document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
+            // Fetch the Given Name from the employee_201_docs table
+            const { data: docData } = await supabaseClient
+                .from('employee_201_docs')
+                .select('given_name')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            // Check if given_name exists and is not blank, otherwise fallback to email name prefix
+            if (docData && docData.given_name && docData.given_name.trim() !== "") {
+                document.getElementById('welcomeMsg').textContent = `Welcome back, ${docData.given_name.trim()}!`;
+            } else {
+                document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
+            }
 
             const now = new Date();
             const y = now.getFullYear();
