@@ -10,12 +10,12 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* Navbar Styles (Synced) */
+        /* Navbar Styles (Synced with flex-wrap to prevent clipping) */
         .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
@@ -69,9 +69,11 @@
         <div class="nav-links">
             <a href="dashboard.html" class="nav-btn">Dashboard</a>
             <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn active">Imports</a>
+            <a href="import-docs.html" class="nav-btn">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <!-- UPDATED: Replaced layout references to target upload-engine.html directly -->
+            <a href="upload-engine.html" class="nav-btn active">Upload Engine</a>
             <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn">Settings</a>
         </div>
     </nav>
@@ -293,7 +295,6 @@
 
         function closeSystemModal() { document.getElementById('systemAlertOverlay').style.display = 'none'; }
 
-        // Autofill logic
         function autofillFormFields(data) {
             if (!data) return;
             document.getElementById('spsicDate').value = data.s_date || '';
@@ -311,7 +312,6 @@
             if (!user) { window.location.href = "login.html"; return; }
             currentUserSession = user;
 
-            // Enforce Admin Settings Security Rules
             setupSettingsProtection();
 
             const today = new Date();
@@ -325,13 +325,11 @@
                 settingsBtn.addEventListener('click', async function(e) {
                     e.preventDefault();
                     
-                    // Pull full profile to inspect custom roles or explicit user app metadata matching vvs-logistics logic
                     const userRole = currentUserSession.user_metadata?.role || "";
                     
                     if (userRole.toUpperCase() === "ADMIN") {
                         window.location.href = "admin-dashboard.html";
                     } else {
-                        // Fallback checking against database profiles fallback if metadata isn't set up yet
                         const { data: profile } = await supabaseClient
                             .from('profiles')
                             .select('role')
@@ -529,7 +527,6 @@
             let table = document.getElementById("reportTable");
             let rows = Array.from(table.rows);
             
-            // Build the internal styled XML structure for the output spreadsheet
             let excelTemplate = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
                 <head>
@@ -554,15 +551,13 @@
                     <tr>
             `;
 
-            // Append headers dynamically from original elements
             Array.from(rows[0].cells).forEach(cell => {
                 excelTemplate += `<th class="table-th">${cell.textContent}</th>`;
             });
             excelTemplate += `</tr>`;
 
-            // Append target row arrays skipping dummy values
             for (let i = 1; i < rows.length; i++) {
-                if (rows[i].cells.length === 1) continue; // Skip default "Select date range" text string row
+                if (rows[i].cells.length === 1) continue; 
                 excelTemplate += `<tr>`;
                 Array.from(rows[i].cells).forEach(cell => {
                     excelTemplate += `<td class="table-td">${cell.textContent}</td>`;
@@ -572,7 +567,6 @@
 
             excelTemplate += `</table></body></html>`;
 
-            // Generate clean transmission stream using application data Blob structures
             let blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel' });
             let url = window.URL.createObjectURL(blob);
             let a = document.createElement("a");
