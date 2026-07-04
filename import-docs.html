@@ -14,7 +14,8 @@
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
+        /* CHANGED: Replaced overflow-x: auto with flex-wrap: wrap to prevent hidden items */
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
@@ -73,6 +74,8 @@
             <a href="import-docs.html" class="nav-btn active">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <!-- CHANGED: Linked the Audit Report Action Button Module into position -->
+            <a href="#" class="nav-btn" onclick="showSystemModal({ title: 'Redirecting...', message: 'Opening Audit Dashboard Modules...' }); window.location.href='audit-report.html'">Audit Report</a>
             <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
         </div>
     </nav>
