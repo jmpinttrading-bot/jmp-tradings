@@ -23,8 +23,10 @@
         /* --- Main Content Layout --- */
         .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
-        .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        
+        /* --- Role Badges Hidden --- */
+        .admin-badge { display: none !important; background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .employee-badge { display: none !important; background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
         .back-link { 
             display: inline-flex; 
@@ -149,8 +151,9 @@
             <a href="dashboard.html" class="nav-btn">Dashboard</a>
             <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
             <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
+            <a href="inventory-management.html" class="nav-btn active">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="audit-report.html" class="nav-btn">Audit Report</a>
             <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
         </div>
     </nav>
