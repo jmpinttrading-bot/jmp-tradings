@@ -203,7 +203,7 @@
         
         let globallyFetchedHistory = [];
         let currentActiveFilteredList = [];
-        let employeeNamesMap = {}; // Maps transaction/employee table id to given_name
+        let employeeNamesMap = {}; // Maps employee id to given_name
         
         let currentPage = 1;
         const rowsPerPage = 15;
@@ -253,6 +253,7 @@
         }
 
         async function fetchEmployeeDirectory() {
+            // Fetch the 'id' and 'given_name' matching from the target employee schema table
             const { data, error } = await supabaseClient
                 .from('employee_201_docs')
                 .select('id, given_name');
@@ -321,8 +322,9 @@
             tbody.innerHTML = paginatedItems.map((item) => {
                 const shortFacility = item.storage_facility ? item.storage_facility.split(' ')[0] : '—';
                 
-                // Maps directly using row/transaction item.id against the directory mapping
-                const operatorName = item.id ? (employeeNamesMap[item.id] || `ID: ${String(item.id).substring(0,5)}`) : 'System';
+                // Uses transaction table's context 'id_transactions' column to find the match in employee directory
+                const transactedById = item.id_transactions || item.id;
+                const operatorName = transactedById ? (employeeNamesMap[transactedById] || `ID: ${String(transactedById).substring(0,5)}`) : 'System';
 
                 return `
                     <tr>
@@ -351,7 +353,8 @@
             currentActiveFilteredList = globallyFetchedHistory.filter(item => {
                 const matchesFacility = (selectedFacility === 'ALL' || item.storage_facility === selectedFacility);
                 
-                const operatorName = item.id ? (employeeNamesMap[item.id] || "").toLowerCase() : "";
+                const transactedById = item.id_transactions || item.id;
+                const operatorName = transactedById ? (employeeNamesMap[transactedById] || "").toLowerCase() : "";
 
                 const matchesKeyword = !query || 
                     (item.item_code || "").toLowerCase().includes(query) ||
