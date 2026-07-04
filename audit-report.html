@@ -112,6 +112,7 @@
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
             <a href="audit-report.html" class="nav-btn active">Audit Report</a>
+            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
         </div>
     </nav>
 
@@ -195,6 +196,7 @@
         
         let currentAdminId = null;
         let currentUserEmail = "";
+        let currentUserRole = "employee";
         let bypassAuthListener = false;
         
         let globallyFetchedHistory = [];
@@ -211,6 +213,13 @@
             modal.showModal();
         }
 
+        function checkAccess(event) {
+            if (currentUserRole !== 'admin') {
+                event.preventDefault();
+                showAlert('Administrative privileges are required to access the System Settings.', 'error');
+            }
+        }
+
         async function initAuditDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
@@ -223,7 +232,11 @@
                 .eq('id', user.id)
                 .single();
             
-            if (profile && profile.role === 'Admin') {
+            if (profile) {
+                currentUserRole = profile.role.toLowerCase().trim();
+            }
+
+            if (profile && currentUserRole === 'admin') {
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
