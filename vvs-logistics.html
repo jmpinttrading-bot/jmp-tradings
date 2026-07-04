@@ -506,6 +506,12 @@
         }
 
         async function initLogisticsDashboard() {
+            // Programmatically highlight the Inventory navbar tab on page load initialization
+            const inventoryBtn = document.querySelector('.nav-links a[href="inventory-management.html"]');
+            if (inventoryBtn) {
+                inventoryBtn.classList.add('active');
+            }
+
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             currentAdminId = user.id;
