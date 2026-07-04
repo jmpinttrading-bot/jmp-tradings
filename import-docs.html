@@ -74,8 +74,8 @@
             <a href="import-docs.html" class="nav-btn active">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <!-- CHANGED: Linked the Audit Report Action Button Module into position -->
-            <a href="#" class="nav-btn" onclick="showSystemModal({ title: 'Redirecting...', message: 'Opening Audit Dashboard Modules...' }); window.location.href='audit-report.html'">Audit Report</a>
+            <!-- FORTIFIED: Re-routed directly to destination and applied mandatory layout rule override -->
+            <a href="audit-report.html" class="nav-btn" style="display: inline-block !important;" onclick="showSystemModal({ title: 'Redirecting...', message: 'Opening Audit Dashboard Modules...' });">Audit Report</a>
             <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
         </div>
     </nav>
