@@ -17,6 +17,7 @@
         .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn.active { background: #475569; color: white; }
 
         /* Content Styles */
         .main-content { padding: 40px; }
@@ -56,10 +57,11 @@
         </div>
         <div class="nav-links">
             <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="#" class="nav-btn">My Profile</a>
+            <a href="#" class="nav-btn active">My Profile</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">Imports</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">Inventory</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Audit Report Ledger', 'audit-report.html')">Audit Report</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Settings', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
@@ -135,7 +137,7 @@
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4>Access Restricted</h4>
-            <p>Administrative privileges are required to access the System Settings.</p>
+            <p>Administrative privileges or authorized security permissions are required to access this system section.</p>
             <button class="btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
@@ -175,6 +177,7 @@
                             (moduleName.includes('Import') && permissionsMatrix.import_access) ||
                             (moduleName.includes('Inventory') && permissionsMatrix.inventory_access) ||
                             (moduleName.includes('Sales') && permissionsMatrix.sales_invoice_access) ||
+                            (moduleName.includes('Audit') && permissionsMatrix.inventory_access) || 
                             (moduleName === 'Settings' && permissionsMatrix.settings_access);
             
             allowed ? window.location.href = url : document.getElementById('accessBlockerModal').classList.add('is-visible');
