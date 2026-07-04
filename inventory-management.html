@@ -30,7 +30,6 @@
 
         .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .user-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         
         .registration-box { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .registration-text-area h3 { color: #0f172a; font-size: 1.1rem; }
@@ -98,7 +97,6 @@
     <div class="main-content">
         <div class="header">
             <h1>Stock & Asset Control Matrix</h1>
-            <div class="user-badge" id="adminEmail">Loading Context...</div>
         </div>
 
         <div class="registration-box">
@@ -201,9 +199,6 @@
             
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).maybeSingle();
             settingsAccess = (profile?.role === 'Admin');
-            
-            const badge = document.getElementById('adminEmail');
-            badge.textContent = `${profile?.role || 'Staff'}: ${user.email.split('@')[0]}`;
             
             fetchMasterTransactions();
         }
