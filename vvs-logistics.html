@@ -339,13 +339,12 @@
         
         let currentAdminId = null;
         let currentUserEmail = "";
-        let currentEmployeeId = null; // Caches the 'id' parameter from employee_201_docs
         let bypassAuthListener = false;
         let currentUserRole = "employee"; 
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
-        let currentActiveFilteredList = []; 
+        let currentActiveFilteredList = []; // Track filtered vs complete history indices
         
         // --- Pagination Global Trackers ---
         let currentPage = 1;
@@ -432,7 +431,6 @@
                     remarks: "TRANSFER ITEM - OUT",
                     transactions_type: "Outbound",
                     processed_by: currentUserEmail,
-                    transacted_by: currentEmployeeId, // Appends structural profile reference id
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
@@ -450,7 +448,6 @@
                     remarks: "TRANSFER ITEM - IN",
                     transactions_type: "Inbound",
                     processed_by: currentUserEmail,
-                    transacted_by: currentEmployeeId, // Appends structural profile reference id
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
@@ -538,18 +535,6 @@
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
             }
-            
-            // Fetch structural identifier linking user profile record context to table database keys
-            const { data: employeeData } = await supabaseClient
-                .from('employee_201_docs')
-                .select('id')
-                .eq('email_address', user.email)
-                .maybeSingle();
-                
-            if (employeeData) {
-                currentEmployeeId = employeeData.id;
-            }
-
             applyFormUIRestrictions();
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
@@ -613,7 +598,7 @@
             if (error) { showAlert("System error: " + error.message, "error"); return; }
             globallyFetchedHistory = data || [];
             currentActiveFilteredList = [...globallyFetchedHistory];
-            currentPage = 1; 
+            currentPage = 1; // Reset back to initial index block
             renderLedgerTable(currentActiveFilteredList);
         }
 
@@ -635,6 +620,7 @@
                 return;
             }
 
+            // Always calculate accurate running cumulative balances across full history context
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const balanceMap = new Map();
             const itemRunningBalances = {};
@@ -646,6 +632,7 @@
                 balanceMap.set(tx.id, itemRunningBalances[code]);
             });
 
+            // Calculate pagination indices
             const totalRows = items.length;
             const totalPages = Math.ceil(totalRows / rowsPerPage);
             
@@ -655,11 +642,13 @@
             const endIdx = startIdx + rowsPerPage;
             const paginatedItems = items.slice(startIdx, endIdx);
 
+            // Update page pagination information indicators
             document.getElementById('paginationInfo').textContent = `Page ${currentPage} of ${totalPages}`;
             document.getElementById('prevPageBtn').disabled = currentPage === 1;
             document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
 
             tbody.innerHTML = paginatedItems.map((item) => {
+                // Discover correct global history index structure for accurate data assignments inside modify prompts
                 const originalGlobalIndex = globallyFetchedHistory.findIndex(row => row.id === item.id);
                 return `
                     <tr>
@@ -685,6 +674,7 @@
             }).join('');
         }
         
+        // --- Page State Change Engine ---
         function changeLedgerPage(direction) {
             const totalPages = Math.ceil(currentActiveFilteredList.length / rowsPerPage);
             currentPage += direction;
@@ -774,7 +764,6 @@
                 unit_price: parseFloat(document.getElementById('rawUnitPrice').value) || 0,
                 transactions_type: "Outbound",
                 processed_by: currentUserEmail,
-                transacted_by: currentEmployeeId, // Appends structural profile reference id
                 storage_facility: 'VVS COLD STORAGE & PROCESSING PLANT CORP.',
                 date: document.getElementById('dateReleased').value,
                 buyer_name: targetBuyerName,
@@ -801,7 +790,7 @@
         function filterLedgerByDescription() {
             const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
             currentActiveFilteredList = globallyFetchedHistory.filter(item => (item.item_name || "").toLowerCase().includes(filterQuery));
-            currentPage = 1; 
+            currentPage = 1; // Return to first dataset offset block
             renderLedgerTable(currentActiveFilteredList);
         }
 
