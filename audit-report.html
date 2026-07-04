@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Global Audit Ledger Report - JMP System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        /* --- Navbar Styles --- */
+        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; font-family: 'Inter', sans-serif; }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .logout-btn:hover { background-color: #dc2626; }
+        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn.active { background: #475569; color: white; }
+
+        /* --- Main Content Layout --- */
+        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+
+        .back-link { 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            background-color: #ffffff; 
+            color: #475569; 
+            text-decoration: none; 
+            font-weight: 700; 
+            font-size: 0.9rem; 
+            margin-bottom: 25px; 
+            padding: 10px 18px; 
+            border-radius: 8px; 
+            border: 1px solid #cbd5e1; 
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out; 
+        }
+        .back-link:hover { 
+            background-color: #f8fafc; 
+            color: #ee964b; 
+            border-color: #ee964b; 
+            transform: translateX(-2px);
+        }
+
+        .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
+        
+        .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        
+        /* --- Filters Dashboard Panel --- */
+        .filter-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 5px; }
+        .filter-group { flex: 1; min-width: 240px; display: flex; flex-direction: column; }
+        .filter-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-group select, .filter-group input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; height: 42px; }
+        .filter-group select:focus, .filter-group input:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        
+        .filter-actions { display: flex; align-items: flex-end; gap: 10px; }
+        .btn-search { height: 42px; padding: 0 20px; background: #0f172a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-search:hover { background: #ee964b; color: #0f172a; }
+        .btn-reset { height: 42px; padding: 0 20px; background: #cbd5e1; color: #334155; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-reset:hover { background: #b8c5d6; }
+
+        /* --- Ledger Table Presentation Layout --- */
+        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; margin-top: 15px; }
+        .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; table-layout: auto; }
+        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
+        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        .master-table tr:hover td { background-color: #f8fafc; }
+        
+        .qty-val { font-weight: 700; color: #d9534f; font-size: 0.95rem; }
+        .qty-in { font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
+        .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
+        .facility-tag { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+
+        /* --- Pagination Layout Styles --- */
+        .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 20px; }
+        .pagination-info { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+        .pagination-btn { background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+        .pagination-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #f8fafc; }
+
+        dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
+        dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
+
+        @media (max-width: 768px) {
+            .filter-row { flex-direction: column; gap: 12px; }
+            .filter-group { width: 100% !important; }
+            .filter-actions { width: 100%; justify-content: space-between; margin-top: 5px; }
+            .filter-actions button { flex: 1; }
+            .pagination-container { justify-content: center; width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="top-row">
+            <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-btn">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
+            <a href="import-docs.html" class="nav-btn">Imports</a>
+            <a href="inventory-management.html" class="nav-btn">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="audit-report.html" class="nav-btn active">Audit Report</a>
+        </div>
+    </nav>
+
+    <dialog id="alertModal">
+        <h3 id="alertModalTitle">Notification</h3>
+        <p id="alertModalBody" style="margin-bottom: 20px; color: #475569;"></p>
+        <div style="display: flex; justify-content: flex-end;">
+            <button class="btn-search" onclick="document.getElementById('alertModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Close</button>
+        </div>
+    </dialog>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Global Inventory Audit Ledger</h1>
+            <div class="admin-badge" id="adminEmail">Loading Context...</div>
+        </div>
+
+        <a href="inventory-management.html" class="back-link">⬅️ Back to Inventory Dashboard</a>
+        
+        <div class="workspace-grid">
+            <div class="card-panel">
+                <div class="filter-row">
+                    <div class="filter-group" style="flex: 1.5;">
+                        <label for="facilityFilter">Storage Hub Facility Branch</label>
+                        <select id="facilityFilter" onchange="filterLedgerDataset()">
+                            <option value="ALL">-- View All System Hubs combined --</option>
+                            <option value="VVS COLD STORAGE & PROCESSING PLANT CORP.">VVS Cold Storage & Processing Plant Corp.</option>
+                            <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">Hightower Storage & Trading Centre, Inc.</option>
+                            <option value="EISBERG COLD LOGISTICS INC.">Eisberg Cold Logistics Inc.</option>
+                            <option value="CRYSTAL COLD STORAGE, INC.">Crystal Cold Storage, Inc.</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="searchFilter">Keyword Search</label>
+                        <input type="text" id="searchFilter" placeholder="SKU Code, Description, Buyer Name..." oninput="filterLedgerDataset()">
+                    </div>
+                    <div class="filter-actions">
+                        <button type="button" class="btn-reset" onclick="resetFilters()">Clear Filters</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>Storage Facility Node</th>
+                                <th>SPSIC</th>
+                                <th>Date Processed</th>
+                                <th>SO#</th>
+                                <th>Item Code</th>
+                                <th>Item Description</th>
+                                <th>Sizes</th>
+                                <th>In Qty</th>
+                                <th>Out Qty</th>
+                                <th>Running Balance</th>
+                                <th>Buyer Name</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledgerTableBody">
+                            <tr>
+                                <td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-container">
+                    <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
+                    <button type="button" class="pagination-btn" id="prevPageBtn" onclick="changeLedgerPage(-1)" disabled>Previous</button>
+                    <button type="button" class="pagination-btn" id="nextPageBtn" onclick="changeLedgerPage(1)" disabled>Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        let currentAdminId = null;
+        let currentUserEmail = "";
+        let bypassAuthListener = false;
+        
+        let globallyFetchedHistory = [];
+        let currentActiveFilteredList = [];
+        
+        let currentPage = 1;
+        const rowsPerPage = 15;
+
+        function showAlert(msg, type) {
+            const modal = document.getElementById('alertModal');
+            document.getElementById('alertModalTitle').textContent = type === 'error' ? 'System Error' : 'Success';
+            document.getElementById('alertModalBody').textContent = msg;
+            modal.style.borderColor = type === 'error' ? '#d9534f' : '#d1fae5';
+            modal.showModal();
+        }
+
+        async function initAuditDashboard() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            currentAdminId = user.id;
+            currentUserEmail = user.email;
+            
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('role, username')
+                .eq('id', user.id)
+                .single();
+            
+            if (profile && profile.role === 'Admin') {
+                document.getElementById('adminEmail').className = "admin-badge";
+                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
+            } else {
+                document.getElementById('adminEmail').className = "employee-badge";
+                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
+            }
+
+            await fetchAllTransactions();
+            setupSessionCrossCheckListener();
+        }
+
+        async function fetchAllTransactions() {
+            const { data, error } = await supabaseClient
+                .from('transactions')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) { 
+                showAlert("System error fetching history: " + error.message, "error"); 
+                return; 
+            }
+
+            globallyFetchedHistory = data || [];
+            currentActiveFilteredList = [...globallyFetchedHistory];
+            currentPage = 1;
+            renderLedgerTable(currentActiveFilteredList);
+        }
+
+        function renderLedgerTable(items) {
+            const tbody = document.getElementById('ledgerTableBody');
+            
+            if (!items || items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records located for the selected criteria.</td></tr>`;
+                document.getElementById('paginationInfo').textContent = "Page 1 of 1";
+                document.getElementById('prevPageBtn').disabled = true;
+                document.getElementById('nextPageBtn').disabled = true;
+                return;
+            }
+
+            // Calculate precise item running balances historically sorted ascending
+            const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            const balanceMap = new Map();
+            const itemRunningBalances = {};
+            
+            allSorted.forEach(tx => {
+                const uniqueKey = `${tx.storage_facility}_${tx.item_code}`;
+                if (!itemRunningBalances[uniqueKey]) itemRunningBalances[uniqueKey] = 0;
+                itemRunningBalances[uniqueKey] += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                balanceMap.set(tx.id, itemRunningBalances[uniqueKey]);
+            });
+
+            const totalRows = items.length;
+            const totalPages = Math.ceil(totalRows / rowsPerPage);
+            
+            if (currentPage > totalPages) currentPage = totalPages || 1;
+            
+            const startIdx = (currentPage - 1) * rowsPerPage;
+            const endIdx = startIdx + rowsPerPage;
+            const paginatedItems = items.slice(startIdx, endIdx);
+
+            document.getElementById('paginationInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prevPageBtn').disabled = currentPage === 1;
+            document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+
+            tbody.innerHTML = paginatedItems.map((item) => {
+                const shortFacility = item.storage_facility ? item.storage_facility.split(' ')[0] : '—';
+                return `
+                    <tr>
+                        <td><span class="facility-tag" title="${item.storage_facility}">${shortFacility}</span></td>
+                        <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
+                        <td>${item.date || '—'}</td>
+                        <td style="color:#b45309; font-weight:700;">${item.sales_order_no || '—'}</td>
+                        <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.item_code || ''}</td>
+                        <td style="font-weight: 600;">${item.item_name || ''}</td>
+                        <td style="color: #475569;">${item.sizes || '—'}</td>
+                        <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
+                        <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
+                        <td><span class="qty-bal">${balanceMap.get(item.id) ?? '—'}</span></td>
+                        <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
+                        <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterLedgerDataset() {
+            const selectedFacility = document.getElementById('facilityFilter').value;
+            const query = document.getElementById('searchFilter').value.trim().toLowerCase();
+
+            currentActiveFilteredList = globallyFetchedHistory.filter(item => {
+                const matchesFacility = (selectedFacility === 'ALL' || item.storage_facility === selectedFacility);
+                
+                const matchesKeyword = !query || 
+                    (item.item_code || "").toLowerCase().includes(query) ||
+                    (item.item_name || "").toLowerCase().includes(query) ||
+                    (item.buyer_name || "").toLowerCase().includes(query) ||
+                    (item.sales_order_no || "").toLowerCase().includes(query) ||
+                    (item.spsic_number || "").toLowerCase().includes(query);
+
+                return matchesFacility && matchesKeyword;
+            });
+
+            currentPage = 1;
+            renderLedgerTable(currentActiveFilteredList);
+        }
+
+        function changeLedgerPage(direction) {
+            const totalPages = Math.ceil(currentActiveFilteredList.length / rowsPerPage);
+            currentPage += direction;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            renderLedgerTable(currentActiveFilteredList);
+        }
+
+        function resetFilters() {
+            document.getElementById('facilityFilter').value = "ALL";
+            document.getElementById('searchFilter').value = "";
+            currentActiveFilteredList = [...globallyFetchedHistory];
+            currentPage = 1;
+            renderLedgerTable(currentActiveFilteredList);
+        }
+
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (bypassAuthListener) return;
+                if (session && session.user && session.user.id !== currentAdminId) {
+                    bypassAuthListener = true; 
+                    await supabaseClient.auth.signOut();
+                    window.location.href = "login.html";
+                }
+            });
+        }
+
+        async function handleLogout() {
+            bypassAuthListener = true;
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        initAuditDashboard();
+    </script>
+</body>
+</html>
