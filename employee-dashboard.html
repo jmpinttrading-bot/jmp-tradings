@@ -62,7 +62,7 @@
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">Imports</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">Inventory</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">Sales</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Audit Report Ledger', 'audit-report.html')">Audit Report</a>
+            <a href="audit-report.html" class="nav-btn">Audit Report</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Settings', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
@@ -178,7 +178,6 @@
                             (moduleName.includes('Import') && permissionsMatrix.import_access) ||
                             (moduleName.includes('Inventory') && permissionsMatrix.inventory_access) ||
                             (moduleName.includes('Sales') && permissionsMatrix.sales_invoice_access) ||
-                            (moduleName.includes('Audit') && permissionsMatrix.inventory_access) || 
                             (moduleName === 'Settings' && permissionsMatrix.settings_access);
             
             allowed ? window.location.href = url : document.getElementById('accessBlockerModal').classList.add('is-visible');
