@@ -74,8 +74,7 @@
             <a href="import-docs.html" class="nav-btn active">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <!-- FIXED: Added event.preventDefault() and a setTimeout delay to keep the modal from vanishing during redirect -->
-            <a href="audit-report.html" class="nav-btn" style="display: inline-block !important;" onclick="event.preventDefault(); showSystemModal({ title: 'Redirecting...', message: 'Opening Audit Dashboard Modules...' }); setTimeout(() => { window.location.href = this.getAttribute('href'); }, 1200);">Audit Report</a>
+            <a href="audit-report.html" class="nav-btn" style="display: inline-block !important;">Audit Report</a>
             <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
         </div>
     </nav>
