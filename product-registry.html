@@ -21,8 +21,6 @@
 
         .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
-        .employee-badge { background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
         .back-link { 
             display: inline-flex; 
@@ -149,6 +147,7 @@
             <a href="import-docs.html" class="nav-btn">Imports</a>
             <a href="inventory-management.html" class="nav-btn active">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="audit-report.html" class="nav-btn">Audit Report</a>
             <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn">Settings</a>
         </div>
     </nav>
@@ -156,7 +155,6 @@
     <div class="main-content">
         <div class="header">
             <h1>Registry & Inbound of Item Product</h1>
-            <div class="admin-badge" id="adminEmail">Loading Context...</div>
         </div>
 
         <a href="inventory-management.html" class="back-link">⬅️ Back to Stock Dashboard</a>
@@ -565,8 +563,6 @@
                 permissions.canEdit = true;
                 permissions.canQuantity = true;
                 
-                document.getElementById('adminEmail').className = "admin-badge";
-                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP ADMIN HQ";
             } else {
                 const masterAccess = profile ? profile.inventory_access !== false : false;
@@ -583,8 +579,6 @@
                 permissions.canEdit = profile ? profile.inv_edit_access === true : false;
                 permissions.canQuantity = profile ? profile.inv_quantity_access === true : false;
 
-                document.getElementById('adminEmail').className = "employee-badge";
-                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
                 document.getElementById('sidebarTitle').textContent = "JMP TERMINAL";
             }
             
