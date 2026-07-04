@@ -214,7 +214,10 @@
         function checkAccess(event) {
             if (currentUserRole !== 'admin') {
                 event.preventDefault();
-                showSystemModal({ title: 'Access Restricted', message: 'Administrative privileges are required to access the System Settings.' });
+                showSystemModal({ 
+                    title: 'Access Restricted', 
+                    message: 'Administrative privileges are required to access the System Settings.' 
+                });
             }
         }
 
