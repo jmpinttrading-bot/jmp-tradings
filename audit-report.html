@@ -65,6 +65,10 @@
         .btn-search:hover { background: #ee964b; color: #0f172a; }
         .btn-reset { height: 42px; padding: 0 20px; background: #cbd5e1; color: #334155; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-reset:hover { background: #b8c5d6; }
+        
+        /* Excel Export Button Layout Style */
+        .btn-export-excel { height: 42px; padding: 0 20px; background: #16a34a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-export-excel:hover { background: #15803d; }
 
         /* --- Ledger Table Presentation Layout --- */
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; margin-top: 15px; }
@@ -95,8 +99,8 @@
         @media (max-width: 768px) {
             .filter-row { flex-direction: column; gap: 12px; }
             .filter-group { width: 100% !important; }
-            .filter-actions { width: 100%; justify-content: space-between; margin-top: 5px; }
-            .filter-actions button { flex: 1; }
+            .filter-actions { width: 100%; justify-content: space-between; margin-top: 5px; flex-wrap: wrap; }
+            .filter-actions button { flex: 1; min-width: 120px; }
             .pagination-container { justify-content: center; width: 100%; }
         }
     </style>
@@ -119,7 +123,6 @@
         </div>
     </nav>
 
-    <!-- Unified Dashboard Restriction Modal Component Container -->
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="alertTitle">Notification</h4>
@@ -155,6 +158,7 @@
                     </div>
                     <div class="filter-actions">
                         <button type="button" class="btn-reset" onclick="resetFilters()">Clear Filters</button>
+                        <button type="button" class="btn-export-excel" onclick="exportLedgerToExcel()">📊 Export Excel</button>
                     </div>
                 </div>
 
@@ -387,6 +391,66 @@
             currentActiveFilteredList = [...globallyFetchedHistory];
             currentPage = 1;
             renderLedgerTable(currentActiveFilteredList);
+        }
+
+        // Custom function to export all currently filtered records directly into Excel (.xls)
+        function exportLedgerToExcel() {
+            if (currentActiveFilteredList.length === 0) {
+                showSystemModal({ title: 'Export Ignored', message: 'There is no data available to export based on your current filters.' });
+                return;
+            }
+
+            // Pre-calculate baseline running states exactly like your rendering grid
+            const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            const balanceMap = new Map();
+            const itemRunningBalances = {};
+            
+            allSorted.forEach(tx => {
+                const uniqueKey = `${tx.storage_facility}_${tx.item_code}`;
+                if (!itemRunningBalances[uniqueKey]) itemRunningBalances[uniqueKey] = 0;
+                itemRunningBalances[uniqueKey] += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                balanceMap.set(tx.id, itemRunningBalances[uniqueKey]);
+            });
+
+            // Formulate standard header definitions
+            let csvRows = [
+                ["Storage Facility Node", "SPSIC Number", "Date Processed", "Sales Order No", "Item Code", "Item Description", "Sizes", "In Qty", "Out Qty", "Running Balance", "Buyer Name", "Transacted By", "Remarks"]
+            ];
+
+            // Map dataset list objects into row rows
+            currentActiveFilteredList.forEach(item => {
+                const operatorName = item.processed_by ? item.processed_by.replace('@jmp-corporate.local', '') : 'System';
+                const runningBal = balanceMap.get(item.id) ?? 0;
+
+                csvRows.push([
+                    item.storage_facility || '—',
+                    item.spsic_number || '—',
+                    item.date || '—',
+                    item.sales_order_no || '—',
+                    item.item_code || '',
+                    item.item_name || '',
+                    item.sizes || '—',
+                    item.in_quantity || '0',
+                    item.out_quantity || '0',
+                    runningBal,
+                    item.buyer_name || '—',
+                    operatorName,
+                    item.remarks || '—'
+                ]);
+            });
+
+            // Convert to a clean character string and trigger context downloads
+            let csvContent = "\uFEFF" + csvRows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(",")).join("\n");
+            
+            let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            let url = URL.createObjectURL(blob);
+            let link = document.createElement("a");
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", `JMP_Global_Audit_Ledger_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function setupSessionCrossCheckListener() {
