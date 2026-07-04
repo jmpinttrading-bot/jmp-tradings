@@ -77,6 +77,7 @@
         .qty-in { font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
         .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
         .facility-tag { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .operator-tag { background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; }
 
         /* --- Pagination Layout Styles --- */
         .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 20px; }
@@ -147,7 +148,7 @@
                     </div>
                     <div class="filter-group">
                         <label for="searchFilter">Keyword Search</label>
-                        <input type="text" id="searchFilter" placeholder="SKU Code, Description, Buyer Name..." oninput="filterLedgerDataset()">
+                        <input type="text" id="searchFilter" placeholder="SKU Code, Description, Transacted by..." oninput="filterLedgerDataset()">
                     </div>
                     <div class="filter-actions">
                         <button type="button" class="btn-reset" onclick="resetFilters()">Clear Filters</button>
@@ -169,12 +170,13 @@
                                 <th>Out Qty</th>
                                 <th>Running Balance</th>
                                 <th>Buyer Name</th>
+                                <th>Transacted By</th>
                                 <th>Remarks</th>
                             </tr>
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -201,6 +203,7 @@
         
         let globallyFetchedHistory = [];
         let currentActiveFilteredList = [];
+        let employeeNamesMap = {}; // Maps user id to given_name
         
         let currentPage = 1;
         const rowsPerPage = 15;
@@ -244,8 +247,23 @@
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
             }
 
+            await fetchEmployeeDirectory();
             await fetchAllTransactions();
             setupSessionCrossCheckListener();
+        }
+
+        async function fetchEmployeeDirectory() {
+            const { data, error } = await supabaseClient
+                .from('employee_201_docs')
+                .select('id, given_name');
+
+            if (!error && data) {
+                data.forEach(emp => {
+                    if (emp.id && emp.given_name) {
+                        employeeNamesMap[emp.id] = emp.given_name.trim();
+                    }
+                });
+            }
         }
 
         async function fetchAllTransactions() {
@@ -269,14 +287,13 @@
             const tbody = document.getElementById('ledgerTableBody');
             
             if (!items || items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records located for the selected criteria.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records located for the selected criteria.</td></tr>`;
                 document.getElementById('paginationInfo').textContent = "Page 1 of 1";
                 document.getElementById('prevPageBtn').disabled = true;
                 document.getElementById('nextPageBtn').disabled = true;
                 return;
             }
 
-            // Calculate precise item running balances historically sorted ascending
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const balanceMap = new Map();
             const itemRunningBalances = {};
@@ -303,6 +320,10 @@
 
             tbody.innerHTML = paginatedItems.map((item) => {
                 const shortFacility = item.storage_facility ? item.storage_facility.split(' ')[0] : '—';
+                
+                // Read from transaction's user context to grab given_name
+                const operatorName = item.user_id ? (employeeNamesMap[item.user_id] || `ID: ${item.user_id.substring(0,5)}`) : 'System';
+
                 return `
                     <tr>
                         <td><span class="facility-tag" title="${item.storage_facility}">${shortFacility}</span></td>
@@ -316,6 +337,7 @@
                         <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
                         <td><span class="qty-bal">${balanceMap.get(item.id) ?? '—'}</span></td>
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
+                        <td><span class="operator-tag">${operatorName}</span></td>
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                     </tr>
                 `;
@@ -329,12 +351,15 @@
             currentActiveFilteredList = globallyFetchedHistory.filter(item => {
                 const matchesFacility = (selectedFacility === 'ALL' || item.storage_facility === selectedFacility);
                 
+                const operatorName = item.user_id ? (employeeNamesMap[item.user_id] || "").toLowerCase() : "";
+
                 const matchesKeyword = !query || 
                     (item.item_code || "").toLowerCase().includes(query) ||
                     (item.item_name || "").toLowerCase().includes(query) ||
                     (item.buyer_name || "").toLowerCase().includes(query) ||
                     (item.sales_order_no || "").toLowerCase().includes(query) ||
-                    (item.spsic_number || "").toLowerCase().includes(query);
+                    (item.spsic_number || "").toLowerCase().includes(query) ||
+                    operatorName.includes(query);
 
                 return matchesFacility && matchesKeyword;
             });
