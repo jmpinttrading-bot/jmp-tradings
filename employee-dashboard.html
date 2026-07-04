@@ -14,7 +14,6 @@
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        /* CHANGED: Swapped overflow-x: auto for flex-wrap: wrap to prevent buttons dropping out of frame */
         .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn:hover { background-color: #475569; color: white; }
@@ -70,7 +69,7 @@
     <div class="main-content">
         <div class="header">
             <h1>Employee Terminal</h1>
-            <div class="user-badge" id="userEmail">Loading User...</div>
+            <div class="user-badge" id="userEmail"></div>
         </div>
 
         <div id="alertBox"></div>
@@ -161,7 +160,7 @@
         async function fetchEmployeeSystemPermissions(authUser) {
             const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', currentEmployeeId).maybeSingle();
             if (profile) {
-                document.getElementById('userEmail').textContent = `👤 ${profile.username || authUser.email}`;
+                // Name display removed here to prevent user name injection
                 permissionsMatrix = { 
                     profile_access: true,
                     import_access: profile.role === 'Admin' || profile.import_access !== false,
