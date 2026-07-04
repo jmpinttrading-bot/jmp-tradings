@@ -322,9 +322,8 @@
             tbody.innerHTML = paginatedItems.map((item) => {
                 const shortFacility = item.storage_facility ? item.storage_facility.split(' ')[0] : '—';
                 
-                // Uses transaction table's context 'id_transactions' column to find the match in employee directory
-                const transactedById = item.id_transactions || item.id;
-                const operatorName = transactedById ? (employeeNamesMap[transactedById] || `ID: ${String(transactedById).substring(0,5)}`) : 'System';
+                // Extracts the operator name from 'processed_by' and strips the domain suffix
+                const operatorName = item.processed_by ? item.processed_by.replace('@jmp-corporate.local', '') : 'System';
 
                 return `
                     <tr>
@@ -353,8 +352,8 @@
             currentActiveFilteredList = globallyFetchedHistory.filter(item => {
                 const matchesFacility = (selectedFacility === 'ALL' || item.storage_facility === selectedFacility);
                 
-                const transactedById = item.id_transactions || item.id;
-                const operatorName = transactedById ? (employeeNamesMap[transactedById] || "").toLowerCase() : "";
+                // Normalizes the target value for text queries matching 'Transacted By'
+                const operatorName = item.processed_by ? item.processed_by.replace('@jmp-corporate.local', '').toLowerCase() : '';
 
                 const matchesKeyword = !query || 
                     (item.item_code || "").toLowerCase().includes(query) ||
