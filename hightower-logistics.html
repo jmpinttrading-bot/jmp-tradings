@@ -517,10 +517,10 @@
                 .from('profiles')
                 .select('role, username, inventory_access')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
             if (error || !profile) {
-                console.error("Profile authorization context missing:", error);
+                console.error("Profile authorization context missing or error occurred:", error);
                 window.location.href = "employee-dashboard.html";
                 return;
             }
@@ -534,7 +534,10 @@
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
                 const masterAccess = profile.inventory_access === true;
-                if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
+                if (!masterAccess) { 
+                    window.location.href = "employee-dashboard.html"; 
+                    return; 
+                }
                 
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
