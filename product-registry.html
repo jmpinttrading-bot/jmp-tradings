@@ -150,8 +150,11 @@
         
         .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; table-layout: auto; }
         .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
-        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; transition: background-color 0.2s ease; }
         .master-table tr:hover td { background-color: #f8fafc; }
+        
+        /* Selected active row highlighting style */
+        .master-table tr.selected-row td { background-color: #e0f2fe !important; }
         
         .qty-val { font-weight: 700; color: #0f172a; font-size: 0.95rem; }
 
@@ -481,6 +484,17 @@
             showSystemModal(type === 'error' ? 'Access Restricted' : 'Action Successful', msg);
         }
 
+        /* --- Global Highlight Controller --- */
+        function highlightSelectedRow(itemId) {
+            // Remove previous highlights
+            document.querySelectorAll('#ledgerTableBody tr').forEach(row => {
+                row.classList.remove('selected-row');
+            });
+            // Apply new highlight
+            const activeRow = document.getElementById(`row-${itemId}`);
+            if (activeRow) activeRow.classList.add('selected-row');
+        }
+
         /* --- Global Restriction Routing Engine --- */
         function verifyNavigationPrivilege(moduleName, url) {
             const allowed = (moduleName.includes('Profile') && permissionsMatrix.profile_access) ||
@@ -590,7 +604,6 @@
             document.getElementById('itemCommodity').value = data.commodity || "";
             document.getElementById('activeSpsicNumber').value = queryVal;
             
-            // Success alerts use basic JS to not lock dashboard flows unprompted
             alert(`Manifest loaded successfully for SPSIC: ${queryVal}`);
             await autoGenerateSkuCode();
         }
@@ -710,11 +723,14 @@
                 return;
             }
 
+            const currentActiveId = document.getElementById('itemId').value;
+
             tbody.innerHTML = items.map((item, index) => {
                 const disabledAttr = permissionsMatrix.product_registry_access ? '' : 'disabled';
+                const isSelectedClass = (currentActiveId && currentActiveId === item.id) ? 'selected-row' : '';
                 
                 return `
-                    <tr>
+                    <tr id="row-${item.id}" class="${isSelectedClass}">
                         <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
                         <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.item_code || ''}</td>
                         <td style="font-weight: 600;">${item.item_name || ''}</td>
@@ -743,6 +759,9 @@
                 showSystemModal("Access Restricted", "Action Denied: You do not have permission to alter stock counts.");
                 return;
             }
+            
+            highlightSelectedRow(item.id);
+            
             document.getElementById('modalItemId').value = item.id;
             document.getElementById('modalOldQty').value = item.stock_quantity || 0;
             document.getElementById('modalNewQty').value = item.stock_quantity || 0;
@@ -753,6 +772,14 @@
         function closeQtyModal() {
             document.getElementById('qtyModalOverlay').style.display = 'none';
             document.getElementById('qtyAdjustmentForm').reset();
+            
+            // Re-sync row highlights to match standard current active state registry
+            const currentActiveId = document.getElementById('itemId').value;
+            if (!currentActiveId) {
+                document.querySelectorAll('#ledgerTableBody tr').forEach(row => row.classList.remove('selected-row'));
+            } else {
+                highlightSelectedRow(currentActiveId);
+            }
         }
 
         async function handleQtyModalSubmit(e) {
@@ -864,6 +891,8 @@
             document.getElementById('remarksLabel').textContent = "Additional Note/Remarks";
             document.getElementById('formTitle').textContent = "Modify Registered Parameters";
             document.getElementById('submitBtn').textContent = "Update Registry Log";
+            
+            highlightSelectedRow(item.id);
         }
 
         function openEditRemarksModal() {
@@ -1015,6 +1044,11 @@
             document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
             document.getElementById('submitBtn').textContent = "Process Inbound & Item Register";
             
+            // Clear current row selections
+            document.querySelectorAll('#ledgerTableBody tr').forEach(row => {
+                row.classList.remove('selected-row');
+            });
+
             applyFormUIRestrictions();
         }
 
