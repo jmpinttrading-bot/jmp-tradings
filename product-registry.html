@@ -157,6 +157,7 @@
         .master-table tr.selected-row td { background-color: #e0f2fe !important; }
         
         .qty-val { font-weight: 700; color: #0f172a; font-size: 0.95rem; }
+        .pallet-val { font-weight: 700; color: #2563eb; font-size: 0.95rem; }
 
         .action-btn-group { display: flex; gap: 6px; justify-content: center; }
         .btn-edit { background: #1e293b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
@@ -382,12 +383,13 @@
                                 <th>Commodity</th>
                                 <th>Assigned Hub</th>
                                 <th>On-Hand Balance</th>
+                                <th>Total Pallets</th>
                                 <th style="text-align: center;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -723,7 +725,7 @@
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">No records logged inside storage profiles.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records logged inside storage profiles.</td></tr>`;
                 return;
             }
 
@@ -733,6 +735,14 @@
                 const disabledAttr = permissionsMatrix.product_registry_access ? '' : 'disabled';
                 const isSelectedClass = (currentActiveId && currentActiveId === item.id) ? 'selected-row' : '';
                 
+                // Process dynamic pallet calculation logic +1 for excess
+                const totalInboundQty = parseInt(item.stock_quantity) || 0;
+                const qtyPerPallet = parseInt(item.qty_per_pallet) || 0;
+                let calculatedPallets = 0;
+                if (qtyPerPallet > 0) {
+                    calculatedPallets = Math.ceil(totalInboundQty / qtyPerPallet);
+                }
+
                 return `
                     <tr id="row-${item.id}" class="${isSelectedClass}">
                         <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
@@ -742,7 +752,10 @@
                         <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase;">${item.commodity || ''}</span></td>
                         <td style="font-size:0.8rem; color:#64748b; text-transform: uppercase;">${item.storage_facility || ''}</td>
                         <td>
-                            <span class="qty-val">${item.stock_quantity || 0}</span>
+                            <span class="qty-val">${totalInboundQty}</span>
+                        </td>
+                        <td>
+                            <span class="pallet-val">${calculatedPallets} Plt</span>
                         </td>
                         <td>
                             <div class="action-btn-group">
