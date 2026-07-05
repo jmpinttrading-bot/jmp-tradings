@@ -14,8 +14,10 @@
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        
+        /* ENFORCED: Forced line wrap with explicit visible overflow to ensure links never get clipped */
+        .nav-links { display: flex !important; gap: 8px !important; flex-wrap: wrap !important; width: 100% !important; padding-bottom: 5px !important; overflow: visible !important; }
+        .nav-btn { display: inline-block !important; background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background-color: #ee964b; color: #0f172a; }
 
@@ -72,7 +74,8 @@
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
             <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" style="background: #475569; color: white;">Settings</a>
+            <!-- Active Highlighting Styled Manually to stay persistence within Settings Workspace -->
+            <a href="admin-dashboard.html" class="nav-btn" style="background: #475569 !important; color: white !important;">Settings</a>
         </div>
     </nav>
 
