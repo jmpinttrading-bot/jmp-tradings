@@ -59,23 +59,9 @@
             background-color: #334155; 
             color: #cbd5e1; 
             text-decoration: none; 
-            padding: 6px 12px; 
-            border-radius: 4px; 
-            font-size: 0.75rem; 
-            font-weight: 500; 
-            cursor: pointer; 
-            border: none; 
-            white-space: nowrap; 
-            transition: all 0.2s; 
-        }
-        .nav-btn:hover { 
-            background-color: #475569; 
-            color: white; 
-        }
-        .nav-btn.active { 
-            background: #475569; 
-            color: white; 
-        }
+            padding: 6px 12px;  border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; transition: all 0.2s; }
+        .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn.active { background: #475569; color: white; }
 
         /* --- Workspace Content Styles --- */
         .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
@@ -107,25 +93,14 @@
         .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
         
         .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
-        .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0b2545; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
-        
-        .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
-        .form-row .form-group { flex: 1; margin-bottom: 0; }
-        
-        .form-row .flex-2 { flex: 2; }
-        .form-row .flex-1 { flex: 1; }
         
         .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
         .form-group label { margin-bottom: 4px; font-weight: 700; font-size: 0.8rem; color: #475569; text-transform: uppercase; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; background: white; height: 42px; }
-        .form-group textarea { height: 80px; resize: vertical; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; background: white; height: 80px; resize: vertical; }
+        .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
         
-        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { background-color: #f1f5f9; color: #64748b; cursor: not-allowed; }
-
         .btn-primary { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; width: 100%; }
         .btn-primary:hover { background: #11355e; }
-        .btn-primary:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
         .btn-secondary { background: #e2e8f0; color: #334155; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
         .btn-secondary:hover { background: #cbd5e1; }
         .form-actions { display: flex; gap: 10px; margin-top: 20px; }
@@ -147,11 +122,27 @@
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
         .master-table tr:hover td { background-color: #f8fafc; }
 
-        .btn-edit { background: #1e293b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
-        .btn-edit:hover { background: #ee964b; color: #0f172a; }
-        .btn-edit:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        /* Direct Edit Input Cell Elements */
+        .inline-price-input {
+            width: 120px;
+            height: 34px;
+            padding: 0 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+            outline: none;
+        }
+        .inline-price-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
 
-        .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
+        .btn-save-inline { background: #22c55e; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: background 0.2s; }
+        .btn-save-inline:hover { background: #16a34a; }
+        .btn-save-inline:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
         .modal-card { background: white; border-radius: 12px; max-width: 450px; width: 100%; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
         .modal-card h3 { font-size: 1.2rem; color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
@@ -169,8 +160,6 @@
         .restriction-modal-card .btn:hover { background: #11355e; }
 
         @media (max-width: 768px) {
-            .form-row { flex-direction: column; gap: 0; }
-            .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
             .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
             .ledger-search-box { width: 100%; }
             .ledger-search-box input { width: 100%; }
@@ -204,57 +193,6 @@
         
         <div class="workspace-grid">
             
-            <div class="card-panel" id="formContainerPanel">
-                <h3 id="formTitle">Update Product Unit Price</h3>
-                
-                <form id="priceForm" onsubmit="handleFormSubmit(event)">
-                    <input type="hidden" id="itemId">
-                    
-                    <div class="form-row">
-                        <div class="form-group flex-2">
-                            <label>SPSIC Number</label>
-                            <input type="text" id="spsicNumber" readonly placeholder="Select item from ledger below">
-                        </div>
-                        <div class="form-group flex-1">
-                            <label>Item Code</label>
-                            <input type="text" id="itemCode" readonly>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Item Description</label>
-                        <input type="text" id="itemName" readonly>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Sizes</label>
-                            <input type="text" id="itemSizes" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Commodity</label>
-                            <input type="text" id="itemCommodity" readonly>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Assigned Storage Hub</label>
-                            <input type="text" id="storageFacility" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label style="color: #f97316;">Target Unit Price (Per Item)</label>
-                            <input type="text" id="unitPrice" required placeholder="₱0.00" onfocus="clearCurrencyFormatting(this)" onblur="applyCurrencyFormatting(this)" disabled>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn-primary" id="submitBtn" disabled>Update Unit Pricing</button>
-                        <button type="button" class="btn-secondary" id="clearBtn" onclick="resetFormState()">Cancel</button>
-                    </div>
-                </form>
-            </div>
-
             <div class="card-panel" style="padding: 20px 0px;">
                 <div class="ledger-header-wrapper">
                     <h3>Active Fleet & Container Yards Balance Ledger</h3>
@@ -276,8 +214,8 @@
                                 <th>Commodity</th>
                                 <th>Assigned Hub</th>
                                 <th>On-Hand Balance</th>
-                                <th>Current Price</th>
-                                <th style="text-align: center;">Actions</th>
+                                <th style="width: 150px;">Target Price (PHP)</th>
+                                <th style="text-align: center; width: 100px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="ledgerTableBody">
@@ -304,6 +242,8 @@
         <div class="modal-card">
             <h3>Pricing Adjustments Log Authorization</h3>
             <form id="editRemarksForm" onsubmit="handlePriceUpdateExecution(event)">
+                <input type="hidden" id="selectedItemId">
+                <input type="hidden" id="selectedItemPriceValue">
                 <div class="form-group">
                     <label style="color: #d9534f;">Reason / Rate Adjustment Log Note (Required)</label>
                     <textarea id="modalItemEditRemarks" placeholder="Provide operational parameters or pricing model update reasoning details..."></textarea>
@@ -327,8 +267,6 @@
         let globallyFetchedItems = [];
         let permissionsMatrix = { profile_access: true, import_access: true, inventory_access: true, sales_invoice_access: true, audit_report_access: true, product_registry_access: false, settings_access: false };
 
-        const pesoFormatter = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' });
-
         function showSystemModal(title, message) {
             document.getElementById('systemAlertTitle').textContent = title;
             document.getElementById('systemAlertContent').textContent = message;
@@ -346,23 +284,6 @@
                             (moduleName.includes('Dashboard') && permissionsMatrix.profile_access) ||
                             (moduleName === 'Settings' && permissionsMatrix.settings_access);
             if (allowed) { window.location.href = url; } else { showSystemModal('Access Restricted', 'Security clearances are required.'); }
-        }
-
-        function applyCurrencyFormatting(input) {
-            const rawValue = input.value.replace(/[^0-9.-]+/g, "");
-            const parsedValue = parseFloat(rawValue);
-            input.value = !isNaN(parsedValue) ? pesoFormatter.format(parsedValue) : "";
-        }
-
-        function clearCurrencyFormatting(input) {
-            const rawValue = input.value.replace(/[^0-9.-]+/g, "");
-            const parsedValue = parseFloat(rawValue);
-            input.value = !isNaN(parsedValue) ? parsedValue : "";
-        }
-
-        function getCleanUnitPriceValue() {
-            const rawString = document.getElementById('unitPrice').value || "";
-            return parseFloat(rawString.replace(/[^0-9.-]+/g, "")) || 0;
         }
 
         async function initPriceDashboard() {
@@ -424,6 +345,7 @@
 
             tbody.innerHTML = items.map((item, index) => {
                 const disabledAttr = permissionsMatrix.product_registry_access ? '' : 'disabled';
+                const currentPriceValue = parseFloat(item.unit_price || 0);
                 return `
                     <tr>
                         <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
@@ -433,40 +355,28 @@
                         <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase;">${item.commodity || ''}</span></td>
                         <td style="font-size:0.8rem; color:#64748b; text-transform: uppercase;">${item.storage_facility || ''}</td>
                         <td style="font-weight: 700; color: #0f172a;">${item.stock_quantity || 0}</td>
-                        <td style="font-weight:600; color:#0f172a;">${pesoFormatter.format(parseFloat(item.unit_price || 0))}</td>
                         <td>
-                            <div class="action-btn-group">
-                                <button class="btn-edit" ${disabledAttr} onclick="populatePricingForm(${index})">Select for Pricing</button>
-                            </div>
+                            <input type="number" step="0.01" class="inline-price-input" id="inlinePrice-${item.id}" value="${currentPriceValue}" ${disabledAttr}>
+                        </td>
+                        <td style="text-align: center;">
+                            <button class="btn-save-inline" ${disabledAttr} onclick="triggerPriceUpdateModal('${item.id}')">Save</button>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        function populatePricingForm(index) {
-            const item = globallyFetchedItems[index];
-            if (!item) return;
+        function triggerPriceUpdateModal(id) {
+            const inputElement = document.getElementById(`inlinePrice-${id}`);
+            const rawValue = parseFloat(inputElement.value);
 
-            document.getElementById('itemId').value = item.id;
-            document.getElementById('spsicNumber').value = item.spsic_number || '';
-            document.getElementById('itemCode').value = item.item_code || '';
-            document.getElementById('itemName').value = item.item_name || '';
-            document.getElementById('itemSizes').value = item.sizes || '';
-            document.getElementById('itemCommodity').value = item.commodity || '';
-            document.getElementById('storageFacility').value = item.storage_facility || '';
-            
-            const targetInput = document.getElementById('unitPrice');
-            targetInput.disabled = false;
-            targetInput.value = pesoFormatter.format(parseFloat(item.unit_price || 0));
-            
-            document.getElementById('submitBtn').disabled = false;
-            document.getElementById('formTitle').textContent = `Manage Valuation: ${item.item_code}`;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+            if (isNaN(rawValue) || rawValue < 0) {
+                showSystemModal("Validation Error", "Please input a valid target price threshold value.");
+                return;
+            }
 
-        function handleFormSubmit(e) {
-            e.preventDefault();
+            document.getElementById('selectedItemId').value = id;
+            document.getElementById('selectedItemPriceValue').value = rawValue;
             document.getElementById('modalItemEditRemarks').value = '';
             document.getElementById('editRemarksModalOverlay').style.display = 'flex';
         }
@@ -478,8 +388,8 @@
             const logRemarksText = document.getElementById('modalItemEditRemarks').value.trim();
             if (logRemarksText === "") { showSystemModal("Validation Error", "An alteration log metric calculation explanation is required."); return; }
 
-            const id = document.getElementById('itemId').value;
-            const newPrice = getCleanUnitPriceValue();
+            const id = document.getElementById('selectedItemId').value;
+            const newPrice = parseFloat(document.getElementById('selectedItemPriceValue').value);
             const timestampISO = new Date().toISOString();
 
             const { error } = await supabaseClient
@@ -497,19 +407,8 @@
             } else {
                 alert("Product Unit Price record schema variables updated successfully.");
                 closeEditRemarksModal();
-                resetFormState();
                 fetchLedgerDataset();
             }
-        }
-
-        function resetFormState() {
-            document.getElementById('priceForm').reset();
-            document.getElementById('itemId').value = '';
-            const prcInp = document.getElementById('unitPrice');
-            prcInp.disabled = true;
-            prcInp.value = "";
-            document.getElementById('submitBtn').disabled = true;
-            document.getElementById('formTitle').textContent = "Update Product Unit Price";
         }
 
         function filterLedgerByDescription() {
