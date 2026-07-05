@@ -471,7 +471,6 @@
             currency: 'PHP'
         });
 
-        /* --- Updated to drive the Dashboard-styled Restriction layout --- */
         function showSystemModal(title, message) {
             document.getElementById('systemAlertTitle').textContent = title;
             document.getElementById('systemAlertContent').textContent = message;
@@ -649,7 +648,6 @@
             if (profile && profile.role === 'Admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
-                document.getElementById('sidebarTitle').textContent = "JMP ADMIN HQ";
             } else {
                 const masterAccess = profile ? profile.product_registry_access !== false : true; 
                 
@@ -661,7 +659,6 @@
 
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                document.getElementById('sidebarTitle').textContent = "JMP TERMINAL";
             }
             
             applyFormUIRestrictions();
