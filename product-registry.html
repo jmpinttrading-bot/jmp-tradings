@@ -184,7 +184,7 @@
             z-index: 9999; 
             opacity: 0; 
             pointer-events: none; 
-            transition: opacity 0.2s ease;
+            transition: opacity 0.2s ease-in-out;
         }
         .restriction-modal-container.is-visible { 
             opacity: 1; 
@@ -243,13 +243,13 @@
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn active">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Dashboard', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('My Profile', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Audit Report', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsBtn">Settings</a>
         </div>
     </nav>
 
@@ -461,9 +461,15 @@
         let globallyFetchedItems = [];
         let currentUserSessionData = null;
         
-        let permissions = {
-            isAdmin: false,
-            hasMasterAccess: false
+        // Dynamic permission configuration layout
+        let permissionsMatrix = { 
+            profile_access: true, 
+            import_access: true, 
+            inventory_access: true, 
+            sales_invoice_access: true, 
+            audit_report_access: true,
+            product_registry_access: false, // Updated state permission toggle rule
+            settings_access: false 
         };
 
         const pesoFormatter = new Intl.NumberFormat('en-PH', {
@@ -471,6 +477,7 @@
             currency: 'PHP'
         });
 
+        // Triggered styling modal handler mappings
         function showSystemModal(title, message) {
             document.getElementById('systemAlertTitle').textContent = title;
             document.getElementById('systemAlertContent').textContent = message;
@@ -483,6 +490,23 @@
 
         function showAlert(msg, type) {
             showSystemModal(type === 'error' ? 'Access Restricted' : 'Action Successful', msg);
+        }
+
+        /* --- Global Restriction Routing Engine --- */
+        function verifyNavigationPrivilege(moduleName, url) {
+            const allowed = (moduleName.includes('Profile') && permissionsMatrix.profile_access) ||
+                            (moduleName.includes('Import') && permissionsMatrix.import_access) ||
+                            (moduleName.includes('Inventory') && permissionsMatrix.inventory_access) ||
+                            (moduleName.includes('Sales') && permissionsMatrix.sales_invoice_access) ||
+                            (moduleName.includes('Audit') && permissionsMatrix.audit_report_access) ||
+                            (moduleName.includes('Dashboard') && permissionsMatrix.profile_access) ||
+                            (moduleName === 'Settings' && permissionsMatrix.settings_access);
+            
+            if (allowed) {
+                window.location.href = url;
+            } else {
+                showSystemModal('Access Restricted', 'Administrative privileges or authorized security permissions are required to access this system section.');
+            }
         }
 
         function applyCurrencyFormatting(input) {
@@ -578,7 +602,7 @@
         async function querySpsicRecordDataset() {
             const queryVal = document.getElementById('spsicSearchQuery').value.trim().toUpperCase();
             if (!queryVal) {
-                showAlert("Please enter a valid SPSIC Number sequence to fetch pipeline documents.", "error");
+                showSystemModal("Input Error", "Please enter a valid SPSIC Number sequence to fetch pipeline documents.");
                 return;
             }
 
@@ -589,20 +613,21 @@
                 .maybeSingle();
 
             if (error) {
-                showAlert("Database fetch engine failed to lookup SPSIC record: " + error.message, "error");
+                showSystemModal("Database Error", "Database fetch engine failed to lookup SPSIC record: " + error.message);
                 return;
             }
 
             if (!data) {
-                showAlert(`No registered context found for SPSIC Number "${queryVal}". Check your syntax or upload data.`, "error");
+                showSystemModal("Not Found", `No registered context found for SPSIC Number "${queryVal}". Check your syntax or upload data.`);
                 return;
             }
 
             document.getElementById('storageFacility').value = data.storage_location || "";
             document.getElementById('itemCommodity').value = data.commodity || "";
             document.getElementById('activeSpsicNumber').value = queryVal;
-            showAlert(`Manifest loaded successfully for SPSIC: ${queryVal}`, "success");
             
+            // Success alerts use basic JS to not lock dashboard flows unprompted
+            alert(`Manifest loaded successfully for SPSIC: ${queryVal}`);
             await autoGenerateSkuCode();
         }
 
@@ -620,7 +645,7 @@
             
             renderLedgerTable(filteredArray);
             if (filteredArray.length === 0) {
-                showAlert("No registered ledger line matches that description context string.", "error");
+                showSystemModal("Filter Alert", "No registered ledger line matches that description context string.");
             }
         }
 
@@ -641,24 +666,26 @@
 
             const { data: profile } = await supabaseClient
                 .from('profiles')
-                .select('role, username, product_registry_access')
+                .select('role, username, product_registry_access, import_access, inventory_access, sales_invoice_access')
                 .eq('id', user.id)
                 .maybeSingle();
 
-            if (profile && profile.role === 'Admin') {
-                permissions.isAdmin = true;
-                permissions.hasMasterAccess = true;
-            } else {
-                const masterAccess = profile ? profile.product_registry_access !== false : true; 
-                
-                if (!masterAccess) {
-                    alert("Unauthorized entry context: Account configuration prevents product registry pathing.");
-                    window.location.href = "employee-dashboard.html";
-                    return;
-                }
+            if (profile) {
+                permissionsMatrix = {
+                    profile_access: true,
+                    import_access: profile.role === 'Admin' || profile.import_access !== false,
+                    inventory_access: profile.role === 'Admin' || profile.inventory_access !== false,
+                    sales_invoice_access: profile.role === 'Admin' || profile.sales_invoice_access !== false,
+                    audit_report_access: profile.role === 'Admin' || profile.inventory_access !== false,
+                    product_registry_access: profile.role === 'Admin' || profile.product_registry_access !== false,
+                    settings_access: profile.role === 'Admin'
+                };
+            }
 
-                permissions.isAdmin = false;
-                permissions.hasMasterAccess = true;
+            if (!permissionsMatrix.product_registry_access) {
+                showSystemModal("Access Restricted", "Unauthorized entry context: Account configuration prevents product registry pathing.");
+                setTimeout(() => { window.location.href = "employee-dashboard.html"; }, 2500);
+                return;
             }
             
             applyFormUIRestrictions();
@@ -673,20 +700,12 @@
         function setupSettingsProtection() {
             const settingsBtn = document.getElementById('settingsBtn');
             if (settingsBtn) {
-                settingsBtn.addEventListener('click', async function(e) {
+                settingsBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    if (!currentUserSessionData) return;
-                    
-                    const { data: profile } = await supabaseClient
-                        .from('profiles')
-                        .select('role')
-                        .eq('id', currentUserSessionData.id)
-                        .maybeSingle();
-
-                    if (profile && profile.role?.toUpperCase() === "ADMIN") {
+                    if (permissionsMatrix.settings_access) {
                         window.location.href = "admin-dashboard.html";
                     } else {
-                        showSystemModal('Access Denied', 'You do not hold the required Administrative privileges to access Control Settings.');
+                        showSystemModal('Access Restricted', 'Administrative privileges or authorized security permissions are required to access this system section.');
                     }
                 });
             }
@@ -697,7 +716,7 @@
             const structuralLock = container.querySelector('.form-lock-message');
             if (structuralLock) structuralLock.remove();
             
-            if (!permissions.hasMasterAccess) {
+            if (!permissionsMatrix.product_registry_access) {
                 const lockMask = document.createElement('div');
                 lockMask.className = "form-lock-message";
                 lockMask.innerHTML = `<span>🔒 Account privileges do not allow cargo parameters or gate configurations modifications.</span>`;
@@ -712,7 +731,7 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                showAlert("System error syncing ledger elements: " + error.message, "error");
+                showSystemModal("Sync Failure", "System error syncing ledger elements: " + error.message);
                 return;
             }
 
@@ -728,7 +747,7 @@
             }
 
             tbody.innerHTML = items.map((item, index) => {
-                const disabledAttr = permissions.hasMasterAccess ? '' : 'disabled';
+                const disabledAttr = permissionsMatrix.product_registry_access ? '' : 'disabled';
                 const unitPriceParsed = parseFloat(item.unit_price || 0);
                 
                 return `
@@ -758,8 +777,8 @@
             const item = globallyFetchedItems[index];
             if (!item) return;
 
-            if (!permissions.hasMasterAccess) {
-                showAlert("Action Denied: You do not have permission to alter stock counts.", "error");
+            if (!permissionsMatrix.product_registry_access) {
+                showSystemModal("Access Restricted", "Action Denied: You do not have permission to alter stock counts.");
                 return;
             }
             document.getElementById('modalItemId').value = item.id;
@@ -782,7 +801,7 @@
             const trackingRemarks = document.getElementById('modalEditRemarks').value.trim();
             
             if (trackingRemarks === "") {
-                showAlert("Action Aborted: A tracking entry record change explanation is required.", "error");
+                showSystemModal("Validation Error", "Action Aborted: A tracking entry record change explanation is required.");
                 return;
             }
 
@@ -796,7 +815,7 @@
                 .single();
                 
             if (fetchErr) { 
-                showAlert("Update tracking verification configuration error: " + fetchErr.message, "error"); 
+                showSystemModal("Verification Error", "Update tracking verification configuration error: " + fetchErr.message); 
                 return; 
             }
 
@@ -811,7 +830,7 @@
                 .eq('id', id);
 
             if (invError) {
-                showAlert(invError.message, "error");
+                showSystemModal("Execution Error", invError.message);
                 return;
             }
 
@@ -837,12 +856,12 @@
                     .insert([transactionPayload]);
 
                 if (txError) {
-                    showAlert("Balances modified inside active registry, but transactions audit trace log creation failed.", "error");
+                    alert("Balances modified inside active registry, but transactions audit trace log creation failed.");
                 } else {
-                    showAlert("Quantity stock parameters updated and transaction audit tracking successfully generated.", "success");
+                    alert("Quantity stock parameters updated and transaction audit tracking successfully generated.");
                 }
             } else {
-                showAlert("Inventory information metadata saved successfully without balance fluctuations.", "success");
+                alert("Inventory information metadata saved successfully without balance fluctuations.");
             }
 
             closeQtyModal();
@@ -853,8 +872,8 @@
             const item = globallyFetchedItems[index];
             if (!item) return;
 
-            if (!permissions.hasMasterAccess) {
-                showAlert("Action Denied: You do not have permission to edit product descriptions.", "error");
+            if (!permissionsMatrix.product_registry_access) {
+                showSystemModal("Access Restricted", "Action Denied: You do not have permission to edit product descriptions.");
                 return;
             }
 
@@ -902,8 +921,8 @@
             e.preventDefault();
             const id = document.getElementById('itemId').value;
             
-            if (!permissions.hasMasterAccess) {
-                showAlert("Action Denied: Missing Product Registry Privileges.", "error");
+            if (!permissionsMatrix.product_registry_access) {
+                showSystemModal("Access Restricted", "Action Denied: Missing Product Registry Privileges.");
                 return;
             }
 
@@ -919,7 +938,7 @@
             const editRemarksText = document.getElementById('modalItemEditRemarks').value.trim();
 
             if (editRemarksText === "") {
-                showAlert("Editing aborted: You must supply valid edit remarks reasons to apply modifications.", "error");
+                showSystemModal("Validation Error", "Editing aborted: You must supply valid edit remarks reasons to apply modifications.");
                 return;
             }
 
@@ -953,9 +972,9 @@
             const { error } = await supabaseClient.from('inventory').update(editPayload).eq('id', id);
             
             if (error) {
-                showAlert(error.message, "error");
+                showSystemModal("Database Error", error.message);
             } else {
-                showAlert("Master log file parameters updated successfully.", "success");
+                alert("Master log file parameters updated successfully.");
                 closeEditRemarksModal();
                 resetFormState();
                 fetchLedgerDataset();
@@ -995,7 +1014,7 @@
                 .single();
 
             if (invError) {
-                showAlert("Error generating inventory registration: " + invError.message, "error");
+                showSystemModal("Execution Error", "Error generating inventory registration: " + invError.message);
                 return;
             }
 
@@ -1021,11 +1040,11 @@
                 .insert([transactionPayload]);
 
             if (txError) {
-                showAlert("Inventory registered, but transaction history failed to write: " + txError.message, "error");
+                showSystemModal("Log Mismatch", "Inventory registered, but transaction history failed to write: " + txError.message);
                 return;
             }
 
-            showAlert(`Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`, "success");
+            alert(`Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`);
             resetFormState();
             fetchLedgerDataset();
         }
