@@ -541,20 +541,20 @@
             currentUserEmail = user.email;
             currentUserSessionData = user;
             
+            setupSettingsProtection();
+
             const { data: profile } = await supabaseClient
                 .from('profiles')
                 .select('role, username, product_registry_access')
                 .eq('id', user.id)
-                .single();
-            
-            setupSettingsProtection();
+                .maybeSingle();
 
             if (profile && profile.role === 'Admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
                 document.getElementById('sidebarTitle').textContent = "JMP ADMIN HQ";
             } else {
-                const masterAccess = profile ? profile.product_registry_access !== false : false;
+                const masterAccess = profile ? profile.product_registry_access !== false : true; 
                 
                 if (!masterAccess) {
                     alert("Unauthorized entry context: Account configuration prevents product registry pathing.");
@@ -581,22 +581,18 @@
             if (settingsBtn) {
                 settingsBtn.addEventListener('click', async function(e) {
                     e.preventDefault();
-                    const userRole = currentUserSessionData.user_metadata?.role || "";
+                    if (!currentUserSessionData) return;
                     
-                    if (userRole.toUpperCase() === "ADMIN") {
+                    const { data: profile } = await supabaseClient
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', currentUserSessionData.id)
+                        .maybeSingle();
+
+                    if (profile && profile.role?.toUpperCase() === "ADMIN") {
                         window.location.href = "admin-dashboard.html";
                     } else {
-                        const { data: profile } = await supabaseClient
-                            .from('profiles')
-                            .select('role')
-                            .eq('id', currentUserSessionData.id)
-                            .maybeSingle();
-
-                        if (profile && profile.role?.toUpperCase() === "ADMIN") {
-                            window.location.href = "admin-dashboard.html";
-                        } else {
-                            showSystemModal('error', 'Access Denied', 'You do not hold the required Administrative privileges to access Control Settings.');
-                        }
+                        showSystemModal('error', 'Access Denied', 'You do not hold the required Administrative privileges to access Control Settings.');
                     }
                 });
             }
@@ -604,6 +600,8 @@
 
         function applyFormUIRestrictions() {
             const container = document.getElementById('formContainerPanel');
+            const structuralLock = container.querySelector('.form-lock-message');
+            if (structuralLock) structuralLock.remove();
             
             if (!permissions.hasMasterAccess) {
                 const lockMask = document.createElement('div');
