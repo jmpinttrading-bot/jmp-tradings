@@ -686,7 +686,7 @@
                     if (permissionsMatrix.settings_access) {
                         window.location.href = "admin-dashboard.html";
                     } else {
-                        showSystemModal('Access Restricted', 'Administrative privileges or authorized security permissions are required to access this system section.');
+                        showSystemModal('Access Restricted', 'Administrative privileges or authorized security permissions are required to access this section.');
                     }
                 });
             }
@@ -803,7 +803,7 @@
 
             const { data: currentItem, error: fetchErr } = await supabaseClient
                 .from('inventory')
-                .select('id, item_code, item_name, sizes, commodity, storage_facility, spsic_number')
+                .select('id, item_code, item_name, sizes, commodity, storage_facility, spsic_number, qty_per_pallet')
                 .eq('id', id)
                 .single();
                 
@@ -841,7 +841,8 @@
                     storage_facility: currentItem.storage_facility.toUpperCase(),
                     date: currentTimestampISO.split('T')[0], 
                     remarks: `Modal Quantity Sync (From ${oldQty} to ${newQty}): ${trackingRemarks}`,
-                    spsic_number: currentItem.spsic_number
+                    spsic_number: currentItem.spsic_number,
+                    qty_per_pallet: parseInt(currentItem.qty_per_pallet) || 0
                 };
 
                 const { error: txError } = await supabaseClient
@@ -944,6 +945,18 @@
             const original_remarks = document.getElementById('formRemarks').value.trim();
             const currentTimestampISO = new Date().toISOString();
 
+            // Fetch current item to retrieve its current balance metrics and qty_per_pallet parameter
+            const { data: existingItem, error: fetchErr } = await supabaseClient
+                .from('inventory')
+                .select('stock_quantity, qty_per_pallet')
+                .eq('id', id)
+                .single();
+
+            if (fetchErr) {
+                showSystemModal("Database Error", "Failed to retrieve contextual parameters for transaction tracing: " + fetchErr.message);
+                return;
+            }
+
             const editPayload = { 
                 spsic_number,
                 item_code, 
@@ -962,12 +975,40 @@
             
             if (error) {
                 showSystemModal("Database Error", error.message);
-            } else {
-                alert("Master log file parameters updated successfully.");
-                closeEditRemarksModal();
-                resetFormState();
-                fetchLedgerDataset();
+                return;
             }
+
+            // Generate contextual transaction tracking trace parameter logs
+            const transactionPayload = {
+                item_id: id,
+                item_code: item_code,
+                item_name: item_name,
+                sizes: sizes,
+                commodity: commodity,
+                in_quantity: existingItem.stock_quantity || 0,
+                sales_order_no: "Shipment Mod",
+                transactions_type: "Update Registry",
+                processed_by: currentUserEmail,
+                storage_facility: storage_facility,
+                date: chosen_date,
+                remarks: `Modified configuration metrics trace: ${editRemarksText}`,
+                spsic_number: spsic_number,
+                qty_per_pallet: parseInt(existingItem.qty_per_pallet) || 0
+            };
+
+            const { error: txError } = await supabaseClient
+                .from('transactions')
+                .insert([transactionPayload]);
+
+            if (txError) {
+                alert("Master log metrics modified, but transaction history tracing file update validation failed.");
+            } else {
+                alert("Master log file parameters and transaction trail metrics updated successfully.");
+            }
+
+            closeEditRemarksModal();
+            resetFormState();
+            fetchLedgerDataset();
         }
 
         async function executeRegistration() {
@@ -992,8 +1033,7 @@
                 date: chosen_date,
                 remarks: input_remarks,
                 stock_quantity: quantity,
-                // If you add a column named qty_per_pallet in Supabase, uncomment the line below:
-                // qty_per_pallet: qty_per_pallet,
+                qty_per_pallet: qty_per_pallet,
                 processed_by: currentUserEmail
             };
 
@@ -1021,7 +1061,8 @@
                 storage_facility: storage_facility,
                 date: chosen_date, 
                 remarks: input_remarks || "",
-                spsic_number: spsic_number
+                spsic_number: spsic_number,
+                qty_per_pallet: qty_per_pallet
             };
 
             const { error: txError } = await supabaseClient
