@@ -48,7 +48,6 @@
         .permission-vertical-list { display: flex; flex-direction: column; gap: 12px; }
         .permission-item { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 14px; border-radius: 8px; border: 1px solid #f1f5f9; }
         .permission-label { font-size: 0.85rem; color: #475569; font-weight: 600; }
-        .permission-sub-item { margin-left: 20px; background: #fafafa; border-left: 3px solid #ee964b; }
         .toggle-switch-container { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; }
         .switch-input-element { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch-input-element input { opacity: 0; width: 0; height: 0; }
@@ -129,14 +128,13 @@
         }
 
         async function fetchPlatformUserProfiles() {
-            // FIXED: Sorted by username ascending to ensure user boxes never shuffle on reload
             const { data: profiles } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
             const container = document.getElementById('accessManagementCardsContainer');
             container.innerHTML = "";
             profiles.forEach(profile => {
                 const isAdmin = profile.role === 'Admin';
-                const createToggle = (label, accessKey, isAllowed, isSub = false) => `
-                    <div class="permission-item ${isSub ? 'permission-sub-item' : ''}">
+                const createToggle = (label, accessKey, isAllowed) => `
+                    <div class="permission-item">
                         <span class="permission-label">${label}</span>
                         <div class="toggle-switch-container">
                             <label class="switch-input-element"><input type="checkbox" ${isAllowed?'checked':''} ${isAdmin?'disabled':''} onchange="updateDatabaseAccessClearance('${profile.id}', '${accessKey}', this)"><span class="slider-rail"></span></label>
@@ -152,9 +150,7 @@
                         ${createToggle('Employee 201 File', 'employee_201_access', profile.employee_201_access !== false)}
                         ${createToggle('Import Management', 'import_access', profile.import_access !== false)}
                         ${createToggle('Inventory Management', 'inventory_access', profile.inventory_access !== false)}
-                        ${createToggle('↳ Register Item', 'inv_register_access', profile.inv_register_access === true, true)}
-                        ${createToggle('↳ Edit Info', 'inv_edit_access', profile.inv_edit_access === true, true)}
-                        ${createToggle('↳ Adjust Stock', 'inv_quantity_access', profile.inv_quantity_access === true, true)}
+                        ${createToggle('Product Registry Management', 'product_registry_access', profile.product_registry_access !== false)}
                         ${createToggle('Sales Invoice Management', 'sales_invoice_access', profile.sales_invoice_access !== false)}
                     </div>`;
                 container.appendChild(card);

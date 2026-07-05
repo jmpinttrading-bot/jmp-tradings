@@ -356,7 +356,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3IDE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentAdminId = null;
@@ -367,10 +367,7 @@
         
         let permissions = {
             isAdmin: false,
-            hasMasterAccess: false,
-            canRegister: false,
-            canEdit: false,
-            canQuantity: false
+            hasMasterAccess: false
         };
 
         const pesoFormatter = new Intl.NumberFormat('en-PH', {
@@ -378,7 +375,6 @@
             currency: 'PHP'
         });
 
-        // Synced Modals Core
         function showSystemModal(type, title, message) {
             document.getElementById('systemAlertTitle').textContent = title;
             document.getElementById('systemAlertContent').textContent = message;
@@ -442,7 +438,6 @@
                 return;
             }
 
-            // Extract the last 4 digits of the SPSIC Number
             const spsicLast4 = spsicNum.length >= 4 ? spsicNum.slice(-4) : spsicNum;
             const commAbbr = commodity.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
 
@@ -458,7 +453,6 @@
                 let matchedSizes = [];
                 if (data) {
                     data.forEach(row => {
-                        // Look for item codes starting with the prefix and the 4-digit slice
                         if (row.item_code && row.item_code.startsWith(prefix + spsicLast4)) {
                             if (!matchedSizes.includes(row.sizes.trim().toLowerCase())) {
                                 matchedSizes.push(row.sizes.trim().toLowerCase());
@@ -477,7 +471,6 @@
                     sequenceNum = String(matchedSizes.length + 1).padStart(2, '0');
                 }
 
-                // Generates SKU using only the last 4 digits of the SPSIC number
                 skuInput.value = `${prefix}${spsicLast4}-${commAbbr}-${sequenceNum}`;
 
             } catch (err) {
@@ -550,7 +543,7 @@
             
             const { data: profile } = await supabaseClient
                 .from('profiles')
-                .select('role, username, inventory_access, inv_register_access, inv_edit_access, inv_quantity_access')
+                .select('role, username, product_registry_access')
                 .eq('id', user.id)
                 .single();
             
@@ -559,26 +552,18 @@
             if (profile && profile.role === 'Admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
-                permissions.canRegister = true;
-                permissions.canEdit = true;
-                permissions.canQuantity = true;
-                
                 document.getElementById('sidebarTitle').textContent = "JMP ADMIN HQ";
             } else {
-                const masterAccess = profile ? profile.inventory_access !== false : false;
+                const masterAccess = profile ? profile.product_registry_access !== false : false;
                 
                 if (!masterAccess) {
-                    alert("Unauthorized entry context: Account configuration prevents inventory pathing.");
+                    alert("Unauthorized entry context: Account configuration prevents product registry pathing.");
                     window.location.href = "employee-dashboard.html";
                     return;
                 }
 
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                permissions.canRegister = profile ? profile.inv_register_access === true : false;
-                permissions.canEdit = profile ? profile.inv_edit_access === true : false;
-                permissions.canQuantity = profile ? profile.inv_quantity_access === true : false;
-
                 document.getElementById('sidebarTitle').textContent = "JMP TERMINAL";
             }
             
@@ -620,27 +605,11 @@
         function applyFormUIRestrictions() {
             const container = document.getElementById('formContainerPanel');
             
-            if (!permissions.canRegister && !permissions.canEdit) {
+            if (!permissions.hasMasterAccess) {
                 const lockMask = document.createElement('div');
                 lockMask.className = "form-lock-message";
                 lockMask.innerHTML = `<span>🔒 Account privileges do not allow cargo parameters or gate configurations modifications.</span>`;
                 container.appendChild(lockMask);
-                return;
-            }
-
-            if (!permissions.canRegister && document.getElementById('itemId').value === '') {
-                document.getElementById('itemCode').disabled = true;
-                document.getElementById('itemName').disabled = true;
-                document.getElementById('itemSizes').disabled = true;
-                document.getElementById('itemCommodity').disabled = true;
-                document.getElementById('storageFacility').disabled = true;
-                document.getElementById('dateReceived').disabled = true;
-                document.getElementById('stockQuantity').disabled = true;
-                document.getElementById('unitPrice').disabled = true;
-                document.getElementById('formRemarks').disabled = true;
-                document.getElementById('submitBtn').disabled = true;
-                
-                document.getElementById('formTitle').textContent = "Select 'Edit' below to modify parameters";
             }
         }
 
@@ -667,8 +636,7 @@
             }
 
             tbody.innerHTML = items.map((item, index) => {
-                const qtyDisabledAttr = permissions.canQuantity ? '' : 'disabled';
-                const editDisabledAttr = permissions.canEdit ? '' : 'disabled';
+                const disabledAttr = permissions.hasMasterAccess ? '' : 'disabled';
                 const unitPriceParsed = parseFloat(item.unit_price || 0);
                 
                 return `
@@ -685,8 +653,8 @@
                         <td style="font-weight:600; color:#0f172a;">${pesoFormatter.format(unitPriceParsed)}</td>
                         <td>
                             <div class="action-btn-group">
-                                <button class="btn-edit" ${editDisabledAttr} onclick="populateFormByIndex(${index})">Edit</button>
-                                <button class="btn-qty-adj" ${qtyDisabledAttr} onclick="openQtyModalByIndex(${index})">Adj Qty</button>
+                                <button class="btn-edit" ${disabledAttr} onclick="populateFormByIndex(${index})">Edit</button>
+                                <button class="btn-qty-adj" ${disabledAttr} onclick="openQtyModalByIndex(${index})">Adj Qty</button>
                             </div>
                         </td>
                     </tr>
@@ -698,7 +666,7 @@
             const item = globallyFetchedItems[index];
             if (!item) return;
 
-            if (!permissions.canQuantity) {
+            if (!permissions.hasMasterAccess) {
                 showAlert("Action Denied: You do not have permission to alter stock counts.", "error");
                 return;
             }
@@ -793,7 +761,7 @@
             const item = globallyFetchedItems[index];
             if (!item) return;
 
-            if (!permissions.canEdit) {
+            if (!permissions.hasMasterAccess) {
                 showAlert("Action Denied: You do not have permission to edit product descriptions.", "error");
                 return;
             }
@@ -842,12 +810,8 @@
             e.preventDefault();
             const id = document.getElementById('itemId').value;
             
-            if (!id && !permissions.canRegister) {
+            if (!permissions.hasMasterAccess) {
                 showAlert("Action Denied: Missing Product Registry Privileges.", "error");
-                return;
-            }
-            if (id && !permissions.canEdit) {
-                showAlert("Action Denied: Missing Parameter Modification Privileges.", "error");
                 return;
             }
 
