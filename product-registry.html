@@ -9,29 +9,75 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* --- Synchronized Layout Components --- */
+        /* --- Synchronized Navbar Layout Components from employee-dashboard.html --- */
         .navbar { 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
             background-color: #1e293b; 
             color: white; 
             width: 100%; 
             display: flex; 
+            flex-direction: column; 
+            padding: 10px; 
+            gap: 10px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+        }
+        .top-row { 
+            display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            padding: 14px 30px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            width: 100%; 
+            gap: 10px; 
         }
-        .nav-left { display: flex; align-items: center; gap: 30px; }
-        .nav-title { font-size: 0.95rem; color: #f97316; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-        .nav-links { display: flex; gap: 6px; align-items: center; }
-        .nav-btn { background-color: transparent; color: #cbd5e1; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
-        .nav-btn:hover { background-color: #334155; color: white; }
-        .nav-btn.active { background: #ee964b; color: #0f172a; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        .logout-btn:hover { background-color: #dc2626; }
+        .nav-title { 
+            font-size: 0.75rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+        }
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 6px 10px; 
+            border-radius: 4px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+        .logout-btn:hover { 
+            background-color: #dc2626; 
+        }
+        .nav-links { 
+            display: flex; 
+            gap: 8px; 
+            flex-wrap: wrap; 
+            width: 100%; 
+            padding-bottom: 5px; 
+        }
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 6px 12px; 
+            border-radius: 4px; 
+            font-size: 0.75rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            transition: all 0.2s; 
+        }
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: white; 
+        }
+        .nav-btn.active { 
+            background: #475569; 
+            color: white; 
+        }
 
+        /* --- Workspace Content Styles --- */
         .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
 
@@ -61,7 +107,7 @@
         .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
         
         .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
-        .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
+        .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0b2545; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
         
         .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
         .form-row .form-group { flex: 1; margin-bottom: 0; }
@@ -70,21 +116,21 @@
         .form-row .flex-1 { flex: 1; }
         
         .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; height: 42px; }
+        .form-group label { margin-bottom: 4px; font-weight: 700; font-size: 0.8rem; color: #475569; text-transform: uppercase; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; background: white; height: 42px; }
         .form-group textarea { height: 80px; resize: vertical; }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
         
-        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { background: #cbd5e1; color: #475569; cursor: not-allowed; }
+        .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { background-color: #f1f5f9; color: #64748b; cursor: not-allowed; }
         
         #storageFacility, #itemCode, #itemCommodity { text-transform: uppercase; }
 
-        .form-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-primary { flex: 1; background: #ee964b; color: #0f172a; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; }
-        .btn-primary:hover { background: #e0853c; }
+        .btn-primary { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; width: 100%; }
+        .btn-primary:hover { background: #11355e; }
         .btn-primary:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
-        .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
-        .btn-secondary:hover { background: #b8c5d6; }
+        .btn-secondary { background: #e2e8f0; color: #334155; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .form-actions { display: flex; gap: 10px; margin-top: 20px; }
 
         .search-engine-block { display: flex; gap: 12px; width: 100%; margin-bottom: 25px; align-items: flex-end; }
         .search-engine-block .form-group { margin-bottom: 0; flex: 1; }
@@ -122,25 +168,61 @@
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
         .modal-card { background: white; border-radius: 12px; max-width: 450px; width: 100%; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
-        .modal-card h3 { font-size: 1.2rem; color: #0f172a; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; }
+        .modal-card h3 { font-size: 1.2rem; color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
 
-        /* Synced System Modal Overlays */
-        .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); }
-        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); overflow: hidden; }
-        .system-alert-header { padding: 20px 24px 10px; display: flex; align-items: center; gap: 12px; }
-        .system-alert-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; }
-        .system-alert-icon.success { background: #d1fae5; color: #065f46; }
-        .system-alert-icon.error { background: #fee2e2; color: #991b1b; }
-        .system-alert-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
-        .system-alert-content { padding: 10px 24px 24px; color: #475569; font-size: 0.95rem; }
-        .system-alert-actions { padding: 12px 24px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; }
-        .alert-btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
-        .alert-btn-primary { background: #0f172a; color: white; }
-
-        @media (max-width: 1024px) {
-            .navbar { flex-direction: column; gap: 15px; padding: 14px 20px; align-items: flex-start; }
-            .nav-left { width: 100%; justify-content: space-between; }
-            .nav-links { width: 100%; overflow-x: auto; padding-bottom: 5px; }
+        /* --- Exact Restriction Modal Design from employee-dashboard.html --- */
+        .restriction-modal-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(11, 37, 69, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 9999; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.2s ease;
+        }
+        .restriction-modal-container.is-visible { 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
+        .restriction-modal-card { 
+            background: white; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 440px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .restriction-modal-card h4 {
+            font-size: 1.2rem;
+            color: #0b2545;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .restriction-modal-card p {
+            font-size: 0.95rem;
+            color: #475569;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .restriction-modal-card .btn {
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            width: 100%;
+        }
+        .restriction-modal-card .btn:hover {
+            background: #11355e;
         }
 
         @media (max-width: 768px) {
@@ -156,19 +238,19 @@
 <body>
 
     <nav class="navbar">
-        <div class="nav-left">
+        <div class="top-row">
             <div class="nav-title" id="sidebarTitle">JMP INTERNATIONAL FISH TRADING</div>
-            <div class="nav-links">
-                <a href="dashboard.html" class="nav-btn">Dashboard</a>
-                <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-                <a href="import-docs.html" class="nav-btn">Imports</a>
-                <a href="inventory-management.html" class="nav-btn active">Inventory</a>
-                <a href="sales-invoice.html" class="nav-btn">Sales</a>
-                <a href="audit-report.html" class="nav-btn">Audit Report</a>
-                <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn">Settings</a>
-            </div>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
-        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-btn">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
+            <a href="import-docs.html" class="nav-btn">Imports</a>
+            <a href="inventory-management.html" class="nav-btn active">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="audit-report.html" class="nav-btn">Audit Report</a>
+            <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn">Settings</a>
+        </div>
     </nav>
 
     <div class="main-content">
@@ -314,16 +396,11 @@
         </div>
     </div>
 
-    <div class="system-alert-overlay" id="systemAlertOverlay">
-        <div class="system-alert-card">
-            <div class="system-alert-header">
-                <div class="system-alert-icon success" id="systemAlertIcon">✓</div>
-                <div class="system-alert-title" id="systemAlertTitle">Notification</div>
-            </div>
-            <div class="system-alert-content" id="systemAlertContent">Message placeholder</div>
-            <div class="system-alert-actions">
-                <button class="alert-btn alert-btn-primary" onclick="closeSystemModal()">Dismiss</button>
-            </div>
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="systemAlertTitle">Access Restricted</h4>
+            <p id="systemAlertContent">Administrative privileges or authorized security permissions are required to access this system section.</p>
+            <button class="btn" onclick="closeSystemModal()">Acknowledge</button>
         </div>
     </div>
 
@@ -366,7 +443,7 @@
                     <textarea id="modalItemEditRemarks" placeholder="You must supply a change log parameter modification description to proceed..."></textarea>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary" style="background: #1e293b; color: white;">Confirm Changes</button>
+                    <button type="submit" class="btn-primary">Confirm Changes</button>
                     <button type="button" class="btn-secondary" onclick="closeEditRemarksModal()">Cancel</button>
                 </div>
             </form>
@@ -394,15 +471,20 @@
             currency: 'PHP'
         });
 
-        function showSystemModal(type, title, message) {
+        /* --- Updated to drive the Dashboard-styled Restriction layout --- */
+        function showSystemModal(title, message) {
             document.getElementById('systemAlertTitle').textContent = title;
             document.getElementById('systemAlertContent').textContent = message;
-            document.getElementById('systemAlertIcon').className = `system-alert-icon ${type}`;
-            document.getElementById('systemAlertIcon').textContent = type === 'success' ? '✓' : '✕';
-            document.getElementById('systemAlertOverlay').style.display = 'flex';
+            document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
-        function closeSystemModal() { document.getElementById('systemAlertOverlay').style.display = 'none'; }
+        function closeSystemModal() { 
+            document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
+        }
+
+        function showAlert(msg, type) {
+            showSystemModal(type === 'error' ? 'Access Restricted' : 'Action Successful', msg);
+        }
 
         function applyCurrencyFormatting(input) {
             const rawValue = input.value.replace(/[^0-9.-]+/g, "");
@@ -427,10 +509,6 @@
         function getCleanUnitPriceValue() {
             const rawString = document.getElementById('unitPrice').value || "";
             return parseFloat(rawString.replace(/[^0-9.-]+/g, "")) || 0;
-        }
-
-        function showAlert(msg, type) {
-            showSystemModal(type === 'error' ? 'error' : 'success', type === 'error' ? '⚠️ System Alert' : '✅ Success', msg);
         }
 
         async function autoGenerateSkuCode() {
@@ -611,7 +689,7 @@
                     if (profile && profile.role?.toUpperCase() === "ADMIN") {
                         window.location.href = "admin-dashboard.html";
                     } else {
-                        showSystemModal('error', 'Access Denied', 'You do not hold the required Administrative privileges to access Control Settings.');
+                        showSystemModal('Access Denied', 'You do not hold the required Administrative privileges to access Control Settings.');
                     }
                 });
             }
