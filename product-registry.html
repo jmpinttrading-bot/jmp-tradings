@@ -9,15 +9,28 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* Navbar Styles (Synced) */
-        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background: #475569; color: white; }
+        /* --- Synchronized Layout Components --- */
+        .navbar { 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 14px 30px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+        }
+        .nav-left { display: flex; align-items: center; gap: 30px; }
+        .nav-title { font-size: 0.95rem; color: #f97316; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .nav-links { display: flex; gap: 6px; align-items: center; }
+        .nav-btn { background-color: transparent; color: #cbd5e1; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+        .nav-btn:hover { background-color: #334155; color: white; }
+        .nav-btn.active { background: #ee964b; color: #0f172a; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        .logout-btn:hover { background-color: #dc2626; }
 
         .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
@@ -124,6 +137,12 @@
         .alert-btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
         .alert-btn-primary { background: #0f172a; color: white; }
 
+        @media (max-width: 1024px) {
+            .navbar { flex-direction: column; gap: 15px; padding: 14px 20px; align-items: flex-start; }
+            .nav-left { width: 100%; justify-content: space-between; }
+            .nav-links { width: 100%; overflow-x: auto; padding-bottom: 5px; }
+        }
+
         @media (max-width: 768px) {
             .form-row { flex-direction: column; gap: 0; }
             .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
@@ -137,19 +156,19 @@
 <body>
 
     <nav class="navbar">
-        <div class="top-row">
+        <div class="nav-left">
             <div class="nav-title" id="sidebarTitle">JMP INTERNATIONAL FISH TRADING</div>
-            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-btn">Dashboard</a>
+                <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
+                <a href="import-docs.html" class="nav-btn">Imports</a>
+                <a href="inventory-management.html" class="nav-btn active">Inventory</a>
+                <a href="sales-invoice.html" class="nav-btn">Sales</a>
+                <a href="audit-report.html" class="nav-btn">Audit Report</a>
+                <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn">Settings</a>
+            </div>
         </div>
-        <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn active">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn">Settings</a>
-        </div>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
     </nav>
 
     <div class="main-content">
