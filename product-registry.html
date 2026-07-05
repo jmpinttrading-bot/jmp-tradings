@@ -163,10 +163,6 @@
         .btn-edit { background: #1e293b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
         .btn-edit:hover { background: #ee964b; color: #0f172a; }
         .btn-edit:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
-        
-        .btn-qty-adj { background: #ee964b; color: #0f172a; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
-        .btn-qty-adj:hover { background: #e0853c; }
-        .btn-qty-adj:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
 
@@ -407,36 +403,6 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="qtyModalOverlay">
-        <div class="modal-card">
-            <h3>Manual Quantity Balancing</h3>
-            <form id="qtyAdjustmentForm" onsubmit="handleQtyModalSubmit(event)">
-                <input type="hidden" id="modalItemId">
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Old Quantity Balance</label>
-                        <input type="number" id="modalOldQty" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label>New Target Quantity</label>
-                        <input type="number" id="modalNewQty" required min="0">
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Edit Remarks / Alteration Log Reason</label>
-                    <textarea id="modalEditRemarks" required placeholder="Provide analytical adjustment parameters or descriptive reason details..."></textarea>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary">Save Balances</button>
-                    <button type="button" class="btn-secondary" onclick="closeQtyModal()">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <div class="modal-overlay" id="editRemarksModalOverlay">
         <div class="modal-card">
             <h3>Registry Log Authorization</h3>
@@ -471,7 +437,7 @@
             inventory_access: true, 
             sales_invoice_access: true, 
             audit_report_access: true,
-            product_registry_access: false, // Updated state permission toggle rule
+            product_registry_access: false, 
             settings_access: false 
         };
 
@@ -492,11 +458,9 @@
 
         /* --- Global Highlight Controller --- */
         function highlightSelectedRow(itemId) {
-            // Remove previous highlights
             document.querySelectorAll('#ledgerTableBody tr').forEach(row => {
                 row.classList.remove('selected-row');
             });
-            // Apply new highlight
             const activeRow = document.getElementById(`row-${itemId}`);
             if (activeRow) activeRow.classList.add('selected-row');
         }
@@ -735,7 +699,6 @@
                 const disabledAttr = permissionsMatrix.product_registry_access ? '' : 'disabled';
                 const isSelectedClass = (currentActiveId && currentActiveId === item.id) ? 'selected-row' : '';
                 
-                // Process dynamic pallet calculation logic +1 for excess
                 const totalInboundQty = parseInt(item.stock_quantity) || 0;
                 const qtyPerPallet = parseInt(item.qty_per_pallet) || 0;
                 let calculatedPallets = 0;
@@ -760,119 +723,11 @@
                         <td>
                             <div class="action-btn-group">
                                 <button class="btn-edit" ${disabledAttr} onclick="populateFormByIndex(${index})">Edit</button>
-                                <button class="btn-qty-adj" ${disabledAttr} onclick="openQtyModalByIndex(${index})">Adj Qty</button>
                             </div>
                         </td>
                     </tr>
                 `;
             }).join('');
-        }
-
-        function openQtyModalByIndex(index) {
-            const item = globallyFetchedItems[index];
-            if (!item) return;
-
-            if (!permissionsMatrix.product_registry_access) {
-                showSystemModal("Access Restricted", "Action Denied: You do not have permission to alter stock counts.");
-                return;
-            }
-            
-            highlightSelectedRow(item.id);
-            
-            document.getElementById('modalItemId').value = item.id;
-            document.getElementById('modalOldQty').value = item.stock_quantity || 0;
-            document.getElementById('modalNewQty').value = item.stock_quantity || 0;
-            document.getElementById('modalEditRemarks').value = item.edit_remarks || '';
-            document.getElementById('qtyModalOverlay').style.display = 'flex';
-        }
-
-        function closeQtyModal() {
-            document.getElementById('qtyModalOverlay').style.display = 'none';
-            document.getElementById('qtyAdjustmentForm').reset();
-            
-            // Re-sync row highlights to match standard current active state registry
-            const currentActiveId = document.getElementById('itemId').value;
-            if (!currentActiveId) {
-                document.querySelectorAll('#ledgerTableBody tr').forEach(row => row.classList.remove('selected-row'));
-            } else {
-                highlightSelectedRow(currentActiveId);
-            }
-        }
-
-        async function handleQtyModalSubmit(e) {
-            e.preventDefault();
-            const id = document.getElementById('modalItemId').value;
-            const oldQty = parseInt(document.getElementById('modalOldQty').value) || 0;
-            const newQty = parseInt(document.getElementById('modalNewQty').value) || 0;
-            const trackingRemarks = document.getElementById('modalEditRemarks').value.trim();
-            
-            if (trackingRemarks === "") {
-                showSystemModal("Validation Error", "Action Aborted: A tracking entry record change explanation is required.");
-                return;
-            }
-
-            const delta = newQty - oldQty;
-            const currentTimestampISO = new Date().toISOString();
-
-            const { data: currentItem, error: fetchErr } = await supabaseClient
-                .from('inventory')
-                .select('id, item_code, item_name, sizes, commodity, storage_facility, spsic_number, qty_per_pallet')
-                .eq('id', id)
-                .single();
-                
-            if (fetchErr) { 
-                showSystemModal("Verification Error", "Update tracking verification configuration error: " + fetchErr.message); 
-                return; 
-            }
-
-            const { error: invError } = await supabaseClient
-                .from('inventory')
-                .update({ 
-                    stock_quantity: newQty,
-                    edit_date: currentTimestampISO,
-                    edit_remarks: trackingRemarks,
-                    processed_by: currentUserEmail
-                })
-                .eq('id', id);
-
-            if (invError) {
-                showSystemModal("Execution Error", invError.message);
-                return;
-            }
-
-            if (delta !== 0) {
-                const transactionPayload = {
-                    item_id: currentItem.id,
-                    item_code: currentItem.item_code.toUpperCase(),
-                    item_name: currentItem.item_name.toUpperCase(),
-                    sizes: currentItem.sizes,
-                    commodity: currentItem.commodity.toUpperCase(),
-                    in_quantity: Math.abs(delta), 
-                    sales_order_no: "Shipment",
-                    transactions_type: delta > 0 ? "Adjustment In" : "Adjustment Out", 
-                    processed_by: currentUserEmail,
-                    storage_facility: currentItem.storage_facility.toUpperCase(),
-                    date: currentTimestampISO.split('T')[0], 
-                    remarks: `Modal Quantity Sync (From ${oldQty} to ${newQty}): ${trackingRemarks}`,
-                    spsic_number: currentItem.spsic_number,
-                    qty_per_pallet: parseInt(currentItem.qty_per_pallet) || 0
-                };
-
-                const { error: txError } = await supabaseClient
-                    .from('transactions')
-                    .insert([transactionPayload]);
-
-                if (txError) {
-                    alert("Balances modified inside active registry, but transactions audit trace log creation failed.");
-                } else {
-                    alert("Quantity stock parameters updated and transaction audit tracking successfully generated.");
-                }
-            } else {
-                alert("Inventory information metadata saved successfully without balance fluctuations.");
-            }
-
-            closeQtyModal();
-            fetchLedgerDataset();
         }
 
         function populateFormByIndex(index) {
@@ -903,8 +758,10 @@
             document.getElementById('dateReceived').value = item.date || ''; 
             document.getElementById('formRemarks').value = item.remarks || '';
             
-            document.getElementById('initialQtyWrapper').style.display = "none";
-            document.getElementById('stockQuantity').required = false;
+            // Populate and ensure the Inbound Quantity and Quantity per Pallet fields are operational during edit operations
+            document.getElementById('stockQuantity').value = item.stock_quantity || '0';
+            document.getElementById('qtyPerPallet').value = item.qty_per_pallet || '';
+            document.getElementById('stockQuantity').required = true;
 
             document.getElementById('remarksLabel').textContent = "Additional Note/Remarks";
             document.getElementById('formTitle').textContent = "Modify Registered Parameters";
@@ -956,12 +813,14 @@
             const storage_facility = document.getElementById('storageFacility').value.toUpperCase();
             const chosen_date = document.getElementById('dateReceived').value;
             const original_remarks = document.getElementById('formRemarks').value.trim();
+            const new_stock_qty = parseInt(document.getElementById('stockQuantity').value) || 0;
+            const new_qty_per_pallet = parseInt(document.getElementById('qtyPerPallet').value) || 0;
             const currentTimestampISO = new Date().toISOString();
 
-            // Fetch current item to retrieve its current balance metrics and qty_per_pallet parameter
+            // Fetch current item to determine contextual balance shifts for auditing logs
             const { data: existingItem, error: fetchErr } = await supabaseClient
                 .from('inventory')
-                .select('stock_quantity, qty_per_pallet')
+                .select('stock_quantity')
                 .eq('id', id)
                 .single();
 
@@ -969,6 +828,9 @@
                 showSystemModal("Database Error", "Failed to retrieve contextual parameters for transaction tracing: " + fetchErr.message);
                 return;
             }
+
+            const oldQty = parseInt(existingItem.stock_quantity) || 0;
+            const delta = new_stock_qty - oldQty;
 
             const editPayload = { 
                 spsic_number,
@@ -979,6 +841,8 @@
                 storage_facility, 
                 date: chosen_date, 
                 remarks: original_remarks, 
+                stock_quantity: new_stock_qty,
+                qty_per_pallet: new_qty_per_pallet,
                 edit_remarks: editRemarksText,
                 edit_date: currentTimestampISO,
                 processed_by: currentUserEmail
@@ -991,22 +855,32 @@
                 return;
             }
 
-            // Generate contextual transaction tracking trace parameter logs
+            // Generate trace record containing explicit historical descriptions
+            let traceType = "Update Registry";
+            let traceQty = new_stock_qty;
+            let logNotes = `Modified parameters log: ${editRemarksText}`;
+            
+            if (delta !== 0) {
+                traceType = delta > 0 ? "Adjustment In" : "Adjustment Out";
+                traceQty = Math.abs(delta);
+                logNotes = `Parameters & Balance Shift (From ${oldQty} to ${new_stock_qty}): ${editRemarksText}`;
+            }
+
             const transactionPayload = {
                 item_id: id,
                 item_code: item_code,
                 item_name: item_name,
                 sizes: sizes,
                 commodity: commodity,
-                in_quantity: existingItem.stock_quantity || 0,
+                in_quantity: traceQty,
                 sales_order_no: "Shipment Mod",
-                transactions_type: "Update Registry",
+                transactions_type: traceType,
                 processed_by: currentUserEmail,
                 storage_facility: storage_facility,
                 date: chosen_date,
-                remarks: `Modified configuration metrics trace: ${editRemarksText}`,
+                remarks: logNotes,
                 spsic_number: spsic_number,
-                qty_per_pallet: parseInt(existingItem.qty_per_pallet) || 0
+                qty_per_pallet: new_qty_per_pallet
             };
 
             const { error: txError } = await supabaseClient
@@ -1098,7 +972,6 @@
             document.getElementById('inventoryForm').reset();
             document.getElementById('spsicSearchQuery').value = '';
             document.getElementById('descSearchQuery').value = '';
-            document.getElementById('initialQtyWrapper').style.display = "flex";
             document.getElementById('stockQuantity').required = true;
             document.getElementById('stockQuantity').value = "1";
             document.getElementById('qtyPerPallet').value = "";
@@ -1106,7 +979,6 @@
             document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
             document.getElementById('submitBtn').textContent = "Process Inbound & Item Register";
             
-            // Clear current row selections
             document.querySelectorAll('#ledgerTableBody tr').forEach(row => {
                 row.classList.remove('selected-row');
             });
