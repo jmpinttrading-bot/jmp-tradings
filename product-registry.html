@@ -340,11 +340,6 @@
                             <label> Total Inbound Quantity</label>
                             <input type="number" id="stockQuantity" required min="1" value="1">
                         </div>
-                        
-                        <div class="form-group">
-                            <label>Unit Price (Per Item)</label>
-                            <input type="text" id="unitPrice" required placeholder="₱0.00" onfocus="clearCurrencyFormatting(this)" onblur="applyCurrencyFormatting(this)">
-                        </div>
                     </div>
 
                     <div class="form-group">
@@ -380,13 +375,12 @@
                                 <th>Commodity</th>
                                 <th>Assigned Hub</th>
                                 <th>On-Hand Balance</th>
-                                <th>Valuation</th>
                                 <th style="text-align: center;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -472,11 +466,6 @@
             settings_access: false 
         };
 
-        const pesoFormatter = new Intl.NumberFormat('en-PH', {
-            style: 'currency',
-            currency: 'PHP'
-        });
-
         // Triggered styling modal handler mappings
         function showSystemModal(title, message) {
             document.getElementById('systemAlertTitle').textContent = title;
@@ -507,31 +496,6 @@
             } else {
                 showSystemModal('Access Restricted', 'Administrative privileges or authorized security permissions are required to access this system section.');
             }
-        }
-
-        function applyCurrencyFormatting(input) {
-            const rawValue = input.value.replace(/[^0-9.-]+/g, "");
-            const parsedValue = parseFloat(rawValue);
-            if (!isNaN(parsedValue)) {
-                input.value = pesoFormatter.format(parsedValue);
-            } else {
-                input.value = "";
-            }
-        }
-
-        function clearCurrencyFormatting(input) {
-            const rawValue = input.value.replace(/[^0-9.-]+/g, "");
-            const parsedValue = parseFloat(rawValue);
-            if (!isNaN(parsedValue)) {
-                input.value = parsedValue;
-            } else {
-                input.value = "";
-            }
-        }
-
-        function getCleanUnitPriceValue() {
-            const rawString = document.getElementById('unitPrice').value || "";
-            return parseFloat(rawString.replace(/[^0-9.-]+/g, "")) || 0;
         }
 
         async function autoGenerateSkuCode() {
@@ -742,13 +706,12 @@
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records logged inside storage profiles.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:#94a3b8;">No records logged inside storage profiles.</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = items.map((item, index) => {
                 const disabledAttr = permissionsMatrix.product_registry_access ? '' : 'disabled';
-                const unitPriceParsed = parseFloat(item.unit_price || 0);
                 
                 return `
                     <tr>
@@ -761,7 +724,6 @@
                         <td>
                             <span class="qty-val">${item.stock_quantity || 0}</span>
                         </td>
-                        <td style="font-weight:600; color:#0f172a;">${pesoFormatter.format(unitPriceParsed)}</td>
                         <td>
                             <div class="action-btn-group">
                                 <button class="btn-edit" ${disabledAttr} onclick="populateFormByIndex(${index})">Edit</button>
@@ -883,7 +845,6 @@
             document.getElementById('itemCommodity').disabled = false;
             document.getElementById('storageFacility').disabled = false;
             document.getElementById('dateReceived').disabled = false;
-            document.getElementById('unitPrice').disabled = false;
             document.getElementById('formRemarks').disabled = false;
             document.getElementById('submitBtn').disabled = false;
 
@@ -895,9 +856,6 @@
             document.getElementById('itemCommodity').value = item.commodity || '';
             document.getElementById('storageFacility').value = item.storage_facility || '';
             document.getElementById('dateReceived').value = item.date || ''; 
-            
-            const parsedPrice = parseFloat(item.unit_price || 0);
-            document.getElementById('unitPrice').value = pesoFormatter.format(parsedPrice);
             document.getElementById('formRemarks').value = item.remarks || '';
             
             document.getElementById('initialQtyWrapper').style.display = "none";
@@ -950,7 +908,6 @@
             const commodity = document.getElementById('itemCommodity').value.toUpperCase();
             const storage_facility = document.getElementById('storageFacility').value.toUpperCase();
             const chosen_date = document.getElementById('dateReceived').value;
-            const unit_price = getCleanUnitPriceValue();
             const original_remarks = document.getElementById('formRemarks').value.trim();
             const currentTimestampISO = new Date().toISOString();
 
@@ -962,7 +919,6 @@
                 commodity, 
                 storage_facility, 
                 date: chosen_date, 
-                unit_price, 
                 remarks: original_remarks, 
                 edit_remarks: editRemarksText,
                 edit_date: currentTimestampISO,
@@ -989,7 +945,6 @@
             const commodity = document.getElementById('itemCommodity').value.toUpperCase();
             const storage_facility = document.getElementById('storageFacility').value.toUpperCase();
             const chosen_date = document.getElementById('dateReceived').value;
-            const unit_price = getCleanUnitPriceValue();
             const input_remarks = document.getElementById('formRemarks').value.trim();
             const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
             
@@ -1001,7 +956,6 @@
                 commodity,
                 storage_facility,
                 date: chosen_date,
-                unit_price,
                 remarks: input_remarks,
                 stock_quantity: quantity,
                 processed_by: currentUserEmail
@@ -1026,7 +980,6 @@
                 commodity: commodity,
                 in_quantity: quantity,
                 sales_order_no: "SHIPMENT",
-                unit_price: unit_price,
                 transactions_type: "Inbound", 
                 processed_by: currentUserEmail,
                 storage_facility: storage_facility,
@@ -1058,7 +1011,6 @@
             document.getElementById('initialQtyWrapper').style.display = "flex";
             document.getElementById('stockQuantity').required = true;
             document.getElementById('stockQuantity').value = "1";
-            document.getElementById('unitPrice').value = "";
             document.getElementById('remarksLabel').textContent = "Additional Note/Remarks";
             document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
             document.getElementById('submitBtn').textContent = "Process Inbound & Item Register";
