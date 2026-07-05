@@ -118,8 +118,6 @@
         .pagination-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
         .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #f8fafc; }
 
-        .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
-
         dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
@@ -347,13 +345,13 @@
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
-        let currentActiveFilteredList = []; // Track filtered vs complete history indices
+        let currentActiveFilteredList = []; 
         
         // --- Pagination Global Trackers ---
         let currentPage = 1;
         const rowsPerPage = 15;
         
-        let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
+        let permissions = { isAdmin: false, hasMasterAccess: false };
 
         function checkAccess(event) {
             if (currentUserRole !== 'admin') {
@@ -508,7 +506,6 @@
         }
 
         async function initLogisticsDashboard() {
-            // Programmatically highlight the Inventory navbar tab on page load initialization
             const inventoryBtn = document.querySelector('.nav-links a[href="inventory-management.html"]');
             if (inventoryBtn) {
                 inventoryBtn.classList.add('active');
@@ -521,7 +518,7 @@
             
             const { data: profile } = await supabaseClient
                 .from('profiles')
-                .select('role, username, inventory_access, inv_quantity_access')
+                .select('role, username, inventory_access')
                 .eq('id', user.id)
                 .single();
             
@@ -532,7 +529,6 @@
             if (profile && profile.role === 'Admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
-                permissions.canRelease = true;
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
@@ -540,24 +536,12 @@
                 if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                permissions.canRelease = profile ? profile.inv_quantity_access !== false : true;
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
             }
-            applyFormUIRestrictions();
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
             setupSessionCrossCheckListener();
-        }
-
-        function applyFormUIRestrictions() {
-            if (!permissions.canRelease) {
-                const container = document.getElementById('formContainerPanel');
-                const lockMask = document.createElement('div');
-                lockMask.className = "form-lock-message";
-                lockMask.innerHTML = `<span>🔒 Account profiles do not allow outbound logistics clearance authorization capabilities.</span>`;
-                container.appendChild(lockMask);
-            }
         }
 
         async function fetchDropdownInventoryPool() {
@@ -607,7 +591,7 @@
             if (error) { showAlert("System error: " + error.message, "error"); return; }
             globallyFetchedHistory = data || [];
             currentActiveFilteredList = [...globallyFetchedHistory];
-            currentPage = 1; // Reset back to initial index block
+            currentPage = 1; 
             renderLedgerTable(currentActiveFilteredList);
         }
 
@@ -629,7 +613,6 @@
                 return;
             }
 
-            // Always calculate accurate running cumulative balances across full history context
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const balanceMap = new Map();
             const itemRunningBalances = {};
@@ -641,7 +624,6 @@
                 balanceMap.set(tx.id, itemRunningBalances[code]);
             });
 
-            // Calculate pagination indices
             const totalRows = items.length;
             const totalPages = Math.ceil(totalRows / rowsPerPage);
             
@@ -651,13 +633,11 @@
             const endIdx = startIdx + rowsPerPage;
             const paginatedItems = items.slice(startIdx, endIdx);
 
-            // Update page pagination information indicators
             document.getElementById('paginationInfo').textContent = `Page ${currentPage} of ${totalPages}`;
             document.getElementById('prevPageBtn').disabled = currentPage === 1;
             document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
 
             tbody.innerHTML = paginatedItems.map((item) => {
-                // Discover correct global history index structure for accurate data assignments inside modify prompts
                 const originalGlobalIndex = globallyFetchedHistory.findIndex(row => row.id === item.id);
                 return `
                     <tr>
@@ -683,7 +663,6 @@
             }).join('');
         }
         
-        // --- Page State Change Engine ---
         function changeLedgerPage(direction) {
             const totalPages = Math.ceil(currentActiveFilteredList.length / rowsPerPage);
             currentPage += direction;
@@ -799,7 +778,7 @@
         function filterLedgerByDescription() {
             const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
             currentActiveFilteredList = globallyFetchedHistory.filter(item => (item.item_name || "").toLowerCase().includes(filterQuery));
-            currentPage = 1; // Return to first dataset offset block
+            currentPage = 1; 
             renderLedgerTable(currentActiveFilteredList);
         }
 

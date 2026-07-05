@@ -118,8 +118,6 @@
         .btn-page:hover:not(:disabled) { background: #f8fafc; border-color: #ee964b; color: #ee964b; }
         .btn-page:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0; }
 
-        .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
-
         dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
@@ -345,17 +343,16 @@
         let currentAdminId = null;
         let currentUserEmail = "";
         let bypassAuthListener = false;
-        let currentUserRole = "employee"; // Added role state handler tracking
+        let currentUserRole = "employee";
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
-        let filteredHistory = []; // Variable tracking active search subsets
+        let filteredHistory = [];
         
-        // Pagination state management trackers
         let currentLedgerPage = 1;
         const rowsPerPageMax = 15;
         
-        let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
+        let permissions = { isAdmin: false, hasMasterAccess: false };
 
         /* --- Copied Dashboard Restriction Script Logic --- */
         function checkAccess(event) {
@@ -518,11 +515,10 @@
             
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
-                .select('role, username, inventory_access, inv_quantity_access')
+                .select('role, username, inventory_access')
                 .eq('id', user.id)
                 .single();
             
-            // Fail-secure kick-back check if profile payload parsing fails
             if (error || !profile) {
                 console.error("Profile authorization context missing:", error);
                 window.location.href = "employee-dashboard.html";
@@ -534,35 +530,21 @@
             if (currentUserRole === 'admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
-                permissions.canRelease = true;
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
-                // Enforce tight boolean checks for seamless master dashboard kick-backs
                 const masterAccess = profile.inventory_access === true;
                 if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                permissions.canRelease = profile.inv_quantity_access === true;
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile.username || user.email.split('@')[0]}`;
             }
             
-            applyFormUIRestrictions();
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
             setupSessionCrossCheckListener();
-        }
-
-        function applyFormUIRestrictions() {
-            if (!permissions.canRelease) {
-                const container = document.getElementById('formContainerPanel');
-                const lockMask = document.createElement('div');
-                lockMask.className = "form-lock-message";
-                lockMask.innerHTML = `<span>🔒 Account profiles do not allow outbound logistics clearance authorization capabilities.</span>`;
-                container.appendChild(lockMask);
-            }
         }
 
         async function fetchDropdownInventoryPool() {
@@ -645,7 +627,6 @@
                 balanceMap.set(tx.id, itemRunningBalances[code]);
             });
 
-            // Calculate pagination indexes variables
             const totalRecords = filteredHistory.length;
             const totalPages = Math.ceil(totalRecords / rowsPerPageMax);
             
@@ -656,7 +637,6 @@
             const paginatedItems = filteredHistory.slice(startIndex, endIndex);
 
             tbody.innerHTML = paginatedItems.map((item) => {
-                // Find original positional index within globallyFetchedHistory to safely trigger edit parameters
                 const globalIndex = globallyFetchedHistory.findIndex(historyItem => historyItem.id === item.id);
                 return `
                     <tr>
@@ -681,7 +661,6 @@
                 `;
             }).join('');
 
-            // UI Pagination updates elements readout rules
             document.getElementById('paginationInfo').textContent = `Showing ${startIndex + 1} to ${endIndex} of ${totalRecords} entries`;
             document.getElementById('btnPrev').disabled = currentLedgerPage === 1;
             document.getElementById('btnNext').disabled = currentLedgerPage === totalPages || totalPages === 0;
