@@ -265,7 +265,7 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let globallyFetchedItems = [];
-        let permissionsMatrix = { profile_access: true, import_access: true, inventory_access: true, sales_invoice_access: true, audit_report_access: true, product_registry_access: false, settings_access: false };
+        let permissionsMatrix = { profile_access: true, import_access: true, inventory_access: true, sales_invoice_access: true, audit_report_access: true, product_registry_access: false, item_price_access: false, settings_access: false };
 
         function showSystemModal(title, message) {
             document.getElementById('systemAlertTitle').textContent = title;
@@ -295,7 +295,7 @@
             
             setupSettingsProtection();
 
-            const { data: profile } = await supabaseClient.from('profiles').select('role, product_registry_access, import_access, inventory_access, sales_invoice_access').eq('id', user.id).maybeSingle();
+            const { data: profile } = await supabaseClient.from('profiles').select('role, product_registry_access, item_price_access, import_access, inventory_access, sales_invoice_access').eq('id', user.id).maybeSingle();
             if (profile) {
                 permissionsMatrix = {
                     profile_access: true,
@@ -304,11 +304,12 @@
                     sales_invoice_access: profile.role === 'Admin' || profile.sales_invoice_access !== false,
                     audit_report_access: profile.role === 'Admin' || profile.inventory_access !== false,
                     product_registry_access: profile.role === 'Admin' || profile.product_registry_access !== false,
+                    item_price_access: profile.role === 'Admin' || profile.item_price_access !== false,
                     settings_access: profile.role === 'Admin'
                 };
             }
 
-            if (!permissionsMatrix.product_registry_access) {
+            if (!permissionsMatrix.item_price_access) {
                 showSystemModal("Access Restricted", "Pricing configurations block applied.");
                 setTimeout(() => { window.location.href = "inventory-management.html"; }, 2500);
                 return;
@@ -344,7 +345,7 @@
             }
 
             tbody.innerHTML = items.map((item, index) => {
-                const disabledAttr = permissionsMatrix.product_registry_access ? '' : 'disabled';
+                const disabledAttr = permissionsMatrix.item_price_access ? '' : 'disabled';
                 const currentPriceValue = parseFloat(item.unit_price || 0);
                 return `
                     <tr>
