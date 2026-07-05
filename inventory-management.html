@@ -32,15 +32,27 @@
         .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         
-        /* Updated Catalog Container & Side-by-Side Buttons */
-        .registration-box { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); flex-wrap: wrap; }
-        .registration-text-area { flex: 1; min-width: 250px; }
+        .registration-box { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
         .registration-text-area h3 { color: #0f172a; font-size: 1.1rem; }
         .registration-text-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
-        .registration-buttons-container { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 
+        .dashboard-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
+        .report-controls { background: white; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .report-title-area { flex: 1; min-width: 250px; }
+        .report-title-area h3 { color: #0f172a; font-size: 1.1rem; }
+        .report-title-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
+        
+        .controls-selectors-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .time-filter-select { padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; font-weight: 600; background-color: white; color: #1e293b; cursor: pointer; min-width: 150px; outline: none; }
+        
+        .date-range-container { display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1; }
+        .date-range-container label { font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; }
+        .calendar-input { border: none; background: transparent; font-size: 0.85rem; font-weight: 600; color: #1e293b; outline: none; cursor: pointer; }
+        
         .register-trigger-btn { background: #ee964b; color: #0f172a; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; text-decoration: none; transition: background 0.2s; }
-        .register-trigger-btn:hover { background: #df853a; }
+        .register-trigger-btn:hover { background: #e0893c; }
+
+        /* Secondary Pricing Matrix Layout Button Variation */
         .price-trigger-btn { background: #3b82f6; color: white; font-weight: bold; padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); white-space: nowrap; text-decoration: none; transition: background 0.2s; }
         .price-trigger-btn:hover { background: #2563eb; }
 
@@ -59,7 +71,9 @@
         .analytics-full-width-container { width: 100%; margin-top: 5px; }
         .chart-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .chart-card h3 { font-size: 1.1rem; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .chart-container { position: relative; width: 100%; height: 380px; }
+        
+        /* Fixed Chart Dimension Rulesets */
+        .chart-container { position: relative; width: 100%; height: 380px; max-height: 380px; }
     </style>
 </head>
 <body>
@@ -98,10 +112,15 @@
                 <h3>Global Product Registry Catalog</h3>
                 <p>View, track, and configure master structural cargo entries by item code.</p>
             </div>
-            <div class="registration-buttons-container">
-                <a href="product-registry.html" class="register-trigger-btn"><span>📦</span> Our Product Item</a>
-                <a href="item-price.html" class="price-trigger-btn"><span>💰</span> Item Price Matrix</a>
+            <a href="product-registry.html" class="register-trigger-btn"><span>📦</span> Our Product Item</a>
+        </div>
+
+        <div class="registration-box" style="margin-bottom: 25px;">
+            <div class="registration-text-area">
+                <h3>Global Product Pricing Matrix</h3>
+                <p>Configure, update, and manage baseline valuations and financial tiers per product unit.</p>
             </div>
+            <a href="item-price.html" class="price-trigger-btn"><span>💰</span> Item Price Matrix</a>
         </div>
 
         <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
@@ -285,6 +304,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    resizeDelay: 100, /* Prevents canvas sizing recalculation glitches */
                     plugins: {
                         datalabels: { anchor: 'end', align: 'top', color: '#1e293b', font: { weight: 'bold' } }
                     },
