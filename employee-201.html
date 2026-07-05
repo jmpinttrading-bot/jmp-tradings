@@ -14,7 +14,7 @@
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background-color: #ee964b; color: #0f172a; }
@@ -71,7 +71,8 @@
             <a href="import-docs.html" class="nav-btn">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
+            <a href="audit-report.html" class="nav-btn">Audit Report</a>
+            <a href="admin-dashboard.html" class="nav-btn" style="background: #475569; color: white;">Settings</a>
         </div>
     </nav>
 
@@ -183,7 +184,7 @@
                 given_name: document.getElementById('givenName').value,
                 middle_name: document.getElementById('middleName').value,
                 surname: document.getElementById('surname').value,
-                date_of_birth: document.getElementById('dob').value || null, // Format check for blank dates
+                date_of_birth: document.getElementById('dob').value || null, 
                 present_address: document.getElementById('address').value,
                 phone_no: document.getElementById('phoneNo').value,
                 emergency_contact_name: document.getElementById('emergencyName').value,
@@ -194,7 +195,6 @@
                 philhealth_no: document.getElementById('philhealthNo').value
             };
 
-            // Added error logging handling and targeted conflict mapping targeting the primary key 'id'
             const { error } = await supabaseClient
                 .from('employee_201_docs')
                 .upsert(payload, { onConflict: 'id' });
