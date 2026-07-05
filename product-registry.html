@@ -338,10 +338,14 @@
                         <input type="text" id="itemSizes" placeholder="e.g., 21/25, 16/20, Medium">
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group" id="initialQtyWrapper">
-                            <label> Total Inbound Quantity</label>
+                    <div class="form-row" id="initialQtyWrapper">
+                        <div class="form-group">
+                            <label>Total Inbound Quantity</label>
                             <input type="number" id="stockQuantity" required min="1" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity Per Pallet</label>
+                            <input type="number" id="qtyPerPallet" min="1" placeholder="e.g., 50">
                         </div>
                     </div>
 
@@ -976,6 +980,7 @@
             const chosen_date = document.getElementById('dateReceived').value;
             const input_remarks = document.getElementById('formRemarks').value.trim();
             const quantity = parseInt(document.getElementById('stockQuantity').value) || 0;
+            const qty_per_pallet = parseInt(document.getElementById('qtyPerPallet').value) || 0;
             
             const registryPayload = {
                 spsic_number,
@@ -987,6 +992,8 @@
                 date: chosen_date,
                 remarks: input_remarks,
                 stock_quantity: quantity,
+                // If you add a column named qty_per_pallet in Supabase, uncomment the line below:
+                // qty_per_pallet: qty_per_pallet,
                 processed_by: currentUserEmail
             };
 
@@ -1040,6 +1047,7 @@
             document.getElementById('initialQtyWrapper').style.display = "flex";
             document.getElementById('stockQuantity').required = true;
             document.getElementById('stockQuantity').value = "1";
+            document.getElementById('qtyPerPallet').value = "";
             document.getElementById('remarksLabel').textContent = "Additional Note/Remarks";
             document.getElementById('formTitle').textContent = "Register Arriving Container / Truck";
             document.getElementById('submitBtn').textContent = "Process Inbound & Item Register";
