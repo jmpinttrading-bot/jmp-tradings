@@ -511,7 +511,7 @@
             
             const { data: profile } = await supabaseClient
                 .from('profiles')
-                .select('role, username, inventory_access, inv_quantity_access')
+                .select('role, username, inventory_access')
                 .eq('id', user.id)
                 .single();
             
@@ -519,18 +519,18 @@
                 currentUserRole = profile.role.toLowerCase().trim();
             }
 
-            if (profile && profile.role === 'Admin') {
+            if (profile && currentUserRole === 'admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
                 permissions.canRelease = true;
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
-                const masterAccess = profile ? profile.inventory_access !== false : false;
+                const masterAccess = profile ? profile.inventory_access === true : false;
                 if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                permissions.canRelease = profile ? profile.inv_quantity_access === true : false;
+                permissions.canRelease = true;
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
             }
