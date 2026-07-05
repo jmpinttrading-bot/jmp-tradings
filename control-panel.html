@@ -56,6 +56,10 @@
         .slider-rail:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
         input:checked + .slider-rail { background-color: #22c55e; }
         input:checked + .slider-rail:before { transform: translateX(18px); }
+        
+        span.locked { color: #64748b; font-size: 0.75rem; }
+        span.allowed { color: #16a34a; font-size: 0.75rem; }
+        span.restricted { color: #dc2626; font-size: 0.75rem; }
 
         @keyframes pulseTrackingEffect { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); } }
     </style>
@@ -74,7 +78,7 @@
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
             <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
+            <a href="admin-dashboard.html" class="nav-btn" style="background: #475569; color: white;">Settings</a>
         </div>
     </nav>
 
@@ -125,7 +129,8 @@
         }
 
         async function fetchPlatformUserProfiles() {
-            const { data: profiles } = await supabaseClient.from('profiles').select('*').order('role', { ascending: true });
+            // FIXED: Sorted by username ascending to ensure user boxes never shuffle on reload
+            const { data: profiles } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
             const container = document.getElementById('accessManagementCardsContainer');
             container.innerHTML = "";
             profiles.forEach(profile => {
