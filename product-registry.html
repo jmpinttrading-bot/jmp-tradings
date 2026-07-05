@@ -804,6 +804,7 @@
                 return;
             }
 
+            // Secure values explicitly into local closure scope prior to any DOM modifications or state shifts
             const id = document.getElementById('itemId').value;
             const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
             const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
@@ -817,19 +818,24 @@
             const new_qty_per_pallet = parseInt(document.getElementById('qtyPerPallet').value) || 0;
             const currentTimestampISO = new Date().toISOString();
 
+            if (!id) {
+                showSystemModal("State Error", "Identity references are corrupted. Clear and re-select item.");
+                return;
+            }
+
             // Fetch current item to determine contextual balance shifts for auditing logs
             const { data: existingItem, error: fetchErr } = await supabaseClient
                 .from('inventory')
                 .select('stock_quantity')
                 .eq('id', id)
-                .single();
+                .maybeSingle();
 
             if (fetchErr) {
                 showSystemModal("Database Error", "Failed to retrieve contextual parameters for transaction tracing: " + fetchErr.message);
                 return;
             }
 
-            const oldQty = parseInt(existingItem.stock_quantity) || 0;
+            const oldQty = existingItem ? (parseInt(existingItem.stock_quantity) || 0) : 0;
             const delta = new_stock_qty - oldQty;
 
             const editPayload = { 
@@ -872,7 +878,8 @@
                 item_name: item_name,
                 sizes: sizes,
                 commodity: commodity,
-                in_quantity: traceQty,
+                in_quantity: traceType === "Adjustment Out" ? 0 : traceQty,
+                out_quantity: traceType === "Adjustment Out" ? traceQty : 0,
                 sales_order_no: "Shipment Mod",
                 transactions_type: traceType,
                 processed_by: currentUserEmail,
@@ -895,7 +902,7 @@
 
             closeEditRemarksModal();
             resetFormState();
-            fetchLedgerDataset();
+            await fetchLedgerDataset();
         }
 
         async function executeRegistration() {
@@ -942,6 +949,7 @@
                 sizes: sizes,
                 commodity: commodity,
                 in_quantity: quantity,
+                out_quantity: 0,
                 sales_order_no: "SHIPMENT",
                 transactions_type: "Inbound", 
                 processed_by: currentUserEmail,
