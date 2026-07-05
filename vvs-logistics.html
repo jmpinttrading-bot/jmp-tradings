@@ -536,11 +536,11 @@
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
-                const masterAccess = profile ? profile.inventory_access !== false : false;
+                const masterAccess = profile ? profile.inventory_access !== false : true;
                 if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                permissions.canRelease = profile ? profile.inv_quantity_access === true : false;
+                permissions.canRelease = profile ? profile.inv_quantity_access !== false : true;
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
             }
