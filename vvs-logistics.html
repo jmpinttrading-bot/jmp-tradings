@@ -663,10 +663,9 @@
                 balanceMap.set(tx.id, itemRunningBalances[code]);
                 
                 const divisor = productPalletRules[code] || parseInt(tx.qty_per_pallet) || 1;
-                const transactionQty = (parseInt(tx.in_quantity) || 0) || (parseInt(tx.out_quantity) || 0);
-                const linePallets = transactionQty > 0 ? Math.ceil(transactionQty / divisor) : 0;
+                const runningPallets = Math.ceil(itemRunningBalances[code] / divisor);
                 
-                palletMap.set(tx.id, linePallets);
+                palletMap.set(tx.id, runningPallets);
             });
 
             const totalRows = items.length;
