@@ -173,6 +173,8 @@
                                 <th>Item Code</th>
                                 <th>Item Description</th>
                                 <th>Sizes</th>
+                                <th>Qty Per Pallet</th>
+                                <th>Total Pallets</th>
                                 <th>In Qty</th>
                                 <th>Out Qty</th>
                                 <th>Running Balance</th>
@@ -183,7 +185,7 @@
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="15" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -299,7 +301,7 @@
             const tbody = document.getElementById('ledgerTableBody');
             
             if (!items || items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records located for the selected criteria.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="15" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records located for the selected criteria.</td></tr>`;
                 document.getElementById('paginationInfo').textContent = "Page 1 of 1";
                 document.getElementById('prevPageBtn').disabled = true;
                 document.getElementById('nextPageBtn').disabled = true;
@@ -343,6 +345,8 @@
                         <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.item_code || ''}</td>
                         <td style="font-weight: 600;">${item.item_name || ''}</td>
                         <td style="color: #475569;">${item.sizes || '—'}</td>
+                        <td style="font-weight: 600; color: #334155;">${item.qty_per_pallet || '—'}</td>
+                        <td style="font-weight: 600; color: #334155;">${item.total_pallet || '—'}</td>
                         <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
                         <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
                         <td><span class="qty-bal">${balanceMap.get(item.id) ?? '—'}</span></td>
@@ -414,7 +418,7 @@
 
             // Formulate standard header definitions
             let csvRows = [
-                ["Storage Facility Node", "SPSIC Number", "Date Processed", "Sales Order No", "Item Code", "Item Description", "Sizes", "In Qty", "Out Qty", "Running Balance", "Buyer Name", "Transacted By", "Remarks"]
+                ["Storage Facility Node", "SPSIC Number", "Date Processed", "Sales Order No", "Item Code", "Item Description", "Sizes", "Qty Per Pallet", "Total Pallets", "In Qty", "Out Qty", "Running Balance", "Buyer Name", "Transacted By", "Remarks"]
             ];
 
             // Map dataset list objects into row rows
@@ -430,6 +434,8 @@
                     item.item_code || '',
                     item.item_name || '',
                     item.sizes || '—',
+                    item.qty_per_pallet || '—',
+                    item.total_pallet || '—',
                     item.in_quantity || '0',
                     item.out_quantity || '0',
                     runningBal,
