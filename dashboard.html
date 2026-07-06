@@ -36,7 +36,8 @@
 
         .facility-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
-        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; }
+        th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; white-space: nowrap; }
+        .sub-header { font-size: 0.72rem; font-weight: bold; background: #f8fafc; color: #475569; text-transform: uppercase; }
         h2 { font-size: 1rem; margin-top: 0; padding: 10px; border-radius: 6px; color: white; }
 
         /* Storage Summary Metrics Layout */
@@ -143,14 +144,12 @@
             const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
             if (profile) currentUserRole = profile.role.toLowerCase().trim();
 
-            // Fetch the Given Name from the employee_201_docs table
             const { data: docData } = await supabaseClient
                 .from('employee_201_docs')
                 .select('given_name')
                 .eq('id', user.id)
                 .maybeSingle();
 
-            // Check if given_name exists and is not blank, otherwise fallback to email name prefix
             if (docData && docData.given_name && docData.given_name.trim() !== "") {
                 document.getElementById('welcomeMsg').textContent = `Welcome back, ${docData.given_name.trim()}!`;
             } else {
@@ -176,9 +175,10 @@
             const end = document.getElementById('dateTo').value;
             const container = document.getElementById('reportContainer');
             
+            // Updated query to retrieve item_name, sizes, and total_pallet fields
             const { data, error } = await supabaseClient
                 .from('transactions')
-                .select('id, item_code, date, balance, storage_facility, sales_order_no')
+                .select('id, item_code, item_name, sizes, total_pallet, date, balance, storage_facility, sales_order_no')
                 .lte('date', end)
                 .order('date', { ascending: true });
 
@@ -191,7 +191,19 @@
         function renderFacility(name, allData, start, end) {
             const color = facilityThemes[name] || "#475569";
             const facilityData = allData.filter(d => d.storage_facility && d.storage_facility.trim() === name.trim());
-            const itemsAtFacility = [...new Set(facilityData.map(d => d.item_code))].filter(Boolean);
+            
+            // Collect unique item configurations to safely list code, name, and size combinations
+            const itemMap = new Map();
+            facilityData.forEach(d => {
+                if (d.item_code) {
+                    itemMap.set(d.item_code, {
+                        name: d.item_name || '—',
+                        sizes: d.sizes || '—'
+                    });
+                }
+            });
+
+            const itemsAtFacility = Array.from(itemMap.keys());
             
             const parseDate = (dStr) => {
                 const [y, m, d] = dStr.split('-');
@@ -212,22 +224,36 @@
 
             dates.reverse();
 
+            // Set up multi-row headers using rowspan="2" and colspan="2"
             let html = `<div class="facility-container">
                 <h2 style="background-color: ${color};">${name}</h2>
-                <table><tr><th style="background-color: ${color}; color: white;">Item Code</th>`;
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Item Code</th>
+                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Item Name</th>
+                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Size</th>`;
             
             dates.forEach(d => {
                 const [y, m, day] = d.split('-');
                 const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                html += `<th style="background-color: ${color}; color: white;">${formatted}</th>`;
+                html += `<th colspan="2" style="background-color: ${color}; color: white;">${formatted}</th>`;
             });
-            html += `</tr>`;
+            
+            html += `</tr><tr>`;
+            dates.forEach(() => {
+                html += `<th class="sub-header">Bal</th><th class="sub-header">Pallet</th>`;
+            });
+            html += `</tr></thead><tbody>`;
 
-            // Array tracking grand total summary per single column date
             let columnTotals = new Array(dates.length).fill(0);
 
             itemsAtFacility.forEach(code => {
-                html += `<tr><td>${code}</td>`;
+                const meta = itemMap.get(code);
+                html += `<tr>
+                            <td style="font-weight: 700;">${code}</td>
+                            <td style="text-align: left;">${meta.name}</td>
+                            <td>${meta.sizes}</td>`;
                 
                 dates.forEach((date, index) => {
                     const match = facilityData.filter(d => d.item_code === code && d.date <= date)
@@ -244,19 +270,20 @@
                                               })[0];
                     
                     const balance = match ? parseInt(match.balance) || 0 : 0;
-                    columnTotals[index] += balance; // Append item quantity to absolute day totals pool
-                    html += `<td>${balance.toLocaleString()}</td>`;
+                    const pallets = (match && match.total_pallet) ? match.total_pallet : '—';
+                    
+                    columnTotals[index] += balance;
+                    
+                    html += `<td>${balance.toLocaleString()}</td>
+                             <td style="color: #64748b; font-weight: 600;">${pallets}</td>`;
                 });
                 html += `</tr>`;
             });
 
-            // Close the table without rendering the DAILY TOTALS row
-            html += `</table>`;
+            html += `</tbody></table>`;
 
-            // Calculate active dynamic ending stock balance (index 0 is latest date column)
             const currentLiveFacilityTotal = columnTotals[0] || 0;
 
-            // Summary block panel card placed below facility container
             html += `
                 <div class="facility-summary-card">
                     <span>Active Stock Volume (${dates[0] || 'Latest'})</span>
