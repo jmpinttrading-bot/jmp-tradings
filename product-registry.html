@@ -849,7 +849,7 @@
                 return;
             }
 
-            // Sync structural parameters and qty_per_pallet with transactions record ledger
+            // Sync structural parameters, qty_per_pallet, and total_pallet with transactions record ledger
             const transactionEditPayload = {
                 item_code,
                 item_name,
@@ -860,7 +860,8 @@
                 date: chosen_date,
                 remarks: original_remarks || "",
                 spsic_number,
-                qty_per_pallet: new_qty_per_pallet
+                qty_per_pallet: new_qty_per_pallet,
+                total_pallet: new_qty_per_pallet > 0 ? Math.ceil(new_stock_qty / new_qty_per_pallet) : 0
             };
 
             const { data: updatedTx, error: txError } = await supabaseClient
@@ -934,7 +935,8 @@
                 date: chosen_date, 
                 remarks: input_remarks || "",
                 spsic_number: spsic_number,
-                qty_per_pallet: qty_per_pallet
+                qty_per_pallet: qty_per_pallet,
+                total_pallet: qty_per_pallet > 0 ? Math.ceil(quantity / qty_per_pallet) : 0
             };
 
             const { error: txError } = await supabaseClient
