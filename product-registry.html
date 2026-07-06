@@ -833,20 +833,45 @@
                 date: chosen_date, 
                 remarks: original_remarks, 
                 stock_quantity: new_stock_qty,
-                qty_per_pallet: String(new_qty_per_pallet),
+                qty_per_pallet: new_qty_per_pallet,
                 edit_remarks: editRemarksText,
                 edit_date: currentTimestampISO,
                 processed_by: currentUserEmail
             };
 
-            const { error } = await supabaseClient.from('inventory').update(editPayload).eq('id', id);
+            const { error: inventoryError } = await supabaseClient.from('inventory').update(editPayload).eq('id', id);
             
-            if (error) {
-                showSystemModal("Database Error", error.message);
+            if (inventoryError) {
+                showSystemModal("Database Error", inventoryError.message);
                 return;
             }
 
-            alert("Master log file parameters updated successfully.");
+            // Sync structural parameters and qty_per_pallet with transactions record ledger
+            const transactionEditPayload = {
+                item_code,
+                item_name,
+                sizes,
+                commodity,
+                in_quantity: new_stock_qty,
+                storage_facility,
+                date: chosen_date,
+                remarks: original_remarks || "",
+                spsic_number,
+                qty_per_pallet: new_qty_per_pallet
+            };
+
+            const { error: txError } = await supabaseClient
+                .from('transactions')
+                .update(transactionEditPayload)
+                .eq('item_id', id)
+                .eq('transactions_type', 'Inbound');
+
+            if (txError) {
+                showSystemModal("Log Mismatch", "Inventory modified, but transaction profile synchronization failed: " + txError.message);
+                return;
+            }
+
+            alert("Master log file parameters and matching transactions updated successfully.");
 
             closeEditRemarksModal();
             resetFormState();
