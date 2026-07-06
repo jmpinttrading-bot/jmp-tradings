@@ -102,6 +102,7 @@
         .qty-val { font-weight: 700; color: #d9534f; font-size: 0.95rem; }
         .qty-in { font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
         .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
+        .qty-tot-pallet { font-weight: 700; color: #f97316; font-size: 0.95rem; }
 
         .action-btn-group { display: flex; gap: 6px; justify-content: center; }
         
@@ -210,6 +211,7 @@
                     <input type="hidden" id="activeSpsicNumber">
                     <input type="hidden" id="maxAvailableQty">
                     <input type="hidden" id="rawUnitPrice">
+                    <input type="hidden" id="qtyPerPallet" value="20">
                     
                     <div class="form-row" style="margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
                         <div class="form-group flex-2">
@@ -324,6 +326,32 @@
                 </div>
             </div>
 
+            <div class="card-panel" style="padding: 20px 0px;">
+                <div class="ledger-header-wrapper">
+                    <h3>Total Pallets Summary Ledger per Item Code</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>Item Code</th>
+                                <th>Item Description</th>
+                                <th>Sizes</th>
+                                <th>Commodity</th>
+                                <th>Current Unit Balance</th>
+                                <th>Qty Per Pallet</th>
+                                <th>Total Pallets (Remaining)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="palletLedgerTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 25px; color: #94a3b8;">No running inventory totals available.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -403,6 +431,13 @@
             modal.showModal();
         }
 
+        // Helper logic to calculate ceiling rounding pallets
+        function calculatePalletCount(qty, qtyPerPallet) {
+            const denom = parseInt(qtyPerPallet) || 20;
+            if (qty <= 0) return 0;
+            return Math.ceil(qty / denom);
+        }
+
         async function executeActualTransfer() {
             const targetFacility = document.getElementById('targetFacility').value;
             const itemId = document.getElementById('itemId').value;
@@ -410,6 +445,7 @@
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
             const spsic = document.getElementById('activeSpsicNumber').value;
             const unitPrice = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
+            const qpp = parseInt(document.getElementById('qtyPerPallet').value) || 20;
             
             if (!itemId || currentQty <= 0) {
                 showAlert("Please select an item and ensure a valid quantity is set.", "error");
@@ -421,6 +457,9 @@
                 return;
             }
 
+            // Calculate current balance pallets for target snapshot updates
+            const outboundPallets = calculatePalletCount(currentQty, qpp);
+
             const transferPayload = [
                 {
                     item_id: itemId,
@@ -430,6 +469,7 @@
                     commodity: document.getElementById('itemCommodity').value,
                     out_quantity: currentQty,
                     in_quantity: 0,
+                    total_pallet: outboundPallets,
                     storage_facility: document.getElementById('storageFacility').value,
                     remarks: "TRANSFER ITEM - OUT",
                     transactions_type: "Outbound",
@@ -447,6 +487,7 @@
                     commodity: document.getElementById('itemCommodity').value,
                     out_quantity: 0,
                     in_quantity: currentQty,
+                    total_pallet: outboundPallets,
                     storage_facility: targetFacility,
                     remarks: "TRANSFER ITEM - IN",
                     transactions_type: "Inbound",
@@ -486,6 +527,7 @@
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
+                document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 20;
                 document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
                 document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
                 showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
@@ -498,6 +540,7 @@
             document.getElementById('activeSpsicNumber').value = '';
             document.getElementById('maxAvailableQty').value = '';
             document.getElementById('rawUnitPrice').value = '';
+            document.getElementById('qtyPerPallet').value = '20';
             document.getElementById('outboundForm').reset();
             document.getElementById('inventorySearchQuery').value = '';
             document.getElementById('descSearchQuery').value = '';
@@ -599,6 +642,7 @@
             filteredHistory = [...globallyFetchedHistory];
             currentLedgerPage = 1;
             renderLedgerTable();
+            renderTotalPalletSummary();
         }
 
         function populateStockDropdown(items) {
@@ -669,6 +713,60 @@
             document.getElementById('btnNext').disabled = currentLedgerPage === totalPages || totalPages === 0;
         }
 
+        // Logic to render the second table showing current Total Pallets per unique item balance code
+        function renderTotalPalletSummary() {
+            const tbody = document.getElementById('palletLedgerTableBody');
+            if (!globallyFetchedHistory || globallyFetchedHistory.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 25px; color: #94a3b8;">No running inventory totals available.</td></tr>`;
+                return;
+            }
+
+            const itemSummaries = {};
+            // Chronological mapping to guarantee accurate running ledger states
+            const chronicHistory = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+            chronicHistory.forEach(tx => {
+                const code = tx.item_code;
+                if (!code) return;
+
+                if (!itemSummaries[code]) {
+                    itemSummaries[code] = {
+                        item_code: code,
+                        item_name: tx.item_name || '—',
+                        sizes: tx.sizes || '—',
+                        commodity: tx.commodity || '—',
+                        balance: 0,
+                        qty_per_pallet: tx.qty_per_pallet || 20 
+                    };
+                }
+                const inQty = parseInt(tx.in_quantity) || 0;
+                const outQty = parseInt(tx.out_quantity) || 0;
+                itemSummaries[code].balance += (inQty - outQty);
+            });
+
+            const uniqueCodesArray = Object.values(itemSummaries).filter(item => item.balance > 0);
+
+            if (uniqueCodesArray.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 25px; color: #94a3b8;">No positive remaining stock profiles.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = uniqueCodesArray.map(summary => {
+                const computedPalletCeil = calculatePalletCount(summary.balance, summary.qty_per_pallet);
+                return `
+                    <tr>
+                        <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${summary.item_code}</td>
+                        <td style="font-weight: 600;">${summary.item_name}</td>
+                        <td style="color: #475569;">${summary.sizes}</td>
+                        <td style="text-transform: uppercase; font-size: 0.85rem;">${summary.commodity}</td>
+                        <td><span class="qty-bal">${summary.balance} Units</span></td>
+                        <td style="font-weight:600; color:#475569;">${summary.qty_per_pallet} / Pallet</td>
+                        <td><span class="qty-tot-pallet">${computedPalletCeil} Pallets</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
         function changeLedgerPage(direction) {
             currentLedgerPage += direction;
             renderLedgerTable();
@@ -688,6 +786,7 @@
             document.getElementById('activeSpsicNumber').value = item.spsic_number;
             document.getElementById('itemId').value = item.item_id;
             document.getElementById('rawUnitPrice').value = item.unit_price;
+            document.getElementById('qtyPerPallet').value = item.qty_per_pallet || 20;
             document.getElementById('formTitle').textContent = "Editing Transaction: " + item.sales_order_no;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -704,9 +803,15 @@
 
         async function executeCancel(index) {
             const item = globallyFetchedHistory[index];
+            
+            // Set outbound tracking metrics to zero upon absolute entry reversal
             const { error } = await supabaseClient
                 .from('transactions')
-                .update({ out_quantity: 0, remarks: "CANCELLED ORDER" })
+                .update({ 
+                    out_quantity: 0, 
+                    total_pallet: 0, 
+                    remarks: "CANCELLED ORDER" 
+                })
                 .eq('id', item.id);
 
             if (error) { showAlert("Error cancelling: " + error.message, "error"); }
@@ -722,6 +827,7 @@
             const submitBtn = document.getElementById('submitBtn');
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
+            const qpp = parseInt(document.getElementById('qtyPerPallet').value) || 20;
 
             if (targetDispatchQuantity > maxQty) {
                 showAlert(`Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).`, "error");
@@ -739,10 +845,13 @@
                 const originalRecord = globallyFetchedHistory.find(row => row.id == targetRowId);
                 if (originalRecord) {
                     if (targetBuyerName !== originalRecord.buyer_name) { remark = "EDIT BUYER"; }
-                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSSITIVE ADJ."; }
+                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSITIVE ADJ."; }
                     else if (targetDispatchQuantity < originalRecord.out_quantity) { remark = "NEGATIVE ADJ."; }
                 }
             }
+
+            // Calculate current operation pallet footprint
+            const totalPalletsCalculated = calculatePalletCount(targetDispatchQuantity, qpp);
 
             const payload = {
                 item_id: document.getElementById('itemId').value,
@@ -752,6 +861,8 @@
                 commodity: document.getElementById('itemCommodity').value,
                 in_quantity: 0,
                 out_quantity: targetDispatchQuantity,
+                total_pallet: totalPalletsCalculated,
+                qty_per_pallet: qpp,
                 unit_price: parseFloat(document.getElementById('rawUnitPrice').value) || 0,
                 transactions_type: "Outbound",
                 processed_by: currentUserEmail,
