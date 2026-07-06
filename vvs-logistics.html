@@ -164,7 +164,7 @@
         <div class="modal-actions">
             <button class="btn-primary" onclick="document.getElementById('alertModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Close</button>
         </div>
-    </dialog>
+    </nav>
 
     <dialog id="cancelModal">
         <h3>Confirm Cancellation</h3>
@@ -663,8 +663,8 @@
                 balanceMap.set(tx.id, itemRunningBalances[code]);
                 
                 const divisor = productPalletRules[code] || parseInt(tx.qty_per_pallet) || 1;
-                const transactionQty = (parseInt(tx.in_quantity) || 0) || (parseInt(tx.out_quantity) || 0);
-                const linePallets = transactionQty > 0 ? Math.ceil(transactionQty / divisor) : 0;
+                const currentRollingBalance = itemRunningBalances[code];
+                const linePallets = currentRollingBalance > 0 ? Math.ceil(currentRollingBalance / divisor) : 0;
                 
                 palletMap.set(tx.id, linePallets);
             });
