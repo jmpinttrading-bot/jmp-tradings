@@ -663,8 +663,8 @@
                 balanceMap.set(tx.id, itemRunningBalances[code]);
                 
                 const divisor = productPalletRules[code] || parseInt(tx.qty_per_pallet) || 1;
-                const currentRollingBalance = itemRunningBalances[code];
-                const linePallets = currentRollingBalance > 0 ? Math.ceil(currentRollingBalance / divisor) : 0;
+                const transactionQty = (parseInt(tx.in_quantity) || 0) || (parseInt(tx.out_quantity) || 0);
+                const linePallets = transactionQty > 0 ? Math.ceil(transactionQty / divisor) : 0;
                 
                 palletMap.set(tx.id, linePallets);
             });
