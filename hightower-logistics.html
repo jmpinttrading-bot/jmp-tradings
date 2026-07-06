@@ -102,7 +102,7 @@
         .qty-val { font-weight: 700; color: #d9534f; font-size: 0.95rem; }
         .qty-in { font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
         .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
-        .qty-tot-pallet { font-weight: 700; color: #f97316; font-size: 0.95rem; }
+        .qty-pallet { font-weight: 700; color: #8b5cf6; font-size: 0.95rem; }
 
         .action-btn-group { display: flex; gap: 6px; justify-content: center; }
         
@@ -211,7 +211,7 @@
                     <input type="hidden" id="activeSpsicNumber">
                     <input type="hidden" id="maxAvailableQty">
                     <input type="hidden" id="rawUnitPrice">
-                    <input type="hidden" id="qtyPerPallet" value="20">
+                    <input type="hidden" id="qtyPerPallet" value="1">
                     
                     <div class="form-row" style="margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
                         <div class="form-group flex-2">
@@ -304,6 +304,7 @@
                                 <th>In Qty</th>
                                 <th>Out Qty</th>
                                 <th>Rolling Balance</th>
+                                <th>Total Pallet</th>
                                 <th>Buyer Name</th>
                                 <th>Remarks</th>
                                 <th style="text-align: center;">Action</th>
@@ -311,7 +312,7 @@
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -323,32 +324,6 @@
                         <button class="btn-page" id="btnPrev" onclick="changeLedgerPage(-1)" disabled>Previous</button>
                         <button class="btn-page" id="btnNext" onclick="changeLedgerPage(1)" disabled>Next</button>
                     </div>
-                </div>
-            </div>
-
-            <div class="card-panel" style="padding: 20px 0px;">
-                <div class="ledger-header-wrapper">
-                    <h3>Total Pallets Summary Ledger per Item Code</h3>
-                </div>
-                <div class="table-responsive">
-                    <table class="master-table">
-                        <thead>
-                            <tr>
-                                <th>Item Code</th>
-                                <th>Item Description</th>
-                                <th>Sizes</th>
-                                <th>Commodity</th>
-                                <th>Current Unit Balance</th>
-                                <th>Qty Per Pallet</th>
-                                <th>Total Pallets (Remaining)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="palletLedgerTableBody">
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 25px; color: #94a3b8;">No running inventory totals available.</td>
-                            </tr>
-                        </tbody>
-                    </table>
                 </div>
             </div>
 
@@ -431,13 +406,6 @@
             modal.showModal();
         }
 
-        // Helper logic to calculate ceiling rounding pallets
-        function calculatePalletCount(qty, qtyPerPallet) {
-            const denom = parseInt(qtyPerPallet) || 20;
-            if (qty <= 0) return 0;
-            return Math.ceil(qty / denom);
-        }
-
         async function executeActualTransfer() {
             const targetFacility = document.getElementById('targetFacility').value;
             const itemId = document.getElementById('itemId').value;
@@ -445,7 +413,7 @@
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
             const spsic = document.getElementById('activeSpsicNumber').value;
             const unitPrice = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
-            const qpp = parseInt(document.getElementById('qtyPerPallet').value) || 20;
+            const qtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
             
             if (!itemId || currentQty <= 0) {
                 showAlert("Please select an item and ensure a valid quantity is set.", "error");
@@ -457,8 +425,7 @@
                 return;
             }
 
-            // Calculate current balance pallets for target snapshot updates
-            const outboundPallets = calculatePalletCount(currentQty, qpp);
+            const calculatedPallets = Math.ceil(currentQty / qtyPerPallet);
 
             const transferPayload = [
                 {
@@ -469,7 +436,6 @@
                     commodity: document.getElementById('itemCommodity').value,
                     out_quantity: currentQty,
                     in_quantity: 0,
-                    total_pallet: outboundPallets,
                     storage_facility: document.getElementById('storageFacility').value,
                     remarks: "TRANSFER ITEM - OUT",
                     transactions_type: "Outbound",
@@ -477,6 +443,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
+                    total_pallet: calculatedPallets,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
                 },
                 {
@@ -487,7 +454,6 @@
                     commodity: document.getElementById('itemCommodity').value,
                     out_quantity: 0,
                     in_quantity: currentQty,
-                    total_pallet: outboundPallets,
                     storage_facility: targetFacility,
                     remarks: "TRANSFER ITEM - IN",
                     transactions_type: "Inbound",
@@ -495,6 +461,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
+                    total_pallet: calculatedPallets,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
                 }
             ];
@@ -527,7 +494,7 @@
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
-                document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 20;
+                document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 1;
                 document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
                 document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
                 showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
@@ -540,7 +507,7 @@
             document.getElementById('activeSpsicNumber').value = '';
             document.getElementById('maxAvailableQty').value = '';
             document.getElementById('rawUnitPrice').value = '';
-            document.getElementById('qtyPerPallet').value = '20';
+            document.getElementById('qtyPerPallet').value = '1';
             document.getElementById('outboundForm').reset();
             document.getElementById('inventorySearchQuery').value = '';
             document.getElementById('descSearchQuery').value = '';
@@ -642,7 +609,6 @@
             filteredHistory = [...globallyFetchedHistory];
             currentLedgerPage = 1;
             renderLedgerTable();
-            renderTotalPalletSummary();
         }
 
         function populateStockDropdown(items) {
@@ -656,7 +622,7 @@
             const tbody = document.getElementById('ledgerTableBody');
             
             if (filteredHistory.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found.</td></tr>`;
                 document.getElementById('paginationInfo').textContent = "Showing 0 to 0 of 0 entries";
                 document.getElementById('btnPrev').disabled = true;
                 document.getElementById('btnNext').disabled = true;
@@ -696,6 +662,7 @@
                         <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
                         <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
                         <td><span class="qty-bal">${balanceMap.get(item.id)}</span></td>
+                        <td><span class="qty-pallet">${item.total_pallet || 0}</span></td>
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
@@ -711,60 +678,6 @@
             document.getElementById('paginationInfo').textContent = `Showing ${startIndex + 1} to ${endIndex} of ${totalRecords} entries`;
             document.getElementById('btnPrev').disabled = currentLedgerPage === 1;
             document.getElementById('btnNext').disabled = currentLedgerPage === totalPages || totalPages === 0;
-        }
-
-        // Logic to render the second table showing current Total Pallets per unique item balance code
-        function renderTotalPalletSummary() {
-            const tbody = document.getElementById('palletLedgerTableBody');
-            if (!globallyFetchedHistory || globallyFetchedHistory.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 25px; color: #94a3b8;">No running inventory totals available.</td></tr>`;
-                return;
-            }
-
-            const itemSummaries = {};
-            // Chronological mapping to guarantee accurate running ledger states
-            const chronicHistory = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-
-            chronicHistory.forEach(tx => {
-                const code = tx.item_code;
-                if (!code) return;
-
-                if (!itemSummaries[code]) {
-                    itemSummaries[code] = {
-                        item_code: code,
-                        item_name: tx.item_name || '—',
-                        sizes: tx.sizes || '—',
-                        commodity: tx.commodity || '—',
-                        balance: 0,
-                        qty_per_pallet: tx.qty_per_pallet || 20 
-                    };
-                }
-                const inQty = parseInt(tx.in_quantity) || 0;
-                const outQty = parseInt(tx.out_quantity) || 0;
-                itemSummaries[code].balance += (inQty - outQty);
-            });
-
-            const uniqueCodesArray = Object.values(itemSummaries).filter(item => item.balance > 0);
-
-            if (uniqueCodesArray.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 25px; color: #94a3b8;">No positive remaining stock profiles.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = uniqueCodesArray.map(summary => {
-                const computedPalletCeil = calculatePalletCount(summary.balance, summary.qty_per_pallet);
-                return `
-                    <tr>
-                        <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${summary.item_code}</td>
-                        <td style="font-weight: 600;">${summary.item_name}</td>
-                        <td style="color: #475569;">${summary.sizes}</td>
-                        <td style="text-transform: uppercase; font-size: 0.85rem;">${summary.commodity}</td>
-                        <td><span class="qty-bal">${summary.balance} Units</span></td>
-                        <td style="font-weight:600; color:#475569;">${summary.qty_per_pallet} / Pallet</td>
-                        <td><span class="qty-tot-pallet">${computedPalletCeil} Pallets</span></td>
-                    </tr>
-                `;
-            }).join('');
         }
 
         function changeLedgerPage(direction) {
@@ -786,7 +699,7 @@
             document.getElementById('activeSpsicNumber').value = item.spsic_number;
             document.getElementById('itemId').value = item.item_id;
             document.getElementById('rawUnitPrice').value = item.unit_price;
-            document.getElementById('qtyPerPallet').value = item.qty_per_pallet || 20;
+            document.getElementById('qtyPerPallet').value = item.qty_per_pallet || 1;
             document.getElementById('formTitle').textContent = "Editing Transaction: " + item.sales_order_no;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -803,15 +716,9 @@
 
         async function executeCancel(index) {
             const item = globallyFetchedHistory[index];
-            
-            // Set outbound tracking metrics to zero upon absolute entry reversal
             const { error } = await supabaseClient
                 .from('transactions')
-                .update({ 
-                    out_quantity: 0, 
-                    total_pallet: 0, 
-                    remarks: "CANCELLED ORDER" 
-                })
+                .update({ out_quantity: 0, total_pallet: 0, remarks: "CANCELLED ORDER" })
                 .eq('id', item.id);
 
             if (error) { showAlert("Error cancelling: " + error.message, "error"); }
@@ -827,7 +734,7 @@
             const submitBtn = document.getElementById('submitBtn');
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
-            const qpp = parseInt(document.getElementById('qtyPerPallet').value) || 20;
+            const qtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
 
             if (targetDispatchQuantity > maxQty) {
                 showAlert(`Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).`, "error");
@@ -845,13 +752,12 @@
                 const originalRecord = globallyFetchedHistory.find(row => row.id == targetRowId);
                 if (originalRecord) {
                     if (targetBuyerName !== originalRecord.buyer_name) { remark = "EDIT BUYER"; }
-                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSITIVE ADJ."; }
+                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSSITIVE ADJ."; }
                     else if (targetDispatchQuantity < originalRecord.out_quantity) { remark = "NEGATIVE ADJ."; }
                 }
             }
 
-            // Calculate current operation pallet footprint
-            const totalPalletsCalculated = calculatePalletCount(targetDispatchQuantity, qpp);
+            const calculatedPallets = Math.ceil(targetDispatchQuantity / qtyPerPallet);
 
             const payload = {
                 item_id: document.getElementById('itemId').value,
@@ -861,8 +767,6 @@
                 commodity: document.getElementById('itemCommodity').value,
                 in_quantity: 0,
                 out_quantity: targetDispatchQuantity,
-                total_pallet: totalPalletsCalculated,
-                qty_per_pallet: qpp,
                 unit_price: parseFloat(document.getElementById('rawUnitPrice').value) || 0,
                 transactions_type: "Outbound",
                 processed_by: currentUserEmail,
@@ -871,6 +775,7 @@
                 buyer_name: targetBuyerName,
                 spsic_number: document.getElementById('activeSpsicNumber').value,
                 sales_order_no: document.getElementById('salesOrderNo').value,
+                total_pallet: calculatedPallets,
                 remarks: remark.toUpperCase()
             };
             if (targetRowId) payload.id = targetRowId;
