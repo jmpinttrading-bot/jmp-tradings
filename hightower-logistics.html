@@ -340,7 +340,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3IDE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentAdminId = null;
@@ -651,6 +651,12 @@
 
             tbody.innerHTML = paginatedItems.map((item) => {
                 const globalIndex = globallyFetchedHistory.findIndex(historyItem => historyItem.id === item.id);
+                
+                // Dynamic computation matching rolling balance / qty_per_pallet rounded up
+                const rollingBal = balanceMap.get(item.id) || 0;
+                const qtyPerPallet = item.qty_per_pallet || 1;
+                const totalPalletsRemaining = Math.ceil(rollingBal / qtyPerPallet);
+
                 return `
                     <tr>
                         <td style="font-size:0.85rem; font-weight:600; color:#475569;">${item.spsic_number || '—'}</td>
@@ -661,8 +667,8 @@
                         <td style="color: #475569;">${item.sizes || '—'}</td>
                         <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
                         <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
-                        <td><span class="qty-bal">${balanceMap.get(item.id)}</span></td>
-                        <td><span class="qty-pallet">${item.total_pallet || 0}</span></td>
+                        <td><span class="qty-bal">${rollingBal}</span></td>
+                        <td><span class="qty-pallet">${totalPalletsRemaining}</span></td>
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
