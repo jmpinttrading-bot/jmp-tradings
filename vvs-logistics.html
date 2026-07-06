@@ -651,6 +651,14 @@
             const palletMap = new Map();
             const itemRunningBalances = {};
             
+            // Build a registry dictionary mapping item_code -> qty_per_pallet from synced inventory state
+            const productPalletRules = {};
+            globallyAvailableStock.forEach(stock => {
+                if (stock.item_code) {
+                    productPalletRules[stock.item_code] = parseInt(stock.qty_per_pallet) || 1;
+                }
+            });
+            
             allSorted.forEach(tx => {
                 const code = tx.item_code;
                 if (!itemRunningBalances[code]) itemRunningBalances[code] = 0;
@@ -658,14 +666,14 @@
                 
                 balanceMap.set(tx.id, itemRunningBalances[code]);
                 
-                // Read configurations dynamically. Avoid dividing by 1 if there's an actual packing rule profile configuration.
-                const parsedDivisor = parseInt(tx.qty_per_pallet);
-                const divisor = (parsedDivisor && parsedDivisor > 0) ? parsedDivisor : 1;
+                // Look up rule parameters dynamically from profile dictionary first, fallback to historical tx, default to 1
+                const divisor = productPalletRules[code] || parseInt(tx.qty_per_pallet) || 1;
                 
-                // Math.ceil converts fractional point quantities directly to +1 full pallet
-                const currentBalanceValue = itemRunningBalances[code];
-                const remainingPallets = currentBalanceValue > 0 ? Math.ceil(currentBalanceValue / divisor) : 0;
-                palletMap.set(tx.id, remainingPallets);
+                // Target item specific metrics on this row line instead of building calculations from rolling totals
+                const transactionQty = (parseInt(tx.in_quantity) || 0) || (parseInt(tx.out_quantity) || 0);
+                const linePallets = transactionQty > 0 ? Math.ceil(transactionQty / divisor) : 0;
+                
+                palletMap.set(tx.id, linePallets);
             });
 
             const totalRows = items.length;
