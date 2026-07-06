@@ -24,8 +24,9 @@
         .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         
-        /* --- Hide Role Badges --- */
-        .admin-badge, .employee-badge { display: none !important; }
+        /* Updated to hide badge visually while preserving background JS selectors */
+        .admin-badge { display: none; background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .employee-badge { display: none; background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
         .back-link { 
             display: inline-flex; 
@@ -102,6 +103,7 @@
         .qty-val { font-weight: 700; color: #d9534f; font-size: 0.95rem; }
         .qty-in { font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
         .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
+        .qty-pallet { font-weight: 700; color: #8b5cf6; font-size: 0.95rem; }
 
         .action-btn-group { display: flex; gap: 6px; justify-content: center; }
         
@@ -116,8 +118,6 @@
         .pagination-btn { background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
         .pagination-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
         .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #f8fafc; }
-
-        .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
 
         dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
@@ -151,7 +151,7 @@
             <a href="dashboard.html" class="nav-btn">Dashboard</a>
             <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
             <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn active">Inventory</a>
+            <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
             <a href="audit-report.html" class="nav-btn">Audit Report</a>
             <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
@@ -182,7 +182,7 @@
             <label>Target Facility</label>
             <select id="targetFacility">
                 <option value="VVS COLD STORAGE & PROCESSING PLANT CORP.">VVS Cold Storage & Processing Plant Corp.</option>
-                <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">Hightower Storage & Trading Centre, Inc.</option>
+                <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">HIGHTOWER STORAGE & TRADING CENTRE, INC.</option>
                 <option value="EISBERG COLD LOGISTICS INC.">Eisberg Cold Logistics Inc.</option>
                 <option value="CRYSTAL COLD STORAGE, INC.">Crystal Cold Storage, Inc.</option>
             </select>
@@ -196,7 +196,7 @@
     <div class="main-content">
         <div class="header">
             <h1>Outbound Inventory Management</h1>
-            <div class="admin-badge" id="adminEmail">Loading Context...</div>
+            <div class="admin-badge" id="adminEmail"></div>
         </div>
 
         <a href="inventory-management.html" class="back-link">⬅️ Back to Inventory Dashboard</a>
@@ -211,6 +211,7 @@
                     <input type="hidden" id="activeSpsicNumber">
                     <input type="hidden" id="maxAvailableQty">
                     <input type="hidden" id="rawUnitPrice">
+                    <input type="hidden" id="qtyPerPallet" value="1">
                     
                     <div class="form-row" style="margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
                         <div class="form-group flex-2">
@@ -303,6 +304,7 @@
                                 <th>In Qty</th>
                                 <th>Out Qty</th>
                                 <th>Rolling Balance</th>
+                                <th>Total Pallet</th>
                                 <th>Buyer Name</th>
                                 <th>Remarks</th>
                                 <th style="text-align: center;">Action</th>
@@ -310,7 +312,7 @@
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -352,7 +354,7 @@
         let currentPage = 1;
         const rowsPerPage = 15;
         
-        let permissions = { isAdmin: false, hasMasterAccess: false, canRelease: false };
+        let permissions = { isAdmin: false, hasMasterAccess: false };
 
         function checkAccess(event) {
             if (currentUserRole !== 'admin') {
@@ -410,6 +412,9 @@
             const spsic = document.getElementById('activeSpsicNumber').value;
             const unitPrice = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
             
+            const baseQtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
+            const qtyPerPallet = baseQtyPerPallet > 0 ? baseQtyPerPallet : 1;
+            
             if (!itemId || currentQty <= 0) {
                 showAlert("Please select an item and ensure a valid quantity is set.", "error");
                 return;
@@ -419,6 +424,8 @@
                 showAlert(`Transfer quantity (${currentQty}) cannot exceed current available quantity (${maxQty}).`, "error");
                 return;
             }
+
+            const calculatedPallets = Math.ceil(currentQty / qtyPerPallet);
 
             const transferPayload = [
                 {
@@ -436,6 +443,8 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
+                    total_pallet: calculatedPallets,
+                    qty_per_pallet: qtyPerPallet,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
                 },
                 {
@@ -453,6 +462,8 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
+                    total_pallet: calculatedPallets,
+                    qty_per_pallet: qtyPerPallet,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
                 }
             ];
@@ -469,7 +480,7 @@
             }
         }
 
-        function handleDropdownSelection(selectElement) {
+        async function handleDropdownSelection(selectElement) {
             const selectedItemCode = selectElement.value;
             if (!selectedItemCode) { resetFormState(); return; }
 
@@ -487,6 +498,23 @@
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
                 document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
                 document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
+                
+                try {
+                    const { data: registryItem, error } = await supabaseClient
+                        .from('product_registry')
+                        .select('qty_per_pallet')
+                        .eq('item_code', stockItem.item_code)
+                        .maybeSingle();
+
+                    if (!error && registryItem && registryItem.qty_per_pallet) {
+                        document.getElementById('qtyPerPallet').value = registryItem.qty_per_pallet;
+                    } else {
+                        document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 1;
+                    }
+                } catch (registryErr) {
+                    document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 1;
+                }
+
                 showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
             }
         }
@@ -497,6 +525,7 @@
             document.getElementById('activeSpsicNumber').value = '';
             document.getElementById('maxAvailableQty').value = '';
             document.getElementById('rawUnitPrice').value = '';
+            document.getElementById('qtyPerPallet').value = '1';
             document.getElementById('outboundForm').reset();
             document.getElementById('inventorySearchQuery').value = '';
             document.getElementById('descSearchQuery').value = '';
@@ -507,6 +536,11 @@
         }
 
         async function initLogisticsDashboard() {
+            const inventoryBtn = document.querySelector('.nav-links a[href="inventory-management.html"]');
+            if (inventoryBtn) {
+                inventoryBtn.classList.add('active');
+            }
+
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             currentAdminId = user.id;
@@ -522,33 +556,22 @@
                 currentUserRole = profile.role.toLowerCase().trim();
             }
 
-            if (profile && currentUserRole === 'admin') {
+            if (profile && profile.role === 'Admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
-                permissions.canRelease = true;
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
+                const masterAccess = profile ? profile.inventory_access !== false : true;
+                if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                permissions.canRelease = true;
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
             }
-            applyFormUIRestrictions();
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
             setupSessionCrossCheckListener();
-        }
-
-        function applyFormUIRestrictions() {
-            if (!permissions.canRelease) {
-                const container = document.getElementById('formContainerPanel');
-                const lockMask = document.createElement('div');
-                lockMask.className = "form-lock-message";
-                lockMask.innerHTML = `<span>🔒 Account profiles do not allow outbound logistics clearance authorization capabilities.</span>`;
-                container.appendChild(lockMask);
-            }
         }
 
         async function fetchDropdownInventoryPool() {
@@ -613,7 +636,7 @@
             const tbody = document.getElementById('ledgerTableBody');
             
             if (!items || items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">No matching running history discovered.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">No matching running history discovered.</td></tr>`;
                 document.getElementById('paginationInfo').textContent = "Page 1 of 1";
                 document.getElementById('prevPageBtn').disabled = true;
                 document.getElementById('nextPageBtn').disabled = true;
@@ -622,13 +645,27 @@
 
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const balanceMap = new Map();
+            const palletMap = new Map();
             const itemRunningBalances = {};
+            
+            const productPalletRules = {};
+            globallyAvailableStock.forEach(stock => {
+                if (stock.item_code) {
+                    productPalletRules[stock.item_code] = parseInt(stock.qty_per_pallet) || 1;
+                }
+            });
             
             allSorted.forEach(tx => {
                 const code = tx.item_code;
                 if (!itemRunningBalances[code]) itemRunningBalances[code] = 0;
                 itemRunningBalances[code] += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                
                 balanceMap.set(tx.id, itemRunningBalances[code]);
+                
+                const divisor = productPalletRules[code] || parseInt(tx.qty_per_pallet) || 1;
+                const runningPallets = Math.ceil(itemRunningBalances[code] / divisor);
+                
+                palletMap.set(tx.id, runningPallets);
             });
 
             const totalRows = items.length;
@@ -657,6 +694,7 @@
                         <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
                         <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
                         <td><span class="qty-bal">${balanceMap.get(item.id)}</span></td>
+                        <td><span class="qty-pallet">${palletMap.get(item.id)}</span></td>
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
@@ -692,6 +730,13 @@
             document.getElementById('activeSpsicNumber').value = item.spsic_number;
             document.getElementById('itemId').value = item.item_id;
             document.getElementById('rawUnitPrice').value = item.unit_price;
+            document.getElementById('qtyPerPallet').value = item.qty_per_pallet || 1;
+            
+            const stockMatch = globallyAvailableStock.find(stock => stock.item_code === item.item_code);
+            const currentAvailable = stockMatch ? stockMatch.calculated_balance : 0;
+            document.getElementById('maxAvailableQty').value = currentAvailable + (item.out_quantity || 0);
+            document.getElementById('displayAvailableQty').value = `${currentAvailable + (item.out_quantity || 0)} Units Remaining`;
+
             document.getElementById('formTitle').textContent = "Editing Transaction: " + item.sales_order_no;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -726,6 +771,9 @@
             const submitBtn = document.getElementById('submitBtn');
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
+            
+            const baseQtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
+            const qtyPerPallet = baseQtyPerPallet > 0 ? baseQtyPerPallet : 1;
 
             if (targetDispatchQuantity > maxQty) {
                 showAlert(`Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).`, "error");
@@ -748,6 +796,8 @@
                 }
             }
 
+            const calculatedPallets = Math.ceil(targetDispatchQuantity / qtyPerPallet);
+
             const payload = {
                 item_id: document.getElementById('itemId').value,
                 item_code: document.getElementById('itemCode').value,
@@ -764,6 +814,8 @@
                 buyer_name: targetBuyerName,
                 spsic_number: document.getElementById('activeSpsicNumber').value,
                 sales_order_no: document.getElementById('salesOrderNo').value,
+                total_pallet: calculatedPallets,
+                qty_per_pallet: qtyPerPallet,
                 remarks: remark.toUpperCase()
             };
             if (targetRowId) payload.id = targetRowId;
@@ -797,9 +849,11 @@
         }
 
         function setupSessionCrossCheckListener() {
-            supabaseClient.auth.onAuthStateChange((event, session) => {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (bypassAuthListener) return;
-                if (event === 'SIGNED_OUT' || !session) {
+                if (session && session.user && session.user.id !== currentAdminId) {
+                    bypassAuthListener = true; 
+                    await supabaseClient.auth.signOut();
                     window.location.href = "login.html";
                 }
             });
