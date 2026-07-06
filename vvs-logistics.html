@@ -625,13 +625,20 @@
 
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const balanceMap = new Map();
+            const palletMap = new Map();
             const itemRunningBalances = {};
             
             allSorted.forEach(tx => {
                 const code = tx.item_code;
                 if (!itemRunningBalances[code]) itemRunningBalances[code] = 0;
                 itemRunningBalances[code] += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                
                 balanceMap.set(tx.id, itemRunningBalances[code]);
+                
+                // Compute remaining total pallets based on rolling balance divided by qty_per_pallet
+                const divisor = parseInt(tx.qty_per_pallet) || 1;
+                const remainingPallets = Math.ceil(itemRunningBalances[code] / divisor);
+                palletMap.set(tx.id, remainingPallets >= 0 ? remainingPallets : 0);
             });
 
             const totalRows = items.length;
@@ -660,7 +667,7 @@
                         <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
                         <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
                         <td><span class="qty-bal">${balanceMap.get(item.id)}</span></td>
-                        <td><span class="qty-pallet">${item.total_pallet || 0}</span></td>
+                        <td><span class="qty-pallet">${palletMap.get(item.id)}</span></td>
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
@@ -697,6 +704,13 @@
             document.getElementById('itemId').value = item.item_id;
             document.getElementById('rawUnitPrice').value = item.unit_price;
             document.getElementById('qtyPerPallet').value = item.qty_per_pallet || 1;
+            
+            // Re-fetch historical context balance if available
+            const stockMatch = globallyAvailableStock.find(stock => stock.item_code === item.item_code);
+            const currentAvailable = stockMatch ? stockMatch.calculated_balance : 0;
+            document.getElementById('maxAvailableQty').value = currentAvailable + (item.out_quantity || 0);
+            document.getElementById('displayAvailableQty').value = `${currentAvailable + (item.out_quantity || 0)} Units Remaining`;
+
             document.getElementById('formTitle').textContent = "Editing Transaction: " + item.sales_order_no;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -715,7 +729,7 @@
             const item = globallyFetchedHistory[index];
             const { error } = await supabaseClient
                 .from('transactions')
-                .update({ out_quantity: 0, total_pallet: 0, remarks: "CANCELLED ORDER" })
+                .update({ out_quantity: 0, remarks: "CANCELLED ORDER" })
                 .eq('id', item.id);
 
             if (error) { showAlert("Error cancelling: " + error.message, "error"); }
