@@ -24,7 +24,6 @@
         .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         
-        /* Updated to hide badge visually while preserving background JS selectors */
         .admin-badge { display: none; background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         .employee-badge { display: none; background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
@@ -112,7 +111,6 @@
         .btn-action-cancel { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
         .btn-action-cancel:hover { background: #c9302c; }
         
-        /* --- Pagination Layout Styles --- */
         .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 20px; padding: 0 25px; }
         .pagination-info { font-size: 0.85rem; color: #64748b; font-weight: 600; }
         .pagination-btn { background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
@@ -124,7 +122,6 @@
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-        /* --- Copied Dashboard Restriction Modal Styles --- */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; font-family: 'Inter', sans-serif; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -350,7 +347,6 @@
         let globallyFetchedHistory = [];
         let currentActiveFilteredList = []; 
         
-        // --- Pagination Global Trackers ---
         let currentPage = 1;
         const rowsPerPage = 15;
         
@@ -425,12 +421,28 @@
                 return;
             }
 
-            const calculatedPallets = Math.ceil(currentQty / qtyPerPallet);
+            const sourceRemainingPallets = Math.ceil((maxQty - currentQty) / qtyPerPallet);
+
+            let targetCurrentBalance = 0;
+            const targetItemCode = document.getElementById('itemCode').value;
+            
+            const { data: targetData } = await supabaseClient
+                .from('transactions')
+                .select('in_quantity, out_quantity')
+                .eq('storage_facility', targetFacility)
+                .eq('item_code', targetItemCode);
+
+            if (targetData) {
+                targetData.forEach(tx => {
+                    targetCurrentBalance += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                });
+            }
+            const targetNewPallets = Math.ceil((targetCurrentBalance + currentQty) / qtyPerPallet);
 
             const transferPayload = [
                 {
                     item_id: itemId,
-                    item_code: document.getElementById('itemCode').value,
+                    item_code: targetItemCode,
                     item_name: document.getElementById('itemName').value,
                     sizes: document.getElementById('itemSizes').value,
                     commodity: document.getElementById('itemCommodity').value,
@@ -443,13 +455,13 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
-                    total_pallet: calculatedPallets,
+                    total_pallet: sourceRemainingPallets,
                     qty_per_pallet: qtyPerPallet,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
                 },
                 {
                     item_id: itemId,
-                    item_code: document.getElementById('itemCode').value,
+                    item_code: targetItemCode,
                     item_name: document.getElementById('itemName').value,
                     sizes: document.getElementById('itemSizes').value,
                     commodity: document.getElementById('itemCommodity').value,
@@ -462,7 +474,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
-                    total_pallet: calculatedPallets,
+                    total_pallet: targetNewPallets,
                     qty_per_pallet: qtyPerPallet,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
                 }
@@ -796,7 +808,8 @@
                 }
             }
 
-            const calculatedPallets = Math.ceil(targetDispatchQuantity / qtyPerPallet);
+            const remainingUnitsAfterDispatch = maxQty - targetDispatchQuantity;
+            const calculatedPallets = Math.ceil(remainingUnitsAfterDispatch / qtyPerPallet);
 
             const payload = {
                 item_id: document.getElementById('itemId').value,
