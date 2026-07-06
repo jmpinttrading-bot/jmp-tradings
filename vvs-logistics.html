@@ -425,12 +425,30 @@
                 return;
             }
 
-            const calculatedPallets = Math.ceil(currentQty / qtyPerPallet);
+            // Calculate rolling pallet space metrics for source facility after allocation drop
+            const sourceRemainingPallets = Math.ceil((maxQty - currentQty) / qtyPerPallet);
+
+            // Dynamically discover current layout volumes on incoming target nodes
+            let targetCurrentBalance = 0;
+            const targetItemCode = document.getElementById('itemCode').value;
+            
+            const { data: targetData } = await supabaseClient
+                .from('transactions')
+                .select('in_quantity, out_quantity')
+                .eq('storage_facility', targetFacility)
+                .eq('item_code', targetItemCode);
+
+            if (targetData) {
+                targetData.forEach(tx => {
+                    targetCurrentBalance += (parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0);
+                });
+            }
+            const targetNewPallets = Math.ceil((targetCurrentBalance + currentQty) / qtyPerPallet);
 
             const transferPayload = [
                 {
                     item_id: itemId,
-                    item_code: document.getElementById('itemCode').value,
+                    item_code: targetItemCode,
                     item_name: document.getElementById('itemName').value,
                     sizes: document.getElementById('itemSizes').value,
                     commodity: document.getElementById('itemCommodity').value,
@@ -443,13 +461,13 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
-                    total_pallet: calculatedPallets,
+                    total_pallet: sourceRemainingPallets,
                     qty_per_pallet: qtyPerPallet,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
                 },
                 {
                     item_id: itemId,
-                    item_code: document.getElementById('itemCode').value,
+                    item_code: targetItemCode,
                     item_name: document.getElementById('itemName').value,
                     sizes: document.getElementById('itemSizes').value,
                     commodity: document.getElementById('itemCommodity').value,
@@ -462,7 +480,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
-                    total_pallet: calculatedPallets,
+                    total_pallet: targetNewPallets,
                     qty_per_pallet: qtyPerPallet,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
                 }
@@ -796,7 +814,9 @@
                 }
             }
 
-            const calculatedPallets = Math.ceil(targetDispatchQuantity / qtyPerPallet);
+            // Calculate post-transaction inventory status for the saved payload
+            const remainingUnitsAfterDispatch = maxQty - targetDispatchQuantity;
+            const calculatedPallets = Math.ceil(remainingUnitsAfterDispatch / qtyPerPallet);
 
             const payload = {
                 item_id: document.getElementById('itemId').value,
