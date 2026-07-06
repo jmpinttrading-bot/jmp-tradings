@@ -182,7 +182,7 @@
             <label>Target Facility</label>
             <select id="targetFacility">
                 <option value="VVS COLD STORAGE & PROCESSING PLANT CORP.">VVS Cold Storage & Processing Plant Corp.</option>
-                <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">Hightower Storage & Trading Centre, Inc.</option>
+                <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">HIGHTOWER STORAGE & TRADING CENTRE, INC.</option>
                 <option value="EISBERG COLD LOGISTICS INC.">Eisberg Cold Logistics Inc.</option>
                 <option value="CRYSTAL COLD STORAGE, INC.">Crystal Cold Storage, Inc.</option>
             </select>
@@ -411,7 +411,10 @@
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
             const spsic = document.getElementById('activeSpsicNumber').value;
             const unitPrice = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
-            const qtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
+            
+            // Check product specifications or dynamic data attributes for divisor, safely default to 1 if unavailable
+            const baseQtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
+            const qtyPerPallet = baseQtyPerPallet > 0 ? baseQtyPerPallet : 1;
             
             if (!itemId || currentQty <= 0) {
                 showAlert("Please select an item and ensure a valid quantity is set.", "error");
@@ -423,6 +426,7 @@
                 return;
             }
 
+            // Math.ceil rounds up remaining points/units to +1 full pallet
             const calculatedPallets = Math.ceil(currentQty / qtyPerPallet);
 
             const transferPayload = [
@@ -442,6 +446,7 @@
                     spsic_number: spsic,
                     unit_price: unitPrice,
                     total_pallet: calculatedPallets,
+                    qty_per_pallet: qtyPerPallet,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
                 },
                 {
@@ -460,6 +465,7 @@
                     spsic_number: spsic,
                     unit_price: unitPrice,
                     total_pallet: calculatedPallets,
+                    qty_per_pallet: qtyPerPallet,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
                 }
             ];
@@ -476,7 +482,7 @@
             }
         }
 
-        function handleDropdownSelection(selectElement) {
+        async function handleDropdownSelection(selectElement) {
             const selectedItemCode = selectElement.value;
             if (!selectedItemCode) { resetFormState(); return; }
 
@@ -492,9 +498,26 @@
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
-                document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 1;
                 document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
                 document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
+                
+                // Cross-check query execution frame targeting product configurations table to copy qty_per_pallet parameter
+                try {
+                    const { data: registryItem, error } = await supabaseClient
+                        .from('product_registry')
+                        .select('qty_per_pallet')
+                        .eq('item_code', stockItem.item_code)
+                        .maybeSingle();
+
+                    if (!error && registryItem && registryItem.qty_per_pallet) {
+                        document.getElementById('qtyPerPallet').value = registryItem.qty_per_pallet;
+                    } else {
+                        document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 1;
+                    }
+                } catch (registryErr) {
+                    document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 1;
+                }
+
                 showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
             }
         }
@@ -635,10 +658,14 @@
                 
                 balanceMap.set(tx.id, itemRunningBalances[code]);
                 
-                // Compute remaining total pallets based on rolling balance divided by qty_per_pallet
-                const divisor = parseInt(tx.qty_per_pallet) || 1;
-                const remainingPallets = Math.ceil(itemRunningBalances[code] / divisor);
-                palletMap.set(tx.id, remainingPallets >= 0 ? remainingPallets : 0);
+                // Read configurations dynamically. Avoid dividing by 1 if there's an actual packing rule profile configuration.
+                const parsedDivisor = parseInt(tx.qty_per_pallet);
+                const divisor = (parsedDivisor && parsedDivisor > 0) ? parsedDivisor : 1;
+                
+                // Math.ceil converts fractional point quantities directly to +1 full pallet
+                const currentBalanceValue = itemRunningBalances[code];
+                const remainingPallets = currentBalanceValue > 0 ? Math.ceil(currentBalanceValue / divisor) : 0;
+                palletMap.set(tx.id, remainingPallets);
             });
 
             const totalRows = items.length;
@@ -745,7 +772,9 @@
             const submitBtn = document.getElementById('submitBtn');
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
-            const qtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
+            
+            const baseQtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
+            const qtyPerPallet = baseQtyPerPallet > 0 ? baseQtyPerPallet : 1;
 
             if (targetDispatchQuantity > maxQty) {
                 showAlert(`Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).`, "error");
@@ -768,6 +797,7 @@
                 }
             }
 
+            // Math.ceil treats partial remainder metrics as +1 full pallet entry on upload payload
             const calculatedPallets = Math.ceil(targetDispatchQuantity / qtyPerPallet);
 
             const payload = {
@@ -787,6 +817,7 @@
                 spsic_number: document.getElementById('activeSpsicNumber').value,
                 sales_order_no: document.getElementById('salesOrderNo').value,
                 total_pallet: calculatedPallets,
+                qty_per_pallet: qtyPerPallet,
                 remarks: remark.toUpperCase()
             };
             if (targetRowId) payload.id = targetRowId;
