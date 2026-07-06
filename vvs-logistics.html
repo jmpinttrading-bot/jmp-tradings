@@ -103,6 +103,7 @@
         .qty-val { font-weight: 700; color: #d9534f; font-size: 0.95rem; }
         .qty-in { font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
         .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
+        .qty-pallet { font-weight: 700; color: #8b5cf6; font-size: 0.95rem; }
 
         .action-btn-group { display: flex; gap: 6px; justify-content: center; }
         
@@ -210,6 +211,7 @@
                     <input type="hidden" id="activeSpsicNumber">
                     <input type="hidden" id="maxAvailableQty">
                     <input type="hidden" id="rawUnitPrice">
+                    <input type="hidden" id="qtyPerPallet" value="1">
                     
                     <div class="form-row" style="margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1;">
                         <div class="form-group flex-2">
@@ -302,6 +304,7 @@
                                 <th>In Qty</th>
                                 <th>Out Qty</th>
                                 <th>Rolling Balance</th>
+                                <th>Total Pallet</th>
                                 <th>Buyer Name</th>
                                 <th>Remarks</th>
                                 <th style="text-align: center;">Action</th>
@@ -309,7 +312,7 @@
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -408,6 +411,7 @@
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
             const spsic = document.getElementById('activeSpsicNumber').value;
             const unitPrice = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
+            const qtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
             
             if (!itemId || currentQty <= 0) {
                 showAlert("Please select an item and ensure a valid quantity is set.", "error");
@@ -418,6 +422,8 @@
                 showAlert(`Transfer quantity (${currentQty}) cannot exceed current available quantity (${maxQty}).`, "error");
                 return;
             }
+
+            const calculatedPallets = Math.ceil(currentQty / qtyPerPallet);
 
             const transferPayload = [
                 {
@@ -435,6 +441,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
+                    total_pallet: calculatedPallets,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER TO", targetFacility)
                 },
                 {
@@ -452,6 +459,7 @@
                     date: new Date().toISOString().split('T')[0],
                     spsic_number: spsic,
                     unit_price: unitPrice,
+                    total_pallet: calculatedPallets,
                     sales_order_no: generateSalesOrderNumber(true, "TRANSFER FROM", targetFacility)
                 }
             ];
@@ -484,6 +492,7 @@
                 document.getElementById('maxAvailableQty').value = stockItem.calculated_balance || 0;
                 document.getElementById('displayAvailableQty').value = `${stockItem.calculated_balance || 0} Units Remaining`;
                 document.getElementById('rawUnitPrice').value = stockItem.unit_price || 0;
+                document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 1;
                 document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
                 document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
                 showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
@@ -496,6 +505,7 @@
             document.getElementById('activeSpsicNumber').value = '';
             document.getElementById('maxAvailableQty').value = '';
             document.getElementById('rawUnitPrice').value = '';
+            document.getElementById('qtyPerPallet').value = '1';
             document.getElementById('outboundForm').reset();
             document.getElementById('inventorySearchQuery').value = '';
             document.getElementById('descSearchQuery').value = '';
@@ -606,7 +616,7 @@
             const tbody = document.getElementById('ledgerTableBody');
             
             if (!items || items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="12" style="text-align: center; padding: 30px; color: #94a3b8;">No matching running history discovered.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">No matching running history discovered.</td></tr>`;
                 document.getElementById('paginationInfo').textContent = "Page 1 of 1";
                 document.getElementById('prevPageBtn').disabled = true;
                 document.getElementById('nextPageBtn').disabled = true;
@@ -650,6 +660,7 @@
                         <td><span class="qty-in">${item.in_quantity ? `+${item.in_quantity}` : '—'}</span></td>
                         <td><span class="qty-val">${item.out_quantity ? `-${item.out_quantity}` : '—'}</span></td>
                         <td><span class="qty-bal">${balanceMap.get(item.id)}</span></td>
+                        <td><span class="qty-pallet">${item.total_pallet || 0}</span></td>
                         <td style="font-weight: 600; color: #334155;">${item.buyer_name || '—'}</td>
                         <td style="font-weight: 600; color: #64748b;">${item.remarks || '—'}</td>
                         <td style="text-align: center;">
@@ -685,6 +696,7 @@
             document.getElementById('activeSpsicNumber').value = item.spsic_number;
             document.getElementById('itemId').value = item.item_id;
             document.getElementById('rawUnitPrice').value = item.unit_price;
+            document.getElementById('qtyPerPallet').value = item.qty_per_pallet || 1;
             document.getElementById('formTitle').textContent = "Editing Transaction: " + item.sales_order_no;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -703,7 +715,7 @@
             const item = globallyFetchedHistory[index];
             const { error } = await supabaseClient
                 .from('transactions')
-                .update({ out_quantity: 0, remarks: "CANCELLED ORDER" })
+                .update({ out_quantity: 0, total_pallet: 0, remarks: "CANCELLED ORDER" })
                 .eq('id', item.id);
 
             if (error) { showAlert("Error cancelling: " + error.message, "error"); }
@@ -719,6 +731,7 @@
             const submitBtn = document.getElementById('submitBtn');
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
+            const qtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
 
             if (targetDispatchQuantity > maxQty) {
                 showAlert(`Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).`, "error");
@@ -741,6 +754,8 @@
                 }
             }
 
+            const calculatedPallets = Math.ceil(targetDispatchQuantity / qtyPerPallet);
+
             const payload = {
                 item_id: document.getElementById('itemId').value,
                 item_code: document.getElementById('itemCode').value,
@@ -757,6 +772,7 @@
                 buyer_name: targetBuyerName,
                 spsic_number: document.getElementById('activeSpsicNumber').value,
                 sales_order_no: document.getElementById('salesOrderNo').value,
+                total_pallet: calculatedPallets,
                 remarks: remark.toUpperCase()
             };
             if (targetRowId) payload.id = targetRowId;
