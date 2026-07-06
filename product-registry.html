@@ -574,7 +574,7 @@
             document.getElementById('itemCommodity').value = data.commodity || "";
             document.getElementById('activeSpsicNumber').value = queryVal;
             
-            alert(`Manifest loaded successfully for SPSIC: ${queryVal}`);
+            showSystemModal("Action Successful", `Manifest loaded successfully for SPSIC: ${queryVal}`);
             await autoGenerateSkuCode();
         }
 
@@ -875,7 +875,7 @@
                 return;
             }
 
-            alert("Master log file parameters and matching transactions updated successfully.");
+            showSystemModal("Action Successful", "Master log file parameters and matching transactions updated successfully.");
 
             closeEditRemarksModal();
             resetFormState();
@@ -945,7 +945,7 @@
                 return;
             }
 
-            alert(`Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`);
+            showSystemModal("Action Successful", `Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`);
             resetFormState();
             fetchLedgerDataset();
         }
@@ -975,9 +975,11 @@
                 if (bypassAuthListener) return;
                 if (session && session.user && session.user.id !== currentAdminId) {
                     bypassAuthListener = true; 
-                    alert("Session Conflicted. Redirecting...");
-                    await supabaseClient.auth.signOut();
-                    window.location.href = "login.html";
+                    showSystemModal("Session Conflicted", "Session Conflicted. Redirecting...");
+                    setTimeout(async () => {
+                        await supabaseClient.auth.signOut();
+                        window.location.href = "login.html";
+                    }, 2000);
                 }
                 if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
             });
