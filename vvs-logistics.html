@@ -412,7 +412,6 @@
             const spsic = document.getElementById('activeSpsicNumber').value;
             const unitPrice = parseFloat(document.getElementById('rawUnitPrice').value) || 0;
             
-            // Check product specifications or dynamic data attributes for divisor, safely default to 1 if unavailable
             const baseQtyPerPallet = parseInt(document.getElementById('qtyPerPallet').value) || 1;
             const qtyPerPallet = baseQtyPerPallet > 0 ? baseQtyPerPallet : 1;
             
@@ -426,7 +425,6 @@
                 return;
             }
 
-            // Math.ceil rounds up remaining points/units to +1 full pallet
             const calculatedPallets = Math.ceil(currentQty / qtyPerPallet);
 
             const transferPayload = [
@@ -501,7 +499,6 @@
                 document.getElementById('dateReleased').value = new Date().toISOString().split('T')[0];
                 document.getElementById('salesOrderNo').value = generateSalesOrderNumber();
                 
-                // Cross-check query execution frame targeting product configurations table to copy qty_per_pallet parameter
                 try {
                     const { data: registryItem, error } = await supabaseClient
                         .from('product_registry')
@@ -651,7 +648,6 @@
             const palletMap = new Map();
             const itemRunningBalances = {};
             
-            // Build a registry dictionary mapping item_code -> qty_per_pallet from synced inventory state
             const productPalletRules = {};
             globallyAvailableStock.forEach(stock => {
                 if (stock.item_code) {
@@ -666,10 +662,7 @@
                 
                 balanceMap.set(tx.id, itemRunningBalances[code]);
                 
-                // Look up rule parameters dynamically from profile dictionary first, fallback to historical tx, default to 1
                 const divisor = productPalletRules[code] || parseInt(tx.qty_per_pallet) || 1;
-                
-                // Target item specific metrics on this row line instead of building calculations from rolling totals
                 const transactionQty = (parseInt(tx.in_quantity) || 0) || (parseInt(tx.out_quantity) || 0);
                 const linePallets = transactionQty > 0 ? Math.ceil(transactionQty / divisor) : 0;
                 
@@ -740,7 +733,6 @@
             document.getElementById('rawUnitPrice').value = item.unit_price;
             document.getElementById('qtyPerPallet').value = item.qty_per_pallet || 1;
             
-            // Re-fetch historical context balance if available
             const stockMatch = globallyAvailableStock.find(stock => stock.item_code === item.item_code);
             const currentAvailable = stockMatch ? stockMatch.calculated_balance : 0;
             document.getElementById('maxAvailableQty').value = currentAvailable + (item.out_quantity || 0);
@@ -805,7 +797,6 @@
                 }
             }
 
-            // Math.ceil treats partial remainder metrics as +1 full pallet entry on upload payload
             const calculatedPallets = Math.ceil(targetDispatchQuantity / qtyPerPallet);
 
             const payload = {
