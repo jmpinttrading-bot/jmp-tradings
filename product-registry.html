@@ -823,21 +823,6 @@
                 return;
             }
 
-            // Fetch current item to determine contextual balance shifts for auditing logs
-            const { data: existingItem, error: fetchErr } = await supabaseClient
-                .from('inventory')
-                .select('stock_quantity')
-                .eq('id', id)
-                .maybeSingle();
-
-            if (fetchErr) {
-                showSystemModal("Database Error", "Failed to retrieve contextual parameters for transaction tracing: " + fetchErr.message);
-                return;
-            }
-
-            const oldQty = existingItem ? (parseInt(existingItem.stock_quantity) || 0) : 0;
-            const delta = new_stock_qty - oldQty;
-
             const editPayload = { 
                 spsic_number,
                 item_code, 
@@ -861,44 +846,7 @@
                 return;
             }
 
-            // Generate trace record containing explicit historical descriptions
-            let traceType = "Update Registry";
-            let traceQty = new_stock_qty;
-            let logNotes = `Modified parameters log: ${editRemarksText}`;
-            
-            if (delta !== 0) {
-                traceType = delta > 0 ? "Adjustment In" : "Adjustment Out";
-                traceQty = Math.abs(delta);
-                logNotes = `Parameters & Balance Shift (From ${oldQty} to ${new_stock_qty}): ${editRemarksText}`;
-            }
-
-            const transactionPayload = {
-                item_id: id,
-                item_code: item_code,
-                item_name: item_name,
-                sizes: sizes,
-                commodity: commodity,
-                in_quantity: traceType === "Adjustment Out" ? 0 : traceQty,
-                out_quantity: traceType === "Adjustment Out" ? traceQty : 0,
-                sales_order_no: "Shipment Mod",
-                transactions_type: traceType,
-                processed_by: currentUserEmail,
-                storage_facility: storage_facility,
-                date: chosen_date,
-                remarks: logNotes,
-                spsic_number: spsic_number,
-                qty_per_pallet: new_qty_per_pallet
-            };
-
-            const { error: txError } = await supabaseClient
-                .from('transactions')
-                .insert([transactionPayload]);
-
-            if (txError) {
-                alert("Master log metrics modified, but transaction history tracing file update validation failed.");
-            } else {
-                alert("Master log file parameters and transaction trail metrics updated successfully.");
-            }
+            alert("Master log file parameters updated successfully.");
 
             closeEditRemarksModal();
             resetFormState();
@@ -961,8 +909,7 @@
             };
 
             const { error: txError } = await supabaseClient
-                .from('transactions')
-                .insert([transactionPayload]);
+                .from('transactions').insert([transactionPayload]);
 
             if (txError) {
                 showSystemModal("Log Mismatch", "Inventory registered, but transaction history failed to write: " + txError.message);
