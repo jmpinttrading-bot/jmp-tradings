@@ -887,7 +887,7 @@
                 date: chosen_date,
                 remarks: logNotes,
                 spsic_number: spsic_number,
-                qty_per_pallet: String(new_qty_per_pallet)
+                qty_per_pallet: new_qty_per_pallet
             };
 
             const { error: txError } = await supabaseClient
@@ -957,7 +957,7 @@
                 date: chosen_date, 
                 remarks: input_remarks || "",
                 spsic_number: spsic_number,
-                qty_per_pallet: String(qty_per_pallet)
+                qty_per_pallet: qty_per_pallet
             };
 
             const { error: txError } = await supabaseClient
