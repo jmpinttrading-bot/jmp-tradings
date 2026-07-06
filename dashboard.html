@@ -175,10 +175,9 @@
             const end = document.getElementById('dateTo').value;
             const container = document.getElementById('reportContainer');
             
-            // Updated query to retrieve item_name, sizes, and total_pallet fields
             const { data, error } = await supabaseClient
                 .from('transactions')
-                .select('id, item_code, item_name, sizes, total_pallet, date, balance, storage_facility, sales_order_no')
+                .select('id, item_code, total_pallet, date, balance, storage_facility, sales_order_no')
                 .lte('date', end)
                 .order('date', { ascending: true });
 
@@ -192,18 +191,8 @@
             const color = facilityThemes[name] || "#475569";
             const facilityData = allData.filter(d => d.storage_facility && d.storage_facility.trim() === name.trim());
             
-            // Collect unique item configurations to safely list code, name, and size combinations
-            const itemMap = new Map();
-            facilityData.forEach(d => {
-                if (d.item_code) {
-                    itemMap.set(d.item_code, {
-                        name: d.item_name || '—',
-                        sizes: d.sizes || '—'
-                    });
-                }
-            });
-
-            const itemsAtFacility = Array.from(itemMap.keys());
+            // Extract out unique list of codes only
+            const itemsAtFacility = [...new Set(facilityData.map(d => d.item_code))].filter(Boolean);
             
             const parseDate = (dStr) => {
                 const [y, m, d] = dStr.split('-');
@@ -224,15 +213,13 @@
 
             dates.reverse();
 
-            // Set up multi-row headers using rowspan="2" and colspan="2"
+            // Setup simplified single-column metadata table layout rowspans
             let html = `<div class="facility-container">
                 <h2 style="background-color: ${color};">${name}</h2>
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Item Code</th>
-                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Item Name</th>
-                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Size</th>`;
+                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Item Code</th>`;
             
             dates.forEach(d => {
                 const [y, m, day] = d.split('-');
@@ -249,11 +236,8 @@
             let columnTotals = new Array(dates.length).fill(0);
 
             itemsAtFacility.forEach(code => {
-                const meta = itemMap.get(code);
                 html += `<tr>
-                            <td style="font-weight: 700;">${code}</td>
-                            <td style="text-align: left;">${meta.name}</td>
-                            <td>${meta.sizes}</td>`;
+                            <td style="font-weight: 700;">${code}</td>`;
                 
                 dates.forEach((date, index) => {
                     const match = facilityData.filter(d => d.item_code === code && d.date <= date)
