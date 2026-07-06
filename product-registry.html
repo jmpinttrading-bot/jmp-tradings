@@ -805,7 +805,10 @@
             }
 
             // Secure values explicitly into local closure scope prior to any DOM modifications or state shifts
-            const id = document.getElementById('itemId').value;
+            const rawId = document.getElementById('itemId').value;
+            // Explicit type casting logic checking for native integer DB primary key constraints
+            const id = isNaN(rawId) ? rawId : parseInt(rawId, 10);
+
             const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
             const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
             const item_name = document.getElementById('itemName').value.trim().toUpperCase();
@@ -860,11 +863,12 @@
                 qty_per_pallet: new_qty_per_pallet
             };
 
-            const { error: txError } = await supabaseClient
+            const { data: updatedTx, error: txError } = await supabaseClient
                 .from('transactions')
                 .update(transactionEditPayload)
                 .eq('item_id', id)
-                .eq('transactions_type', 'Inbound');
+                .eq('transactions_type', 'Inbound')
+                .select();
 
             if (txError) {
                 showSystemModal("Log Mismatch", "Inventory modified, but transaction profile synchronization failed: " + txError.message);
