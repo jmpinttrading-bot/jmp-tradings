@@ -19,6 +19,14 @@
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
+        /* Standardized Notification Modal Styles from inventory-management.html */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
+        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
+
         /* Content Area Alignment */
         .main-content { padding: 40px; }
         
@@ -44,15 +52,17 @@
         .facility-summary-card { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px 18px; margin-top: 15px; border-radius: 8px; display: inline-flex; flex-direction: column; gap: 4px; min-width: 240px; }
         .facility-summary-card span:first-child { font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
         .facility-summary-card span:last-child { font-size: 1.35rem; font-weight: 800; color: #1e293b; }
-
-        /* Modal Layout */
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
     </style>
 </head>
 <body>
+
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">Access Restricted</h4>
+            <p id="restrictionModalMessage">You do not possess the structural authorization parameters required to enter this workspace zone.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
 
     <nav class="navbar">
         <div class="top-row">
@@ -60,13 +70,13 @@
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn active">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsNavBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -91,20 +101,13 @@
         <div id="reportContainer"></div>
     </div>
 
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage">Execution status telemetry readout frame.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let currentUserRole = "employee";
+        let currentUserPermissions = null;
+        let currentAdminId = null;
 
         const facilityThemes = {
             "VVS COLD STORAGE & PROCESSING PLANT CORP.": "#0f172a",
@@ -120,17 +123,42 @@
             return `${y}-${m}-${d}`;
         }
 
-        function checkAccess(event) {
-            if (currentUserRole !== 'admin') {
-                event.preventDefault();
-                showSystemModal({ title: 'Access Restricted', message: 'Administrative privileges are required to access the System Settings.' });
-            }
-        }
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
 
-        function showSystemModal(options = {}) {
-            document.getElementById('alertTitle').textContent = options.title || 'Notification';
-            document.getElementById('alertMessage').textContent = options.message || '';
-            document.getElementById('accessBlockerModal').classList.add('is-visible');
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
+            }
+
+            if (accessKey === 'admin_access') {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+                return;
+            }
+
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+            } else {
+                window.location.href = url;
+            }
         }
 
         function closeRestrictionModal() {
@@ -140,9 +168,28 @@
         async function initDashboard() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
+            currentAdminId = user.id;
             
-            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-            if (profile) currentUserRole = profile.role.toLowerCase().trim();
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            if (error || !profile) {
+                console.error("Profile structural query fault:", error);
+                window.location.href = "login.html";
+                return;
+            }
+
+            currentUserPermissions = profile;
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+
+            const settingsBtn = document.getElementById('settingsNavBtn');
+            if (roleClean === 'admin' && settingsBtn) {
+                settingsBtn.style.background = "#475569";
+                settingsBtn.style.color = "white";
+            }
 
             const { data: docData } = await supabaseClient
                 .from('employee_201_docs')
@@ -191,7 +238,6 @@
             const color = facilityThemes[name] || "#475569";
             const facilityData = allData.filter(d => d.storage_facility && d.storage_facility.trim() === name.trim());
             
-            // Extract out unique list of codes only
             const itemsAtFacility = [...new Set(facilityData.map(d => d.item_code))].filter(Boolean);
             
             const parseDate = (dStr) => {
@@ -213,7 +259,6 @@
 
             dates.reverse();
 
-            // Setup simplified single-column metadata table layout rowspans
             let html = `<div class="facility-container">
                 <h2 style="background-color: ${color};">${name}</h2>
                 <table>
