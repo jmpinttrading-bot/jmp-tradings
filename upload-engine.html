@@ -16,12 +16,12 @@
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
         .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; display: inline-block; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
         /* Workspace Layouts */
-        .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; display: none; } /* Initial hide until verification passes */
+        .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; display: none; } 
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin: 0 0 5px 0; }
         .back-link { background: #0f172a; color: white; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
@@ -47,7 +47,7 @@
         .submit-btn:hover { opacity: 0.9; }
         .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
-        /* Standardized Notification Modals (from inventory-management.html) */
+        /* Standardized Notification Modals */
         .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); }
         .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: modalReveal 0.25s ease-out; }
         .system-alert-header { padding: 20px 24px 10px; display: flex; align-items: center; gap: 12px; }
@@ -76,13 +76,13 @@
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links" id="navbarLinks">
-            <a href="dashboard.html" class="nav-btn" data-module="Dashboard">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn" data-module="My Profile">My Profile</a>
-            <a href="import-docs.html" class="nav-btn active" data-module="Imports">Imports</a>
-            <a href="inventory-management.html" class="nav-btn" data-module="Inventory">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn" data-module="Sales">Sales</a>
-            <a href="audit-report.html" class="nav-btn" data-module="Audit Report">Audit Report</a>
-            <a href="#" class="nav-btn" id="settingsBtn" data-module="Settings">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -270,7 +270,7 @@
         </div>
     </div>
 
-    <!-- Inventory Standard Notification Modal Structural Target Overlay -->
+    <!-- Standardized Notification Modal Structural Target Overlay -->
     <div class="system-alert-overlay" id="systemAlertOverlay">
         <div class="system-alert-card">
             <div class="system-alert-header">
@@ -292,10 +292,11 @@
         const STORAGE_BUCKET_NAME = "shipment-documents";
         let localFetchedRecord = null;
         let currentUserSession = null;
+        let currentUserPermissions = null;
         let activeTrackingSpsic = null;
         let presenceHeartbeatInterval = null;
 
-        // Custom Standardized Notification Modal Handler
+        // Standardized Notification Modal Handler
         function showSystemModal(type, title, message, onConfirm = null) {
             document.getElementById('systemAlertTitle').textContent = title;
             document.getElementById('systemAlertContent').textContent = message;
@@ -320,6 +321,41 @@
             document.getElementById('systemAlertOverlay').style.display = 'none'; 
         }
 
+        // Structural Privilege Verification Mapping
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
+            }
+
+            if (accessKey === 'admin_access') {
+                showSystemModal('error', 'Access Restricted', 'Administrative level privileges are required to access System Settings.');
+                return;
+            }
+
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && !val) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                showSystemModal('error', 'Access Restricted', 'You do not possess the dynamic authorization privileges needed for this module pipeline.');
+            } else {
+                window.location.href = url;
+            }
+        }
+
         function autofillFormFields(data) {
             if (!data) return;
             document.getElementById('spsicDate').value = data.s_date || '';
@@ -337,77 +373,40 @@
             if (!user) { window.location.href = "login.html"; return; }
             currentUserSession = user;
 
-            // Enforcement of control-panel module restrictions
+            // Enforcement of structural restrictions
             await enforceRestrictionAccess();
-
-            setupSettingsProtection();
 
             const today = new Date();
             document.getElementById('spsicTargetMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
             evaluateUploadSequenceLocks();
         }
 
-        // Restriction Check Engine mapping matching control panel standards
         async function enforceRestrictionAccess() {
             try {
                 const { data: profile, error } = await supabaseClient
                     .from('profiles')
-                    .select('role, restrictions')
+                    .select('*')
                     .eq('id', currentUserSession.id)
                     .maybeSingle();
 
-                if (error) throw error;
+                if (error || !profile) throw error || new Error("Profile retrieval failed");
 
-                const userRole = (profile?.role || "").toUpperCase();
-                // Treat empty or unset configurations safely as arrays
-                const restrictions = profile?.restrictions || []; 
+                currentUserPermissions = profile;
+                const userRole = String(profile.role || '').toLowerCase().trim();
+                const rawAccessStr = String(profile.import_access || '').replace(/['"]+/g, '').toLowerCase().trim();
+                const hasImportAccess = profile.import_access === true || rawAccessStr === 'true';
 
-                // 1. Base Access protection for this Upload Engine module (Imports)
-                if (userRole !== "ADMIN" && restrictions.includes("Imports")) {
-                    showSystemModal('error', 'Access Denied', 'You do not have permission to access the Imports module.', () => {
-                        window.location.href = "dashboard.html";
+                if (userRole !== 'admin' && !hasImportAccess) {
+                    showSystemModal('error', 'Access Restricted', 'You do not possess the dynamic authorization privileges needed for this module pipeline.', () => {
+                        window.location.href = "employee-dashboard.html";
                     });
                     return;
                 }
 
-                // If authorization passes, make the workspace context visible
                 document.getElementById('mainContentWrapper').style.display = 'block';
-
-                // 2. Filter Navbar options matching restrictions list
-                const navLinks = document.querySelectorAll('#navbarLinks .nav-btn');
-                navLinks.forEach(link => {
-                    const targetModule = link.getAttribute('data-module');
-                    if (userRole !== "ADMIN" && restrictions.includes(targetModule)) {
-                        link.style.display = 'none';
-                    }
-                });
             } catch (err) {
                 console.error("Restriction verification fault:", err);
                 showSystemModal('error', 'Security Fault', 'Could not verify user access control maps.');
-            }
-        }
-
-        function setupSettingsProtection() {
-            const settingsBtn = document.getElementById('settingsBtn');
-            if (settingsBtn) {
-                settingsBtn.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    
-                    const userRole = currentUserSession.user_metadata?.role || "";
-                    
-                    if (userRole.toUpperCase() === "ADMIN") {
-                        window.location.href = "admin-dashboard.html";
-                    } else {
-                        const { data: profile } = await supabaseClient
-                            .from('profiles').select('role').eq('id', currentUserSession.id).maybeSingle();
-
-                        if (profile && profile.role?.toUpperCase() === "ADMIN") {
-                            window.location.href = "admin-dashboard.html";
-                        } else {
-                            showSystemModal('error', 'Access Denied', 'You do not hold the required Administrative privileges to access Control Settings.');
-                        }
-                    }
-                });
             }
         }
 
@@ -614,7 +613,7 @@
                             <img src="${window.location.origin}/circle-logo.png" width="50" height="50" style="display:block;" />
                         </td>
                         <td colspan="8" class="header-title" style="vertical-align: middle; padding-left: 10px;">
-                            JMP INTERNATIONAL FISH TRADINGS
+                            JMP INTERNATIONAL FISH TRADING
                         </td>
                     </tr>
                     <tr style="height: 15pt;"><td colspan="8"></td></tr>
