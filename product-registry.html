@@ -9,7 +9,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* --- Synchronized Navbar Layout Components from employee-dashboard.html --- */
+        /* --- Synchronized Navbar Layout Components --- */
         .navbar { 
             background-color: #1e293b; 
             color: white; 
@@ -75,6 +75,63 @@
         .nav-btn.active { 
             background: #475569; 
             color: white; 
+        }
+
+        /* --- Standardized Notification Modal Styles from inventory-management.html --- */
+        .restriction-modal-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(11, 37, 69, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 20000; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.2s ease-in-out;
+        }
+        .restriction-modal-container.is-visible { 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
+        .restriction-modal-card { 
+            background: white; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 440px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .restriction-modal-card h4 {
+            margin-bottom: 10px; 
+            color: #1e293b; 
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .restriction-modal-card p {
+            color: #64748b; 
+            font-size: 0.9rem; 
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .modal-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 15px; 
+            width: 100%; 
+            max-width: 150px; 
+        }
+        .modal-btn:hover {
+            background: #11355e;
         }
 
         /* --- Workspace Content Styles --- */
@@ -153,7 +210,6 @@
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; transition: background-color 0.2s ease; }
         .master-table tr:hover td { background-color: #f8fafc; }
         
-        /* Selected active row highlighting style */
         .master-table tr.selected-row td { background-color: #e0f2fe !important; }
         
         .qty-val { font-weight: 700; color: #0f172a; font-size: 0.95rem; }
@@ -170,61 +226,6 @@
         .modal-card { background: white; border-radius: 12px; max-width: 450px; width: 100%; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
         .modal-card h3 { font-size: 1.2rem; color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
 
-        /* --- Exact Restriction Modal Design from employee-dashboard.html --- */
-        .restriction-modal-container { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(11, 37, 69, 0.6); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 9999; 
-            opacity: 0; 
-            pointer-events: none; 
-            transition: opacity 0.2s ease-in-out;
-        }
-        .restriction-modal-container.is-visible { 
-            opacity: 1; 
-            pointer-events: auto; 
-        }
-        .restriction-modal-card { 
-            background: white; 
-            border-radius: 12px; 
-            width: 90%; 
-            max-width: 440px; 
-            padding: 30px; 
-            text-align: center; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        .restriction-modal-card h4 {
-            font-size: 1.2rem;
-            color: #0b2545;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        .restriction-modal-card p {
-            font-size: 0.95rem;
-            color: #475569;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
-        .restriction-modal-card .btn {
-            background: #0b2545; 
-            color: white; 
-            border: none; 
-            padding: 10px 20px; 
-            border-radius: 6px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            width: 100%;
-        }
-        .restriction-modal-card .btn:hover {
-            background: #11355e;
-        }
-
         @media (max-width: 768px) {
             .form-row { flex-direction: column; gap: 0; }
             .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
@@ -237,19 +238,27 @@
 </head>
 <body>
 
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">Access Restricted</h4>
+            <p id="restrictionModalMessage">You do not possess the dynamic authorization privileges needed for this module pipeline.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title" id="sidebarTitle">JMP INTERNATIONAL FISH TRADING</div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Dashboard', 'dashboard.html')">Dashboard</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('My Profile', 'employee-dashboard.html')">My Profile</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">Imports</a>
-            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">Inventory</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">Sales</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Audit Report', 'audit-report.html')">Audit Report</a>
-            <a href="#" class="nav-btn" id="settingsBtn">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -395,14 +404,6 @@
         </div>
     </div>
 
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="systemAlertTitle">Access Restricted</h4>
-            <p id="systemAlertContent">Administrative privileges or authorized security permissions are required to access this system section.</p>
-            <button class="btn" onclick="closeSystemModal()">Acknowledge</button>
-        </div>
-    </div>
-
     <div class="modal-overlay" id="editRemarksModalOverlay">
         <div class="modal-card">
             <h3>Registry Log Authorization</h3>
@@ -428,32 +429,54 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let globallyFetchedItems = [];
-        let currentUserSessionData = null;
-        
-        // Dynamic permission configuration layout
-        let permissionsMatrix = { 
-            profile_access: true, 
-            import_access: true, 
-            inventory_access: true, 
-            sales_invoice_access: true, 
-            audit_report_access: true,
-            product_registry_access: false, 
-            settings_access: false 
-        };
+        let currentUserPermissions = null;
 
-        // Triggered styling modal handler mappings
         function showSystemModal(title, message) {
-            document.getElementById('systemAlertTitle').textContent = title;
-            document.getElementById('systemAlertContent').textContent = message;
+            document.getElementById('restrictionModalTitle').textContent = title;
+            document.getElementById('restrictionModalMessage').textContent = message;
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
-        function closeSystemModal() { 
+        function closeRestrictionModal() { 
             document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
         }
 
         function showAlert(msg, type) {
             showSystemModal(type === 'error' ? 'Access Restricted' : 'Action Successful', msg);
+        }
+
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
+            }
+
+            if (accessKey === 'admin_access') {
+                showSystemModal("Access Restricted", "Administrative level privileges are required to access System Settings.");
+                return;
+            }
+
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                showSystemModal("Access Restricted", "You do not possess the dynamic authorization privileges needed for this module pipeline.");
+            } else {
+                window.location.href = url;
+            }
         }
 
         /* --- Global Highlight Controller --- */
@@ -463,23 +486,6 @@
             });
             const activeRow = document.getElementById(`row-${itemId}`);
             if (activeRow) activeRow.classList.add('selected-row');
-        }
-
-        /* --- Global Restriction Routing Engine --- */
-        function verifyNavigationPrivilege(moduleName, url) {
-            const allowed = (moduleName.includes('Profile') && permissionsMatrix.profile_access) ||
-                            (moduleName.includes('Import') && permissionsMatrix.import_access) ||
-                            (moduleName.includes('Inventory') && permissionsMatrix.inventory_access) ||
-                            (moduleName.includes('Sales') && permissionsMatrix.sales_invoice_access) ||
-                            (moduleName.includes('Audit') && permissionsMatrix.audit_report_access) ||
-                            (moduleName.includes('Dashboard') && permissionsMatrix.profile_access) ||
-                            (moduleName === 'Settings' && permissionsMatrix.settings_access);
-            
-            if (allowed) {
-                window.location.href = url;
-            } else {
-                showSystemModal('Access Restricted', 'Administrative privileges or authorized security permissions are required to access this system section.');
-            }
         }
 
         async function autoGenerateSkuCode() {
@@ -607,36 +613,38 @@
             
             currentAdminId = user.id;
             currentUserEmail = user.email;
-            currentUserSessionData = user;
             
-            setupSettingsProtection();
-
-            const { data: profile } = await supabaseClient
+            const { data: profile, error } = await supabaseClient
                 .from('profiles')
-                .select('role, username, product_registry_access, import_access, inventory_access, sales_invoice_access')
+                .select('*')
                 .eq('id', user.id)
                 .maybeSingle();
 
-            if (profile) {
-                permissionsMatrix = {
-                    profile_access: true,
-                    import_access: profile.role === 'Admin' || profile.import_access !== false,
-                    inventory_access: profile.role === 'Admin' || profile.inventory_access !== false,
-                    sales_invoice_access: profile.role === 'Admin' || profile.sales_invoice_access !== false,
-                    audit_report_access: profile.role === 'Admin' || profile.inventory_access !== false,
-                    product_registry_access: profile.role === 'Admin' || profile.product_registry_access !== false,
-                    settings_access: profile.role === 'Admin'
-                };
+            if (error || !profile) {
+                console.error("Profile structural query fault:", error);
+                window.location.href = "login.html";
+                return;
             }
 
-            if (!permissionsMatrix.product_registry_access) {
+            currentUserPermissions = profile;
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+
+            const settingsBtn = document.getElementById('settingsBtn');
+            if (roleClean === 'admin' && settingsBtn) {
+                settingsBtn.style.background = "#475569";
+                settingsBtn.style.color = "white";
+            }
+
+            const hasRegistryAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
+
+            if (!hasRegistryAccess) {
                 showSystemModal("Access Restricted", "Unauthorized entry context: Account configuration prevents product registry pathing.");
                 setTimeout(() => { window.location.href = "inventory-management.html"; }, 2500);
                 return;
             }
             
-            applyFormUIRestrictions();
-            fetchLedgerDataset();
+            applyFormUIRestrictions(hasRegistryAccess);
+            fetchLedgerDataset(hasRegistryAccess);
             
             document.getElementById('itemName').addEventListener('input', autoGenerateSkuCode);
             document.getElementById('itemSizes').addEventListener('input', autoGenerateSkuCode);
@@ -644,26 +652,12 @@
             setupSessionCrossCheckListener();
         }
 
-        function setupSettingsProtection() {
-            const settingsBtn = document.getElementById('settingsBtn');
-            if (settingsBtn) {
-                settingsBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (permissionsMatrix.settings_access) {
-                        window.location.href = "admin-dashboard.html";
-                    } else {
-                        showSystemModal('Access Restricted', 'Administrative privileges or authorized security permissions are required to access this section.');
-                    }
-                });
-            }
-        }
-
-        function applyFormUIRestrictions() {
+        function applyFormUIRestrictions(hasAccess) {
             const container = document.getElementById('formContainerPanel');
             const structuralLock = container.querySelector('.form-lock-message');
             if (structuralLock) structuralLock.remove();
             
-            if (!permissionsMatrix.product_registry_access) {
+            if (!hasAccess) {
                 const lockMask = document.createElement('div');
                 lockMask.className = "form-lock-message";
                 lockMask.innerHTML = `<span>🔒 Account privileges do not allow cargo parameters or gate configurations modifications.</span>`;
@@ -671,7 +665,7 @@
             }
         }
 
-        async function fetchLedgerDataset() {
+        async function fetchLedgerDataset(hasAccess) {
             const { data, error } = await supabaseClient
                 .from('inventory')
                 .select('*')
@@ -683,10 +677,10 @@
             }
 
             globallyFetchedItems = data || [];
-            renderLedgerTable(globallyFetchedItems);
+            renderLedgerTable(globallyFetchedItems, hasAccess);
         }
 
-        function renderLedgerTable(items) {
+        function renderLedgerTable(items, hasAccess) {
             const tbody = document.getElementById('ledgerTableBody');
             if (items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records logged inside storage profiles.</td></tr>`;
@@ -696,7 +690,7 @@
             const currentActiveId = document.getElementById('itemId').value;
 
             tbody.innerHTML = items.map((item, index) => {
-                const disabledAttr = permissionsMatrix.product_registry_access ? '' : 'disabled';
+                const disabledAttr = hasAccess ? '' : 'disabled';
                 const isSelectedClass = (currentActiveId && currentActiveId === item.id) ? 'selected-row' : '';
                 
                 const totalInboundQty = parseInt(item.stock_quantity) || 0;
@@ -734,7 +728,10 @@
             const item = globallyFetchedItems[index];
             if (!item) return;
 
-            if (!permissionsMatrix.product_registry_access) {
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
+
+            if (!hasAccess) {
                 showSystemModal("Access Restricted", "Action Denied: You do not have permission to edit product descriptions.");
                 return;
             }
@@ -758,7 +755,6 @@
             document.getElementById('dateReceived').value = item.date || ''; 
             document.getElementById('formRemarks').value = item.remarks || '';
             
-            // Populate and ensure the Inbound Quantity and Quantity per Pallet fields are operational during edit operations
             document.getElementById('stockQuantity').value = item.stock_quantity || '0';
             document.getElementById('qtyPerPallet').value = item.qty_per_pallet || '';
             document.getElementById('stockQuantity').required = true;
@@ -783,7 +779,10 @@
             e.preventDefault();
             const id = document.getElementById('itemId').value;
             
-            if (!permissionsMatrix.product_registry_access) {
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
+
+            if (!hasAccess) {
                 showSystemModal("Access Restricted", "Action Denied: Missing Product Registry Privileges.");
                 return;
             }
@@ -804,9 +803,7 @@
                 return;
             }
 
-            // Secure values explicitly into local closure scope prior to any DOM modifications or state shifts
             const rawId = document.getElementById('itemId').value;
-            // Explicit type casting logic checking for native integer DB primary key constraints
             const id = isNaN(rawId) ? rawId : parseInt(rawId, 10);
 
             const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
@@ -849,7 +846,6 @@
                 return;
             }
 
-            // Sync structural parameters, qty_per_pallet, and total_pallet with transactions record ledger
             const transactionEditPayload = {
                 item_code,
                 item_name,
@@ -864,12 +860,11 @@
                 total_pallet: new_qty_per_pallet > 0 ? Math.ceil(new_stock_qty / new_qty_per_pallet) : 0
             };
 
-            const { data: updatedTx, error: txError } = await supabaseClient
+            const { error: txError } = await supabaseClient
                 .from('transactions')
                 .update(transactionEditPayload)
                 .eq('item_id', id)
-                .eq('transactions_type', 'Inbound')
-                .select();
+                .eq('transactions_type', 'Inbound');
 
             if (txError) {
                 showSystemModal("Log Mismatch", "Inventory modified, but transaction profile synchronization failed: " + txError.message);
@@ -880,7 +875,10 @@
 
             closeEditRemarksModal();
             resetFormState();
-            await fetchLedgerDataset();
+            
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
+            await fetchLedgerDataset(hasAccess);
         }
 
         async function executeRegistration() {
@@ -949,7 +947,10 @@
 
             showSystemModal("Action Successful", `Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`);
             resetFormState();
-            fetchLedgerDataset();
+            
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
+            fetchLedgerDataset(hasAccess);
         }
 
         function resetFormState() {
@@ -969,7 +970,9 @@
                 row.classList.remove('selected-row');
             });
 
-            applyFormUIRestrictions();
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
+            applyFormUIRestrictions(hasAccess);
         }
 
         function setupSessionCrossCheckListener() {
