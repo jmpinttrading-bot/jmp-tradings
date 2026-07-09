@@ -9,7 +9,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; }
+        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        
+        /* Navigation Styles */
         .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
@@ -18,12 +20,22 @@
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
+        
+        /* Standardized Modal Styles - Matched exactly to inventory-management.html */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
+        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
+
+        /* Content Styles */
         .main-content { padding: 40px; }
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; }
+        .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; margin-top: 0; }
         .panel-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; align-items: start; width: 100%; }
         .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); min-width: 0; }
-        .panel-card h3 { color: #0f172a; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9; }
+        .panel-card h3 { color: #0f172a; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9; margin-top: 0; }
         .engine-launch-box { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 6px; }
         .launch-btn { display: inline-block; background: #ee964b; color: #0f172a; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; transition: 0.2s; text-align: center; }
         .launch-btn:hover { opacity: 0.9; }
@@ -51,17 +63,18 @@
         
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
         .empty-placeholder { background: #f8fafc; border: 2px dashed #e2e8f0; padding: 30px; text-align: center; border-radius: 8px; color: #64748b; font-size: 0.9rem; margin-top: 15px; }
-
-        /* Copied Standard Dialog Styling */
-        dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
-        dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-        .btn-primary { background: #0f172a; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
-        .btn-primary:hover { background: #ee964b; color: #0f172a; }
     </style>
 </head>
 <body>
+
+    <!-- Notification Modal - Aligned directly to inventory-management.html -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">Access Restricted</h4>
+            <p id="restrictionModalMessage">You do not possess the structural authorization parameters required to enter this workspace zone.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
 
     <nav class="navbar">
         <div class="top-row">
@@ -69,24 +82,15 @@
             <button class="logout-btn" id="sidebarLogoutBtn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn" onclick="checkNavbarAccess(event, 'dashboard')">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn" id="profileNavLink" onclick="checkNavbarAccess(event, 'profile')">My Profile</a>
-            <a href="import-docs.html" class="nav-btn active">Imports</a>
-            <a href="inventory-management.html" class="nav-btn" onclick="checkNavbarAccess(event, 'inventory')">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn" onclick="checkNavbarAccess(event, 'sales')">Sales</a>
-            <a href="audit-report.html" class="nav-btn" style="display: inline-block !important;" onclick="checkNavbarAccess(event, 'audit')">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkNavbarAccess(event, 'admin')">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" id="profileNavLink" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" style="display: inline-block !important;" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsNavBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
-
-    <!-- Standardized Alert Modal Component -->
-    <dialog id="alertModal">
-        <h3 id="alertModalTitle">Notification</h3>
-        <p id="alertModalBody" style="margin-bottom: 20px; color: #475569;"></p>
-        <div class="modal-actions">
-            <button class="btn-primary" onclick="document.getElementById('alertModal').close()">Close</button>
-        </div>
-    </dialog>
 
     <div class="main-content">
         <div class="header-panel">
@@ -98,14 +102,14 @@
             <div class="panel-card">
                 <h3>Document Upload Engine</h3>
                 <div class="engine-launch-box">
-                    <p style="font-size: 0.9rem; color: #64748b;">Add new parameters, update tracking records, and process digital shipment file pairs securely.</p>
-                    <a href="upload-engine.html" class="launch-btn">⚙️ Open Upload Engine Workspace</a>
+                    <p style="font-size: 0.9rem; color: #64748b; margin: 0;">Add new parameters, update tracking records, and process digital shipment file pairs securely.</p>
+                    <a href="#" onclick="verifyNavigationPrivilege('import_access', 'upload-engine.html')" class="launch-btn">⚙️ Open Upload Engine Workspace</a>
                 </div>
             </div>
 
             <div class="panel-card" id="globalUncompletedLogsWrapper">
                 <h3>Documentation Log Data Table (Action Required)</h3>
-                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
                 <div class="table-responsive-wrapper">
                     <table class="item-list-table">
                         <thead>
@@ -183,8 +187,8 @@
         let availableYears = [2026, 2027]; 
         const STORAGE_BUCKET_NAME = "shipment-documents";
         
-        let currentUserSession = null;
         let currentUserRole = "employee"; 
+        let currentUserPermissions = null;
         let activeInspectingRecordId = null;
         let activeFilesList = []; 
         let currentLoadedWorkspaceRows = [];
@@ -198,35 +202,52 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
-        // Central Access Matrix rules matching your Control Panel layout
-        function checkNavbarAccess(event, moduleName) {
-            if (currentUserRole === 'admin') return true; // Admins override constraints
-
-            const restrictedModules = {
-                'admin': { roles: ['admin'], msg: 'Administrative configuration access required.' },
-                'audit': { roles: ['admin', 'auditor'], msg: 'Access restricted to system Auditors.' }
-            };
-
-            if (restrictedModules[moduleName] && !restrictedModules[moduleName].roles.includes(currentUserRole)) {
-                event.preventDefault();
-                showSystemModal({
-                    title: 'Access Restricted',
-                    message: restrictedModules[moduleName].msg
-                });
-                return false;
-            }
-            return true;
+        // Close logic matching inventory dashboard mechanics
+        function closeRestrictionModal() { 
+            document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
         }
 
-        function showSystemModal(options = {}) {
-            document.getElementById('alertModalTitle').textContent = options.title || 'Notification';
-            document.getElementById('alertModalBody').textContent = options.message || '';
-            document.getElementById('alertModal').showModal();
+        // Privilege verification checking matched directly with inventory-management.html logic
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
+            }
+
+            if (accessKey === 'admin_access') {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+                return;
+            }
+
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+            } else {
+                window.location.href = url;
+            }
         }
 
         async function downloadCurrentDocumentPackage() {
             checkAdminAccess(async () => {
-                showSystemModal({ title: 'Preparing', message: 'Generating secure download links...' });
                 try {
                     for (const file of activeFilesList) {
                         const { data, error } = await supabaseClient.storage
@@ -235,9 +256,10 @@
                         if (error) throw error;
                         window.open(data.signedUrl, '_blank');
                     }
-                    document.getElementById('alertModal').close();
                 } catch (err) {
-                    showSystemModal({ title: 'Download Error', message: err.message });
+                    document.getElementById('restrictionModalTitle').textContent = "Download Error";
+                    document.getElementById('restrictionModalMessage').textContent = err.message;
+                    document.getElementById('accessBlockerModal').classList.add('is-visible');
                 }
             });
         }
@@ -265,7 +287,7 @@
                             <img src="${window.location.origin}/circle-logo.png" width="50" height="50" style="display:block;" />
                         </td>
                         <td colspan="10" class="header-title" style="vertical-align: middle; padding-left: 10px;">
-                            JMP INTERNATIONAL FISH TRADINGS
+                            JMP INTERNATIONAL FISH TRADING
                         </td>
                     </tr>
                     <tr style="height: 15pt;"><td colspan="11"></td></tr>
@@ -320,7 +342,6 @@
 
         async function downloadEntireYearDirectory() {
             const year = document.getElementById('directoryYearSelect').value;
-            showSystemModal({ title: 'Processing Package', message: 'Compiling all 12 monthly modules and remote repository documentation files. Please hold...' });
             
             try {
                 const { data: allYearRecords, error } = await supabaseClient
@@ -358,7 +379,7 @@
                                         zip.file(`${folderName}/SPSIC-${doc.spsic_number}/${cleanFileName}`, fileBlob);
                                     }
                                 } catch (e) {
-                                    console.error(`Skipping an attachment reference due to stream payload interruption:`, e);
+                                    console.error(`Skipping attachment reference:`, e);
                                 }
                             }
                         }
@@ -370,9 +391,10 @@
                 link.href = URL.createObjectURL(content);
                 link.download = `SPSIC_${year}_Directory_Folder.zip`;
                 link.click();
-                document.getElementById('alertModal').close();
             } catch (err) {
-                showSystemModal({ title: 'Archive Generation Error', message: err.message });
+                document.getElementById('restrictionModalTitle').textContent = "Archive Generation Error";
+                document.getElementById('restrictionModalMessage').textContent = err.message;
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
             }
         }
 
@@ -389,16 +411,11 @@
             toggleWorkspaceView();
         }
 
-        function checkAccess(event) {
-            if (currentUserRole !== 'admin') {
-                event.preventDefault();
-                showSystemModal({ title: 'Access Restricted', message: 'Administrative privileges are required to access the System Settings.' });
-            }
-        }
-
         function checkAdminAccess(callback) {
             if (currentUserRole !== 'admin') {
-                showSystemModal({ title: 'Access Denied', message: 'You do not have permission to download or export confidential documentation.' });
+                document.getElementById('restrictionModalTitle').textContent = "Access Denied";
+                document.getElementById('restrictionModalMessage').textContent = "You do not have permission to download or export confidential documentation.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
                 return;
             }
             if (typeof callback === 'function') callback();
@@ -414,9 +431,10 @@
                 .eq('id', activeInspectingRecordId);
 
             if (error) {
-                showSystemModal({ title: 'Approval Failed', message: error.message });
+                document.getElementById('restrictionModalTitle').textContent = "Approval Failed";
+                document.getElementById('restrictionModalMessage').textContent = error.message;
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
             } else {
-                showSystemModal({ title: 'Success', message: 'Document approved and status updated.' });
                 closeViewer();
                 fetchDocuments();
             }
@@ -429,8 +447,41 @@
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).maybeSingle();
-            if (profile) currentUserRole = profile.role.toLowerCase().trim();
+            
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .maybeSingle();
+                
+            if (error || !profile) {
+                console.error("Profile structural query fault:", error);
+                window.location.href = "login.html"; 
+                return;
+            }
+
+            currentUserPermissions = profile;
+            currentUserRole = String(currentUserPermissions.role || '').toLowerCase().trim();
+            
+            const rawAccessStr = String(currentUserPermissions.import_access || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const hasImportAccess = currentUserPermissions.import_access === true || rawAccessStr === 'true';
+
+            if (currentUserRole !== 'admin' && !hasImportAccess) {
+                document.getElementById('restrictionModalTitle').textContent = "Access Denied";
+                document.getElementById('restrictionModalMessage').textContent = "Your profile matrix does not allow access to Import Document Hub modules.";
+                const modal = document.getElementById('accessBlockerModal');
+                modal.classList.add('is-visible');
+                const btn = modal.querySelector('.modal-btn');
+                btn.textContent = "Exit Module";
+                btn.onclick = () => { window.location.href = "employee-dashboard.html"; };
+                return;
+            }
+
+            const settingsBtn = document.getElementById('settingsNavBtn');
+            if (currentUserRole === 'admin') {
+                settingsBtn.style.background = "#475569";
+                settingsBtn.style.color = "white";
+            }
             
             initYearSelectOptions(new Date().getFullYear());
             buildMonthlyFolders();
