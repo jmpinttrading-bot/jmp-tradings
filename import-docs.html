@@ -473,7 +473,7 @@
 
             if (currentUserRole !== 'admin' && !hasImportAccess) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
-                document.getElementById('restrictionModalMessage').textContent = "You do not possess the structural authorization parameters required to enter this workspace zone.";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
                 const modal = document.getElementById('accessBlockerModal');
                 modal.classList.add('is-visible');
                 const btn = document.getElementById('modalActionBtn');
