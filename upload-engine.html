@@ -10,7 +10,7 @@
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; color: #1e293b; min-height: 100vh; }
         
-        /* Navigation Styles - Exactly matched with employee-dashboard.html */
+        /* Navigation Styles */
         .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
@@ -20,8 +20,8 @@
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
-        /* Workspace Grid and Section Content Definitions */
-        .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
+        /* Workspace Layouts */
+        .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; display: none; } /* Initial hide until verification passes */
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
         .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin: 0 0 5px 0; }
         .back-link { background: #0f172a; color: white; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
@@ -47,18 +47,25 @@
         .submit-btn:hover { opacity: 0.9; }
         .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
-        /* Standardized System Notifications Overlays */
+        /* Standardized Notification Modals (from inventory-management.html) */
         .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); }
-        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; }
+        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: modalReveal 0.25s ease-out; }
         .system-alert-header { padding: 20px 24px 10px; display: flex; align-items: center; gap: 12px; }
-        .system-alert-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; }
+        .system-alert-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; shrink: 0; }
         .system-alert-icon.success { background: #d1fae5; color: #065f46; }
         .system-alert-icon.error { background: #fee2e2; color: #991b1b; }
+        .system-alert-icon.warning { background: #fef3c7; color: #92400e; }
         .system-alert-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
-        .system-alert-content { padding: 10px 24px 24px; color: #475569; font-size: 0.95rem; }
+        .system-alert-content { padding: 10px 24px 24px; color: #475569; font-size: 0.95rem; line-height: 1.5; }
         .system-alert-actions { padding: 12px 24px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; }
-        .alert-btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+        .alert-btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
         .alert-btn-primary { background: #0f172a; color: white; }
+        .alert-btn-primary:hover { background: #1e293b; }
+
+        @keyframes modalReveal {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -68,18 +75,18 @@
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
-        <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn active">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="#" class="nav-btn" id="settingsBtn">Settings</a>
+        <div class="nav-links" id="navbarLinks">
+            <a href="dashboard.html" class="nav-btn" data-module="Dashboard">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn" data-module="My Profile">My Profile</a>
+            <a href="import-docs.html" class="nav-btn active" data-module="Imports">Imports</a>
+            <a href="inventory-management.html" class="nav-btn" data-module="Inventory">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn" data-module="Sales">Sales</a>
+            <a href="audit-report.html" class="nav-btn" data-module="Audit Report">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsBtn" data-module="Settings">Settings</a>
         </div>
     </nav>
 
-    <div class="main-content">
+    <div class="main-content" id="mainContentWrapper">
         <div class="header-panel">
             <div>
                 <h1>SPSIC Document Upload Engine</h1>
@@ -172,7 +179,7 @@
                             <option value="ZHANGZHOU WANGMINGHONG FOOD CO., LTD."></option>
                             <option value="OCEAN PRESENTS SEAFOOD CO., LIMITED"></option>
                             <option value="FUBAO TRADING COMPANY LIMITED"></option>
-                            <option value="SHISHI OCEAN TREASURE AQUATIC PRODUCTS CO., LTD"></option>
+                            <option value="SHISHI OCEAN TREASURE AQUATIC PRODUCTS CO., LTD LIGHTWEIGHT"></option>
                             <option value="GLORY SEAFOODS COMPANY LIMITED"></option>
                             <option value="SHISHI SEABOUND AQUATIC PRODUCTS CO., LTD."></option>
                             <option value="SHISHI WANFENG SEAFOOD TECHNOLOGY CO., LTD."></option>
@@ -263,6 +270,7 @@
         </div>
     </div>
 
+    <!-- Inventory Standard Notification Modal Structural Target Overlay -->
     <div class="system-alert-overlay" id="systemAlertOverlay">
         <div class="system-alert-card">
             <div class="system-alert-header">
@@ -271,7 +279,7 @@
             </div>
             <div class="system-alert-content" id="systemAlertContent">Message placeholder</div>
             <div class="system-alert-actions">
-                <button class="alert-btn alert-btn-primary" onclick="closeSystemModal()">Dismiss</button>
+                <button class="alert-btn alert-btn-primary" id="systemAlertConfirmBtn" onclick="closeSystemModal()">Dismiss</button>
             </div>
         </div>
     </div>
@@ -287,15 +295,30 @@
         let activeTrackingSpsic = null;
         let presenceHeartbeatInterval = null;
 
-        function showSystemModal(type, title, message) {
+        // Custom Standardized Notification Modal Handler
+        function showSystemModal(type, title, message, onConfirm = null) {
             document.getElementById('systemAlertTitle').textContent = title;
             document.getElementById('systemAlertContent').textContent = message;
-            document.getElementById('systemAlertIcon').className = `system-alert-icon ${type}`;
-            document.getElementById('systemAlertIcon').textContent = type === 'success' ? '✓' : '✕';
+            
+            const iconEl = document.getElementById('systemAlertIcon');
+            iconEl.className = `system-alert-icon ${type}`;
+            
+            if (type === 'success') iconEl.textContent = '✓';
+            else if (type === 'error') iconEl.textContent = '✕';
+            else if (type === 'warning') iconEl.textContent = '⚠️';
+
+            const confirmBtn = document.getElementById('systemAlertConfirmBtn');
+            confirmBtn.onclick = function() {
+                closeSystemModal();
+                if (onConfirm) onConfirm();
+            };
+
             document.getElementById('systemAlertOverlay').style.display = 'flex';
         }
 
-        function closeSystemModal() { document.getElementById('systemAlertOverlay').style.display = 'none'; }
+        function closeSystemModal() { 
+            document.getElementById('systemAlertOverlay').style.display = 'none'; 
+        }
 
         function autofillFormFields(data) {
             if (!data) return;
@@ -314,11 +337,54 @@
             if (!user) { window.location.href = "login.html"; return; }
             currentUserSession = user;
 
+            // Enforcement of control-panel module restrictions
+            await enforceRestrictionAccess();
+
             setupSettingsProtection();
 
             const today = new Date();
             document.getElementById('spsicTargetMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
             evaluateUploadSequenceLocks();
+        }
+
+        // Restriction Check Engine mapping matching control panel standards
+        async function enforceRestrictionAccess() {
+            try {
+                const { data: profile, error } = await supabaseClient
+                    .from('profiles')
+                    .select('role, restrictions')
+                    .eq('id', currentUserSession.id)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                const userRole = (profile?.role || "").toUpperCase();
+                // Treat empty or unset configurations safely as arrays
+                const restrictions = profile?.restrictions || []; 
+
+                // 1. Base Access protection for this Upload Engine module (Imports)
+                if (userRole !== "ADMIN" && restrictions.includes("Imports")) {
+                    showSystemModal('error', 'Access Denied', 'You do not have permission to access the Imports module.', () => {
+                        window.location.href = "dashboard.html";
+                    });
+                    return;
+                }
+
+                // If authorization passes, make the workspace context visible
+                document.getElementById('mainContentWrapper').style.display = 'block';
+
+                // 2. Filter Navbar options matching restrictions list
+                const navLinks = document.querySelectorAll('#navbarLinks .nav-btn');
+                navLinks.forEach(link => {
+                    const targetModule = link.getAttribute('data-module');
+                    if (userRole !== "ADMIN" && restrictions.includes(targetModule)) {
+                        link.style.display = 'none';
+                    }
+                });
+            } catch (err) {
+                console.error("Restriction verification fault:", err);
+                showSystemModal('error', 'Security Fault', 'Could not verify user access control maps.');
+            }
         }
 
         function setupSettingsProtection() {
@@ -482,9 +548,14 @@
 
                 const { error } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
                 if (error) throw error;
-                showSystemModal('success', 'Pipeline Sync Complete', 'Records stored successfully.');
-                setTimeout(() => window.location.reload(), 1500);
-            } catch (err) { showSystemModal('error', 'Sync Failed', err.message); submitBtn.disabled = false; }
+                
+                showSystemModal('success', 'Pipeline Sync Complete', 'Records stored successfully.', () => {
+                    window.location.reload();
+                });
+            } catch (err) { 
+                showSystemModal('error', 'Sync Failed', err.message); 
+                submitBtn.disabled = false; 
+            }
         }
 
         async function fetchSpsicReports() {
@@ -493,7 +564,7 @@
             const tableBody = document.getElementById('reportTableBody');
             
             if (!from || !to) {
-                showSystemModal('error', 'Date Range Required', 'Please select both a Start Date and an End Date.');
+                showSystemModal('warning', 'Date Range Required', 'Please select both a Start Date and an End Date.');
                 return;
             }
             tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">Filtering records...</td></tr>';
