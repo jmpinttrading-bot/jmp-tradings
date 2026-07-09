@@ -75,37 +75,24 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            // Extract the user identifier prefix from the email account structure
-            const loginUsername = user.email ? user.email.split('@')[0] : '';
-
-            // Query profile records via matching username key values
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
                 .select('*')
-                .eq('username', loginUsername)
+                .eq('id', user.id)
                 .maybeSingle();
             
             if (error || !profile) {
-                console.error("Profile fetch error:", error);
-                // Fallback secondary check: verify UUID structure match mapping parameters
-                const { data: retryProfile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
-                if (retryProfile) {
-                    currentUserPermissions = retryProfile;
-                } else {
-                    window.location.href = "login.html"; 
-                    return;
-                }
-            } else {
-                currentUserPermissions = profile;
+                console.error("Profile structural query fault:", error);
+                window.location.href = "login.html"; 
+                return;
             }
 
+            currentUserPermissions = profile;
             const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
             
-            // Evaluates text TRUE strings, native true booleans, and whitespace variances cleanly
             const rawAccessStr = String(currentUserPermissions.sales_invoice_access || '').replace(/['"]+/g, '').toLowerCase().trim();
             const hasSalesAccess = currentUserPermissions.sales_invoice_access === true || rawAccessStr === 'true';
 
-            // Main security barrier check for Workspace entries
             if (roleClean !== 'admin' && !hasSalesAccess) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Denied";
                 document.getElementById('restrictionModalMessage').textContent = "Your profile matrix does not allow access to Sales Invoice Processing modules.";
@@ -141,7 +128,12 @@
                 return;
             }
 
-            const val = currentUserPermissions[accessKey];
+            // Fallback cross-check mapping adjustment for Profile permissions validation
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
             const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
             const isRestricted = (val === false || cleanedValStr === 'false' || !val);
 

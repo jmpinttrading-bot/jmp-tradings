@@ -11,7 +11,7 @@
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; color: #1e293b; min-height: 100vh; }
         
-        /* Navigation Styles - Exactly matched with employee-dashboard.html */
+        /* Navigation Styles */
         .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
@@ -212,7 +212,6 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            // Query profile records via matching ID string to perfectly replicate control panel alignment
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
                 .select('*')
@@ -228,7 +227,6 @@
             currentUserPermissions = profile;
             const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
             
-            // Core access checks matching the string/boolean parser matrix
             const rawAccessStr = String(currentUserPermissions.inventory_access || '').replace(/['"]+/g, '').toLowerCase().trim();
             const hasInvAccess = currentUserPermissions.inventory_access === true || rawAccessStr === 'true';
 
@@ -268,7 +266,12 @@
                 return;
             }
 
-            const val = currentUserPermissions[accessKey];
+            // Fallback cross-check mapping adjustment for Profile permissions validation
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
             const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
             const isRestricted = (val === false || cleanedValStr === 'false' || !val);
 
