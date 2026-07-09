@@ -4,180 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Import Document Manager | JMP HQ</title>
-    
-    <!-- Third Party Script Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    
     <style>
-        /* Modern System UI Variable Variables & CSS Resets */
-        :root {
-            --slate-50: #f8fafc;
-            --slate-100: #f1f5f9;
-            --slate-200: #e2e8f0;
-            --slate-300: #cbd5e1;
-            --slate-400: #94a3b8;
-            --slate-500: #64748b;
-            --slate-600: #475569;
-            --slate-700: #334155;
-            --slate-800: #1e293b;
-            --slate-900: #0f172a;
-            
-            --brand-orange: #f97316;
-            --brand-amber: #ee964b;
-            --blue-accent: #2563eb;
-            --emerald-green: #10b981;
-            --danger-red: #ef4444;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { width: 100%; min-height: 100vh; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: var(--slate-50); color: var(--slate-800); -webkit-font-smoothing: antialiased; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
-        /* Modernized Responsive Top Navigation Engine */
-        .navbar { 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
-            background-color: var(--slate-800); 
-            color: white; 
-            width: 100%; 
-            display: flex; 
-            flex-direction: column; 
-            padding: 12px 16px; 
-            gap: 12px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); 
-        }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .nav-title { font-size: 0.85rem; color: var(--brand-orange); font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+        /* Navigation Styles */
+        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; display: inline-block; }
+        .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn.active { background: #475569; color: white; }
         
-        .logout-btn { 
-            background-color: var(--danger-red); 
-            color: white; 
-            border: none; 
-            padding: 6px 14px; 
-            border-radius: 6px; 
-            font-size: 0.75rem; 
-            font-weight: 700; 
-            cursor: pointer; 
-            transition: opacity 0.2s;
-        }
-        .logout-btn:hover { opacity: 0.9; }
-
-        /* Navigation Drawer Toggle UI Switch (Mobile Hamburger) */
-        .drawer-toggle-btn {
-            display: none;
-            background: var(--slate-700);
-            border: 1px solid var(--slate-600);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
-        .nav-btn { 
-            background-color: var(--slate-700); 
-            color: var(--slate-300); 
-            text-decoration: none; 
-            padding: 8px 14px; 
-            border-radius: 6px; 
-            font-size: 0.8rem; 
-            font-weight: 600; 
-            cursor: pointer; 
-            border: 1px solid transparent; 
-            white-space: nowrap; 
-            transition: all 0.2s;
-        }
-        .nav-btn:hover { background-color: var(--slate-600); color: white; }
-        .nav-btn.active { background: var(--slate-600); color: white; border-color: var(--slate-500); }
-        
-        /* Fixed Structural Notification Modals */
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+        /* Standardized Modal Styles */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 32px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); border: 1px solid var(--slate-200); }
-        .restriction-modal-card h4 { margin-bottom: 12px; color: var(--slate-900); font-size: 1.3rem; font-weight: 700; }
-        .restriction-modal-card p { color: var(--slate-500); font-size: 0.95rem; line-height: 1.5; margin-bottom: 24px; }
-        .modal-btn { background: var(--slate-900); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.9rem; width: 100%; transition: opacity 0.2s; }
-        .modal-btn:hover { opacity: 0.9; }
+        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
 
-        /* Unified Document Layout Canvas Content Architecture */
-        .main-content { max-width: 1400px; margin: 0 auto; padding: 32px 24px; display: flex; flex-direction: column; gap: 24px; }
-        
-        .header-panel { background: white; padding: 24px; border-radius: 8px; border: 1px solid var(--slate-200); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .header-panel h1 { color: var(--slate-900); font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }
-        .header-panel p { color: var(--slate-500); font-size: 0.95rem; }
-
-        .panel-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; width: 100%; }
-        .panel-card { background: white; padding: 24px; border-radius: 8px; border: 1px solid var(--slate-200); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .panel-card h3 { color: var(--slate-900); font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid var(--slate-100); }
-        
-        /* Configuration Launcher Interface */
-        .engine-launch-box { display: flex; align-items: center; justify-content: space-between; background: var(--slate-50); border: 1px solid var(--slate-200); padding: 20px; border-radius: 8px; gap: 16px; }
-        .launch-btn { display: inline-block; background: var(--brand-amber); color: var(--slate-900); text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 700; font-size: 0.9rem; transition: background-color 0.2s; text-align: center; white-space: nowrap; }
-        .launch-btn:hover { background-color: #e58530; }
-        
-        /* Context Directory UI Controls */
-        .directory-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; background: var(--slate-50); padding: 14px; border-radius: 8px; border: 1px solid var(--slate-200); flex-wrap: wrap; }
-        .directory-select-wrapper { flex: 1; min-width: 200px; }
-        .directory-select { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--slate-300); background-color: white; font-size: 0.9rem; font-weight: 500; color: var(--slate-800); outline: none; }
-        .directory-select:focus { border-color: var(--slate-500); }
-
-        .year-btn { background: var(--slate-900); color: white; border: none; padding: 11px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
-        .download-year-btn { background: var(--blue-accent); color: white; border: none; padding: 11px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; }
-        .year-btn:hover, .download-year-btn:hover { opacity: 0.9; }
-
-        /* Interactive Monthly Folder Layout Grid System */
-        .month-folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 12px; }
-        .folder-node { background: var(--slate-100); border: 1px solid var(--slate-200); border-radius: 8px; padding: 14px 8px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--slate-700); transition: all 0.2s ease; }
-        .folder-node:hover { background: var(--slate-200); color: var(--slate-900); }
-        .folder-node.active { background: var(--slate-900); color: white; border-color: var(--slate-900); }
-        
-        /* Modern Workspace Panel View Mode Modules */
-        .folder-workspace { background: #ffffff; border: 1px solid var(--slate-200); padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: none; }
+        /* Content Styles */
+        .main-content { padding: 40px; }
+        .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin-bottom: 5px; margin-top: 0; }
+        .panel-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; align-items: start; width: 100%; }
+        .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); min-width: 0; }
+        .panel-card h3 { color: #0f172a; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid #f1f5f9; margin-top: 0; }
+        .engine-launch-box { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 6px; }
+        .launch-btn { display: inline-block; background: #ee964b; color: #0f172a; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 0.95rem; transition: 0.2s; text-align: center; }
+        .launch-btn:hover { opacity: 0.9; }
+        .directory-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; gap: 10px; background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .year-btn { background: #0f172a; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .download-year-btn { background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .export-excel-btn { background: #10b981; color: white; border: none; padding: 12px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+        .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
+        .search-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .month-folder-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
+        .folder-node { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px 5px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
+        .folder-node:hover, .folder-node.active { background: #0f172a; color: white; }
+        .folder-workspace { background: #ffffff; border: 1px solid #cbd5e1; padding: 25px; border-radius: 8px; margin-bottom: 30px; display: none; }
         .folder-workspace.active { display: block; }
-        .workspace-title { font-size: 1.15rem; color: var(--slate-900); font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-        
-        /* Search Infrastructure and Data Export Action Toolkits */
-        .search-container { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
-        .search-box { flex: 1; min-width: 260px; padding: 11px 14px; border: 1px solid var(--slate-300); border-radius: 6px; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
-        .search-box:focus { border-color: var(--slate-500); }
-        .export-excel-btn { background: var(--emerald-green); color: white; border: none; padding: 11px 20px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; }
-        .export-excel-btn:hover { opacity: 0.9; }
-
-        /* Unified Table System & Responsive Layout Wrappers */
-        .table-responsive-wrapper { width: 100%; overflow-x: auto; border: 1px solid var(--slate-200); border-radius: 8px; background: white; }
+        .workspace-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; margin-bottom: 15px; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .status-badge.pending { background: #fef3c7; color: #b45309; }
+        .status-badge.completed { background: #d1fae5; color: #065f46; }
+        .status-badge.incomplete { background: #fee2e2; color: #991b1b; }
+        .status-badge.for-approval { background: #e0e7ff; color: #3730a3; }
+        .table-responsive-wrapper { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .item-list-table th { background: var(--slate-50); color: var(--slate-600); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 14px 16px; border-bottom: 1px solid var(--slate-200); white-space: nowrap; }
-        .item-list-table td { padding: 14px 16px; border-bottom: 1px solid var(--slate-100); font-size: 0.9rem; color: var(--slate-800); white-space: nowrap; vertical-align: middle; }
-        .item-list-table tr:last-child td { border-bottom: none; }
-        .item-list-table tbody tr:hover td { background-color: var(--slate-50); }
+        .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; white-space: nowrap; }
+        .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
         
-        /* Dynamic Status Micro-UI Tags */
-        .status-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
-        .status-badge.pending { background: #fef3c7; color: #d97706; }
-        .status-badge.completed { background: #d1fae5; color: #059669; }
-        .status-badge.incomplete { background: #fee2e2; color: #dc2626; }
-        .status-badge.for-approval { background: #e0e7ff; color: #4f46e5; }
-        
-        .action-link-btn { background: var(--slate-900); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
-        .action-link-btn:hover { background: var(--slate-700); }
-        
-        /* Component State Modifiers & Overlays */
-        .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.75); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 10000; padding: 16px; }
-        .empty-placeholder { background: var(--slate-50); border: 2px dashed var(--slate-200); padding: 40px 20px; text-align: center; border-radius: 8px; color: var(--slate-500); font-size: 0.95rem; margin-top: 8px; }
-
-        /* Responsive Media Adaptations */
-        @media(max-width: 992px) {
-            .drawer-toggle-btn { display: inline-block; }
-            .nav-links { display: none; flex-direction: column; width: 100%; gap: 6px; margin-top: 4px; }
-            .nav-links.is-open { display: flex; }
-            .nav-btn { width: 100%; }
-            .main-content { padding: 20px 16px; }
-            .engine-launch-box { flex-direction: column; align-items: stretch; text-align: center; }
-            .launch-btn { width: 100%; }
-        }
+        .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .empty-placeholder { background: #f8fafc; border: 2px dashed #e2e8f0; padding: 30px; text-align: center; border-radius: 8px; color: #64748b; font-size: 0.9rem; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -186,21 +70,17 @@
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Restricted</h4>
-            <p id="restrictionModalMessage">You do not possess the dynamic authorization privileges needed for this module pipeline.</p>
+            <p id="restrictionModalMessage">You do not possess the structural authorization parameters required to enter this workspace zone.</p>
             <button class="modal-btn" id="modalActionBtn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
 
-    <!-- Unified Enterprise Navigation Header -->
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
-            <div style="display: flex; gap: 8px; align-items: center;">
-                <button class="drawer-toggle-btn" onclick="toggleMobileDrawer()">Menu ☰</button>
-                <button class="logout-btn" id="sidebarLogoutBtn" onclick="handleLogout()">Logout</button>
-            </div>
+            <button class="logout-btn" id="sidebarLogoutBtn" onclick="handleLogout()">Logout</button>
         </div>
-        <div class="nav-links" id="navbarLinksWrapper">
+        <div class="nav-links">
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
             <a href="#" class="nav-btn" id="profileNavLink" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
             <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
@@ -211,7 +91,6 @@
         </div>
     </nav>
 
-    <!-- Main Workspace Application Frame -->
     <div class="main-content">
         <div class="header-panel">
             <h1>Shipment Importation Documentation Hub</h1>
@@ -219,19 +98,17 @@
         </div>
 
         <div class="panel-grid">
-            <!-- Access Configuration Hub Panel -->
             <div class="panel-card">
                 <h3>Document Upload Engine</h3>
                 <div class="engine-launch-box">
-                    <p style="font-size: 0.9rem; color: var(--slate-500); margin: 0; line-height: 1.4;">Add new parameters, update tracking records, and process digital shipment file pairs securely.</p>
+                    <p style="font-size: 0.9rem; color: #64748b; margin: 0;">Add new parameters, update tracking records, and process digital shipment file pairs securely.</p>
                     <a href="#" onclick="verifyNavigationPrivilege('import_access', 'upload-engine.html')" class="launch-btn">⚙️ Open Upload Engine Workspace</a>
                 </div>
             </div>
 
-            <!-- Urgent Pipeline Records Container -->
             <div class="panel-card" id="globalUncompletedLogsWrapper">
                 <h3>Documentation Log Data Table (Action Required)</h3>
-                <p style="font-size: 0.85rem; color: var(--slate-500); margin-bottom: 16px; margin-top: -4px;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
                 <div class="table-responsive-wrapper">
                     <table class="item-list-table">
                         <thead>
@@ -243,23 +120,20 @@
                             </tr>
                         </thead>
                         <tbody id="globalUncompletedLogsTableBody">
-                            <tr><td colspan="4" style="text-align:center; color: var(--slate-500); padding: 24px;">Loading actionable logs...</td></tr>
+                            <tr><td colspan="4" style="text-align:center; color:#64748b;">Loading actionable logs...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Historical Context Directories Lookup Section -->
             <div class="panel-card">
                 <h3>Monthly Directories & Consolidated Logs</h3>
                 <div class="directory-controls">
-                    <div class="directory-select-wrapper">
-                        <select id="directoryYearSelect" class="directory-select" onchange="buildMonthlyFolders(); toggleWorkspaceView();"></select>
+                    <div class="form-group" style="margin-bottom:0; flex:1;">
+                        <select id="directoryYearSelect" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;" onchange="buildMonthlyFolders(); toggleWorkspaceView();"></select>
                     </div>
-                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
-                        <button class="download-year-btn" id="downloadYearArchiveBtn" onclick="checkAdminAccess(downloadEntireYearDirectory)">📥 Download Year Package</button>
-                    </div>
+                    <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
+                    <button class="download-year-btn" id="downloadYearArchiveBtn" onclick="checkAdminAccess(downloadEntireYearDirectory)">📥 Download Year Package</button>
                 </div>
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
                 <div id="emptyDirectoryPlaceholder" class="empty-placeholder">
@@ -267,7 +141,6 @@
                 </div>
             </div>
 
-            <!-- Dynamic Workspace Component (Revealed on Active Selection Focus Only) -->
             <div class="folder-workspace" id="folderWorkspaceWrapper">
                 <div class="workspace-title" id="workspaceTitleDisplay">📂 Folder Context</div>
                 <div class="search-container">
@@ -292,7 +165,7 @@
                             </tr>
                         </thead>
                         <tbody id="documentLogsTableBody">
-                            <tr><td colspan="11" style="text-align:center; color: var(--slate-500); padding: 24px;">Initializing items...</td></tr>
+                            <tr><td colspan="11" style="text-align:center; color:#64748b;">Initializing items...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -300,12 +173,10 @@
         </div>
     </div>
 
-    <!-- Modally Mounted Document Reader Frame overlay -->
     <div class="viewer-overlay" id="documentViewerOverlay">
         <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);"></iframe>
     </div>
 
-    <!-- Application Script Module -->
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -329,10 +200,6 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
-        function toggleMobileDrawer() {
-            document.getElementById('navbarLinksWrapper').classList.toggle('is-open');
-        }
-
         function closeRestrictionModal() { 
             document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
         }
@@ -352,7 +219,7 @@
 
             if (accessKey === 'admin_access') {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
-                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
+                document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
                 document.getElementById('accessBlockerModal').classList.add('is-visible');
                 return;
             }
@@ -372,7 +239,7 @@
 
             if (isRestricted) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
-                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the structural authorization parameters required to enter this workspace zone.";
                 document.getElementById('accessBlockerModal').classList.add('is-visible');
             } else {
                 window.location.href = url;
@@ -585,9 +452,8 @@
 
             const settingsBtn = document.getElementById('settingsNavBtn');
             if (currentUserRole === 'admin') {
-                settingsBtn.style.background = "var(--slate-600)";
+                settingsBtn.style.background = "#475569";
                 settingsBtn.style.color = "white";
-                settingsBtn.style.borderColor = "var(--slate-500)";
             }
             
             initYearSelectOptions(new Date().getFullYear());
@@ -649,7 +515,7 @@
                 .order('s_date', { ascending: false });
 
             const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
-            globalTbody.innerHTML = actionableData?.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td><span class="status-badge ${doc.status.toLowerCase().replace(' ', '-')}">${doc.status.toUpperCase()}</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color: var(--slate-500); padding: 20px;">No items require attention.</td></tr>';
+            globalTbody.innerHTML = actionableData?.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td><span class="status-badge ${doc.status.toLowerCase().replace(' ', '-')}">${doc.status.toUpperCase()}</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
 
             if (!selectedFolderMonth) return;
             
@@ -662,7 +528,7 @@
             currentLoadedWorkspaceRows = data || [];
             
             const tbody = document.getElementById('documentLogsTableBody');
-            tbody.innerHTML = currentLoadedWorkspaceRows.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td>${formatHumanReadableDate(doc.approved_date)}</td><td>${formatHumanReadableDate(doc.expiration_date)}</td><td>${(doc.storage_location || '').toUpperCase()}</td><td>${(doc.commodity || '').toUpperCase()}</td><td>${formatHumanReadableDate(doc.storage_arrival_date)}</td><td>${(doc.client_name || '').toUpperCase()}</td><td>${(doc.cv_number || '').toUpperCase()}</td><td><span class="status-badge completed">COMPLETED</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="11" style="text-align:center; color: var(--slate-500); padding: 20px;">No entries found.</td></tr>';
+            tbody.innerHTML = currentLoadedWorkspaceRows.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td>${formatHumanReadableDate(doc.approved_date)}</td><td>${formatHumanReadableDate(doc.expiration_date)}</td><td>${(doc.storage_location || '').toUpperCase()}</td><td>${(doc.commodity || '').toUpperCase()}</td><td>${formatHumanReadableDate(doc.storage_arrival_date)}</td><td>${(doc.client_name || '').toUpperCase()}</td><td>${(doc.cv_number || '').toUpperCase()}</td><td><span class="status-badge completed">COMPLETED</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="11" style="text-align:center; color:#64748b;">No entries found.</td></tr>';
         }
 
         function formatHumanReadableDate(dateString) {
