@@ -108,6 +108,7 @@
 
         let currentUserPermissions = null;
         let currentAdminId = null;
+        let realTimePresenceChannel = null;
 
         const facilityThemes = {
             "VVS COLD STORAGE & PROCESSING PLANT CORP.": "#0f172a",
@@ -203,6 +204,9 @@
                 document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
             }
 
+            // Fire and initialize the session presence beacon for this dashboard view
+            initializePresenceSynchronization(user, profile.username, profile.role);
+
             const now = new Date();
             const y = now.getFullYear();
             const m = now.getMonth();
@@ -215,6 +219,22 @@
             document.getElementById('dateTo').value = toLocalDateString(dateToday);
             
             updateReport();
+        }
+
+        function initializePresenceSynchronization(u, name, role) {
+            realTimePresenceChannel = supabaseClient.channel('jmp-global-presence', { 
+                config: { presence: { key: u.id } } 
+            });
+
+            realTimePresenceChannel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await realTimePresenceChannel.track({
+                        username: name,
+                        role: role,
+                        online_at: new Date().toISOString()
+                    });
+                }
+            });
         }
 
         async function updateReport() {
@@ -323,7 +343,18 @@
             document.getElementById('reportContainer').insertAdjacentHTML('beforeend', html);
         }
 
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (event === 'SIGNED_OUT' || !session) {
+                    window.location.href = "login.html";
+                }
+            });
+        }
+
         async function handleLogout() {
+            if (realTimePresenceChannel) {
+                await realTimePresenceChannel.untrack();
+            }
             await supabaseClient.auth.signOut();
             window.location.href = "login.html";
         }
