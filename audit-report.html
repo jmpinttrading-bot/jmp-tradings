@@ -90,10 +90,12 @@
         .pagination-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
         .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #f8fafc; }
 
-        /* --- Restriction Modal Styles --- */
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        /* --- Standardized Notification Modal Styles --- */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; }
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
 
         @media (max-width: 768px) {
@@ -107,29 +109,29 @@
 </head>
 <body>
 
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">Access Restricted</h4>
+            <p id="restrictionModalMessage">You do not possess the structural authorization parameters required to enter this workspace zone.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="audit-report.html" class="nav-btn active">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsNavBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
-
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage">Execution status telemetry readout frame.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
-    </div>
 
     <div class="main-content">
         <div class="header">
@@ -207,30 +209,52 @@
         
         let currentAdminId = null;
         let currentUserEmail = "";
-        let currentUserRole = "employee";
+        let currentUserPermissions = null;
         let bypassAuthListener = false;
         
         let globallyFetchedHistory = [];
         let currentActiveFilteredList = [];
-        let employeeNamesMap = {}; // Maps employee id to given_name
+        let employeeNamesMap = {}; 
         
         let currentPage = 1;
         const rowsPerPage = 15;
 
-        function checkAccess(event) {
-            if (currentUserRole !== 'admin') {
-                event.preventDefault();
-                showSystemModal({ 
-                    title: 'Access Restricted', 
-                    message: 'Administrative privileges are required to access the System Settings.' 
-                });
-            }
-        }
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
 
-        function showSystemModal(options = {}) {
-            document.getElementById('alertTitle').textContent = options.title || 'Notification';
-            document.getElementById('alertMessage').textContent = options.message || '';
-            document.getElementById('accessBlockerModal').classList.add('is-visible');
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
+            }
+
+            if (accessKey === 'admin_access') {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+                return;
+            }
+
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+            } else {
+                window.location.href = url;
+            }
         }
 
         function closeRestrictionModal() {
@@ -245,20 +269,27 @@
             
             const { data: profile } = await supabaseClient
                 .from('profiles')
-                .select('role, username')
+                .select('*')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
-            if (profile) {
-                currentUserRole = profile.role.toLowerCase().trim();
-            }
+            if (!profile) { window.location.href = "login.html"; return; }
+            
+            currentUserPermissions = profile;
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
 
-            if (profile && currentUserRole === 'admin') {
+            if (roleClean === 'admin') {
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
+                
+                const settingsBtn = document.getElementById('settingsNavBtn');
+                if (settingsBtn) {
+                    settingsBtn.style.background = "#475569";
+                    settingsBtn.style.color = "white";
+                }
             } else {
                 document.getElementById('adminEmail').className = "employee-badge";
-                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
+                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile.username || user.email.split('@')[0]}`;
             }
 
             await fetchEmployeeDirectory();
@@ -287,7 +318,9 @@
                 .order('created_at', { ascending: false });
 
             if (error) { 
-                showSystemModal({ title: 'System Error', message: "System error fetching history: " + error.message }); 
+                document.getElementById('restrictionModalTitle').textContent = "System Error";
+                document.getElementById('restrictionModalMessage').textContent = "System error fetching history: " + error.message;
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
                 return; 
             }
 
@@ -397,14 +430,14 @@
             renderLedgerTable(currentActiveFilteredList);
         }
 
-        // Custom function to export all currently filtered records directly into Excel (.xls)
         function exportLedgerToExcel() {
             if (currentActiveFilteredList.length === 0) {
-                showSystemModal({ title: 'Export Ignored', message: 'There is no data available to export based on your current filters.' });
+                document.getElementById('restrictionModalTitle').textContent = "Export Ignored";
+                document.getElementById('restrictionModalMessage').textContent = "There is no data available to export based on your current filters.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
                 return;
             }
 
-            // Pre-calculate baseline running states exactly like your rendering grid
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const balanceMap = new Map();
             const itemRunningBalances = {};
@@ -416,12 +449,10 @@
                 balanceMap.set(tx.id, itemRunningBalances[uniqueKey]);
             });
 
-            // Formulate standard header definitions
             let csvRows = [
                 ["Storage Facility Node", "SPSIC Number", "Date Processed", "Sales Order No", "Item Code", "Item Description", "Sizes", "Qty Per Pallet", "Total Pallets", "In Qty", "Out Qty", "Running Balance", "Buyer Name", "Transacted By", "Remarks"]
             ];
 
-            // Map dataset list objects into row rows
             currentActiveFilteredList.forEach(item => {
                 const operatorName = item.processed_by ? item.processed_by.replace('@jmp-corporate.local', '') : 'System';
                 const runningBal = balanceMap.get(item.id) ?? 0;
@@ -445,7 +476,6 @@
                 ]);
             });
 
-            // Convert to a clean character string and trigger context downloads
             let csvContent = "\uFEFF" + csvRows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(",")).join("\n");
             
             let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
