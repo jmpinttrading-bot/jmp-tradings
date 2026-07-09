@@ -22,14 +22,24 @@
         .main-content { padding: 40px; }
         .content-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
 
-        /* Notification Modal Styles */
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        /* Standardized Notification Modal Styles from inventory-management.html */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; }
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
     </style>
 </head>
 <body>
+
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">Access Restricted</h4>
+            <p id="restrictionModalMessage">You do not possess the structural authorization parameters required to enter this workspace zone.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
 
     <nav class="navbar">
         <div class="top-row">
@@ -37,13 +47,13 @@
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn active">Sales</a>
-            <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsNavBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -54,40 +64,78 @@
         </div>
     </div>
 
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage">Execution status telemetry readout frame.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        let currentUserRole = "employee";
+        
+        let currentUserPermissions = null;
 
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).single();
-            if (profile) currentUserRole = profile.role.toLowerCase().trim();
-        }
+            // Query entire permission parameters configured in Control Panel
+            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            
+            if (!profile) { window.location.href = "login.html"; return; }
+            currentUserPermissions = profile;
 
-        // --- Logic Shared from import-docs.html ---
-        function checkAccess(event) {
-            if (currentUserRole !== 'admin') {
-                event.preventDefault();
-                showSystemModal({ title: 'Access Restricted', message: 'Administrative privileges are required to access the System Settings.' });
+            // Robust data parsing protection for top-level verification framework
+            const roleClean = String(profile.role).toLowerCase().trim();
+            const hasSalesAccess = profile.sales_invoice_access === true || String(profile.sales_invoice_access).toLowerCase().trim() === 'true';
+
+            // Strict core verification check for the sales invoice workspace
+            if (roleClean !== 'admin' && !hasSalesAccess) {
+                document.getElementById('restrictionModalTitle').textContent = "Access Denied";
+                document.getElementById('restrictionModalMessage').textContent = "Your profile matrix does not allow access to Sales Invoice Processing modules.";
+                const modal = document.getElementById('accessBlockerModal');
+                modal.classList.add('is-visible');
+                
+                // Force exit back to profile if completely locked out
+                const btn = modal.querySelector('.modal-btn');
+                btn.textContent = "Exit Module";
+                btn.onclick = () => { window.location.href = "employee-dashboard.html"; };
+                return;
+            }
+
+            // Adjust navigation views for settings element dynamically
+            const settingsBtn = document.getElementById('settingsNavBtn');
+            if (roleClean === 'admin') {
+                settingsBtn.style.background = "#475569";
+                settingsBtn.style.color = "white";
             }
         }
 
-        function showSystemModal(options = {}) {
-            document.getElementById('alertTitle').textContent = options.title || 'Notification';
-            document.getElementById('alertMessage').textContent = options.message || '';
-            document.getElementById('accessBlockerModal').classList.add('is-visible');
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+
+            const roleClean = String(currentUserPermissions.role).toLowerCase().trim();
+            // Admins bypass restriction evaluations completely
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
+            }
+
+            // Evaluation ruleset for setting panels
+            if (accessKey === 'admin_access') {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+                return;
+            }
+
+            // Universal parsing validation evaluation logic to accept boolean OR text values properly
+            const val = currentUserPermissions[accessKey];
+            const isRestricted = (val === false || String(val).toLowerCase().trim() === 'false');
+
+            if (isRestricted) {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+            } else {
+                window.location.href = url;
+            }
         }
 
         function closeRestrictionModal() {
