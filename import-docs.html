@@ -190,6 +190,7 @@
         let currentUserPermissions = null;
         let activeInspectingRecordId = null;
         let currentLoadedWorkspaceRows = [];
+        let realTimePresenceChannel = null;
 
         const monthsLabels = [
             { text: "Jan", value: "01" }, { text: "Feb", value: "02" },
@@ -455,10 +456,29 @@
                 settingsBtn.style.background = "#475569";
                 settingsBtn.style.color = "white";
             }
+
+            // Initialize and bind real-time presence synchronization
+            initializePresenceSynchronization(user, profile.username, profile.role);
             
             initYearSelectOptions(new Date().getFullYear());
             buildMonthlyFolders();
             fetchDocuments();
+        }
+
+        function initializePresenceSynchronization(u, name, role) {
+            realTimePresenceChannel = supabaseClient.channel('jmp-global-presence', { 
+                config: { presence: { key: u.id } } 
+            });
+
+            realTimePresenceChannel.subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await realTimePresenceChannel.track({
+                        username: name,
+                        role: role,
+                        online_at: new Date().toISOString()
+                    });
+                }
+            });
         }
 
         function initYearSelectOptions(defaultYear) {
@@ -553,7 +573,13 @@
             else iframe.onload = initViewer;
         }
 
-        function handleLogout() { supabaseClient.auth.signOut(); window.location.href = "login.html"; }
+        async function handleLogout() { 
+            if (realTimePresenceChannel) {
+                await realTimePresenceChannel.untrack();
+            }
+            await supabaseClient.auth.signOut(); 
+            window.location.href = "login.html"; 
+        }
         initModule();
     </script>
 </body>
