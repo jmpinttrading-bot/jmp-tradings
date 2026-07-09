@@ -214,28 +214,28 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            // Query entire permission parameters configured in Control Panel
             const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
             
             if (!profile) { window.location.href = "login.html"; return; }
             currentUserPermissions = profile;
 
-            // Strict core verification check for the inventory access workspace
-            if (profile.role !== 'Admin' && profile.inventory_access === false) {
+            // Robust data parsing protection for top-level verification framework
+            const roleClean = String(profile.role).toLowerCase().trim();
+            const hasInvAccess = profile.inventory_access === true || String(profile.inventory_access).toLowerCase().trim() === 'true';
+
+            if (roleClean !== 'admin' && !hasInvAccess) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Denied";
                 document.getElementById('restrictionModalMessage').textContent = "Your profile matrix does not allow access to Inventory Management modules.";
                 const modal = document.getElementById('accessBlockerModal');
                 modal.classList.add('is-visible');
-                // Remove acknowledge action and force exit routing direction
                 const btn = modal.querySelector('.modal-btn');
                 btn.textContent = "Exit Module";
                 btn.onclick = () => { window.location.href = "employee-dashboard.html"; };
                 return;
             }
 
-            // Adjust navigation views for the current setup settings interface dynamically
             const settingsBtn = document.getElementById('settingsNavBtn');
-            if (profile.role === 'Admin') {
+            if (roleClean === 'admin') {
                 settingsBtn.style.background = "#475569";
                 settingsBtn.style.color = "white";
             }
@@ -246,13 +246,12 @@
         function verifyNavigationPrivilege(accessKey, url) {
             if (!currentUserPermissions) return;
 
-            // Admins pass all checks unconditionally
-            if (currentUserPermissions.role === 'Admin') {
+            const roleClean = String(currentUserPermissions.role).toLowerCase().trim();
+            if (roleClean === 'admin') {
                 window.location.href = url;
                 return;
             }
 
-            // Custom evaluation check for setting configuration panels
             if (accessKey === 'admin_access') {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
                 document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
@@ -260,8 +259,11 @@
                 return;
             }
 
-            // Regular operational evaluation mapping check
-            if (currentUserPermissions[accessKey] === false) {
+            // Universal parsing validation evaluation logic to accept boolean OR text values properly
+            const val = currentUserPermissions[accessKey];
+            const isRestricted = (val === false || String(val).toLowerCase().trim() === 'false');
+
+            if (isRestricted) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
                 document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
                 document.getElementById('accessBlockerModal').classList.add('is-visible');
