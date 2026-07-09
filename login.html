@@ -44,8 +44,8 @@
         }
 
         .brand-logo {
-            height: 65px;
-            width: 65px;
+            height: 85px;
+            width: 85px;
             object-fit: contain;
             background: #f4f8fb;
             border-radius: 50%;
@@ -302,6 +302,11 @@
         const CORPORATE_DOMAIN = "@jmp-corporate.local"; 
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Clear password whenever the username field layout is modified or re-typed
+        document.getElementById('employeeUsername').addEventListener('input', function() {
+            document.getElementById('employeePassword').value = '';
+        });
 
         function togglePasswordVisibility() {
             const passInput = document.getElementById('employeePassword');
