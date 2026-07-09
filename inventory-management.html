@@ -216,6 +216,10 @@
 
         async function initInventoryDashboard() {
             setDefaultCalendarDates();
+            
+            // Fixed Refresh Auth Race Condition: Let SDK pull the session down completely before parsing user verification parameters
+            await new Promise(resolve => setTimeout(resolve, 350));
+
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             currentUserSession = user;
@@ -278,13 +282,18 @@
                 });
         }
 
+        // Fixed Tracker Validation: Removed channel.state constraint blocking execution on initial broadcast subscription
         async function syncPresenceContext() {
-            if (realTimePresenceChannel && realTimePresenceChannel.state === 'joined') {
+            if (realTimePresenceChannel) {
                 const storageKey = document.getElementById('storageFilterSelect').value;
-                await realTimePresenceChannel.track({
-                    user_email: currentUserSession.email.toUpperCase(),
-                    active_facility_view: storageKey
-                });
+                try {
+                    await realTimePresenceChannel.track({
+                        user_email: currentUserSession.email.toUpperCase(),
+                        active_facility_view: storageKey
+                    });
+                } catch(presenceErr) {
+                    console.error("Presence status payload failed to post:", presenceErr);
+                }
             }
         }
 
