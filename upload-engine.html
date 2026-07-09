@@ -20,6 +20,15 @@
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
+        /* Standardized Modal Styles from inventory-management.html */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; backdrop-filter: blur(4px); }
+        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
+        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card h4 { margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; font-weight: 700; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; line-height: 1.5; }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; transition: background 0.15s; }
+        .modal-btn:hover { opacity: 0.9; }
+
         /* Workspace Layouts */
         .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; display: none; } 
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
@@ -46,29 +55,18 @@
         .submit-btn { background: #0b2545; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s; }
         .submit-btn:hover { opacity: 0.9; }
         .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
-
-        /* Standardized Notification Modals */
-        .system-alert-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: none; justify-content: center; align-items: center; z-index: 20000; backdrop-filter: blur(4px); }
-        .system-alert-card { background: white; width: 100%; max-width: 440px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: modalReveal 0.25s ease-out; }
-        .system-alert-header { padding: 20px 24px 10px; display: flex; align-items: center; gap: 12px; }
-        .system-alert-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; shrink: 0; }
-        .system-alert-icon.success { background: #d1fae5; color: #065f46; }
-        .system-alert-icon.error { background: #fee2e2; color: #991b1b; }
-        .system-alert-icon.warning { background: #fef3c7; color: #92400e; }
-        .system-alert-title { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
-        .system-alert-content { padding: 10px 24px 24px; color: #475569; font-size: 0.95rem; line-height: 1.5; }
-        .system-alert-actions { padding: 12px 24px 20px; background: #f8fafc; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; }
-        .alert-btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-        .alert-btn-primary { background: #0f172a; color: white; }
-        .alert-btn-primary:hover { background: #1e293b; }
-
-        @keyframes modalReveal {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
     </style>
 </head>
 <body>
+
+    <!-- Standardized Restriction Modal Element from inventory-management.html -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">Access Restricted</h4>
+            <p id="restrictionModalMessage">You do not possess the structural authorization parameters required to enter this workspace zone.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
 
     <nav class="navbar">
         <div class="top-row">
@@ -270,20 +268,6 @@
         </div>
     </div>
 
-    <!-- Standardized Notification Modal Structural Target Overlay -->
-    <div class="system-alert-overlay" id="systemAlertOverlay">
-        <div class="system-alert-card">
-            <div class="system-alert-header">
-                <div class="system-alert-icon success" id="systemAlertIcon">✓</div>
-                <div class="system-alert-title" id="systemAlertTitle">Notification</div>
-            </div>
-            <div class="system-alert-content" id="systemAlertContent">Message placeholder</div>
-            <div class="system-alert-actions">
-                <button class="alert-btn alert-btn-primary" id="systemAlertConfirmBtn" onclick="closeSystemModal()">Dismiss</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -296,32 +280,21 @@
         let activeTrackingSpsic = null;
         let presenceHeartbeatInterval = null;
 
-        // Standardized Notification Modal Handler
-        function showSystemModal(type, title, message, onConfirm = null) {
-            document.getElementById('systemAlertTitle').textContent = title;
-            document.getElementById('systemAlertContent').textContent = message;
-            
-            const iconEl = document.getElementById('systemAlertIcon');
-            iconEl.className = `system-alert-icon ${type}`;
-            
-            if (type === 'success') iconEl.textContent = '✓';
-            else if (type === 'error') iconEl.textContent = '✕';
-            else if (type === 'warning') iconEl.textContent = '⚠️';
-
-            const confirmBtn = document.getElementById('systemAlertConfirmBtn');
-            confirmBtn.onclick = function() {
-                closeSystemModal();
-                if (onConfirm) onConfirm();
-            };
-
-            document.getElementById('systemAlertOverlay').style.display = 'flex';
+        // Restriction Modal Handlers from inventory-management.html
+        function showRestrictionModal(title, message, btnText = "Acknowledge", clickAction = null) {
+            document.getElementById('restrictionModalTitle').textContent = title;
+            document.getElementById('restrictionModalMessage').textContent = message;
+            const btn = document.querySelector('#accessBlockerModal .modal-btn');
+            btn.textContent = btnText;
+            btn.onclick = clickAction ? clickAction : closeRestrictionModal;
+            document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
-        function closeSystemModal() { 
-            document.getElementById('systemAlertOverlay').style.display = 'none'; 
+        function closeRestrictionModal() { 
+            document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
         }
 
-        // Structural Privilege Verification Mapping
+        // Navigation Privilege Verification matching inventory-management.html logic
         function verifyNavigationPrivilege(accessKey, url) {
             if (!currentUserPermissions) return;
 
@@ -332,7 +305,7 @@
             }
 
             if (accessKey === 'admin_access') {
-                showSystemModal('error', 'Access Restricted', 'Administrative level privileges are required to access System Settings.');
+                showRestrictionModal("Access Restricted", "Administrative level privileges are required to access System Settings.");
                 return;
             }
 
@@ -342,7 +315,7 @@
             }
 
             let val = currentUserPermissions[accessKey];
-            if (accessKey === 'employee_201_access' && !val) {
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
                 val = currentUserPermissions['profile_access'];
             }
 
@@ -350,7 +323,7 @@
             const isRestricted = (val === false || cleanedValStr === 'false' || !val);
 
             if (isRestricted) {
-                showSystemModal('error', 'Access Restricted', 'You do not possess the dynamic authorization privileges needed for this module pipeline.');
+                showRestrictionModal("Access Restricted", "You do not possess the dynamic authorization privileges needed for this module pipeline.");
             } else {
                 window.location.href = url;
             }
@@ -373,7 +346,6 @@
             if (!user) { window.location.href = "login.html"; return; }
             currentUserSession = user;
 
-            // Enforcement of structural restrictions
             await enforceRestrictionAccess();
 
             const today = new Date();
@@ -397,7 +369,7 @@
                 const hasImportAccess = profile.import_access === true || rawAccessStr === 'true';
 
                 if (userRole !== 'admin' && !hasImportAccess) {
-                    showSystemModal('error', 'Access Restricted', 'You do not possess the dynamic authorization privileges needed for this module pipeline.', () => {
+                    showRestrictionModal("Access Denied", "Your profile matrix does not allow access to Imports modules.", "Exit Module", () => {
                         window.location.href = "employee-dashboard.html";
                     });
                     return;
@@ -406,7 +378,7 @@
                 document.getElementById('mainContentWrapper').style.display = 'block';
             } catch (err) {
                 console.error("Restriction verification fault:", err);
-                showSystemModal('error', 'Security Fault', 'Could not verify user access control maps.');
+                showRestrictionModal("Security Fault", "Could not verify user access control maps.");
             }
         }
 
@@ -548,11 +520,11 @@
                 const { error } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
                 if (error) throw error;
                 
-                showSystemModal('success', 'Pipeline Sync Complete', 'Records stored successfully.', () => {
+                showRestrictionModal("Pipeline Sync Complete", "Records stored successfully.", "Done", () => {
                     window.location.reload();
                 });
             } catch (err) { 
-                showSystemModal('error', 'Sync Failed', err.message); 
+                showRestrictionModal("Sync Failed", err.message); 
                 submitBtn.disabled = false; 
             }
         }
@@ -563,7 +535,7 @@
             const tableBody = document.getElementById('reportTableBody');
             
             if (!from || !to) {
-                showSystemModal('warning', 'Date Range Required', 'Please select both a Start Date and an End Date.');
+                showRestrictionModal("Date Range Required", "Please select both a Start Date and an End Date.");
                 return;
             }
             tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">Filtering records...</td></tr>';
@@ -575,7 +547,7 @@
                 .lte('s_date', to)
                 .order('s_date', { ascending: false });
 
-            if (error) { showSystemModal('error', 'Query Failed', error.message); return; }
+            if (error) { showRestrictionModal("Query Failed", error.message); return; }
             if (!data || data.length === 0) { tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">No records found for this period.</td></tr>'; return; }
             tableBody.innerHTML = data.map(row => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
