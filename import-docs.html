@@ -72,7 +72,7 @@
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Restricted</h4>
             <p id="restrictionModalMessage">You do not possess the structural authorization parameters required to enter this workspace zone.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+            <button class="modal-btn" id="modalActionBtn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
 
@@ -217,6 +217,11 @@
                 return;
             }
 
+            // Setup button fallback back to standard acknowledgment closing behavior 
+            const modalBtn = document.getElementById('modalActionBtn');
+            modalBtn.textContent = "Acknowledge";
+            modalBtn.onclick = closeRestrictionModal;
+
             if (accessKey === 'admin_access') {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
                 document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
@@ -239,7 +244,7 @@
 
             if (isRestricted) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
-                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the structural authorization parameters required to enter this workspace zone.";
                 document.getElementById('accessBlockerModal').classList.add('is-visible');
             } else {
                 window.location.href = url;
@@ -413,8 +418,8 @@
 
         function checkAdminAccess(callback) {
             if (currentUserRole !== 'admin') {
-                document.getElementById('restrictionModalTitle').textContent = "Access Denied";
-                document.getElementById('restrictionModalMessage').textContent = "You do not have permission to download or export confidential documentation.";
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the structural authorization parameters required to enter this workspace zone.";
                 document.getElementById('accessBlockerModal').classList.add('is-visible');
                 return;
             }
@@ -467,11 +472,11 @@
             const hasImportAccess = currentUserPermissions.import_access === true || rawAccessStr === 'true';
 
             if (currentUserRole !== 'admin' && !hasImportAccess) {
-                document.getElementById('restrictionModalTitle').textContent = "Access Denied";
-                document.getElementById('restrictionModalMessage').textContent = "Your profile matrix does not allow access to Import Document Hub modules.";
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the structural authorization parameters required to enter this workspace zone.";
                 const modal = document.getElementById('accessBlockerModal');
                 modal.classList.add('is-visible');
-                const btn = modal.querySelector('.modal-btn');
+                const btn = document.getElementById('modalActionBtn');
                 btn.textContent = "Exit Module";
                 btn.onclick = () => { window.location.href = "employee-dashboard.html"; };
                 return;
