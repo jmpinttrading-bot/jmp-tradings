@@ -14,7 +14,6 @@
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        /* CHANGED: Replaced overflow-x: auto with flex-wrap: wrap to prevent hidden items */
         .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
         .nav-btn:hover { background-color: #475569; color: white; }
@@ -50,15 +49,16 @@
         .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; white-space: nowrap; }
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
         
-        /* Updated Z-Index for proper layering */
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-        
-        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; }
-        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
         .empty-placeholder { background: #f8fafc; border: 2px dashed #e2e8f0; padding: 30px; text-align: center; border-radius: 8px; color: #64748b; font-size: 0.9rem; margin-top: 15px; }
+
+        /* Copied Standard Dialog Styling */
+        dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
+        dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .btn-primary { background: #0f172a; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
+        .btn-primary:hover { background: #ee964b; color: #0f172a; }
     </style>
 </head>
 <body>
@@ -69,15 +69,24 @@
             <button class="logout-btn" id="sidebarLogoutBtn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn" id="profileNavLink">My Profile</a>
+            <a href="dashboard.html" class="nav-btn" onclick="checkNavbarAccess(event, 'dashboard')">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn" id="profileNavLink" onclick="checkNavbarAccess(event, 'profile')">My Profile</a>
             <a href="import-docs.html" class="nav-btn active">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="audit-report.html" class="nav-btn" style="display: inline-block !important;">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
+            <a href="inventory-management.html" class="nav-btn" onclick="checkNavbarAccess(event, 'inventory')">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn" onclick="checkNavbarAccess(event, 'sales')">Sales</a>
+            <a href="audit-report.html" class="nav-btn" style="display: inline-block !important;" onclick="checkNavbarAccess(event, 'audit')">Audit Report</a>
+            <a href="admin-dashboard.html" class="nav-btn" onclick="checkNavbarAccess(event, 'admin')">Settings</a>
         </div>
     </nav>
+
+    <!-- Standardized Alert Modal Component -->
+    <dialog id="alertModal">
+        <h3 id="alertModalTitle">Notification</h3>
+        <p id="alertModalBody" style="margin-bottom: 20px; color: #475569;"></p>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="document.getElementById('alertModal').close()">Close</button>
+        </div>
+    </dialog>
 
     <div class="main-content">
         <div class="header-panel">
@@ -118,7 +127,7 @@
                 <h3>Monthly Directories & Consolidated Logs</h3>
                 <div class="directory-controls">
                     <div class="form-group" style="margin-bottom:0; flex:1;">
-                        <select id="directoryYearSelect" onchange="buildMonthlyFolders(); toggleWorkspaceView();"></select>
+                        <select id="directoryYearSelect" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;" onchange="buildMonthlyFolders(); toggleWorkspaceView();"></select>
                     </div>
                     <button class="year-btn" onclick="addNewYearFolder()">+ New Year Folder</button>
                     <button class="download-year-btn" id="downloadYearArchiveBtn" onclick="checkAdminAccess(downloadEntireYearDirectory)">📥 Download Year Package</button>
@@ -165,14 +174,6 @@
         <iframe id="viewerModuleIframe" src="viewer.html" style="width: 100%; max-width: 900px; height: 90vh; border: none; background: transparent; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);"></iframe>
     </div>
 
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage">Execution status telemetry readout frame.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -197,6 +198,32 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
+        // Central Access Matrix rules matching your Control Panel layout
+        function checkNavbarAccess(event, moduleName) {
+            if (currentUserRole === 'admin') return true; // Admins override constraints
+
+            const restrictedModules = {
+                'admin': { roles: ['admin'], msg: 'Administrative configuration access required.' },
+                'audit': { roles: ['admin', 'auditor'], msg: 'Access restricted to system Auditors.' }
+            };
+
+            if (restrictedModules[moduleName] && !restrictedModules[moduleName].roles.includes(currentUserRole)) {
+                event.preventDefault();
+                showSystemModal({
+                    title: 'Access Restricted',
+                    message: restrictedModules[moduleName].msg
+                });
+                return false;
+            }
+            return true;
+        }
+
+        function showSystemModal(options = {}) {
+            document.getElementById('alertModalTitle').textContent = options.title || 'Notification';
+            document.getElementById('alertModalBody').textContent = options.message || '';
+            document.getElementById('alertModal').showModal();
+        }
+
         async function downloadCurrentDocumentPackage() {
             checkAdminAccess(async () => {
                 showSystemModal({ title: 'Preparing', message: 'Generating secure download links...' });
@@ -208,7 +235,7 @@
                         if (error) throw error;
                         window.open(data.signedUrl, '_blank');
                     }
-                    closeRestrictionModal();
+                    document.getElementById('alertModal').close();
                 } catch (err) {
                     showSystemModal({ title: 'Download Error', message: err.message });
                 }
@@ -220,7 +247,6 @@
             iframe.style.maxWidth = isZoomed ? "100%" : "900px";
         }
 
-        // Shared native spreadsheet generation algorithm matching engine layout rules
         function generateStyledExcelBlob(records) {
             let excelTemplate = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
@@ -297,7 +323,6 @@
             showSystemModal({ title: 'Processing Package', message: 'Compiling all 12 monthly modules and remote repository documentation files. Please hold...' });
             
             try {
-                // Fetch all data for the specified year
                 const { data: allYearRecords, error } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('*')
@@ -306,19 +331,14 @@
                 if (error) throw error;
                 const zip = new JSZip();
 
-                // Process every single month sequentially (01 - 12)
                 for (const m of monthsLabels) {
                     const targetMonthString = `${year}-${m.value}`;
                     const folderName = `SPSIC ${year}/${m.value}_${m.text.toUpperCase()}`;
-                    
-                    // Filter down rows belonging strictly to this month segment
                     const monthRecords = allYearRecords ? allYearRecords.filter(r => r.target_month === targetMonthString) : [];
                     
-                    // 1. Write the custom styled corporate layout Excel sheet into the month directory
                     const excelBlob = generateStyledExcelBlob(monthRecords);
                     zip.file(`${folderName}/Monthly_Report_${m.value}.xls`, excelBlob);
 
-                    // 2. Download and include all attachment binary objects if they exist
                     for (const doc of monthRecords) {
                         const filePaths = [
                             { path: doc.spsic_file_path, suffix: 'SPSIC' },
@@ -350,7 +370,7 @@
                 link.href = URL.createObjectURL(content);
                 link.download = `SPSIC_${year}_Directory_Folder.zip`;
                 link.click();
-                closeRestrictionModal();
+                document.getElementById('alertModal').close();
             } catch (err) {
                 showSystemModal({ title: 'Archive Generation Error', message: err.message });
             }
@@ -400,16 +420,6 @@
                 closeViewer();
                 fetchDocuments();
             }
-        }
-
-        function showSystemModal(options = {}) {
-            document.getElementById('alertTitle').textContent = options.title || 'Notification';
-            document.getElementById('alertMessage').textContent = options.message || '';
-            document.getElementById('accessBlockerModal').classList.add('is-visible');
-        }
-
-        function closeRestrictionModal() {
-            document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
         function closeViewer() {
