@@ -266,6 +266,12 @@
                 return;
             }
 
+            // Universal clearance logic for the Audit Report workspace pipeline
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
             // Fallback cross-check mapping adjustment for Profile permissions validation
             let val = currentUserPermissions[accessKey];
             if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
