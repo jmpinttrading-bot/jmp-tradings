@@ -59,9 +59,74 @@
             background-color: #334155; 
             color: #cbd5e1; 
             text-decoration: none; 
-            padding: 6px 12px;  border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; transition: all 0.2s; }
+            padding: 6px 12px;  
+            border-radius: 4px; 
+            font-size: 0.75rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            transition: all 0.2s; 
+        }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
+
+        /* --- Standardized Notification Modal Styles from inventory-management.html --- */
+        .restriction-modal-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(11, 37, 69, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 20000; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.2s ease-in-out;
+        }
+        .restriction-modal-container.is-visible { 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
+        .restriction-modal-card { 
+            background: white; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 440px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .restriction-modal-card h4 {
+            margin-bottom: 10px; 
+            color: #1e293b; 
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .restriction-modal-card p {
+            color: #64748b; 
+            font-size: 0.9rem; 
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .modal-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 15px; 
+            width: 100%; 
+            max-width: 150px; 
+        }
+        .modal-btn:hover {
+            background: #11355e;
+        }
 
         /* --- Workspace Content Styles --- */
         .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
@@ -147,18 +212,6 @@
         .modal-card { background: white; border-radius: 12px; max-width: 450px; width: 100%; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
         .modal-card h3 { font-size: 1.2rem; color: #0b2545; margin-bottom: 15px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
 
-        /* --- Restriction Modal Design --- */
-        .restriction-modal-container { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); 
-            display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
-        }
-        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .restriction-modal-card h4 { font-size: 1.2rem; color: #0b2545; margin-bottom: 10px; font-weight: bold; }
-        .restriction-modal-card p { font-size: 0.95rem; color: #475569; margin-bottom: 20px; line-height: 1.5; }
-        .restriction-modal-card .btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
-        .restriction-modal-card .btn:hover { background: #11355e; }
-
         @media (max-width: 768px) {
             .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
             .ledger-search-box { width: 100%; }
@@ -168,19 +221,27 @@
 </head>
 <body>
 
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">Access Restricted</h4>
+            <p id="restrictionModalMessage">You do not possess the dynamic authorization privileges needed for this module pipeline.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Dashboard', 'dashboard.html')">Dashboard</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('My Profile', 'employee-dashboard.html')">My Profile</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Import Doc File Management', 'import-docs.html')">Imports</a>
-            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('Inventory Management', 'inventory-management.html')">Inventory</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Sales Invoice Management', 'sales-invoice.html')">Sales</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Audit Report', 'audit-report.html')">Audit Report</a>
-            <a href="#" class="nav-btn" id="settingsBtn">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -230,14 +291,6 @@
         </div>
     </div>
 
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="systemAlertTitle">Access Restricted</h4>
-            <p id="systemAlertContent">Administrative privileges or authorized security permissions are required to access this system section.</p>
-            <button class="btn" onclick="closeSystemModal()">Acknowledge</button>
-        </div>
-    </div>
-
     <div class="modal-overlay" id="editRemarksModalOverlay">
         <div class="modal-card">
             <h3>Pricing Adjustments Log Authorization</h3>
@@ -265,25 +318,50 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let globallyFetchedItems = [];
-        let permissionsMatrix = { profile_access: true, import_access: true, inventory_access: true, sales_invoice_access: true, audit_report_access: true, product_registry_access: false, item_price_access: false, settings_access: false };
+        let currentUserPermissions = null;
 
         function showSystemModal(title, message) {
-            document.getElementById('systemAlertTitle').textContent = title;
-            document.getElementById('systemAlertContent').textContent = message;
+            document.getElementById('restrictionModalTitle').textContent = title;
+            document.getElementById('restrictionModalMessage').textContent = message;
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
-        function closeSystemModal() { document.getElementById('accessBlockerModal').classList.remove('is-visible'); }
+        function closeRestrictionModal() { 
+            document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
+        }
 
-        function verifyNavigationPrivilege(moduleName, url) {
-            const allowed = (moduleName.includes('Profile') && permissionsMatrix.profile_access) ||
-                            (moduleName.includes('Import') && permissionsMatrix.import_access) ||
-                            (moduleName.includes('Inventory') && permissionsMatrix.inventory_access) ||
-                            (moduleName.includes('Sales') && permissionsMatrix.sales_invoice_access) ||
-                            (moduleName.includes('Audit') && permissionsMatrix.audit_report_access) ||
-                            (moduleName.includes('Dashboard') && permissionsMatrix.profile_access) ||
-                            (moduleName === 'Settings' && permissionsMatrix.settings_access);
-            if (allowed) { window.location.href = url; } else { showSystemModal('Access Restricted', 'Security clearances are required.'); }
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
+            }
+
+            if (accessKey === 'admin_access') {
+                showSystemModal("Access Restricted", "Administrative level privileges are required to access System Settings.");
+                return;
+            }
+
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                showSystemModal("Access Restricted", "You do not possess the dynamic authorization privileges needed for this module pipeline.");
+            } else {
+                window.location.href = url;
+            }
         }
 
         async function initPriceDashboard() {
@@ -293,59 +371,55 @@
             currentAdminId = user.id;
             currentUserEmail = user.email;
             
-            setupSettingsProtection();
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .maybeSingle();
 
-            const { data: profile } = await supabaseClient.from('profiles').select('role, product_registry_access, item_price_access, import_access, inventory_access, sales_invoice_access').eq('id', user.id).maybeSingle();
-            if (profile) {
-                permissionsMatrix = {
-                    profile_access: true,
-                    import_access: profile.role === 'Admin' || profile.import_access !== false,
-                    inventory_access: profile.role === 'Admin' || profile.inventory_access !== false,
-                    sales_invoice_access: profile.role === 'Admin' || profile.sales_invoice_access !== false,
-                    audit_report_access: profile.role === 'Admin' || profile.inventory_access !== false,
-                    product_registry_access: profile.role === 'Admin' || profile.product_registry_access !== false,
-                    item_price_access: profile.role === 'Admin' || profile.item_price_access !== false,
-                    settings_access: profile.role === 'Admin'
-                };
+            if (error || !profile) {
+                console.error("Profile structural query fault:", error);
+                window.location.href = "login.html";
+                return;
             }
 
-            if (!permissionsMatrix.item_price_access) {
-                showSystemModal("Access Restricted", "Pricing configurations block applied.");
+            currentUserPermissions = profile;
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+
+            const settingsBtn = document.getElementById('settingsBtn');
+            if (roleClean === 'admin' && settingsBtn) {
+                settingsBtn.style.background = "#475569";
+                settingsBtn.style.color = "white";
+            }
+
+            const hasPriceAccess = roleClean === 'admin' || (currentUserPermissions.item_price_access !== false && currentUserPermissions.inventory_access !== false);
+
+            if (!hasPriceAccess) {
+                showSystemModal("Access Restricted", "Unauthorized entry context: Account configuration prevents changing price logs.");
                 setTimeout(() => { window.location.href = "inventory-management.html"; }, 2500);
                 return;
             }
             
-            fetchLedgerDataset();
+            fetchLedgerDataset(hasPriceAccess);
             setupSessionCrossCheckListener();
         }
 
-        function setupSettingsProtection() {
-            const settingsBtn = document.getElementById('settingsBtn');
-            if (settingsBtn) {
-                settingsBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (permissionsMatrix.settings_access) { window.location.href = "admin-dashboard.html"; } 
-                    else { showSystemModal('Access Restricted', 'Administrative clearance required.'); }
-                });
-            }
-        }
-
-        async function fetchLedgerDataset() {
+        async function fetchLedgerDataset(hasAccess) {
             const { data, error } = await supabaseClient.from('inventory').select('*').order('created_at', { ascending: false });
             if (error) { showSystemModal("Sync Failure", error.message); return; }
             globallyFetchedItems = data || [];
-            renderLedgerTable(globallyFetchedItems);
+            renderLedgerTable(globallyFetchedItems, hasAccess);
         }
 
-        function renderLedgerTable(items) {
+        function renderLedgerTable(items, hasAccess) {
             const tbody = document.getElementById('ledgerTableBody');
             if (items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records logged inside storage profiles.</td></tr>`;
                 return;
             }
 
-            tbody.innerHTML = items.map((item, index) => {
-                const disabledAttr = permissionsMatrix.item_price_access ? '' : 'disabled';
+            tbody.innerHTML = items.map((item) => {
+                const disabledAttr = hasAccess ? '' : 'disabled';
                 const currentPriceValue = parseFloat(item.unit_price || 0);
                 return `
                     <tr>
@@ -406,22 +480,35 @@
             if (error) {
                 showSystemModal("Database Error", error.message);
             } else {
-                alert("Product Unit Price record schema variables updated successfully.");
+                showSystemModal("Action Successful", "Product Unit Price record schema variables updated successfully.");
                 closeEditRemarksModal();
-                fetchLedgerDataset();
+                
+                const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+                const hasAccess = roleClean === 'admin' || (currentUserPermissions.item_price_access !== false && currentUserPermissions.inventory_access !== false);
+                fetchLedgerDataset(hasAccess);
             }
         }
 
         function filterLedgerByDescription() {
             const query = document.getElementById('descSearchQuery').value.trim().toLowerCase();
-            if (!query) { renderLedgerTable(globallyFetchedItems); return; }
+            if (!query) { 
+                const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+                const hasAccess = roleClean === 'admin' || (currentUserPermissions.item_price_access !== false && currentUserPermissions.inventory_access !== false);
+                renderLedgerTable(globallyFetchedItems, hasAccess); 
+                return; 
+            }
             const filtered = globallyFetchedItems.filter(i => (i.item_name || "").toLowerCase().includes(query));
-            renderLedgerTable(filtered);
+            
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions.item_price_access !== false && currentUserPermissions.inventory_access !== false);
+            renderLedgerTable(filtered, hasAccess);
         }
 
         function clearDescriptionFilter() {
             document.getElementById('descSearchQuery').value = "";
-            renderLedgerTable(globallyFetchedItems);
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions.item_price_access !== false && currentUserPermissions.inventory_access !== false);
+            renderLedgerTable(globallyFetchedItems, hasAccess);
         }
 
         function setupSessionCrossCheckListener() {
