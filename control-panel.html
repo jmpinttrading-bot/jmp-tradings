@@ -27,12 +27,16 @@
         .roster-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
         .live-count-badge { background: #22c55e; color: white; border-radius: 12px; font-size: 0.75rem; padding: 3px 12px; font-weight: bold; }
         
-        .user-presence-list { list-style: none; display: flex; flex-wrap: wrap; gap: 12px; max-height: 150px; overflow-y: auto; }
-        .user-presence-item { display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 30px; font-size: 0.88rem; }
+        .user-presence-list { list-style: none; display: flex; flex-wrap: wrap; gap: 12px; max-height: 250px; overflow-y: auto; padding: 0; margin: 0; }
+        .user-presence-item { display: flex; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 30px; font-size: 0.88rem; transition: all 0.2s ease; }
         .user-meta-info { display: flex; align-items: center; gap: 6px; }
         .user-email-text { font-weight: 600; color: #334155; }
         .user-role-lbl { font-size: 0.75rem; color: #64748b; background: #e2e8f0; padding: 2px 8px; border-radius: 10px; text-transform: capitalize; }
+        
+        /* Presence Status Classes */
         .pulse-indicator-dot { height: 8px; width: 8px; background-color: #22c55e; border-radius: 50%; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); animation: pulseTrackingEffect 1.8s infinite; }
+        .offline-indicator-dot { height: 8px; width: 8px; background-color: #94a3b8; border-radius: 50%; }
+        .user-presence-item.offline { opacity: 0.65; background: #f1f5f9; border-style: dashed; }
 
         .control-block { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         .control-block h3 { margin-bottom: 5px; color: #0f172a; font-size: 1.25rem; }
@@ -114,6 +118,7 @@
         let currentAdminId = null;
         let bypassAuthListener = false;
         let realTimePresenceChannel = null;
+        let globalCachedProfiles = []; // Holds the unified snapshot of database profiles
 
         async function initControlPanel() {
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -122,16 +127,20 @@
             const { data: profile } = await supabaseClient.from('profiles').select('role, username').eq('id', user.id).single();
             if (!profile || profile.role !== 'Admin') { window.location.href = "employee-dashboard.html"; return; }
             document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
+            
             setupSessionCrossCheckListener();
+            // Load user matrices into memory first so the presence roster has structure to evaluate against
+            await fetchPlatformUserProfiles();
             initializePresenceSynchronization(user, profile.username, profile.role);
-            fetchPlatformUserProfiles();
         }
 
         async function fetchPlatformUserProfiles() {
             const { data: profiles } = await supabaseClient.from('profiles').select('*').order('username', { ascending: true });
+            globalCachedProfiles = profiles || [];
+            
             const container = document.getElementById('accessManagementCardsContainer');
             container.innerHTML = "";
-            profiles.forEach(profile => {
+            globalCachedProfiles.forEach(profile => {
                 const isAdmin = profile.role === 'Admin';
                 const createToggle = (label, accessKey, isAllowed) => `
                     <div class="permission-item">
@@ -156,6 +165,11 @@
                     </div>`;
                 container.appendChild(card);
             });
+
+            // Re-render the system session ledger matching the fresh profile structural updates
+            if (realTimePresenceChannel) {
+                renderActivePresenceRoster(realTimePresenceChannel.presenceState());
+            }
         }
 
         async function updateDatabaseAccessClearance(userId, col, el) {
@@ -172,12 +186,26 @@
         function renderActivePresenceRoster(state) {
             const container = document.getElementById('activePresenceTrackerList');
             container.innerHTML = "";
-            const users = Object.values(state).flat();
-            document.getElementById('rosterCountBadge').textContent = `${users.length} Live Users`;
-            users.forEach(u => {
+            
+            // Extract unique user tracking assignments directly from Supabase Presence State keys
+            const liveUsersCount = Object.keys(state).length;
+            document.getElementById('rosterCountBadge').textContent = `${liveUsersCount} Live Users`;
+
+            // Loop through all database records, determining statuses programmatically
+            globalCachedProfiles.forEach(profile => {
+                const isOnline = state[profile.id] !== undefined;
                 const li = document.createElement('li');
-                li.className = "user-presence-item";
-                li.innerHTML = `<div class="pulse-indicator-dot"></div><div class="user-meta-info"><span class="user-email-text">${u.username}</span><span class="user-role-lbl">${u.role}</span></div>`;
+                li.className = `user-presence-item ${isOnline ? 'online' : 'offline'}`;
+                
+                li.innerHTML = `
+                    <div class="${isOnline ? 'pulse-indicator-dot' : 'offline-indicator-dot'}"></div>
+                    <div class="user-meta-info">
+                        <span class="user-email-text">${profile.username}</span>
+                        <span class="user-role-lbl">${profile.role}</span>
+                        <span style="font-size: 0.72rem; margin-left: 2px; color: ${isOnline ? '#16a34a' : '#64748b'}; font-weight: 500;">
+                            (${isOnline ? 'online' : 'offline'})
+                        </span>
+                    </div>`;
                 container.appendChild(li);
             });
         }
