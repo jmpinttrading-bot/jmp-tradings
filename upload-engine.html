@@ -146,7 +146,6 @@
                             <option value="BULLET TUNA-2CV"></option>
                             <option value="BULLET TUNA-3CV"></option>
                             <option value="MOONFISH-1CV"></option>
-                            <option value="MOONFISH-2CV"></option>
                             <option value="MOONFISH-3CV"></option>
                             <option value="SALMON HEAD-1CV"></option>
                             <option value="SALMON HEAD-2CV"></option>
@@ -277,8 +276,10 @@
         let localFetchedRecord = null;
         let currentUserSession = null;
         let currentUserPermissions = null;
+        
+        // Dynamic Presence & Tracking State
         let activeTrackingSpsic = null;
-        let presenceHeartbeatInterval = null;
+        let realTimePresenceChannel = null;
 
         // Restriction Modal Handlers from inventory-management.html
         function showRestrictionModal(title, message, btnText = "Acknowledge", clickAction = null) {
@@ -347,6 +348,7 @@
             currentUserSession = user;
 
             await enforceRestrictionAccess();
+            initializeGlobalPresenceSystem();
 
             const today = new Date();
             document.getElementById('spsicTargetMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -382,6 +384,94 @@
             }
         }
 
+        // --- Real-time Global Presence Synchronization Core ---
+        function initializeGlobalPresenceSystem() {
+            realTimePresenceChannel = supabaseClient.channel('upload_engine_presence', {
+                config: { presence: { key: currentUserSession.id } }
+            });
+
+            realTimePresenceChannel
+                .on('presence', { event: 'sync' }, () => {
+                    handlePresenceStateMutation();
+                })
+                .on('presence', { event: 'join' }, ({ newPresences }) => {
+                    handlePresenceStateMutation();
+                })
+                .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+                    handlePresenceStateMutation();
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await realTimePresenceChannel.track({
+                            user_email: currentUserSession.email.toUpperCase(),
+                            active_spsic: activeTrackingSpsic
+                        });
+                    }
+                });
+        }
+
+        async function syncPresenceContext() {
+            if (realTimePresenceChannel && realTimePresenceChannel.state === 'joined') {
+                await realTimePresenceChannel.track({
+                    user_email: currentUserSession.email.toUpperCase(),
+                    active_spsic: activeTrackingSpsic
+                });
+            }
+        }
+
+        function handlePresenceStateMutation() {
+            const state = realTimePresenceChannel.presenceState();
+            const currentNumInput = document.getElementById('spsicRawNumber').value.trim().toUpperCase();
+            const banner = document.getElementById('lockStatusBanner');
+            const submitBtn = document.getElementById('submitSyncPipelineBtn');
+
+            if (!currentNumInput) {
+                banner.style.display = "none";
+                return;
+            }
+
+            // Exclude self, check if someone else is tracing/locking this document
+            let remoteLockUser = null;
+            Object.keys(state).forEach(id => {
+                if (id !== currentUserSession.id) {
+                    const sessions = state[id];
+                    if (sessions && sessions.length > 0) {
+                        const presenceData = sessions[0];
+                        if (presenceData.active_spsic === currentNumInput) {
+                            remoteLockUser = presenceData.user_email;
+                        }
+                    }
+                }
+            });
+
+            if (remoteLockUser) {
+                banner.innerHTML = `⚠️ <strong>Concurrency Lock Encountered:</strong> This record sequence is presently open and being modified by <strong>${remoteLockUser}</strong>. Changes blocked to avoid sync degradation.`;
+                banner.style.display = "block";
+                submitBtn.setAttribute('disabled', 'true');
+                toggleFormInputFields(true);
+            } else {
+                // Return control back if the immutable state check fails below
+                if (!localFetchedRecord || localFetchedRecord.status !== "Completed") {
+                    banner.style.display = "none";
+                    submitBtn.removeAttribute('disabled');
+                    toggleFormInputFields(false);
+                    // Re-run lock metrics rules
+                    evaluateUploadSequenceLocks(true);
+                }
+            }
+        }
+
+        function toggleFormInputFields(isDisabled) {
+            const targets = ['spsicDate', 'approvedDate', 'expirationDate', 'storageLocation', 'storageArrivalDate', 'commodity', 'clientName', 'cvNumber', 'spsicTargetMonth', 'fileSpsic', 'fileArrival', 'fileImportDocs'];
+            targets.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    if (isDisabled) element.setAttribute('disabled', 'true');
+                    else element.removeAttribute('disabled');
+                }
+            });
+        }
+
         forceRefetchAndEvaluate = function() { localFetchedRecord = null; evaluateUploadSequenceLocks(); }
 
         function handleFileSelection(inputId, progressId) {
@@ -398,9 +488,14 @@
             } else { progressEl.style.display = "none"; }
         }
 
-        async function handleInputBlur() { if (!document.getElementById('spsicRawNumber').value.trim()) { await clearLockHeartbeat(); } }
+        async function handleInputBlur() { 
+            if (!document.getElementById('spsicRawNumber').value.trim()) { 
+                activeTrackingSpsic = null;
+                await syncPresenceContext(); 
+            } 
+        }
 
-        async function evaluateUploadSequenceLocks() {
+        async function evaluateUploadSequenceLocks(skipPresenceCheck = false) {
             const numInput = document.getElementById('spsicRawNumber').value.trim().toUpperCase();
             const targetMonthInput = document.getElementById('spsicTargetMonth').value.toUpperCase();
             const fSpsic = document.getElementById('fileSpsic');
@@ -409,7 +504,12 @@
             const submitBtn = document.getElementById('submitSyncPipelineBtn');
             const banner = document.getElementById('lockStatusBanner');
 
-            if (!numInput) { clearLockHeartbeat(); return; }
+            if (!numInput) { 
+                activeTrackingSpsic = null;
+                await syncPresenceContext();
+                return; 
+            }
+
             if (!localFetchedRecord || localFetchedRecord.spsic_number !== numInput || localFetchedRecord.target_month !== targetMonthInput) {
                 const { data } = await supabaseClient.from('imported_shipment_docs').select('*').eq('spsic_number', numInput).eq('target_month', targetMonthInput).maybeSingle();
                 localFetchedRecord = data;
@@ -420,12 +520,18 @@
                 banner.innerHTML = `🔒 <strong>Immutable Records Blocked:</strong> Approved & Finalized. Modification access rescinded.`;
                 banner.style.display = "block";
                 submitBtn.setAttribute('disabled', 'true');
+                toggleFormInputFields(true);
                 return;
-            } else {
-                banner.style.display = "none";
-                submitBtn.removeAttribute('disabled');
             }
-            if (activeTrackingSpsic !== numInput) { startLockHeartbeat(numInput); }
+
+            if (activeTrackingSpsic !== numInput) { 
+                activeTrackingSpsic = numInput;
+                await syncPresenceContext();
+            }
+
+            if (!skipPresenceCheck) {
+                handlePresenceStateMutation();
+            }
 
             let hasSpsicInDb = !!(localFetchedRecord && localFetchedRecord.spsic_file_path);
             let hasArrivalInDb = !!(localFetchedRecord && localFetchedRecord.arrival_notice_path);
@@ -434,29 +540,16 @@
             document.getElementById('statusArrivalUploaded').style.display = hasArrivalInDb ? "block" : "none";
             document.getElementById('statusImportUploaded').style.display = (localFetchedRecord && localFetchedRecord.import_docs_path) ? "block" : "none";
 
-            fSpsic.disabled = hasSpsicInDb;
-            fArrival.disabled = !hasSpsicInDb || hasArrivalInDb;
-            fImport.disabled = !hasSpsicInDb || !hasArrivalInDb;
+            // Enforce upload step validations if not already locked down globally
+            const isBannerVisible = banner.style.display === "block";
+            if (!isBannerVisible) {
+                fSpsic.disabled = hasSpsicInDb;
+                fArrival.disabled = !hasSpsicInDb || hasArrivalInDb;
+                fImport.disabled = !hasSpsicInDb || !hasArrivalInDb;
+            }
             
             document.getElementById('noticeArrival').style.display = hasSpsicInDb ? "none" : "block";
             document.getElementById('noticeImport').style.display = (hasSpsicInDb && hasArrivalInDb) ? "none" : "block";
-        }
-
-        async function startLockHeartbeat(spsic) {
-            clearLockHeartbeat();
-            activeTrackingSpsic = spsic.toUpperCase();
-            await supabaseClient.from('active_document_locks').upsert({ spsic_number: activeTrackingSpsic, locked_by_email: currentUserSession.email.toUpperCase(), locked_by_id: currentUserSession.id, last_ping_at: new Date().toISOString() });
-            presenceHeartbeatInterval = setInterval(async () => {
-                if (activeTrackingSpsic) {
-                    await supabaseClient.from('active_document_locks').upsert({ spsic_number: activeTrackingSpsic, locked_by_email: currentUserSession.email.toUpperCase(), locked_by_id: currentUserSession.id, last_ping_at: new Date().toISOString() });
-                }
-            }, 5000);
-        }
-
-        async function clearLockHeartbeat() {
-            if (activeTrackingSpsic) { await supabaseClient.from('active_document_locks').delete().eq('spsic_number', activeTrackingSpsic).eq('locked_by_id', currentUserSession.id); }
-            if (presenceHeartbeatInterval) clearInterval(presenceHeartbeatInterval);
-            activeTrackingSpsic = null;
         }
 
         async function optimizeAndCompressPdfFile(fileObject) {
@@ -520,6 +613,9 @@
                 const { error } = await supabaseClient.from('imported_shipment_docs').upsert(payload, { onConflict: 'spsic_number,target_month' });
                 if (error) throw error;
                 
+                activeTrackingSpsic = null;
+                await syncPresenceContext();
+
                 showRestrictionModal("Pipeline Sync Complete", "Records stored successfully.", "Done", () => {
                     window.location.reload();
                 });
@@ -617,8 +713,14 @@
             window.URL.revokeObjectURL(url);
         }
 
-        async function handleLogout() { await clearLockHeartbeat(); await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
-        window.addEventListener('beforeunload', () => { clearLockHeartbeat(); });
+        async function handleLogout() { 
+            if (realTimePresenceChannel) {
+                await realTimePresenceChannel.unsubscribe();
+            }
+            await supabaseClient.auth.signOut(); 
+            window.location.href = "login.html"; 
+        }
+        
         initModule();
     </script>
 </body>
