@@ -219,8 +219,8 @@
             if (!profile) { window.location.href = "login.html"; return; }
             currentUserPermissions = profile;
 
-            // Robust data parsing protection for top-level verification framework
-            const roleClean = String(profile.role).toLowerCase().trim();
+            // Normalized safe case-insensitive checking for string or actual boolean variations
+            const roleClean = String(profile.role || '').toLowerCase().trim();
             const hasInvAccess = profile.inventory_access === true || String(profile.inventory_access).toLowerCase().trim() === 'true';
 
             if (roleClean !== 'admin' && !hasInvAccess) {
@@ -246,7 +246,7 @@
         function verifyNavigationPrivilege(accessKey, url) {
             if (!currentUserPermissions) return;
 
-            const roleClean = String(currentUserPermissions.role).toLowerCase().trim();
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
             if (roleClean === 'admin') {
                 window.location.href = url;
                 return;
@@ -259,9 +259,9 @@
                 return;
             }
 
-            // Universal parsing validation evaluation logic to accept boolean OR text values properly
+            // Universal evaluation checker block handles true, false, "TRUE", "FALSE" completely
             const val = currentUserPermissions[accessKey];
-            const isRestricted = (val === false || String(val).toLowerCase().trim() === 'false');
+            const isRestricted = (val === false || String(val).toLowerCase().trim() === 'false' || !val);
 
             if (isRestricted) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
