@@ -116,20 +116,19 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentAdminId = null;
-        let bypassAuthListener = false;
         let realTimePresenceChannel = null;
-        let globalCachedProfiles = []; // Holds the unified snapshot of database profiles
+        let globalCachedProfiles = []; 
 
         async function initControlPanel() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             currentAdminId = user.id;
+            
             const { data: profile } = await supabaseClient.from('profiles').select('role, username').eq('id', user.id).single();
             if (!profile || profile.role !== 'Admin') { window.location.href = "employee-dashboard.html"; return; }
             document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             
             setupSessionCrossCheckListener();
-            // Load user matrices into memory first so the presence roster has structure to evaluate against
             await fetchPlatformUserProfiles();
             initializePresenceSynchronization(user, profile.username, profile.role);
         }
@@ -166,7 +165,6 @@
                 container.appendChild(card);
             });
 
-            // Re-render the system session ledger matching the fresh profile structural updates
             if (realTimePresenceChannel) {
                 renderActivePresenceRoster(realTimePresenceChannel.presenceState());
             }
@@ -178,22 +176,42 @@
         }
 
         function initializePresenceSynchronization(u, name, role) {
-            realTimePresenceChannel = supabaseClient.channel('jmp-global-presence', { config: { presence: { key: u.id } } });
-            realTimePresenceChannel.on('presence', { event: 'sync' }, () => renderActivePresenceRoster(realTimePresenceChannel.presenceState()));
-            realTimePresenceChannel.subscribe(async (s) => { if (s === 'SUBSCRIBED') await realTimePresenceChannel.track({username: name, role: role}); });
+            realTimePresenceChannel = supabaseClient.channel('jmp-global-presence', { 
+                config: { presence: { key: u.id } } 
+            });
+
+            realTimePresenceChannel
+                .on('presence', { event: 'sync' }, () => {
+                    renderActivePresenceRoster(realTimePresenceChannel.presenceState());
+                })
+                .on('presence', { event: 'join' }, () => {
+                    renderActivePresenceRoster(realTimePresenceChannel.presenceState());
+                })
+                .on('presence', { event: 'leave' }, () => {
+                    renderActivePresenceRoster(realTimePresenceChannel.presenceState());
+                })
+                .subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await realTimePresenceChannel.track({
+                            username: name,
+                            role: role,
+                            online_at: new Date().toISOString()
+                        });
+                    }
+                });
         }
 
         function renderActivePresenceRoster(state) {
             const container = document.getElementById('activePresenceTrackerList');
+            if (!container) return;
             container.innerHTML = "";
             
-            // Extract unique user tracking assignments directly from Supabase Presence State keys
             const liveUsersCount = Object.keys(state).length;
             document.getElementById('rosterCountBadge').textContent = `${liveUsersCount} Live Users`;
 
-            // Loop through all database records, determining statuses programmatically
             globalCachedProfiles.forEach(profile => {
-                const isOnline = state[profile.id] !== undefined;
+                const isOnline = state[profile.id] !== undefined && state[profile.id].length > 0;
+                
                 const li = document.createElement('li');
                 li.className = `user-presence-item ${isOnline ? 'online' : 'offline'}`;
                 
@@ -212,16 +230,20 @@
 
         function setupSessionCrossCheckListener() {
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
-                if (bypassAuthListener) return;
-                if (session && session.user && session.user.id !== currentAdminId) {
-                    bypassAuthListener = true; 
-                    alert("Session Conflicted.");
+                if (event === 'SIGNED_OUT' || !session) {
                     window.location.href = "login.html";
                 }
             });
         }
 
-        async function handleLogout() { bypassAuthListener = true; await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
+        async function handleLogout() { 
+            if (realTimePresenceChannel) {
+                await realTimePresenceChannel.untrack();
+            }
+            await supabaseClient.auth.signOut(); 
+            window.location.href = "login.html"; 
+        }
+        
         initControlPanel();
     </script>
 </body>
