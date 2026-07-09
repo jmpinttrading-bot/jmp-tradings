@@ -75,31 +75,49 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            // Query entire permission parameters configured in Control Panel
-            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            // Extract the user identifier prefix from the email account structure
+            const loginUsername = user.email ? user.email.split('@')[0] : '';
+
+            // Query profile records via matching username key values
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('username', loginUsername)
+                .maybeSingle();
             
-            if (!profile) { window.location.href = "login.html"; return; }
-            currentUserPermissions = profile;
+            if (error || !profile) {
+                console.error("Profile fetch error:", error);
+                // Fallback secondary check: verify UUID structure match mapping parameters
+                const { data: retryProfile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
+                if (retryProfile) {
+                    currentUserPermissions = retryProfile;
+                } else {
+                    window.location.href = "login.html"; 
+                    return;
+                }
+            } else {
+                currentUserPermissions = profile;
+            }
 
-            // Normalized safe case-insensitive checking for string or actual boolean variations
-            const roleClean = String(profile.role || '').toLowerCase().trim();
-            const hasSalesAccess = profile.sales_invoice_access === true || String(profile.sales_invoice_access).toLowerCase().trim() === 'true';
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            
+            // Evaluates text TRUE strings, native true booleans, and whitespace variances cleanly
+            const rawAccessStr = String(currentUserPermissions.sales_invoice_access || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const hasSalesAccess = currentUserPermissions.sales_invoice_access === true || rawAccessStr === 'true';
 
-            // Strict core verification check for the sales invoice workspace
+            // Main security barrier check for Workspace entries
             if (roleClean !== 'admin' && !hasSalesAccess) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Denied";
                 document.getElementById('restrictionModalMessage').textContent = "Your profile matrix does not allow access to Sales Invoice Processing modules.";
                 const modal = document.getElementById('accessBlockerModal');
                 modal.classList.add('is-visible');
                 
-                // Force exit back to profile if completely locked out
                 const btn = modal.querySelector('.modal-btn');
                 btn.textContent = "Exit Module";
                 btn.onclick = () => { window.location.href = "employee-dashboard.html"; };
                 return;
             }
 
-            // Adjust navigation views for settings element dynamically
             const settingsBtn = document.getElementById('settingsNavBtn');
             if (roleClean === 'admin') {
                 settingsBtn.style.background = "#475569";
@@ -111,13 +129,11 @@
             if (!currentUserPermissions) return;
 
             const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
-            // Admins bypass restriction evaluations completely
             if (roleClean === 'admin') {
                 window.location.href = url;
                 return;
             }
 
-            // Evaluation ruleset for setting panels
             if (accessKey === 'admin_access') {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
                 document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
@@ -125,9 +141,9 @@
                 return;
             }
 
-            // Universal evaluation checker block handles true, false, "TRUE", "FALSE" completely
             const val = currentUserPermissions[accessKey];
-            const isRestricted = (val === false || String(val).toLowerCase().trim() === 'false' || !val);
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
 
             if (isRestricted) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";

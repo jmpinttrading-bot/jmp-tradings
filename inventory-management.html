@@ -194,7 +194,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3IDE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let masterTransactionsCachedData = [];
@@ -214,14 +214,35 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
-            
-            if (!profile) { window.location.href = "login.html"; return; }
-            currentUserPermissions = profile;
+            // Extract the user identifier prefix from the account email setup
+            const loginUsername = user.email ? user.email.split('@')[0] : '';
 
-            // Normalized safe case-insensitive checking for string or actual boolean variations
-            const roleClean = String(profile.role || '').toLowerCase().trim();
-            const hasInvAccess = profile.inventory_access === true || String(profile.inventory_access).toLowerCase().trim() === 'true';
+            // Query profile records via matching username parameters directly
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('username', loginUsername)
+                .maybeSingle();
+            
+            if (error || !profile) {
+                console.error("Profile fetch error:", error);
+                // Fallback route evaluation parameter mapping by ID 
+                const { data: retryProfile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
+                if (retryProfile) {
+                    currentUserPermissions = retryProfile;
+                } else {
+                    window.location.href = "login.html"; 
+                    return;
+                }
+            } else {
+                currentUserPermissions = profile;
+            }
+
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            
+            // Normalized cross-checking evaluation criteria for true states
+            const rawAccessStr = String(currentUserPermissions.inventory_access || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const hasInvAccess = currentUserPermissions.inventory_access === true || rawAccessStr === 'true';
 
             if (roleClean !== 'admin' && !hasInvAccess) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Denied";
@@ -259,9 +280,9 @@
                 return;
             }
 
-            // Universal evaluation checker block handles true, false, "TRUE", "FALSE" completely
             const val = currentUserPermissions[accessKey];
-            const isRestricted = (val === false || String(val).toLowerCase().trim() === 'false' || !val);
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
 
             if (isRestricted) {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
