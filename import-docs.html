@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Import Document Manager | JMP HQ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * { box-sizing: border-box; }
@@ -17,11 +16,11 @@
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
         .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; display: inline-block; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
         
-        /* Standardized Modal Styles - Matched exactly to inventory-management.html */
+        /* Standardized Modal Styles */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -67,7 +66,7 @@
 </head>
 <body>
 
-    <!-- Notification Modal - Aligned directly to inventory-management.html -->
+    <!-- Notification Modal -->
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Restricted</h4>
@@ -87,7 +86,7 @@
             <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
-            <a href="#" class="nav-btn" style="display: inline-block !important;" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
             <a href="#" class="nav-btn" id="settingsNavBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
@@ -190,7 +189,6 @@
         let currentUserRole = "employee"; 
         let currentUserPermissions = null;
         let activeInspectingRecordId = null;
-        let activeFilesList = []; 
         let currentLoadedWorkspaceRows = [];
 
         const monthsLabels = [
@@ -202,12 +200,10 @@
             { text: "Nov", value: "11" }, { text: "Dec", value: "12" }
         ];
 
-        // Close logic matching inventory dashboard mechanics
         function closeRestrictionModal() { 
             document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
         }
 
-        // Privilege verification checking matched directly with inventory-management.html logic
         function verifyNavigationPrivilege(accessKey, url) {
             if (!currentUserPermissions) return;
 
@@ -217,7 +213,6 @@
                 return;
             }
 
-            // Setup button fallback back to standard acknowledgment closing behavior 
             const modalBtn = document.getElementById('modalActionBtn');
             modalBtn.textContent = "Acknowledge";
             modalBtn.onclick = closeRestrictionModal;
@@ -235,7 +230,7 @@
             }
 
             let val = currentUserPermissions[accessKey];
-            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+            if (accessKey === 'employee_201_access' && !val) {
                 val = currentUserPermissions['profile_access'];
             }
 
@@ -249,29 +244,6 @@
             } else {
                 window.location.href = url;
             }
-        }
-
-        async function downloadCurrentDocumentPackage() {
-            checkAdminAccess(async () => {
-                try {
-                    for (const file of activeFilesList) {
-                        const { data, error } = await supabaseClient.storage
-                            .from(STORAGE_BUCKET_NAME)
-                            .createSignedUrl(file.path, 60);
-                        if (error) throw error;
-                        window.open(data.signedUrl, '_blank');
-                    }
-                } catch (err) {
-                    document.getElementById('restrictionModalTitle').textContent = "Download Error";
-                    document.getElementById('restrictionModalMessage').textContent = err.message;
-                    document.getElementById('accessBlockerModal').classList.add('is-visible');
-                }
-            });
-        }
-
-        function handleIframeZoomToggle(isZoomed) {
-            const iframe = document.getElementById('viewerModuleIframe');
-            iframe.style.maxWidth = isZoomed ? "100%" : "900px";
         }
 
         function generateStyledExcelBlob(records) {
@@ -366,21 +338,17 @@
                     zip.file(`${folderName}/Monthly_Report_${m.value}.xls`, excelBlob);
 
                     for (const doc of monthRecords) {
-                        const filePaths = [
-                            { path: doc.spsic_file_path, suffix: 'SPSIC' },
-                            { path: doc.arrival_notice_path, suffix: 'ArrivalNotice' },
-                            { path: doc.import_docs_path, suffix: 'ImportDocs' }
-                        ];
+                        const filePaths = [doc.spsic_file_path, doc.arrival_notice_path, doc.import_docs_path];
 
-                        for (const item of filePaths) {
-                            if (item.path) {
+                        for (const filePath of filePaths) {
+                            if (filePath) {
                                 try {
                                     const { data: fileBlob, error: downloadError } = await supabaseClient.storage
                                         .from(STORAGE_BUCKET_NAME)
-                                        .download(item.path);
+                                        .download(filePath);
 
                                     if (!downloadError && fileBlob) {
-                                        const cleanFileName = item.path.split('/').pop();
+                                        const cleanFileName = filePath.split('/').pop();
                                         zip.file(`${folderName}/SPSIC-${doc.spsic_number}/${cleanFileName}`, fileBlob);
                                     }
                                 } catch (e) {
@@ -419,7 +387,7 @@
         function checkAdminAccess(callback) {
             if (currentUserRole !== 'admin') {
                 document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
-                document.getElementById('restrictionModalMessage').textContent = "You do not possess the structural authorization parameters required to enter this workspace zone.";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
                 document.getElementById('accessBlockerModal').classList.add('is-visible');
                 return;
             }
@@ -572,14 +540,14 @@
         async function openDocCompiler(recordId) {
             activeInspectingRecordId = recordId;
             const { data: doc } = await supabaseClient.from('imported_shipment_docs').select('*').eq('id', recordId).single();
-            activeFilesList = [];
-            if(doc.spsic_file_path) activeFilesList.push({ name: "1. SPSIC Document", path: doc.spsic_file_path, uploadDate: doc.created_at });
-            if(doc.arrival_notice_path) activeFilesList.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path, uploadDate: doc.created_at });
-            if(doc.import_docs_path) activeFilesList.push({ name: "3. Import Documentation Package", path: doc.import_docs_path, uploadDate: doc.created_at });
+            const filesList = [];
+            if(doc.spsic_file_path) filesList.push({ name: "1. SPSIC Document", path: doc.spsic_file_path, uploadDate: doc.created_at });
+            if(doc.arrival_notice_path) filesList.push({ name: "2. Arrival Notice", path: doc.arrival_notice_path, uploadDate: doc.created_at });
+            if(doc.import_docs_path) filesList.push({ name: "3. Import Documentation Package", path: doc.import_docs_path, uploadDate: doc.created_at });
 
             document.getElementById('documentViewerOverlay').style.display = 'flex';
             const iframe = document.getElementById('viewerModuleIframe');
-            const initViewer = () => iframe.contentWindow.setupViewerContent(doc, activeFilesList, (currentUserRole === 'admin'), STORAGE_BUCKET_NAME, supabaseClient, approveCurrentDocument);
+            const initViewer = () => iframe.contentWindow.setupViewerContent(doc, filesList, (currentUserRole === 'admin'), STORAGE_BUCKET_NAME, supabaseClient, approveCurrentDocument);
             
             if (iframe.contentWindow.document.readyState === 'complete') initViewer();
             else iframe.onload = initViewer;
