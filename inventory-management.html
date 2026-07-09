@@ -22,15 +22,15 @@
         .nav-btn.active { background: #475569; color: white; }
 
         /* Standardized Modal Styles */
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; backdrop-filter: blur(4px); }
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .restriction-modal-card h4 { margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; font-weight: 700; }
-        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; line-height: 1.5; }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; }
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
 
         /* Content Styles */
-        .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; display: none; }
+        .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         
         .registration-box { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
@@ -73,7 +73,6 @@
         .chart-card h3 { font-size: 1.1rem; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         
         .chart-container { position: relative; width: 100%; height: 380px; max-height: 380px; }
-        .live-presence-banner { display: none; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -102,12 +101,10 @@
         </div>
     </nav>
 
-    <div class="main-content" id="mainContentWrapper">
+    <div class="main-content">
         <div class="header">
             <h1>Stock & Asset Control Matrix</h1>
         </div>
-
-        <div class="live-presence-banner" id="presenceTrackingBanner"></div>
 
         <div class="registration-box">
             <div class="registration-text-area">
@@ -164,7 +161,7 @@
                     <p>Comparison of In/Out quantities per Item Code (Active Balance Only)</p>
                 </div>
                 <div class="controls-selectors-group">
-                    <select id="storageFilterSelect" class="time-filter-select" onchange="handleStorageFilterChange()">
+                    <select id="storageFilterSelect" class="time-filter-select" onchange="updateAnalyticsTimelineCharts()">
                         <option value="vvs">🏬 VVS Cold Storage</option>
                         <option value="hightower">🏬 Hightower Storage</option>
                         <option value="eisberg">🏬 Eisberg Logistics</option>
@@ -195,16 +192,12 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24pLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let masterTransactionsCachedData = [];
         let masterChartInstance = null;
         let currentUserPermissions = null;
-        let currentUserSession = null;
-
-        // Dynamic Presence Configuration 
-        let realTimePresenceChannel = null;
 
         function setDefaultCalendarDates() {
             const today = new Date();
@@ -216,13 +209,8 @@
 
         async function initInventoryDashboard() {
             setDefaultCalendarDates();
-            
-            // Fixed Refresh Auth Race Condition: Let SDK pull the session down completely before parsing user verification parameters
-            await new Promise(resolve => setTimeout(resolve, 350));
-
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            currentUserSession = user;
             
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
@@ -253,84 +241,13 @@
                 return;
             }
 
-            document.getElementById('mainContentWrapper').style.display = 'block';
-
             const settingsBtn = document.getElementById('settingsNavBtn');
             if (roleClean === 'admin') {
                 settingsBtn.style.background = "#475569";
                 settingsBtn.style.color = "white";
             }
             
-            initializeGlobalPresenceSystem();
             fetchMasterTransactions();
-        }
-
-        // --- Real-time Global Presence Synchronization Core ---
-        function initializeGlobalPresenceSystem() {
-            realTimePresenceChannel = supabaseClient.channel('inventory_dashboard_presence', {
-                config: { presence: { key: currentUserSession.id } }
-            });
-
-            realTimePresenceChannel
-                .on('presence', { event: 'sync' }, handlePresenceStateMutation)
-                .on('presence', { event: 'join' }, handlePresenceStateMutation)
-                .on('presence', { event: 'leave' }, handlePresenceStateMutation)
-                .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        await syncPresenceContext();
-                    }
-                });
-        }
-
-        async function syncPresenceContext() {
-            if (realTimePresenceChannel && currentUserSession) {
-                const storageKey = document.getElementById('storageFilterSelect').value;
-                try {
-                    await realTimePresenceChannel.track({
-                        user_email: currentUserSession.email.toUpperCase(),
-                        active_facility_view: storageKey
-                    });
-                } catch(presenceErr) {
-                    console.error("Presence status payload failed to post:", presenceErr);
-                }
-            }
-        }
-
-        function handlePresenceStateMutation() {
-            // Defensively exit early if the session logic hasn't fully parsed or channel is closing down
-            if (!currentUserSession || !currentUserSession.id || !realTimePresenceChannel) return;
-
-            const state = realTimePresenceChannel.presenceState();
-            if (!state) return;
-
-            const currentFilter = document.getElementById('storageFilterSelect').value;
-            const banner = document.getElementById('presenceTrackingBanner');
-            
-            let coworkersMonitoring = [];
-            Object.keys(state).forEach(id => {
-                if (id !== currentUserSession.id) {
-                    const sessions = state[id];
-                    if (sessions && sessions.length > 0) {
-                        const presenceData = sessions[0];
-                        if (presenceData && presenceData.active_facility_view === currentFilter) {
-                            coworkersMonitoring.push(presenceData.user_email);
-                        }
-                    }
-                }
-            });
-
-            if (coworkersMonitoring.length > 0) {
-                banner.innerHTML = `👁️ <strong>Simultaneous Viewport Activity:</strong> <strong>${coworkersMonitoring.join(', ')}</strong> is also balancing analytics parameters for this facility live.`;
-                banner.style.display = "block";
-            } else {
-                banner.style.display = "none";
-            }
-        }
-
-        async function handleStorageFilterChange() {
-            updateAnalyticsTimelineCharts();
-            await syncPresenceContext();
-            handlePresenceStateMutation();
         }
 
         function verifyNavigationPrivilege(accessKey, url) {
@@ -349,11 +266,13 @@
                 return;
             }
 
+            // Universal clearance logic for the Audit Report workspace pipeline
             if (accessKey === 'audit_access') {
                 window.location.href = url;
                 return;
             }
 
+            // Fallback cross-check mapping adjustment for Profile permissions validation
             let val = currentUserPermissions[accessKey];
             if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
                 val = currentUserPermissions['profile_access'];
@@ -457,15 +376,7 @@
             });
         }
 
-        async function handleLogout() { 
-            if (realTimePresenceChannel) {
-                await realTimePresenceChannel.unsubscribe();
-                realTimePresenceChannel = null;
-            }
-            currentUserSession = null;
-            await supabaseClient.auth.signOut(); 
-            window.location.href = "login.html"; 
-        }
+        async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
 
         initInventoryDashboard();
     </script>
