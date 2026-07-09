@@ -282,9 +282,8 @@
                 });
         }
 
-        // Fixed Tracker Validation: Removed channel.state constraint blocking execution on initial broadcast subscription
         async function syncPresenceContext() {
-            if (realTimePresenceChannel) {
+            if (realTimePresenceChannel && currentUserSession) {
                 const storageKey = document.getElementById('storageFilterSelect').value;
                 try {
                     await realTimePresenceChannel.track({
@@ -298,7 +297,12 @@
         }
 
         function handlePresenceStateMutation() {
+            // Defensively exit early if the session logic hasn't fully parsed or channel is closing down
+            if (!currentUserSession || !currentUserSession.id || !realTimePresenceChannel) return;
+
             const state = realTimePresenceChannel.presenceState();
+            if (!state) return;
+
             const currentFilter = document.getElementById('storageFilterSelect').value;
             const banner = document.getElementById('presenceTrackingBanner');
             
@@ -308,7 +312,7 @@
                     const sessions = state[id];
                     if (sessions && sessions.length > 0) {
                         const presenceData = sessions[0];
-                        if (presenceData.active_facility_view === currentFilter) {
+                        if (presenceData && presenceData.active_facility_view === currentFilter) {
                             coworkersMonitoring.push(presenceData.user_email);
                         }
                     }
@@ -456,7 +460,9 @@
         async function handleLogout() { 
             if (realTimePresenceChannel) {
                 await realTimePresenceChannel.unsubscribe();
+                realTimePresenceChannel = null;
             }
+            currentUserSession = null;
             await supabaseClient.auth.signOut(); 
             window.location.href = "login.html"; 
         }
