@@ -25,7 +25,8 @@
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; }
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
 
         /* Content Styles */
@@ -61,7 +62,7 @@
         .logistics-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
         
         .facility-identity-header { display: flex; align-items: center; gap: 15px; width: 100%; min-height: 65px; }
-        .facility-logo-container { width: 65px; height: 65px; display: flex; align-items: center; justify-content: center; overflow: hidden; shrink: 0; }
+        .facility-logo-container { width: 65px; height: 65px; display: flex; align-items: center; shrink: 0; justify-content: center; overflow: hidden; }
         .facility-logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 4px; }
 
         .logistics-card h4 { font-size: 0.95rem; color: #0f172a; line-height: 1.3; font-weight: 600; flex: 1; margin: 0; }
@@ -80,8 +81,8 @@
 
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
-            <h4>Access Restricted</h4>
-            <p>Administrative privileges are required to access the System Settings.</p>
+            <h4 id="restrictionModalTitle">Access Restricted</h4>
+            <p id="restrictionModalMessage">You do not possess the structural authorization parameters required to enter this workspace zone.</p>
             <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
@@ -92,13 +93,13 @@
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn active">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('Settings', 'admin-dashboard.html')">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsNavBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -112,7 +113,7 @@
                 <h3>Global Product Registry Catalog</h3>
                 <p>View, track, and configure master structural cargo entries by item code.</p>
             </div>
-            <a href="product-registry.html" class="register-trigger-btn"><span>📦</span> Our Product Item</a>
+            <a href="#" onclick="verifyNavigationPrivilege('product_registry_access', 'product-registry.html')" class="register-trigger-btn"><span>📦</span> Our Product Item</a>
         </div>
 
         <div class="registration-box" style="margin-bottom: 25px;">
@@ -120,7 +121,7 @@
                 <h3>Global Product Pricing Matrix</h3>
                 <p>Configure, update, and manage baseline valuations and financial tiers per product unit.</p>
             </div>
-            <a href="item-price.html" class="price-trigger-btn"><span>💰</span> Item Price Matrix</a>
+            <a href="#" onclick="verifyNavigationPrivilege('item_price_access', 'item-price.html')" class="price-trigger-btn"><span>💰</span> Item Price Matrix</a>
         </div>
 
         <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
@@ -130,28 +131,28 @@
                     <div class="facility-logo-container"><img src="1000017477.png" alt="VVS Logo"></div>
                     <h4>VVS Cold Storage & Processing Plant Corp.</h4>
                 </div>
-                <a href="vvs-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
+                <a href="#" onclick="verifyNavigationPrivilege('inventory_access', 'vvs-logistics.html')" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             <div class="logistics-card">
                 <div class="facility-identity-header">
                     <div class="facility-logo-container"><img src="1000017474.png" alt="Hightower Logo"></div>
                     <h4>Hightower Storage & Trading Centre, Inc.</h4>
                 </div>
-                <a href="hightower-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
+                <a href="#" onclick="verifyNavigationPrivilege('inventory_access', 'hightower-logistics.html')" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             <div class="logistics-card">
                 <div class="facility-identity-header">
                     <div class="facility-logo-container"><img src="1000017475.png" alt="Eisberg Logo"></div>
                     <h4>Eisberg Cold Logistics Inc.</h4>
                 </div>
-                <a href="eisberg-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
+                <a href="#" onclick="verifyNavigationPrivilege('inventory_access', 'eisberg-logistics.html')" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
             <div class="logistics-card">
                 <div class="facility-identity-header">
                     <div class="facility-logo-container"><img src="1000017476.png" alt="Crystal Logo"></div>
                     <h4>Crystal Cold Storage, Inc.</h4>
                 </div>
-                <a href="crystal-logistics.html" class="logistics-route-btn">Open Transactions ➜</a>
+                <a href="#" onclick="verifyNavigationPrivilege('inventory_access', 'crystal-logistics.html')" class="logistics-route-btn">Open Transactions ➜</a>
             </div>
         </div>
 
@@ -198,7 +199,7 @@
         
         let masterTransactionsCachedData = [];
         let masterChartInstance = null;
-        let settingsAccess = false;
+        let currentUserPermissions = null;
 
         function setDefaultCalendarDates() {
             const today = new Date();
@@ -213,14 +214,56 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            const { data: profile } = await supabaseClient.from('profiles').select('role').eq('id', user.id).maybeSingle();
-            settingsAccess = (profile?.role === 'Admin');
+            // Query entire permission parameters configured in Control Panel
+            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            
+            if (!profile) { window.location.href = "login.html"; return; }
+            currentUserPermissions = profile;
+
+            // Strict core verification check for the inventory access workspace
+            if (profile.role !== 'Admin' && profile.inventory_access === false) {
+                document.getElementById('restrictionModalTitle').textContent = "Access Denied";
+                document.getElementById('restrictionModalMessage').textContent = "Your profile matrix does not allow access to Inventory Management modules.";
+                const modal = document.getElementById('accessBlockerModal');
+                modal.classList.add('is-visible');
+                // Remove acknowledge action and force exit routing direction
+                const btn = modal.querySelector('.modal-btn');
+                btn.textContent = "Exit Module";
+                btn.onclick = () => { window.location.href = "employee-dashboard.html"; };
+                return;
+            }
+
+            // Adjust navigation views for the current setup settings interface dynamically
+            const settingsBtn = document.getElementById('settingsNavBtn');
+            if (profile.role === 'Admin') {
+                settingsBtn.style.background = "#475569";
+                settingsBtn.style.color = "white";
+            }
             
             fetchMasterTransactions();
         }
 
-        function verifyNavigationPrivilege(moduleName, url) {
-            if (moduleName === 'Settings' && !settingsAccess) {
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+
+            // Admins pass all checks unconditionally
+            if (currentUserPermissions.role === 'Admin') {
+                window.location.href = url;
+                return;
+            }
+
+            // Custom evaluation check for setting configuration panels
+            if (accessKey === 'admin_access') {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+                return;
+            }
+
+            // Regular operational evaluation mapping check
+            if (currentUserPermissions[accessKey] === false) {
+                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
+                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
                 document.getElementById('accessBlockerModal').classList.add('is-visible');
             } else {
                 window.location.href = url;
@@ -304,7 +347,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    resizeDelay: 100, /* Prevents canvas sizing recalculation glitches */
+                    resizeDelay: 100, 
                     plugins: {
                         datalabels: { anchor: 'end', align: 'top', color: '#1e293b', font: { weight: 'bold' } }
                     },
