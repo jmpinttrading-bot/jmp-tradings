@@ -343,6 +343,9 @@
         }
 
         async function initModule() {
+            // Fix 1: Add a delay helper to let local cookies/storage rebuild on refresh
+            await new Promise(resolve => setTimeout(resolve, 350));
+
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             currentUserSession = user;
@@ -402,20 +405,22 @@
                 })
                 .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
-                        await realTimePresenceChannel.track({
-                            user_email: currentUserSession.email.toUpperCase(),
-                            active_spsic: activeTrackingSpsic
-                        });
+                        await syncPresenceContext();
                     }
                 });
         }
 
+        // Fix 2: Removed raw channel state constraint blocking tracking on active subscription callback
         async function syncPresenceContext() {
-            if (realTimePresenceChannel && realTimePresenceChannel.state === 'joined') {
-                await realTimePresenceChannel.track({
-                    user_email: currentUserSession.email.toUpperCase(),
-                    active_spsic: activeTrackingSpsic
-                });
+            if (realTimePresenceChannel) {
+                try {
+                    await realTimePresenceChannel.track({
+                        user_email: currentUserSession.email.toUpperCase(),
+                        active_spsic: activeTrackingSpsic
+                    });
+                } catch(presenceTrackError) {
+                    console.error("Presence status payload failed to post:", presenceTrackError);
+                }
             }
         }
 
