@@ -73,9 +73,6 @@
         .chart-card h3 { font-size: 1.1rem; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         
         .chart-container { position: relative; width: 100%; height: 380px; max-height: 380px; }
-
-        /* Real-time Global Presence Alert Element Banner Layout Component */
-        .live-presence-banner { display: none; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -108,9 +105,6 @@
         <div class="header">
             <h1>Stock & Asset Control Matrix</h1>
         </div>
-
-        <!-- Real-time Global Presence Synchronized Content Target Notification Panel Container Slot -->
-        <div class="live-presence-banner" id="presenceTrackingBanner"></div>
 
         <div class="registration-box">
             <div class="registration-text-area">
@@ -167,7 +161,7 @@
                     <p>Comparison of In/Out quantities per Item Code (Active Balance Only)</p>
                 </div>
                 <div class="controls-selectors-group">
-                    <select id="storageFilterSelect" class="time-filter-select" onchange="handleStorageFilterChange()">
+                    <select id="storageFilterSelect" class="time-filter-select" onchange="updateAnalyticsTimelineCharts()">
                         <option value="vvs">🏬 VVS Cold Storage</option>
                         <option value="hightower">🏬 Hightower Storage</option>
                         <option value="eisberg">🏬 Eisberg Logistics</option>
@@ -198,16 +192,12 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24pLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let masterTransactionsCachedData = [];
         let masterChartInstance = null;
         let currentUserPermissions = null;
-        
-        // Infrastructure Global Channel Registry Variables
-        let currentUserSession = null;
-        let realTimePresenceChannel = null;
 
         function setDefaultCalendarDates() {
             const today = new Date();
@@ -221,9 +211,6 @@
             setDefaultCalendarDates();
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            
-            // Set session variable context for synchronization layers
-            currentUserSession = user;
             
             const { data: profile, error } = await supabaseClient
                 .from('profiles')
@@ -260,78 +247,7 @@
                 settingsBtn.style.color = "white";
             }
             
-            // Start real-time presence sync engine once profile passes clearance
-            initializeGlobalPresenceSystem();
             fetchMasterTransactions();
-        }
-
-        // --- Real-time Global Presence Infrastructure System Engine Functions ---
-        function initializeGlobalPresenceSystem() {
-            if (!currentUserSession) return;
-
-            realTimePresenceChannel = supabaseClient.channel('inventory_dashboard_presence', {
-                config: { presence: { key: currentUserSession.id } }
-            });
-
-            realTimePresenceChannel
-                .on('presence', { event: 'sync' }, handlePresenceStateMutation)
-                .on('presence', { event: 'join' }, handlePresenceStateMutation)
-                .on('presence', { event: 'leave' }, handlePresenceStateMutation)
-                .subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        await syncPresenceContext();
-                    }
-                });
-        }
-
-        async function syncPresenceContext() {
-            if (realTimePresenceChannel && currentUserSession) {
-                const storageKey = document.getElementById('storageFilterSelect').value;
-                try {
-                    await realTimePresenceChannel.track({
-                        user_email: currentUserSession.email.toUpperCase(),
-                        active_facility_view: storageKey
-                    });
-                } catch(presenceErr) {
-                    console.error("Presence context sync tracking broadcast failure:", presenceErr);
-                }
-            }
-        }
-
-        function handlePresenceStateMutation() {
-            if (!currentUserSession || !realTimePresenceChannel) return;
-
-            const state = realTimePresenceChannel.presenceState();
-            if (!state) return;
-
-            const currentFilter = document.getElementById('storageFilterSelect').value;
-            const banner = document.getElementById('presenceTrackingBanner');
-            
-            let coworkersMonitoring = [];
-            Object.keys(state).forEach(id => {
-                if (id !== currentUserSession.id) {
-                    const sessions = state[id];
-                    if (sessions && sessions.length > 0) {
-                        const presenceData = sessions[0];
-                        if (presenceData && presenceData.active_facility_view === currentFilter) {
-                            coworkersMonitoring.push(presenceData.user_email);
-                        }
-                    }
-                }
-            });
-
-            if (coworkersMonitoring.length > 0) {
-                banner.innerHTML = `👁️ <strong>Simultaneous Viewport Activity:</strong> <strong>${coworkersMonitoring.join(', ')}</strong> is also balancing analytics parameters for this facility live.`;
-                banner.style.display = "block";
-            } else {
-                banner.style.display = "none";
-            }
-        }
-
-        async function handleStorageFilterChange() {
-            updateAnalyticsTimelineCharts();
-            await syncPresenceContext();
-            handlePresenceStateMutation();
         }
 
         function verifyNavigationPrivilege(accessKey, url) {
@@ -460,13 +376,7 @@
             });
         }
 
-        async function handleLogout() { 
-            if (realTimePresenceChannel) {
-                await realTimePresenceChannel.unsubscribe();
-            }
-            await supabaseClient.auth.signOut(); 
-            window.location.href = "login.html"; 
-        }
+        async function handleLogout() { await supabaseClient.auth.signOut(); window.location.href = "login.html"; }
 
         initInventoryDashboard();
     </script>
