@@ -122,10 +122,14 @@
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
+        /* Standardized Notification Modal Styles from inventory-management.html */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; font-family: 'Inter', sans-serif; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
+        .restriction-modal-card h4 { font-size: 1.25rem; color: #1e293b; margin-bottom: 10px; font-weight: 700; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; width: 100%; max-width: 150px; transition: background 0.2s; }
+        .modal-btn:hover { background: #153a66; }
 
         @media (max-width: 768px) {
             .form-row { flex-direction: column; gap: 0; }
@@ -145,23 +149,24 @@
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn">Imports</a>
+            <a href="dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'Dashboard')">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'My Profile')">My Profile</a>
+            <a href="import-docs.html" class="nav-btn" onclick="checkModuleAccess(event, 'Imports')">Imports</a>
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn">Sales</a>
-            <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkAccess(event)">Settings</a>
+            <a href="sales-invoice.html" class="nav-btn" onclick="checkModuleAccess(event, 'Sales')">Sales</a>
+            <a href="audit-report.html" class="nav-btn" onclick="checkModuleAccess(event, 'Audit Report')">Audit Report</a>
+            <a href="admin-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'Settings')">Settings</a>
         </div>
     </nav>
 
-    <dialog id="alertModal">
-        <h3 id="alertModalTitle">Notification</h3>
-        <p id="alertModalBody" style="margin-bottom: 20px; color: #475569;"></p>
-        <div class="modal-actions">
-            <button class="btn-primary" onclick="document.getElementById('alertModal').close()" style="padding: 8px 16px; font-size: 0.9rem;">Close</button>
+    <!-- Standardized Alert Modal Frame -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="alertTitle">Notification</h4>
+            <p id="alertMessage">Execution status telemetry readout frame.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
-    </dialog>
+    </div>
 
     <dialog id="cancelModal">
         <h3>Confirm Cancellation</h3>
@@ -193,7 +198,7 @@
     <div class="main-content">
         <div class="header">
             <h1>Outbound Inventory Management</h1>
-            <div class="admin-badge" id="adminEmail"></div>
+            <div id="adminEmail" class="employee-badge" style="display: block;">Connecting...</div>
         </div>
 
         <a href="inventory-management.html" class="back-link">⬅️ Back to Inventory Dashboard</a>
@@ -325,14 +330,6 @@
         </div>
     </div>
 
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage">Execution status telemetry readout frame.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -342,6 +339,7 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let currentUserRole = "employee"; 
+        let userPermissions = {}; // Dynamic cache container for module privileges matching control-panel.html
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
@@ -352,11 +350,12 @@
         
         let permissions = { isAdmin: false, hasMasterAccess: false };
 
-        function checkAccess(event) {
-            if (currentUserRole !== 'admin') {
-                event.preventDefault();
-                showSystemModal({ title: 'Access Restricted', message: 'Administrative privileges are required to access the System Settings.' });
-            }
+        // Unified layout modal messenger
+        function showAlert(msg, type) {
+            showSystemModal({
+                title: type === 'error' ? 'System Error' : 'Success',
+                message: msg
+            });
         }
 
         function showSystemModal(options = {}) {
@@ -367,6 +366,32 @@
 
         function closeRestrictionModal() {
             document.getElementById('accessBlockerModal').classList.remove('is-visible');
+        }
+
+        // Module Authorization Crosscheck Logic matching your Control Panel layout
+        function checkModuleAccess(event, moduleName) {
+            if (currentUserRole === 'admin') return; // Master authorization bypass
+
+            let permitted = true;
+            if (moduleName === 'Settings' || moduleName === 'Audit Report') {
+                permitted = false; 
+            } else if (moduleName === 'Imports' && userPermissions.import_access === false) {
+                permitted = false;
+            } else if (moduleName === 'Sales' && userPermissions.sales_access === false) {
+                permitted = false;
+            } else if (moduleName === 'Dashboard' && userPermissions.dashboard_access === false) {
+                permitted = false;
+            } else if (moduleName === 'My Profile' && userPermissions.profile_access === false) {
+                permitted = false;
+            }
+
+            if (!permitted) {
+                event.preventDefault();
+                showSystemModal({ 
+                    title: 'Access Restricted', 
+                    message: `Your account profile does not possess authorization privileges to open the ${moduleName} module.` 
+                });
+            }
         }
 
         function generateSalesOrderNumber(isTransfer = false, direction = "", targetFacility = "") {
@@ -388,16 +413,6 @@
             const minute = String(now.getMinutes()).padStart(2, '0');
             const second = String(now.getSeconds()).padStart(2, '0');
             return `SO#${sourceFirstWord.charAt(0)}${year}${month}${day}-${hour}${minute}${second}`;
-        }
-
-        function showAlert(msg, type) {
-            const modal = document.getElementById('alertModal');
-            const title = document.getElementById('alertModalTitle');
-            const body = document.getElementById('alertModalBody');
-            title.textContent = type === 'error' ? 'System Error' : 'Success';
-            body.textContent = msg;
-            modal.style.borderColor = type === 'error' ? '#d9534f' : '#d1fae5';
-            modal.showModal();
         }
 
         async function executeActualTransfer() {
@@ -560,26 +575,32 @@
             
             const { data: profile } = await supabaseClient
                 .from('profiles')
-                .select('role, username, inventory_access')
+                .select('*')
                 .eq('id', user.id)
                 .single();
             
             if (profile) {
-                currentUserRole = profile.role.toLowerCase().trim();
+                currentUserRole = (profile.role || 'employee').toLowerCase().trim();
+                userPermissions = profile; // Save reference values
             }
 
-            if (profile && profile.role === 'Admin') {
+            if (currentUserRole === 'admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
-                document.getElementById('adminEmail').className = "admin-badge";
-                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
+                const badge = document.getElementById('adminEmail');
+                badge.className = "admin-badge";
+                badge.style.display = "block";
+                badge.textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
+                // Confirm tracking node access logic
                 const masterAccess = profile ? profile.inventory_access !== false : true;
                 if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                document.getElementById('adminEmail').className = "employee-badge";
-                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
+                const badge = document.getElementById('adminEmail');
+                badge.className = "employee-badge";
+                badge.style.display = "block";
+                badge.textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
             }
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
