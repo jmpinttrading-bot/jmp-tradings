@@ -48,6 +48,11 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         th { background: #f1f5f9; text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: bold; }
         td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        
+        /* Action Utility Layout */
+        .inline-edit-btn { background-color: #2563eb; color: white; border: none; padding: 5px 10px; font-size: 0.75rem; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
+        .inline-edit-btn:hover { background-color: #1d4ed8; }
+
         .pagination-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 10px; }
         .page-btn { background: #334155; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
         .page-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
@@ -86,7 +91,7 @@
                 <h1>Supplier Matrix Registry</h1>
                 <p>Register new profiles and monitor structured ledger files</p>
             </div>
-            <a href="import-docs.html" class="back-link">← Return to Import Docs</a>
+            <a href="upload-engine.html" class="back-link">← Return to Upload Engine</a>
         </div>
 
         <div class="panel-card">
@@ -108,10 +113,11 @@
                         <tr>
                             <th style="width: 80px;">ID</th>
                             <th>Supplier Name</th>
+                            <th style="width: 100px; text-align: center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="supplierTableBody">
-                        <tr><td colspan="2" style="text-align:center; color:#94a3b8; padding:20px;">Fetching directory entries...</td></tr>
+                        <tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:20px;">Fetching directory entries...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -150,7 +156,6 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             
-            // Re-use access security logic from codebase
             try {
                 const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
                 if (!profile || (profile.role !== 'admin' && profile.import_access !== true && String(profile.import_access).toLowerCase() !== 'true')) {
@@ -170,7 +175,7 @@
             const { data, error } = await supabaseClient
                 .from('supplier')
                 .select('*')
-                .order('supplier_name', { ascending: true }); // Sorted A-Z directly
+                .order('supplier_name', { ascending: true });
 
             if (error) {
                 showRestrictionModal("Fetch Error", error.message);
@@ -183,7 +188,7 @@
         function renderTable() {
             const tbody = document.getElementById('supplierTableBody');
             if (supplierList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#94a3b8; padding:20px;">No registered suppliers found.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:20px;">No registered suppliers found.</td></tr>';
                 updatePaginationControls(1);
                 return;
             }
@@ -199,6 +204,9 @@
                 <tr>
                     <td style="color:#64748b; font-weight:600;">${startIndex + index + 1}</td>
                     <td style="font-weight:600; text-transform: uppercase;">${item.supplier_name}</td>
+                    <td style="text-align: center;">
+                        <button class="inline-edit-btn" onclick="initiateSupplierCorrection(${item.id}, '${item.supplier_name.replace(/'/g, "\\'")}')">Edit</button>
+                    </td>
                 </tr>
             `).join('');
 
@@ -239,6 +247,35 @@
                     closeRestrictionModal();
                     await fetchSuppliers();
                 });
+            }
+        }
+
+        async function initiateSupplierCorrection(targetId, currentName) {
+            const dynamicCorrectionPrompt = prompt("Modify Supplier Corporate Identity String:", currentName);
+            if (dynamicCorrectionPrompt === null) return; 
+            
+            const processedCorrectionName = dynamicCorrectionPrompt.trim().toUpperCase();
+            if (!processedCorrectionName) {
+                showRestrictionModal("Input Incomplete", "Supplier identity validation data strings cannot remain empty.");
+                return;
+            }
+
+            if (processedCorrectionName === currentName.toUpperCase()) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('supplier')
+                    .update({ supplier_name: processedCorrectionName })
+                    .eq('id', targetId);
+
+                if (error) throw error;
+
+                showRestrictionModal("Identity Synced", "Supplier name designation updated across the ledger index matrix.", "OK", async () => {
+                    closeRestrictionModal();
+                    await fetchSuppliers();
+                });
+            } catch (mutationError) {
+                showRestrictionModal("Mutation Failure", mutationError.message);
             }
         }
 
