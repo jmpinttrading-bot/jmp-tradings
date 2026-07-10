@@ -467,7 +467,12 @@
             const newPrice = parseFloat(document.getElementById('selectedItemPriceValue').value);
             const timestampISO = new Date().toISOString();
 
-            const { error } = await supabaseClient
+            // Find the item details from the local global array to extract its item_code
+            const targetItem = globallyFetchedItems.find(item => String(item.id) === String(id));
+            const itemCode = targetItem ? targetItem.item_code : null;
+
+            // 1. Update the inventory table
+            const { error: inventoryError } = await supabaseClient
                 .from('inventory')
                 .update({ 
                     unit_price: newPrice,
@@ -477,16 +482,31 @@
                 })
                 .eq('id', id);
 
-            if (error) {
-                showSystemModal("Database Error", error.message);
-            } else {
-                showSystemModal("Action Successful", "Product Unit Price record schema variables updated successfully.");
-                closeEditRemarksModal();
-                
-                const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
-                const hasAccess = roleClean === 'admin' || (currentUserPermissions.item_price_access !== false && currentUserPermissions.inventory_access !== false);
-                fetchLedgerDataset(hasAccess);
+            if (inventoryError) {
+                showSystemModal("Database Error", inventoryError.message);
+                return;
             }
+
+            // 2. Cascade update the transactions table where item_code matches
+            if (itemCode) {
+                const { error: transactionError } = await supabaseClient
+                    .from('transactions')
+                    .update({ unit_price: newPrice })
+                    .eq('item_code', itemCode);
+
+                if (transactionError) {
+                    showSystemModal("Database Error (Transactions Cascade)", transactionError.message);
+                    return;
+                }
+            }
+
+            // UI Refresh and Success Banner
+            showSystemModal("Action Successful", "Product Unit Price record fields and transactions updated successfully.");
+            closeEditRemarksModal();
+            
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions.item_price_access !== false && currentUserPermissions.inventory_access !== false);
+            fetchLedgerDataset(hasAccess);
         }
 
         function filterLedgerByDescription() {
