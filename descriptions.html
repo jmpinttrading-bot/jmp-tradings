@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Item Descriptions Profile Management - JMP System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
+        
+        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .logout-btn:hover { background-color: #dc2626; }
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; transition: all 0.2s; }
+        .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn.active { background: #475569; color: white; }
+
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out; }
+        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
+        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; font-weight: bold; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
+        .modal-btn:hover { background: #11355e; }
+
+        .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+
+        .back-link { display: inline-flex; align-items: center; gap: 8px; background-color: #ffffff; color: #475569; text-decoration: none; font-weight: 700; font-size: 0.9rem; margin-bottom: 25px; padding: 10px 18px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: all 0.2s ease-in-out; }
+        .back-link:hover { background-color: #f8fafc; color: #ee964b; border-color: #ee964b; transform: translateX(-2px); }
+
+        .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
+        .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
+        .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0b2545; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
+        
+        .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
+        .form-group { margin-bottom: 16px; display: flex; flex-direction: column; flex: 1; }
+        .form-group label { margin-bottom: 4px; font-weight: 700; font-size: 0.8rem; color: #475569; text-transform: uppercase; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; background: white; height: 42px; }
+        .form-group input:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        
+        /* Forces character view constraint visualization to Uppercase */
+        #itemDescription { text-transform: uppercase; }
+
+        .btn-primary { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; width: 100%; height: 44px; }
+        .btn-primary:hover { background: #11355e; }
+        
+        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; margin-top: 20px; }
+        .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; }
+        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        
+        @media (max-width: 768px) { .form-row { flex-direction: column; gap: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">System Status</h4>
+            <p id="restrictionModalMessage">Connecting infrastructure pipelines...</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="top-row">
+            <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
+        <div class="nav-links">
+            <a href="product-registry.html" class="nav-btn">🔙 Product Registry</a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>Master Description Setup Profile</h1>
+        </div>
+
+        <a href="product-registry.html" class="back-link">⬅️ Back to Registry Dashboard</a>
+
+        <div class="workspace-grid">
+            <div class="card-panel">
+                <h3>Create New Identification Sequence</h3>
+                <form id="descriptionForm" onsubmit="handleFormSubmit(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="itemDescription">Item Description (Locked Uppercase)</label>
+                            <input type="text" id="itemDescription" required placeholder="E.G. FROZEN SQUID WHOLE ROUND" oninput="this.value = this.value.toUpperCase()">
+                        </div>
+                        <div class="form-group">
+                            <label for="itemSizes">Sizes</label>
+                            <input type="text" id="itemSizes" required placeholder="e.g., 21/25, 16/20, Medium">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Create item</button>
+                </form>
+            </div>
+
+            <div class="card-panel">
+                <h3>Registered System Records</h3>
+                <div class="table-responsive">
+                    <table class="master-table">
+                        <thead>
+                            <tr>
+                                <th>Item Description</th>
+                                <th>Sizes</th>
+                                <th>Timestamp Added</th>
+                            </tr>
+                        </thead>
+                        <tbody id="descriptionTableBody">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: #94a3b8;">Loading descriptions context database...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentAdminId = null;
+
+        function showSystemModal(title, message) {
+            document.getElementById('restrictionModalTitle').textContent = title;
+            document.getElementById('restrictionModalMessage').textContent = message;
+            document.getElementById('accessBlockerModal').classList.add('is-visible');
+        }
+
+        function closeRestrictionModal() { 
+            document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
+        }
+
+        async function checkSession() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            currentAdminId = user.id;
+            fetchDescriptions();
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const item_description = document.getElementById('itemDescription').value.trim().toUpperCase();
+            const sizes = document.getElementById('itemSizes').value.trim();
+
+            const { error } = await supabaseClient
+                .from('Descriptions')
+                .insert([{ item_description, sizes }]);
+
+            if (error) {
+                showSystemModal("Error saving parameters", error.message);
+                return;
+            }
+
+            showSystemModal("Success", "New item definition appended cleanly into storage parameters registry.");
+            document.getElementById('descriptionForm').reset();
+            fetchDescriptions();
+        }
+
+        async function fetchDescriptions() {
+            const { data, error } = await supabaseClient
+                .from('Descriptions')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            const tbody = document.getElementById('descriptionTableBody');
+            if (error) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#ef4444;">Sync Error: ${error.message}</td></tr>`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#94a3b8;">No descriptions found in system table.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td style="font-weight:600; text-transform: uppercase;">${item.item_description}</td>
+                    <td>${item.sizes}</td>
+                    <td style="font-size:0.8rem; color:#64748b;">${new Date(item.created_at).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        async function handleLogout() {
+            await supabaseClient.auth.signOut();
+            window.location.href = "login.html";
+        }
+
+        checkSession();
+    </script>
+</body>
+</html>
