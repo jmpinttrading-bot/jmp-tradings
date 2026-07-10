@@ -28,6 +28,13 @@
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; transition: background 0.15s; }
         .modal-btn:hover { opacity: 0.9; }
 
+        /* Professional Structured Edit Modal */
+        .edit-modal-card { text-align: left; max-width: 480px; width: 95%; }
+        .edit-modal-actions { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; }
+        .edit-cancel-btn { background: #cbd5e1; color: #334155; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .edit-save-btn { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .edit-save-btn:hover { background-color: #1d4ed8; }
+
         /* Workspace Layouts */
         .main-content { padding: 40px; max-width: 800px; margin: 0 auto; display: none; } 
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
@@ -62,11 +69,28 @@
 </head>
 <body>
 
+    <!-- Notification System Modal -->
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Restricted</h4>
             <p id="restrictionModalMessage">Authorization criteria validation required.</p>
             <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
+    <!-- Professional Pop-Up Edit Module Modal -->
+    <div class="restriction-modal-container" id="editSupplierModal">
+        <div class="restriction-modal-card edit-modal-card">
+            <h4 style="margin-bottom: 20px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px;">Update Supplier Entry</h4>
+            <input type="hidden" id="editTargetId">
+            <div class="form-group">
+                <label for="editSupplierName">Supplier Name</label>
+                <input type="text" id="editSupplierName" class="uppercase-input" oninput="this.value = this.value.toUpperCase()">
+            </div>
+            <div class="edit-modal-actions">
+                <button class="edit-cancel-btn" onclick="closeEditModal()">Cancel</button>
+                <button class="edit-save-btn" id="saveEditBtn" onclick="saveSupplierCorrection()">Save Changes</button>
+            </div>
         </div>
     </div>
 
@@ -152,6 +176,16 @@
 
         function closeRestrictionModal() { 
             document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
+        }
+
+        function openEditModal(id, currentName) {
+            document.getElementById('editTargetId').value = id;
+            document.getElementById('editSupplierName').value = currentName;
+            document.getElementById('editSupplierModal').classList.add('is-visible');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editSupplierModal').classList.remove('is-visible');
         }
 
         // Shared Navigation Verification logic matching upload-engine.html
@@ -249,7 +283,7 @@
                     <td style="color:#64748b; font-weight:600;">${startIndex + index + 1}</td>
                     <td style="font-weight:600; text-transform: uppercase;">${item.supplier_name}</td>
                     <td style="text-align: center;">
-                        <button class="inline-edit-btn" onclick="initiateSupplierCorrection(${item.id}, '${item.supplier_name.replace(/'/g, "\\'")}')">Edit</button>
+                        <button class="inline-edit-btn" onclick="openEditModal(${item.id}, '${item.supplier_name.replace(/'/g, "\\'")}')">Edit</button>
                     </td>
                 </tr>
             `).join('');
@@ -294,17 +328,17 @@
             }
         }
 
-        async function initiateSupplierCorrection(targetId, currentName) {
-            const dynamicCorrectionPrompt = prompt("Modify Supplier Corporate Identity String:", currentName);
-            if (dynamicCorrectionPrompt === null) return; 
-            
-            const processedCorrectionName = dynamicCorrectionPrompt.trim().toUpperCase();
+        async function saveSupplierCorrection() {
+            const targetId = document.getElementById('editTargetId').value;
+            const processedCorrectionName = document.getElementById('editSupplierName').value.trim().toUpperCase();
+            const saveBtn = document.getElementById('saveEditBtn');
+
             if (!processedCorrectionName) {
                 showRestrictionModal("Input Incomplete", "Supplier identity validation data strings cannot remain empty.");
                 return;
             }
 
-            if (processedCorrectionName === currentName.toUpperCase()) return;
+            saveBtn.disabled = true;
 
             try {
                 const { error } = await supabaseClient
@@ -314,12 +348,15 @@
 
                 if (error) throw error;
 
+                closeEditModal();
                 showRestrictionModal("Identity Synced", "Supplier name designation updated across the ledger index matrix.", "OK", async () => {
                     closeRestrictionModal();
                     await fetchSuppliers();
                 });
             } catch (mutationError) {
                 showRestrictionModal("Mutation Failure", mutationError.message);
+            } finally {
+                saveBtn.disabled = false;
             }
         }
 
