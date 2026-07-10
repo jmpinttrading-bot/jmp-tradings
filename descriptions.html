@@ -29,6 +29,13 @@
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
         .modal-btn:hover { opacity: 0.9; }
 
+        /* Custom Structured Edit Modal */
+        .edit-modal-card { text-align: left; max-width: 480px; width: 95%; }
+        .edit-modal-actions { display: flex; gap: 12px; margin-top: 20px; justify-content: flex-end; }
+        .edit-cancel-btn { background: #cbd5e1; color: #334155; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .edit-save-btn { background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .edit-save-btn:hover { background-color: #1d4ed8; }
+
         /* Workspace Layouts */
         .main-content { padding: 40px; max-width: 800px; margin: 0 auto; display: none; }
         .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
@@ -69,11 +76,32 @@
 </head>
 <body>
 
+    <!-- Notification System Modal -->
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Restricted</h4>
             <p id="restrictionModalMessage">Authorization criteria validation required.</p>
             <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
+    <!-- Professional Pop-Up Edit Module Modal -->
+    <div class="restriction-modal-container" id="editItemModal">
+        <div class="restriction-modal-card edit-modal-card">
+            <h4 style="margin-bottom: 20px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px;">Update Description Entry</h4>
+            <input type="hidden" id="editTargetId">
+            <div class="form-group">
+                <label for="editItemDescription">Item Description (Locked Uppercase)</label>
+                <input type="text" id="editItemDescription" class="uppercase-input" oninput="this.value = this.value.toUpperCase()">
+            </div>
+            <div class="form-group">
+                <label for="editItemSizes">Sizes</label>
+                <input type="text" id="editItemSizes">
+            </div>
+            <div class="edit-modal-actions">
+                <button class="edit-cancel-btn" onclick="closeEditModal()">Cancel</button>
+                <button class="edit-save-btn" id="saveEditBtn" onclick="saveItemCorrection()">Save Changes</button>
+            </div>
         </div>
     </div>
 
@@ -172,6 +200,17 @@
             document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
         }
 
+        function openEditModal(id, currentDescription, currentSizes) {
+            document.getElementById('editTargetId').value = id;
+            document.getElementById('editItemDescription').value = currentDescription;
+            document.getElementById('editItemSizes').value = currentSizes;
+            document.getElementById('editItemModal').classList.add('is-visible');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editItemModal').classList.remove('is-visible');
+        }
+
         // Shared Standard Navigation Verification System
         function verifyNavigationPrivilege(accessKey, url) {
             if (!currentUserPermissions) return;
@@ -262,7 +301,6 @@
         }
 
         async function fetchDescriptions() {
-            // Updated sorting to explicitly target A-Z alphabetical configuration mapping
             const { data, error } = await supabaseClient
                 .from('Descriptions')
                 .select('*')
@@ -299,7 +337,7 @@
                     <td>${item.sizes || ''}</td>
                     <td style="font-size:0.8rem; color:#64748b;">${item.created_at ? new Date(item.created_at).toLocaleString() : 'N/A'}</td>
                     <td style="text-align: center;">
-                        <button class="inline-edit-btn" onclick="initiateItemCorrection(${item.id}, '${item.item_description.replace(/'/g, "\\'")}', '${(item.sizes || '').replace(/'/g, "\\'")}')">Edit</button>
+                        <button class="inline-edit-btn" onclick="openEditModal(${item.id}, '${item.item_description.replace(/'/g, "\\'")}', '${(item.sizes || '').replace(/'/g, "\\'")}')">Edit</button>
                     </td>
                 </tr>
             `).join('');
@@ -318,26 +356,18 @@
             renderDescriptionsTable();
         }
 
-        async function initiateItemCorrection(targetId, currentDescription, currentSizes) {
-            const descriptionPrompt = prompt("Modify Item Description Matrix String:", currentDescription);
-            if (descriptionPrompt === null) return; 
-            
-            const dynamicDescription = descriptionPrompt.trim().toUpperCase();
-            if (!dynamicDescription) {
-                showSystemModal("Input Error", "Item definition identity parameters cannot remain blank.");
+        async function saveItemCorrection() {
+            const targetId = document.getElementById('editTargetId').value;
+            const dynamicDescription = document.getElementById('editItemDescription').value.trim().toUpperCase();
+            const dynamicSizes = document.getElementById('editItemSizes').value.trim();
+            const saveBtn = document.getElementById('saveEditBtn');
+
+            if (!dynamicDescription || !dynamicSizes) {
+                showSystemModal("Input Error", "Both item description identity and sizes parameters are required.");
                 return;
             }
 
-            const sizesPrompt = prompt("Modify Item Sizes Parameter String:", currentSizes);
-            if (sizesPrompt === null) return;
-
-            const dynamicSizes = sizesPrompt.trim();
-            if (!dynamicSizes) {
-                showSystemModal("Input Error", "Size structural data strings cannot remain blank.");
-                return;
-            }
-
-            if (dynamicDescription === currentDescription.toUpperCase() && dynamicSizes === currentSizes) return;
+            saveBtn.disabled = true;
 
             try {
                 const { error } = await supabaseClient
@@ -347,12 +377,15 @@
 
                 if (error) throw error;
 
+                closeEditModal();
                 showSystemModal("Identity Synced", "Global inventory catalog item properties refreshed.", "OK", async () => {
                     closeRestrictionModal();
                     await fetchDescriptions();
                 });
             } catch (mutationError) {
                 showSystemModal("Mutation Failure", mutationError.message);
+            } finally {
+                saveBtn.disabled = false;
             }
         }
 
