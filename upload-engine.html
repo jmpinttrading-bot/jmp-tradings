@@ -180,7 +180,7 @@
                             <option value="GLORY SEAFOODS COMPANY LIMITED"></option>
                             <option value="SHISHI SEABOUND AQUATIC PRODUCTS CO., LTD."></option>
                             <option value="SHISHI WANFENG SEAFOOD TECHNOLOGY CO., LTD."></option>
-                            <option value="SHISHI YIHONG JIAPIN FISHERY CO., LTD"></option>
+                            <option value="SHISHI YIHONG JIAPIN FISHERY CO., LTD SERVICE"></option>
                             <option value="TAIZHOU WEIHAO OCEAN TECHNOLOGY CO., LTD."></option>
                             <option value="FUJIAN JINHUA FISHERIES SCIENCE AND TECHNOLOGY CO., LTD"></option>
                             <option value="SHISHI CHANGFAQIXIANG FOOD CO., LTD."></option>
@@ -343,7 +343,6 @@
         }
 
         async function initModule() {
-            // Fix 1: Add a delay helper to let local cookies/storage rebuild on refresh
             await new Promise(resolve => setTimeout(resolve, 350));
 
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -387,7 +386,6 @@
             }
         }
 
-        // --- Real-time Global Presence Synchronization Core ---
         function initializeGlobalPresenceSystem() {
             realTimePresenceChannel = supabaseClient.channel('upload_engine_presence', {
                 config: { presence: { key: currentUserSession.id } }
@@ -410,7 +408,6 @@
                 });
         }
 
-        // Fix 2: Removed raw channel state constraint blocking tracking on active subscription callback
         async function syncPresenceContext() {
             if (realTimePresenceChannel) {
                 try {
@@ -435,7 +432,6 @@
                 return;
             }
 
-            // Exclude self, check if someone else is tracing/locking this document
             let remoteLockUser = null;
             Object.keys(state).forEach(id => {
                 if (id !== currentUserSession.id) {
@@ -455,12 +451,10 @@
                 submitBtn.setAttribute('disabled', 'true');
                 toggleFormInputFields(true);
             } else {
-                // Return control back if the immutable state check fails below
                 if (!localFetchedRecord || localFetchedRecord.status !== "Completed") {
                     banner.style.display = "none";
                     submitBtn.removeAttribute('disabled');
                     toggleFormInputFields(false);
-                    // Re-run lock metrics rules
                     evaluateUploadSequenceLocks(true);
                 }
             }
@@ -545,8 +539,6 @@
             document.getElementById('statusArrivalUploaded').style.display = hasArrivalInDb ? "block" : "none";
             document.getElementById('statusImportUploaded').style.display = (localFetchedRecord && localFetchedRecord.import_docs_path) ? "block" : "none";
 
-            // --- CHANGED LOGIC FOR EDITS & RE-UPLOADS ---
-            // Allow structural updates and overrides as long as the document isn't globally completed or locked by another user
             const isBannerVisible = banner.style.display === "block";
             if (!isBannerVisible) {
                 fSpsic.disabled = false; 
@@ -675,22 +667,24 @@
                 <head>
                 <style>
                     td, th { white-space: nowrap !important; font-family: 'Segoe UI', sans-serif; font-size: 11pt; }
-                    .header-title { font-size: 16pt; font-weight: bold; color: #1e293b; vertical-align: middle; }
+                    .header-container { text-align: left; vertical-align: middle; background-color: #ffffff; padding: 10px 0; }
+                    .company-title { font-size: 16pt; font-weight: bold; color: #1e293b; font-family: 'Segoe UI', sans-serif; margin-left: 10px; }
                     .table-th { background-color: #f1f5f9; font-weight: bold; border: 0.5pt solid #cbd5e1; padding: 6px; }
                     .table-td { border: 0.5pt solid #e2e8f0; padding: 6px; }
                 </style>
                 </head>
                 <body>
                 <table>
-                    <tr style="height: 45pt;">
-                        <td style="vertical-align: middle; text-align: center;">
-                            <img src="${window.location.origin}/circle-logo.png" width="50" height="50" style="display:block;" />
-                        </td>
-                        <td colspan="8" class="header-title" style="vertical-align: middle; padding-left: 10px;">
-                            JMP INTERNATIONAL FISH TRADING
+                    <tr style="height: 55pt;">
+                        <td colspan="9" class="header-container">
+                            <!-- Wrapping layout elements safely inside a unified layout block to guarantee fit across deep rows -->
+                            <div style="display: flex; align-items: center;">
+                                <img src="${window.location.origin}/circle-logo.png" width="50" height="50" style="float: left; display: inline-block; margin-right: 15px;" />
+                                <span class="company-title">JMP INTERNATIONAL FISH TRADING</span>
+                            </div>
                         </td>
                     </tr>
-                    <tr style="height: 15pt;"><td colspan="8"></td></tr>
+                    <tr style="height: 15pt;"><td colspan="9"></td></tr>
                     <tr>
             `;
 
