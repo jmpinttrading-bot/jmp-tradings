@@ -468,11 +468,11 @@
             if (activeRow) activeRow.classList.add('selected-row');
         }
 
-        // Fetch directory definitions from "descriptions" table with "item_description" column key
+        // Fetch directory definitions from "Descriptions" table with "item_description" column key
         async function fetchDescriptionsDirectory() {
             try {
                 const { data, error } = await supabaseClient
-                    .from('descriptions')
+                    .from('Descriptions')
                     .select('item_description, sizes')
                     .order('item_description', { ascending: true });
 
