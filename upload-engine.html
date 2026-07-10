@@ -545,12 +545,13 @@
             document.getElementById('statusArrivalUploaded').style.display = hasArrivalInDb ? "block" : "none";
             document.getElementById('statusImportUploaded').style.display = (localFetchedRecord && localFetchedRecord.import_docs_path) ? "block" : "none";
 
-            // Enforce upload step validations if not already locked down globally
+            // --- CHANGED LOGIC FOR EDITS & RE-UPLOADS ---
+            // Allow structural updates and overrides as long as the document isn't globally completed or locked by another user
             const isBannerVisible = banner.style.display === "block";
             if (!isBannerVisible) {
-                fSpsic.disabled = hasSpsicInDb;
-                fArrival.disabled = !hasSpsicInDb || hasArrivalInDb;
-                fImport.disabled = !hasSpsicInDb || !hasArrivalInDb;
+                fSpsic.disabled = false; 
+                fArrival.disabled = !hasSpsicInDb; 
+                fImport.disabled = !hasSpsicInDb || !hasArrivalInDb; 
             }
             
             document.getElementById('noticeArrival').style.display = hasSpsicInDb ? "none" : "block";
