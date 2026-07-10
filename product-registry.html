@@ -267,7 +267,6 @@
             <h1>Registry & Inbound of Item Product</h1>
         </div>
 
-        <!-- Updated Action Row holding both buttons aligned correctly -->
         <div style="display: flex; gap: 10px; margin-bottom: 25px;">
             <a href="inventory-management.html" class="back-link" style="margin-bottom: 0;">⬅️ Back to Stock Dashboard</a>
             <a href="descriptions.html" class="back-link" style="margin-bottom: 0; border-color: #0b2545; color: #0b2545;">📝 Item Description Directory</a>
@@ -314,38 +313,15 @@
                     
                     <div class="form-group">
                         <label>Item Description</label>
-                        <input type="text" id="itemName" list="itemOptions" required placeholder="Type to search or select...">
+                        <input type="text" id="itemName" list="itemOptions" required placeholder="Type to search or select..." onchange="handleItemDescriptionChange()">
                         <datalist id="itemOptions">
-                            <option value="FROZEN BIGEYE SCAD WHOLE (MALAYSIA)">
-                            <option value="FROZEN BIGEYE SCAD WHOLE (VIETNAM)">
-                            <option value="FROZEN GOLDEN POMFRET WHOLE ROUND">
-                            <option value="FROZEN LIAN - COMMON SCAD WHOLE">
-                            <option value="FROZEN MOONFISH WHOLE">
-                            <option value="FROZEN NOBASHI SHRIMP">
-                            <option value="FROZEN PANGASIUS FILLET">
-                            <option value="FROZEN PEELED SHRIMP">
-                            <option value="FROZEN ROUND SCAD">
-                            <option value="FROZEN SALMON BELLY">
-                            <option value="FROZEN SALMON HEAD">
-                            <option value="FROZEN SEABASS WHOLE ROUND">
-                            <option value="FROZEN SQUID WHOLE">
-                            <option value="FROZEN SQUID WHOLE ROUND (ILLEX)">
-                            <option value="FROZEN SQUID WHOLE ROUND (TODARODES)">
-                            <option value="FROZEN TUNA BELLY">
-                            <option value="FROZEN TUNA CUBES">
-                            <option value="FROZEN TUNA KAMA">
-                            <option value="FROZEN TUNA PORTION CUT">
-                            <option value="FROZEN TUNA SAKU BAR">
-                            <option value="FROZEN TUNA STEAK">
-                            <option value="FROZEN YELLOWTAIL SCAD WHOLE (CHINA)">
-                            <option value="FROZEN YELLOWTAIL SCAD WHOLE (MALAYSIA)">
-                            <option value="FROZEN YELLOWTAIL WHOLE ROUND">
+                            <!-- Populated dynamically from descriptions table -->
                         </datalist>
                     </div>
 
                     <div class="form-group">
                         <label>Sizes</label>
-                        <input type="text" id="itemSizes" placeholder="e.g., 21/25, 16/20, Medium">
+                        <input type="text" id="itemSizes" placeholder="Auto-Generated" readonly>
                     </div>
                     
                     <div class="form-row" id="initialQtyWrapper">
@@ -433,6 +409,7 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let globallyFetchedItems = [];
+        let fetchedDescriptions = [];
         let currentUserPermissions = null;
 
         function showSystemModal(title, message) {
@@ -483,13 +460,45 @@
             }
         }
 
-        /* --- Global Highlight Controller --- */
         function highlightSelectedRow(itemId) {
             document.querySelectorAll('#ledgerTableBody tr').forEach(row => {
                 row.classList.remove('selected-row');
             });
             const activeRow = document.getElementById(`row-${itemId}`);
             if (activeRow) activeRow.classList.add('selected-row');
+        }
+
+        // Fetch directory definitions from "descriptions" table
+        async function fetchDescriptionsDirectory() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('descriptions')
+                    .select('item_description, sizes')
+                    .order('item_description', { ascending: true });
+
+                if (error) throw error;
+                fetchedDescriptions = data || [];
+                
+                const datalist = document.getElementById('itemOptions');
+                datalist.innerHTML = fetchedDescriptions.map(d => 
+                    `<option value="${(d.item_description || '').toUpperCase()}">`
+                ).join('');
+            } catch (err) {
+                console.error("Error fetching descriptions registry system data:", err.message);
+            }
+        }
+
+        // Automatically map Sizes and calculate dynamic SKUs when Item Description changes
+        function handleItemDescriptionChange() {
+            const selectedDesc = document.getElementById('itemName').value.trim().toUpperCase();
+            const matchedRow = fetchedDescriptions.find(d => (d.item_description || '').toUpperCase() === selectedDesc);
+            
+            if (matchedRow) {
+                document.getElementById('itemSizes').value = matchedRow.sizes || '';
+            } else {
+                document.getElementById('itemSizes').value = '';
+            }
+            autoGenerateSkuCode();
         }
 
         async function autoGenerateSkuCode() {
@@ -585,7 +594,7 @@
             document.getElementById('activeSpsicNumber').value = queryVal;
             
             showSystemModal("Action Successful", `Manifest loaded successfully for SPSIC: ${queryVal}`);
-            await autoGenerateSkuCode();
+            handleItemDescriptionChange();
         }
 
         function filterLedgerByDescription() {
@@ -648,10 +657,10 @@
             }
             
             applyFormUIRestrictions(hasRegistryAccess);
+            await fetchDescriptionsDirectory();
             fetchLedgerDataset(hasRegistryAccess);
             
-            document.getElementById('itemName').addEventListener('input', autoGenerateSkuCode);
-            document.getElementById('itemSizes').addEventListener('input', autoGenerateSkuCode);
+            document.getElementById('itemName').addEventListener('input', handleItemDescriptionChange);
 
             setupSessionCrossCheckListener();
         }
@@ -742,7 +751,6 @@
 
             document.getElementById('itemCode').disabled = false;
             document.getElementById('itemName').disabled = false;
-            document.getElementById('itemSizes').disabled = false;
             document.getElementById('itemCommodity').disabled = false;
             document.getElementById('storageFacility').disabled = false;
             document.getElementById('dateReceived').disabled = false;
