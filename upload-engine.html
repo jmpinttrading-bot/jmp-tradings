@@ -90,7 +90,10 @@
                 <h1>SPSIC Document Upload Engine</h1>
                 <p>Register records and manage multi-stage verification attachment sequences</p>
             </div>
-            <a href="import-docs.html" class="back-link">← Return to Import Docs</a>
+            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                <a href="import-docs.html" class="back-link">← Return to Import Docs</a>
+                <a href="supplier.html" class="back-link" style="background: #2563eb; color: white; border: none; text-align: center; width: 100%;">+ Add Supplier</a>
+            </div>
         </div>
 
         <div class="panel-card">
@@ -171,22 +174,7 @@
                         <label>SUPPLIERS NAME</label>
                         <input type="text" id="clientName" list="supplierList" class="uppercase-input" placeholder="Type or Select Supplier...">
                         <datalist id="supplierList">
-                            <option value="FUQING CITY HUASHENG AQUATIC FOOD CO., LTD."></option>
-                            <option value="FUJIAN HOLLY TRADING COMPANY LTD"></option>
-                            <option value="ZHANGZHOU WANGMINGHONG FOOD CO., LTD."></option>
-                            <option value="OCEAN PRESENTS SEAFOOD CO., LIMITED"></option>
-                            <option value="FUBAO TRADING COMPANY LIMITED"></option>
-                            <option value="SHISHI OCEAN TREASURE AQUATIC PRODUCTS CO., LTD LIGHTWEIGHT"></option>
-                            <option value="GLORY SEAFOODS COMPANY LIMITED"></option>
-                            <option value="SHISHI SEABOUND AQUATIC PRODUCTS CO., LTD."></option>
-                            <option value="SHISHI WANFENG SEAFOOD TECHNOLOGY CO., LTD."></option>
-                            <option value="SHISHI YIHONG JIAPIN FISHERY CO., LTD SERVICE"></option>
-                            <option value="TAIZHOU WEIHAO OCEAN TECHNOLOGY CO., LTD."></option>
-                            <option value="FUJIAN JINHUA FISHERIES SCIENCE AND TECHNOLOGY CO., LTD"></option>
-                            <option value="SHISHI CHANGFAQIXIANG FOOD CO., LTD."></option>
-                            <option value="FUJIAN HAIHUA AQUATIC TECHNOLOGY CO., LTD."></option>
-                            <option value="FUJIAN UPTOP TRADING CO., LTD."></option>
-                            <option value="ZHANJIANG HONGHUANG TRADING CO., LTD"></option>
+                            <!-- Populated Dynamically via fetch from 'supplier' database table -->
                         </datalist>
                     </div>
                     <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
@@ -350,11 +338,33 @@
             currentUserSession = user;
 
             await enforceRestrictionAccess();
+            await populateSupplierDropdown();
             initializeGlobalPresenceSystem();
 
             const today = new Date();
             document.getElementById('spsicTargetMonth').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
             evaluateUploadSequenceLocks();
+        }
+
+        // Asynchronous Data Extraction from standard table to replace static vendor lists
+        async function populateSupplierDropdown() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('supplier')
+                    .select('supplier_name')
+                    .order('supplier_name', { ascending: true });
+
+                if (error) throw error;
+
+                const datalist = document.getElementById('supplierList');
+                if (data && data.length > 0) {
+                    datalist.innerHTML = data.map(item => 
+                        `<option value="${item.supplier_name.toUpperCase()}"></option>`
+                    ).join('');
+                }
+            } catch (err) {
+                console.error("Failed to populate dynamic supplier datalist registry:", err);
+            }
         }
 
         async function enforceRestrictionAccess() {
@@ -677,7 +687,6 @@
                 <table>
                     <tr style="height: 55pt;">
                         <td colspan="9" class="header-container">
-                            <!-- Wrapping layout elements safely inside a unified layout block to guarantee fit across deep rows -->
                             <div style="display: flex; align-items: center;">
                                 <img src="${window.location.origin}/circle-logo.png" width="50" height="50" style="float: left; display: inline-block; margin-right: 15px;" />
                                 <span class="company-title">JMP INTERNATIONAL FISH TRADING</span>
