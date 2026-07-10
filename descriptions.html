@@ -55,6 +55,15 @@
         .master-table th { background: #f1f5f9; text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: bold; }
         .master-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; }
         
+        /* Utility Action Layout */
+        .inline-edit-btn { background-color: #2563eb; color: white; border: none; padding: 5px 10px; font-size: 0.75rem; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
+        .inline-edit-btn:hover { background-color: #1d4ed8; }
+
+        .pagination-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 10px; }
+        .page-btn { background: #334155; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
+        .page-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .page-info { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+
         @media (max-width: 768px) { .form-row { flex-direction: column; gap: 0; } }
     </style>
 </head>
@@ -90,7 +99,7 @@
                 <h1>Master Description Setup Profile</h1>
                 <p>Configure product description schemas and target standard sizes</p>
             </div>
-            <a href="inventory-management.html" class="back-link">← Back to Inventory Management</a>
+            <a href="product-registry.html" class="back-link">← Back to Product Registry</a>
         </div>
 
         <div class="workspace-grid">
@@ -120,14 +129,21 @@
                                 <th>Item Description</th>
                                 <th>Sizes</th>
                                 <th>Timestamp Added</th>
+                                <th style="width: 100px; text-align: center;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="descriptionTableBody">
                             <tr>
-                                <td colspan="3" style="text-align: center; color: #94a3b8; padding:20px;">Loading descriptions context database...</td>
+                                <td colspan="4" style="text-align: center; color: #94a3b8; padding:20px;">Loading descriptions context database...</td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <div class="pagination-bar">
+                    <button class="page-btn" id="prevBtn" onclick="changePage(-1)">Preview</button>
+                    <span class="page-info" id="pageIndicator">Page 1 of 1</span>
+                    <button class="page-btn" id="nextBtn" onclick="changePage(1)">Next</button>
                 </div>
             </div>
         </div>
@@ -139,6 +155,9 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUserPermissions = null;
+        let descriptionsDataList = [];
+        let currentPage = 1;
+        const rowsPerPage = 15;
 
         function showSystemModal(title, message, btnText = "Acknowledge", clickAction = null) {
             document.getElementById('restrictionModalTitle').textContent = title;
@@ -201,7 +220,6 @@
                 const rawAccessStr = String(profile.inventory_access || '').replace(/['"]+/g, '').toLowerCase().trim();
                 const hasInventoryAccess = profile.inventory_access === true || rawAccessStr === 'true';
 
-                // Checked against inventory parameter matrix maps
                 if (userRole !== 'admin' && !hasInventoryAccess) {
                     showSystemModal("Access Denied", "Your profile credentials do not possess access parameters for this module.", "Exit Module", () => {
                         window.location.href = "employee-dashboard.html";
@@ -210,7 +228,7 @@
                 }
                 
                 document.getElementById('mainContentWrapper').style.display = 'block';
-                fetchDescriptions();
+                await fetchDescriptions();
             } catch (err) {
                 showSystemModal("Security Fault", "Failed to resolve structural security configuration profiles.");
             }
@@ -236,37 +254,106 @@
                 return;
             }
 
-            showSystemModal("Success", "New item definition appended cleanly into storage parameters registry.", "OK", () => {
+            showSystemModal("Success", "New item definition appended cleanly into storage parameters registry.", "OK", async () => {
                 closeRestrictionModal();
                 document.getElementById('descriptionForm').reset();
-                fetchDescriptions();
+                await fetchDescriptions();
             });
         }
 
         async function fetchDescriptions() {
+            // Updated sorting to explicitly target A-Z alphabetical configuration mapping
             const { data, error } = await supabaseClient
                 .from('Descriptions')
                 .select('*')
-                .order('created_at', { ascending: false });
+                .order('item_description', { ascending: true });
 
-            const tbody = document.getElementById('descriptionTableBody');
             if (error) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#ef4444; padding:20px;">Sync Error: ${error.message}</td></tr>`;
+                const tbody = document.getElementById('descriptionTableBody');
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#ef4444; padding:20px;">Sync Error: ${error.message}</td></tr>`;
                 return;
             }
 
-            if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:20px;">No descriptions found in system table.</td></tr>`;
+            descriptionsDataList = data || [];
+            renderDescriptionsTable();
+        }
+
+        function renderDescriptionsTable() {
+            const tbody = document.getElementById('descriptionTableBody');
+            if (descriptionsDataList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:20px;">No descriptions found in system table.</td></tr>`;
+                updatePaginationControls(1);
                 return;
             }
 
-            tbody.innerHTML = data.map(item => `
+            const totalPages = Math.ceil(descriptionsDataList.length / rowsPerPage);
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = startIndex + rowsPerPage;
+            const pageItems = descriptionsDataList.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pageItems.map(item => `
                 <tr>
                     <td style="font-weight:600; text-transform: uppercase;">${item.item_description}</td>
-                    <td>${item.sizes}</td>
-                    <td style="font-size:0.8rem; color:#64748b;">${new Date(item.created_at).toLocaleString()}</td>
+                    <td>${item.sizes || ''}</td>
+                    <td style="font-size:0.8rem; color:#64748b;">${item.created_at ? new Date(item.created_at).toLocaleString() : 'N/A'}</td>
+                    <td style="text-align: center;">
+                        <button class="inline-edit-btn" onclick="initiateItemCorrection(${item.id}, '${item.item_description.replace(/'/g, "\\'")}', '${(item.sizes || '').replace(/'/g, "\\'")}')">Edit</button>
+                    </td>
                 </tr>
             `).join('');
+
+            updatePaginationControls(totalPages);
+        }
+
+        function updatePaginationControls(totalPages) {
+            document.getElementById('pageIndicator').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+            document.getElementById('prevBtn').disabled = (currentPage === 1);
+            document.getElementById('nextBtn').disabled = (currentPage === totalPages || totalPages === 0);
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderDescriptionsTable();
+        }
+
+        async function initiateItemCorrection(targetId, currentDescription, currentSizes) {
+            const descriptionPrompt = prompt("Modify Item Description Matrix String:", currentDescription);
+            if (descriptionPrompt === null) return; 
+            
+            const dynamicDescription = descriptionPrompt.trim().toUpperCase();
+            if (!dynamicDescription) {
+                showSystemModal("Input Error", "Item definition identity parameters cannot remain blank.");
+                return;
+            }
+
+            const sizesPrompt = prompt("Modify Item Sizes Parameter String:", currentSizes);
+            if (sizesPrompt === null) return;
+
+            const dynamicSizes = sizesPrompt.trim();
+            if (!dynamicSizes) {
+                showSystemModal("Input Error", "Size structural data strings cannot remain blank.");
+                return;
+            }
+
+            if (dynamicDescription === currentDescription.toUpperCase() && dynamicSizes === currentSizes) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('Descriptions')
+                    .update({ item_description: dynamicDescription, sizes: dynamicSizes })
+                    .eq('id', targetId);
+
+                if (error) throw error;
+
+                showSystemModal("Identity Synced", "Global inventory catalog item properties refreshed.", "OK", async () => {
+                    closeRestrictionModal();
+                    await fetchDescriptions();
+                });
+            } catch (mutationError) {
+                showSystemModal("Mutation Failure", mutationError.message);
+            }
         }
 
         async function handleLogout() {
