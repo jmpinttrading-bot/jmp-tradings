@@ -7,8 +7,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
+        body { background-color: #f4f6f9; color: #1e293b; min-height: 100vh; }
         
+        /* Standardized Navigation Styles */
         .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
@@ -19,40 +20,40 @@
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out; }
+        /* Standardized Modals */
+        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out; backdrop-filter: blur(4px); }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; font-weight: bold; }
-        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
+        .restriction-modal-card h4 { margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; font-weight: bold; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; line-height: 1.5; }
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
-        .modal-btn:hover { background: #11355e; }
+        .modal-btn:hover { opacity: 0.9; }
 
-        .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        /* Workspace Layouts */
+        .main-content { padding: 40px; max-width: 800px; margin: 0 auto; display: none; }
+        .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin: 0 0 5px 0; }
 
-        .back-link { display: inline-flex; align-items: center; gap: 8px; background-color: #ffffff; color: #475569; text-decoration: none; font-weight: 700; font-size: 0.9rem; margin-bottom: 25px; padding: 10px 18px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); transition: all 0.2s ease-in-out; }
-        .back-link:hover { background-color: #f8fafc; color: #ee964b; border-color: #ee964b; transform: translateX(-2px); }
+        .back-link { background: #0f172a; color: white; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
 
-        .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
-        .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
-        .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0b2545; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px; }
+        .workspace-grid { display: flex; flex-direction: column; gap: 25px; }
+        .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .panel-card h3 { color: #0b2545; margin-top: 0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f4f6f9; }
         
-        .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
-        .form-group { margin-bottom: 16px; display: flex; flex-direction: column; flex: 1; }
-        .form-group label { margin-bottom: 4px; font-weight: 700; font-size: 0.8rem; color: #475569; text-transform: uppercase; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; background: white; height: 42px; }
-        .form-group input:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        .form-row { display: flex; gap: 16px; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; flex: 1; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 700; font-size: 0.8rem; color: #475569; text-transform: uppercase; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; background: white; }
+        .uppercase-input { text-transform: uppercase; }
         
-        /* Forces character view constraint visualization to Uppercase */
-        #itemDescription { text-transform: uppercase; }
-
-        .btn-primary { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; width: 100%; height: 44px; }
-        .btn-primary:hover { background: #11355e; }
+        .submit-btn { background: #0b2545; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s; }
+        .submit-btn:hover { opacity: 0.9; }
         
-        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; margin-top: 20px; }
-        .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; }
-        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        /* Table Components */
+        .table-responsive { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; width: 100%; }
+        .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+        .master-table th { background: #f1f5f9; text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: bold; }
+        .master-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; }
         
         @media (max-width: 768px) { .form-row { flex-direction: column; gap: 0; } }
     </style>
@@ -61,8 +62,8 @@
 
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
-            <h4 id="restrictionModalTitle">System Status</h4>
-            <p id="restrictionModalMessage">Connecting infrastructure pipelines...</p>
+            <h4 id="restrictionModalTitle">Access Restricted</h4>
+            <p id="restrictionModalMessage">Authorization criteria validation required.</p>
             <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
@@ -72,37 +73,45 @@
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
-        <div class="nav-links">
-            <a href="product-registry.html" class="nav-btn">🔙 Product Registry</a>
+        <div class="nav-links" id="navbarLinks">
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
-    <div class="main-content">
-        <div class="header">
-            <h1>Master Description Setup Profile</h1>
+    <div class="main-content" id="mainContentWrapper">
+        <div class="header-panel">
+            <div>
+                <h1>Master Description Setup Profile</h1>
+                <p>Configure product description schemas and target standard sizes</p>
+            </div>
+            <a href="inventory-management.html" class="back-link">← Back to Inventory Management</a>
         </div>
 
-        <a href="product-registry.html" class="back-link">⬅️ Back to Registry Dashboard</a>
-
         <div class="workspace-grid">
-            <div class="card-panel">
+            <div class="panel-card">
                 <h3>Create New Identification Sequence</h3>
                 <form id="descriptionForm" onsubmit="handleFormSubmit(event)">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="itemDescription">Item Description (Locked Uppercase)</label>
-                            <input type="text" id="itemDescription" required placeholder="E.G. FROZEN SQUID WHOLE ROUND" oninput="this.value = this.value.toUpperCase()">
+                            <input type="text" id="itemDescription" class="uppercase-input" required placeholder="E.G. FROZEN SQUID WHOLE ROUND" oninput="this.value = this.value.toUpperCase()">
                         </div>
                         <div class="form-group">
                             <label for="itemSizes">Sizes</label>
                             <input type="text" id="itemSizes" required placeholder="e.g., 21/25, 16/20, Medium">
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary">Create item</button>
+                    <button type="submit" id="submitBtn" class="submit-btn">Create Item</button>
                 </form>
             </div>
 
-            <div class="card-panel">
+            <div class="panel-card">
                 <h3>Registered System Records</h3>
                 <div class="table-responsive">
                     <table class="master-table">
@@ -115,7 +124,7 @@
                         </thead>
                         <tbody id="descriptionTableBody">
                             <tr>
-                                <td colspan="3" style="text-align: center; color: #94a3b8;">Loading descriptions context database...</td>
+                                <td colspan="3" style="text-align: center; color: #94a3b8; padding:20px;">Loading descriptions context database...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -129,11 +138,14 @@
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let currentAdminId = null;
+        let currentUserPermissions = null;
 
-        function showSystemModal(title, message) {
+        function showSystemModal(title, message, btnText = "Acknowledge", clickAction = null) {
             document.getElementById('restrictionModalTitle').textContent = title;
             document.getElementById('restrictionModalMessage').textContent = message;
+            const btn = document.querySelector('#accessBlockerModal .modal-btn');
+            btn.textContent = btnText;
+            btn.onclick = clickAction ? clickAction : closeRestrictionModal;
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
@@ -141,30 +153,94 @@
             document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
         }
 
+        // Shared Standard Navigation Verification System
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
+            }
+
+            if (accessKey === 'admin_access') {
+                showSystemModal("Access Restricted", "Administrative level privileges are required to access System Settings.");
+                return;
+            }
+
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                showSystemModal("Access Restricted", "You do not possess the dynamic authorization privileges needed for this module pipeline.");
+            } else {
+                window.location.href = url;
+            }
+        }
+
         async function checkSession() {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
-            currentAdminId = user.id;
-            fetchDescriptions();
+            
+            try {
+                const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
+                if (!profile) throw new Error("Profile resolution error.");
+
+                currentUserPermissions = profile;
+                const userRole = String(profile.role || '').toLowerCase().trim();
+                const rawAccessStr = String(profile.inventory_access || '').replace(/['"]+/g, '').toLowerCase().trim();
+                const hasInventoryAccess = profile.inventory_access === true || rawAccessStr === 'true';
+
+                // Checked against inventory parameter matrix maps
+                if (userRole !== 'admin' && !hasInventoryAccess) {
+                    showSystemModal("Access Denied", "Your profile credentials do not possess access parameters for this module.", "Exit Module", () => {
+                        window.location.href = "employee-dashboard.html";
+                    });
+                    return;
+                }
+                
+                document.getElementById('mainContentWrapper').style.display = 'block';
+                fetchDescriptions();
+            } catch (err) {
+                showSystemModal("Security Fault", "Failed to resolve structural security configuration profiles.");
+            }
         }
 
         async function handleFormSubmit(e) {
             e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
             const item_description = document.getElementById('itemDescription').value.trim().toUpperCase();
             const sizes = document.getElementById('itemSizes').value.trim();
+
+            if (!item_description || !sizes) return;
+            submitBtn.disabled = true;
 
             const { error } = await supabaseClient
                 .from('Descriptions')
                 .insert([{ item_description, sizes }]);
+
+            submitBtn.disabled = false;
 
             if (error) {
                 showSystemModal("Error saving parameters", error.message);
                 return;
             }
 
-            showSystemModal("Success", "New item definition appended cleanly into storage parameters registry.");
-            document.getElementById('descriptionForm').reset();
-            fetchDescriptions();
+            showSystemModal("Success", "New item definition appended cleanly into storage parameters registry.", "OK", () => {
+                closeRestrictionModal();
+                document.getElementById('descriptionForm').reset();
+                fetchDescriptions();
+            });
         }
 
         async function fetchDescriptions() {
@@ -175,12 +251,12 @@
 
             const tbody = document.getElementById('descriptionTableBody');
             if (error) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#ef4444;">Sync Error: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#ef4444; padding:20px;">Sync Error: ${error.message}</td></tr>`;
                 return;
             }
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#94a3b8;">No descriptions found in system table.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#94a3b8; padding:20px;">No descriptions found in system table.</td></tr>`;
                 return;
             }
 
