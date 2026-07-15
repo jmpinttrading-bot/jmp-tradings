@@ -118,7 +118,7 @@
                             <tr>
                                 <th>SPSIC Ref</th>
                                 <th>Created Date</th>
-                                <th>Current Status</th>
+                                <th>Tracking Status</th>
                                 <th>Control Interfaces</th>
                             </tr>
                         </thead>
@@ -163,12 +163,13 @@
                                 <th>Storage Arrival Date</th>
                                 <th>Client Name</th>
                                 <th>CV Number</th>
-                                <th>Current Status</th>
+                                <th>Workflow Status</th>
+                                <th>Document State</th>
                                 <th>Control Interfaces</th>
                             </tr>
                         </thead>
                         <tbody id="documentLogsTableBody">
-                            <tr><td colspan="11" style="text-align:center; color:#64748b;">Initializing items...</td></tr>
+                            <tr><td colspan="12" style="text-align:center; color:#64748b;">Initializing items...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -265,6 +266,9 @@
                     .status-cell-pending { background-color: #fef3c7; color: #b45309; font-weight: bold; text-align: center; }
                     .status-cell-incomplete { background-color: #fee2e2; color: #991b1b; font-weight: bold; text-align: center; }
                     .status-cell-for-approval { background-color: #e0e7ff; color: #3730a3; font-weight: bold; text-align: center; }
+                    
+                    /* Documents Status Styling */
+                    .doc-status-cell { font-weight: 500; font-size: 10pt; border: 0.5pt solid #cbd5e1; }
                 </style>
                 </head>
                 <body>
@@ -273,11 +277,11 @@
                         <td style="vertical-align: middle; text-align: center;">
                             <img src="${window.location.origin}/circle-logo.png" width="50" height="50" style="display:block;" />
                         </td>
-                        <td colspan="10" class="header-title" style="vertical-align: middle; padding-left: 10px;">
+                        <td colspan="11" class="header-title" style="vertical-align: middle; padding-left: 10px;">
                             JMP INTERNATIONAL FISH TRADING
                         </td>
                     </tr>
-                    <tr style="height: 15pt;"><td colspan="11"></td></tr>
+                    <tr style="height: 15pt;"><td colspan="12"></td></tr>
                     <tr>
                         <th class="table-th">SPSIC Number</th>
                         <th class="table-th">Created Date</th>
@@ -288,13 +292,14 @@
                         <th class="table-th">Storage Arrival Date</th>
                         <th class="table-th">Client Name</th>
                         <th class="table-th">CV Number</th>
-                        <th class="table-th">Current Status</th>
+                        <th class="table-th">Workflow Status</th>
+                        <th class="table-th">Documents Status</th>
                     </tr>
             `;
 
             if (records && records.length > 0) {
                 records.forEach(row => {
-                    const cleanStatus = (row.documents_status || 'PENDING').trim().toLowerCase();
+                    const cleanStatus = (row.status || 'PENDING').trim().toLowerCase();
                     let statusClass = 'status-cell-pending';
                     
                     if (cleanStatus === 'completed') statusClass = 'status-cell-completed';
@@ -312,12 +317,13 @@
                             <td class="table-td">${formatHumanReadableDate(row.storage_arrival_date)}</td>
                             <td class="table-td">${(row.client_name || '').toUpperCase()}</td>
                             <td class="table-td">${(row.cv_number || '').toUpperCase()}</td>
-                            <td class="table-td ${statusClass}">${(row.documents_status || '').toUpperCase()}</td>
+                            <td class="table-td ${statusClass}">${(row.status || '').toUpperCase()}</td>
+                            <td class="table-td doc-status-cell">${(row.documents_status || 'N/A').toUpperCase()}</td>
                         </tr>
                     `;
                 });
             } else {
-                excelTemplate += `<tr><td colspan="11" class="table-td" style="text-align:center; color:#94a3b8;">No records found for this period.</td></tr>`;
+                excelTemplate += `<tr><td colspan="12" class="table-td" style="text-align:center; color:#94a3b8;">No records found for this period.</td></tr>`;
             }
 
             excelTemplate += `</table></body></html>`;
@@ -415,9 +421,14 @@
             if (!activeInspectingRecordId) return;
             if (!confirm("Confirm approval of this document package?")) return;
 
+            // Approving sets workflow status to Completed and default document state tracking to APPROVED
             const { error } = await supabaseClient
                 .from('imported_shipment_docs')
-                .update({ documents_status: 'Completed', approved_date: new Date().toISOString() })
+                .update({ 
+                    status: 'Completed', 
+                    documents_status: 'APPROVED',
+                    approved_date: new Date().toISOString() 
+                })
                 .eq('id', activeInspectingRecordId);
 
             if (error) {
@@ -543,19 +554,20 @@
         async function fetchDocuments() {
             const searchQuery = document.getElementById('docSearchBox').value.trim();
             
+            // Filters based on the 'status' column for Action Required
             const { data: actionableData } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
-                .in('documents_status', ['Pending', 'Incomplete', 'For Approval'])
+                .in('status', ['Pending', 'Incomplete', 'For Approval'])
                 .order('s_date', { ascending: false });
 
             const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
             globalTbody.innerHTML = actionableData?.map(doc => {
-                const cleanStatus = (doc.documents_status || '').toLowerCase().replace(/\s+/g, '-');
+                const cleanStatus = (doc.status || '').toLowerCase().replace(/\s+/g, '-');
                 return `<tr>
                     <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
                     <td>${formatHumanReadableDate(doc.s_date)}</td>
-                    <td><span class="status-badge ${cleanStatus}">${(doc.documents_status || '').toUpperCase()}</span></td>
+                    <td><span class="status-badge ${cleanStatus}">${(doc.status || '').toUpperCase()}</span></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
             }).join('') || '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
@@ -572,7 +584,7 @@
             
             const tbody = document.getElementById('documentLogsTableBody');
             tbody.innerHTML = currentLoadedWorkspaceRows.map(doc => {
-                const cleanStatus = (doc.documents_status || '').toLowerCase().replace(/\s+/g, '-');
+                const cleanStatus = (doc.status || '').toLowerCase().replace(/\s+/g, '-');
                 return `<tr>
                     <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
                     <td>${formatHumanReadableDate(doc.s_date)}</td>
@@ -583,10 +595,11 @@
                     <td>${formatHumanReadableDate(doc.storage_arrival_date)}</td>
                     <td>${(doc.client_name || '').toUpperCase()}</td>
                     <td>${(doc.cv_number || '').toUpperCase()}</td>
-                    <td><span class="status-badge ${cleanStatus}">${(doc.documents_status || '').toUpperCase()}</span></td>
+                    <td><span class="status-badge ${cleanStatus}">${(doc.status || '').toUpperCase()}</span></td>
+                    <td><strong>${(doc.documents_status || 'N/A').toUpperCase()}</strong></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
-            }).join('') || '<tr><td colspan="11" style="text-align:center; color:#64748b;">No entries found.</td></tr>';
+            }).join('') || '<tr><td colspan="12" style="text-align:center; color:#64748b;">No entries found.</td></tr>';
         }
 
         function formatHumanReadableDate(dateString) {
