@@ -50,11 +50,14 @@
         .folder-workspace { background: #ffffff; border: 1px solid #cbd5e1; padding: 25px; border-radius: 8px; margin-bottom: 30px; display: none; }
         .folder-workspace.active { display: block; }
         .workspace-title { font-size: 1.1rem; color: #0f172a; font-weight: 700; margin-bottom: 15px; }
+        
+        /* Status Badge Utilities */
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
         .status-badge.pending { background: #fef3c7; color: #b45309; }
         .status-badge.completed { background: #d1fae5; color: #065f46; }
         .status-badge.incomplete { background: #fee2e2; color: #991b1b; }
         .status-badge.for-approval { background: #e0e7ff; color: #3730a3; }
+        
         .table-responsive-wrapper { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
         .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; white-space: nowrap; }
@@ -256,6 +259,12 @@
                     .header-title { font-size: 16pt; font-weight: bold; color: #1e293b; vertical-align: middle; }
                     .table-th { background-color: #f1f5f9; font-weight: bold; border: 0.5pt solid #cbd5e1; padding: 6px; text-align: left; }
                     .table-td { border: 0.5pt solid #e2e8f0; padding: 6px; }
+                    
+                    /* Status Styles for Exported Excel spreadsheets */
+                    .status-cell-completed { background-color: #d1fae5; color: #065f46; font-weight: bold; text-align: center; }
+                    .status-cell-pending { background-color: #fef3c7; color: #b45309; font-weight: bold; text-align: center; }
+                    .status-cell-incomplete { background-color: #fee2e2; color: #991b1b; font-weight: bold; text-align: center; }
+                    .status-cell-for-approval { background-color: #e0e7ff; color: #3730a3; font-weight: bold; text-align: center; }
                 </style>
                 </head>
                 <body>
@@ -285,6 +294,13 @@
 
             if (records && records.length > 0) {
                 records.forEach(row => {
+                    const cleanStatus = (row.document_status || 'PENDING').trim().toLowerCase();
+                    let statusClass = 'status-cell-pending';
+                    
+                    if (cleanStatus === 'completed') statusClass = 'status-cell-completed';
+                    else if (cleanStatus === 'incomplete') statusClass = 'status-cell-incomplete';
+                    else if (cleanStatus === 'for approval' || cleanStatus === 'for_approval') statusClass = 'status-cell-for-approval';
+
                     excelTemplate += `
                         <tr>
                             <td class="table-td">${row.spsic_number || ''}</td>
@@ -296,7 +312,7 @@
                             <td class="table-td">${formatHumanReadableDate(row.storage_arrival_date)}</td>
                             <td class="table-td">${(row.client_name || '').toUpperCase()}</td>
                             <td class="table-td">${(row.cv_number || '').toUpperCase()}</td>
-                            <td class="table-td">${(row.status || '').toUpperCase()}</td>
+                            <td class="table-td ${statusClass}">${(row.document_status || '').toUpperCase()}</td>
                         </tr>
                     `;
                 });
@@ -322,6 +338,7 @@
             const year = document.getElementById('directoryYearSelect').value;
             
             try {
+                // Fetch all records with targeted columns mapped correctly
                 const { data: allYearRecords, error } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('*')
@@ -401,7 +418,7 @@
 
             const { error } = await supabaseClient
                 .from('imported_shipment_docs')
-                .update({ status: 'Completed', approved_date: new Date().toISOString() })
+                .update({ document_status: 'Completed', approved_date: new Date().toISOString() })
                 .eq('id', activeInspectingRecordId);
 
             if (error) {
@@ -531,16 +548,24 @@
             const { data: actionableData } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
-                .in('status', ['Pending', 'Incomplete', 'For Approval'])
+                .in('document_status', ['Pending', 'Incomplete', 'For Approval'])
                 .order('s_date', { ascending: false });
 
             const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
-            globalTbody.innerHTML = actionableData?.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td><span class="status-badge ${doc.status.toLowerCase().replace(' ', '-')}">${doc.status.toUpperCase()}</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
+            globalTbody.innerHTML = actionableData?.map(doc => {
+                const cleanStatus = (doc.document_status || '').toLowerCase().replace(/\s+/g, '-');
+                return `<tr>
+                    <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
+                    <td>${formatHumanReadableDate(doc.s_date)}</td>
+                    <td><span class="status-badge ${cleanStatus}">${(doc.document_status || '').toUpperCase()}</span></td>
+                    <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
 
             if (!selectedFolderMonth) return;
             
-            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth).eq('status', 'Completed');
-            if(searchQuery) {
+            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth);
+            if (searchQuery) {
                 query = query.ilike('spsic_number', `%${searchQuery}%`);
             }
             
@@ -548,7 +573,22 @@
             currentLoadedWorkspaceRows = data || [];
             
             const tbody = document.getElementById('documentLogsTableBody');
-            tbody.innerHTML = currentLoadedWorkspaceRows.map(doc => `<tr><td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td><td>${formatHumanReadableDate(doc.s_date)}</td><td>${formatHumanReadableDate(doc.approved_date)}</td><td>${formatHumanReadableDate(doc.expiration_date)}</td><td>${(doc.storage_location || '').toUpperCase()}</td><td>${(doc.commodity || '').toUpperCase()}</td><td>${formatHumanReadableDate(doc.storage_arrival_date)}</td><td>${(doc.client_name || '').toUpperCase()}</td><td>${(doc.cv_number || '').toUpperCase()}</td><td><span class="status-badge completed">COMPLETED</span></td><td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td></tr>`).join('') || '<tr><td colspan="11" style="text-align:center; color:#64748b;">No entries found.</td></tr>';
+            tbody.innerHTML = currentLoadedWorkspaceRows.map(doc => {
+                const cleanStatus = (doc.document_status || '').toLowerCase().replace(/\s+/g, '-');
+                return `<tr>
+                    <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
+                    <td>${formatHumanReadableDate(doc.s_date)}</td>
+                    <td>${formatHumanReadableDate(doc.approved_date)}</td>
+                    <td>${formatHumanReadableDate(doc.expiration_date)}</td>
+                    <td>${(doc.storage_location || '').toUpperCase()}</td>
+                    <td>${(doc.commodity || '').toUpperCase()}</td>
+                    <td>${formatHumanReadableDate(doc.storage_arrival_date)}</td>
+                    <td>${(doc.client_name || '').toUpperCase()}</td>
+                    <td>${(doc.cv_number || '').toUpperCase()}</td>
+                    <td><span class="status-badge ${cleanStatus}">${(doc.document_status || '').toUpperCase()}</span></td>
+                    <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="11" style="text-align:center; color:#64748b;">No entries found.</td></tr>';
         }
 
         function formatHumanReadableDate(dateString) {
