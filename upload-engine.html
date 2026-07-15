@@ -177,9 +177,19 @@
                             <!-- Populated Dynamically via fetch from 'supplier' database table -->
                         </datalist>
                     </div>
-                    <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                    <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
                         <label>CV NO.</label>
                         <input type="text" id="cvNumber" class="uppercase-input" placeholder="e.g., CV-99210">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 180px; margin-bottom: 0;">
+                        <label>DOCUMENTS STATUS</label>
+                        <select id="documentsStatus" class="uppercase-input">
+                            <option value="">SELECT STATUS...</option>
+                            <option value="APPROVED">APPROVED</option>
+                            <option value="SURRENDERED/EXPIRED">SURRENDERED/EXPIRED</option>
+                            <option value="SURRENDERED/RE-APPLY">SURRENDERED/RE-APPLY</option>
+                            <option value="REJECT">REJECT</option>
+                        </select>
                     </div>
                 </div>
 
@@ -245,10 +255,11 @@
                             <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Storage Arrival Date</th>
                             <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Client Name</th>
                             <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">CV Number</th>
+                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Documents Status</th>
                         </tr>
                     </thead>
                     <tbody id="reportTableBody">
-                        <tr><td colspan="9" style="padding: 20px; text-align: center; color: #94a3b8;">Select date range to view records...</td></tr>
+                        <tr><td colspan="10" style="padding: 20px; text-align: center; color: #94a3b8;">Select date range to view records...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -328,6 +339,7 @@
             document.getElementById('commodity').value = data.commodity || '';
             document.getElementById('clientName').value = data.client_name || '';
             document.getElementById('cvNumber').value = data.cv_number || '';
+            document.getElementById('documentsStatus').value = data.documents_status || '';
         }
 
         async function initModule() {
@@ -471,7 +483,7 @@
         }
 
         function toggleFormInputFields(isDisabled) {
-            const targets = ['spsicDate', 'approvedDate', 'expirationDate', 'storageLocation', 'storageArrivalDate', 'commodity', 'clientName', 'cvNumber', 'spsicTargetMonth', 'fileSpsic', 'fileArrival', 'fileImportDocs'];
+            const targets = ['spsicDate', 'approvedDate', 'expirationDate', 'storageLocation', 'storageArrivalDate', 'commodity', 'clientName', 'cvNumber', 'documentsStatus', 'spsicTargetMonth', 'fileSpsic', 'fileArrival', 'fileImportDocs'];
             targets.forEach(id => {
                 const element = document.getElementById(id);
                 if (element) {
@@ -614,7 +626,9 @@
                     approved_date: document.getElementById('approvedDate').value, expiration_date: document.getElementById('expirationDate').value,
                     storage_location: document.getElementById('storageLocation').value, 
                     storage_arrival_date: document.getElementById('storageArrivalDate').value || null,
-                    commodity: document.getElementById('commodity').value, client_name: document.getElementById('clientName').value, cv_number: document.getElementById('cvNumber').value,
+                    commodity: document.getElementById('commodity').value, client_name: document.getElementById('clientName').value, 
+                    cv_number: document.getElementById('cvNumber').value,
+                    documents_status: document.getElementById('documentsStatus').value || null,
                     updated_at: new Date().toISOString()
                 };
 
@@ -642,7 +656,7 @@
                 showRestrictionModal("Date Range Required", "Please select both a Start Date and an End Date.");
                 return;
             }
-            tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">Filtering records...</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="10" style="padding:20px; text-align:center;">Filtering records...</td></tr>';
             
             const { data, error } = await supabaseClient
                 .from('imported_shipment_docs')
@@ -652,7 +666,7 @@
                 .order('s_date', { ascending: false });
 
             if (error) { showRestrictionModal("Query Failed", error.message); return; }
-            if (!data || data.length === 0) { tableBody.innerHTML = '<tr><td colspan="9" style="padding:20px; text-align:center;">No records found for this period.</td></tr>'; return; }
+            if (!data || data.length === 0) { tableBody.innerHTML = '<tr><td colspan="10" style="padding:20px; text-align:center;">No records found for this period.</td></tr>'; return; }
             tableBody.innerHTML = data.map(row => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 10px; white-space: nowrap;">${row.spsic_number}</td>
@@ -664,6 +678,7 @@
                     <td style="padding: 10px; white-space: nowrap;">${row.storage_arrival_date || '-'}</td>
                     <td style="padding: 10px; white-space: nowrap;">${row.client_name || '-'}</td>
                     <td style="padding: 10px; white-space: nowrap;">${row.cv_number || '-'}</td>
+                    <td style="padding: 10px; white-space: nowrap; font-weight:bold;">${row.documents_status || '-'}</td>
                 </tr>
             `).join('');
         }
@@ -686,14 +701,14 @@
                 <body>
                 <table>
                     <tr style="height: 55pt;">
-                        <td colspan="9" class="header-container">
+                        <td colspan="10" class="header-container">
                             <div style="display: flex; align-items: center;">
                                 <img src="${window.location.origin}/circle-logo.png" width="50" height="50" style="float: left; display: inline-block; margin-right: 15px;" />
                                 <span class="company-title">JMP INTERNATIONAL FISH TRADING</span>
                             </div>
                         </td>
                     </tr>
-                    <tr style="height: 15pt;"><td colspan="9"></td></tr>
+                    <tr style="height: 15pt;"><td colspan="10"></td></tr>
                     <tr>
             `;
 
