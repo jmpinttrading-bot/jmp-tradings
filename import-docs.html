@@ -57,6 +57,7 @@
         .status-badge.completed { background: #d1fae5; color: #065f46; }
         .status-badge.incomplete { background: #fee2e2; color: #991b1b; }
         .status-badge.for-approval { background: #e0e7ff; color: #3730a3; }
+        .status-badge.approved { background: #d1fae5; color: #065f46; }
         
         .table-responsive-wrapper { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -302,7 +303,7 @@
                     const cleanStatus = (row.status || 'PENDING').trim().toLowerCase();
                     let statusClass = 'status-cell-pending';
                     
-                    if (cleanStatus === 'completed') statusClass = 'status-cell-completed';
+                    if (cleanStatus === 'completed' || cleanStatus === 'approved') statusClass = 'status-cell-completed';
                     else if (cleanStatus === 'incomplete') statusClass = 'status-cell-incomplete';
                     else if (cleanStatus === 'for approval' || cleanStatus === 'for_approval') statusClass = 'status-cell-for-approval';
 
@@ -421,11 +422,11 @@
             if (!activeInspectingRecordId) return;
             if (!confirm("Confirm approval of this document package?")) return;
 
-            // Approving sets workflow status to Completed and default document state tracking to APPROVED
+            // Approving sets workflow status to 'APPROVED' and default document state to 'APPROVED'
             const { error } = await supabaseClient
                 .from('imported_shipment_docs')
                 .update({ 
-                    status: 'Completed', 
+                    status: 'APPROVED', 
                     documents_status: 'APPROVED',
                     approved_date: new Date().toISOString() 
                 })
@@ -554,11 +555,11 @@
         async function fetchDocuments() {
             const searchQuery = document.getElementById('docSearchBox').value.trim();
             
-            // Filters based on the 'status' column for Action Required
+            // 1. ACTION REQUIRED TABLE: Show only non-APPROVED records (Pending, Incomplete, For Approval)
             const { data: actionableData } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
-                .in('status', ['Pending', 'Incomplete', 'For Approval'])
+                .neq('status', 'APPROVED')
                 .order('s_date', { ascending: false });
 
             const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
@@ -574,7 +575,13 @@
 
             if (!selectedFolderMonth) return;
             
-            let query = supabaseClient.from('imported_shipment_docs').select('*').eq('target_month', selectedFolderMonth);
+            // 2. FOLDER CONTEXT: Show only APPROVED status records matching month target
+            let query = supabaseClient
+                .from('imported_shipment_docs')
+                .select('*')
+                .eq('target_month', selectedFolderMonth)
+                .eq('status', 'APPROVED');
+                
             if (searchQuery) {
                 query = query.ilike('spsic_number', `%${searchQuery}%`);
             }
@@ -599,7 +606,7 @@
                     <td><strong>${(doc.documents_status || 'N/A').toUpperCase()}</strong></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
-            }).join('') || '<tr><td colspan="12" style="text-align:center; color:#64748b;">No entries found.</td></tr>';
+            }).join('') || '<tr><td colspan="12" style="text-align:center; color:#64748b;">No approved entries found for this directory month.</td></tr>';
         }
 
         function formatHumanReadableDate(dateString) {
