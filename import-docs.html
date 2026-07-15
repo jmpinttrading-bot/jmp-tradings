@@ -294,7 +294,7 @@
 
             if (records && records.length > 0) {
                 records.forEach(row => {
-                    const cleanStatus = (row.document_status || 'PENDING').trim().toLowerCase();
+                    const cleanStatus = (row.documents_status || 'PENDING').trim().toLowerCase();
                     let statusClass = 'status-cell-pending';
                     
                     if (cleanStatus === 'completed') statusClass = 'status-cell-completed';
@@ -312,7 +312,7 @@
                             <td class="table-td">${formatHumanReadableDate(row.storage_arrival_date)}</td>
                             <td class="table-td">${(row.client_name || '').toUpperCase()}</td>
                             <td class="table-td">${(row.cv_number || '').toUpperCase()}</td>
-                            <td class="table-td ${statusClass}">${(row.document_status || '').toUpperCase()}</td>
+                            <td class="table-td ${statusClass}">${(row.documents_status || '').toUpperCase()}</td>
                         </tr>
                     `;
                 });
@@ -338,7 +338,6 @@
             const year = document.getElementById('directoryYearSelect').value;
             
             try {
-                // Fetch all records with targeted columns mapped correctly
                 const { data: allYearRecords, error } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('*')
@@ -418,7 +417,7 @@
 
             const { error } = await supabaseClient
                 .from('imported_shipment_docs')
-                .update({ document_status: 'Completed', approved_date: new Date().toISOString() })
+                .update({ documents_status: 'Completed', approved_date: new Date().toISOString() })
                 .eq('id', activeInspectingRecordId);
 
             if (error) {
@@ -474,7 +473,6 @@
                 settingsBtn.style.color = "white";
             }
 
-            // Initialize and bind real-time presence synchronization
             initializePresenceSynchronization(user, profile.username, profile.role);
             
             initYearSelectOptions(new Date().getFullYear());
@@ -548,16 +546,16 @@
             const { data: actionableData } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
-                .in('document_status', ['Pending', 'Incomplete', 'For Approval'])
+                .in('documents_status', ['Pending', 'Incomplete', 'For Approval'])
                 .order('s_date', { ascending: false });
 
             const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
             globalTbody.innerHTML = actionableData?.map(doc => {
-                const cleanStatus = (doc.document_status || '').toLowerCase().replace(/\s+/g, '-');
+                const cleanStatus = (doc.documents_status || '').toLowerCase().replace(/\s+/g, '-');
                 return `<tr>
                     <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
                     <td>${formatHumanReadableDate(doc.s_date)}</td>
-                    <td><span class="status-badge ${cleanStatus}">${(doc.document_status || '').toUpperCase()}</span></td>
+                    <td><span class="status-badge ${cleanStatus}">${(doc.documents_status || '').toUpperCase()}</span></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
             }).join('') || '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
@@ -574,7 +572,7 @@
             
             const tbody = document.getElementById('documentLogsTableBody');
             tbody.innerHTML = currentLoadedWorkspaceRows.map(doc => {
-                const cleanStatus = (doc.document_status || '').toLowerCase().replace(/\s+/g, '-');
+                const cleanStatus = (doc.documents_status || '').toLowerCase().replace(/\s+/g, '-');
                 return `<tr>
                     <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
                     <td>${formatHumanReadableDate(doc.s_date)}</td>
@@ -585,7 +583,7 @@
                     <td>${formatHumanReadableDate(doc.storage_arrival_date)}</td>
                     <td>${(doc.client_name || '').toUpperCase()}</td>
                     <td>${(doc.cv_number || '').toUpperCase()}</td>
-                    <td><span class="status-badge ${cleanStatus}">${(doc.document_status || '').toUpperCase()}</span></td>
+                    <td><span class="status-badge ${cleanStatus}">${(doc.documents_status || '').toUpperCase()}</span></td>
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
             }).join('') || '<tr><td colspan="11" style="text-align:center; color:#64748b;">No entries found.</td></tr>';
