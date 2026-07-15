@@ -122,14 +122,14 @@
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-        /* --- Standardized Notification Modal (From inventory-management.html) --- */
+        /* Standardized Notification Modal Styles from inventory-management.html */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; font-family: 'Inter', sans-serif; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .restriction-modal-card h4 { margin-bottom: 12px; font-size: 1.25rem; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
-        .restriction-modal-card p { margin-bottom: 20px; color: #475569; font-size: 0.95rem; line-height: 1.5; }
-        .modal-btn { background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; transition: background 0.2s; }
-        .modal-btn:hover { background: #f97316; }
+        .restriction-modal-card h4 { font-size: 1.25rem; color: #1e293b; margin-bottom: 10px; font-weight: 700; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
+        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; width: 100%; max-width: 150px; transition: background 0.2s; }
+        .modal-btn:hover { background: #153a66; }
 
         @media (max-width: 768px) {
             .form-row { flex-direction: column; gap: 0; }
@@ -149,15 +149,24 @@
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn" onclick="checkModuleAccess(event, 'imports')">Imports</a>
-            <a href="inventory-management.html" class="nav-btn" onclick="checkModuleAccess(event, 'inventory')">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn" onclick="checkModuleAccess(event, 'sales')">Sales</a>
-            <a href="audit-report.html" class="nav-btn" onclick="checkModuleAccess(event, 'audit')">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'settings')">Settings</a>
+            <a href="dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'Dashboard')">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'My Profile')">My Profile</a>
+            <a href="import-docs.html" class="nav-btn" onclick="checkModuleAccess(event, 'Imports')">Imports</a>
+            <a href="inventory-management.html" class="nav-btn">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn" onclick="checkModuleAccess(event, 'Sales')">Sales</a>
+            <a href="audit-report.html" class="nav-btn" onclick="checkModuleAccess(event, 'Audit Report')">Audit Report</a>
+            <a href="admin-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'Settings')">Settings</a>
         </div>
     </nav>
+
+    <!-- Standardized Alert Modal Frame -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="alertTitle">Notification</h4>
+            <p id="alertMessage">Execution status telemetry readout frame.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
 
     <dialog id="cancelModal">
         <h3>Confirm Cancellation</h3>
@@ -189,7 +198,7 @@
     <div class="main-content">
         <div class="header">
             <h1>Outbound Inventory Management</h1>
-            <div class="admin-badge" id="adminEmail"></div>
+            <div id="adminEmail" class="employee-badge" style="display: block;">Connecting...</div>
         </div>
 
         <a href="inventory-management.html" class="back-link">⬅️ Back to Inventory Dashboard</a>
@@ -215,7 +224,7 @@
                         </div>
                         <div class="form-group flex-2">
                             <label style="color: #0f172a; font-weight: 700;">Dispatching Cold Storage Hub Facility</label>
-                            <input type="text" id="storageFacility" value="EISBERG COLD LOGISTICS INC." readonly>
+                            <input type="text" id="storageFacility" value="POLARIS COLD CHAIN SOLUTIONS" readonly>
                         </div>
                     </div>
                     
@@ -321,15 +330,6 @@
         </div>
     </div>
 
-    <!-- Standardized Notification/Access Blocker Modal Container -->
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage">Execution status telemetry readout frame.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -339,7 +339,7 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let currentUserRole = "employee"; 
-        let userPermissions = {}; 
+        let userPermissions = {}; // Permissions placeholder cache matching your control-panel.html system configuration
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
@@ -350,30 +350,12 @@
         
         let permissions = { isAdmin: false, hasMasterAccess: false };
 
-        // Universal modular restrictions synchronized with control-panel setup
-        function checkModuleAccess(event, moduleName) {
-            if (currentUserRole === 'admin') return; 
-
-            if (moduleName === 'settings') {
-                event.preventDefault();
-                showSystemModal({ title: 'Access Restricted', message: 'Administrative privileges are required to access System Settings.' });
-                return;
-            }
-
-            const accessMap = {
-                'imports': userPermissions.imports_access,
-                'inventory': userPermissions.inventory_access,
-                'sales': userPermissions.sales_access,
-                'audit': userPermissions.audit_access
-            };
-
-            if (accessMap[moduleName] === false) {
-                event.preventDefault();
-                showSystemModal({ 
-                    title: 'Access Denied', 
-                    message: `Your employee profile does not hold permissions to view the ${moduleName.toUpperCase()} module.` 
-                });
-            }
+        // Unified layout modal messenger
+        function showAlert(msg, type) {
+            showSystemModal({
+                title: type === 'error' ? 'System Error' : 'Success',
+                message: msg
+            });
         }
 
         function showSystemModal(options = {}) {
@@ -386,11 +368,30 @@
             document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
-        function showAlert(msg, type) {
-            showSystemModal({
-                title: type === 'error' ? 'System Error' : 'Success',
-                message: msg
-            });
+        // Standard Navigation Access Privilege Restriction Router
+        function checkModuleAccess(event, moduleName) {
+            if (currentUserRole === 'admin') return; // Master authorization bypass
+
+            let permitted = true;
+            if (moduleName === 'Settings' || moduleName === 'Audit Report') {
+                permitted = false; 
+            } else if (moduleName === 'Imports' && userPermissions.import_access === false) {
+                permitted = false;
+            } else if (moduleName === 'Sales' && userPermissions.sales_access === false) {
+                permitted = false;
+            } else if (moduleName === 'Dashboard' && userPermissions.dashboard_access === false) {
+                permitted = false;
+            } else if (moduleName === 'My Profile' && userPermissions.profile_access === false) {
+                permitted = false;
+            }
+
+            if (!permitted) {
+                event.preventDefault();
+                showSystemModal({ 
+                    title: 'Access Restricted', 
+                    message: `Your account profile does not possess authorization privileges to open the ${moduleName} module.` 
+                });
+            }
         }
 
         function generateSalesOrderNumber(isTransfer = false, direction = "", targetFacility = "") {
@@ -557,7 +558,7 @@
             document.getElementById('descSearchQuery').value = '';
             document.getElementById('salesOrderNo').value = '';
             document.getElementById('displayAvailableQty').value = '0 Units Available';
-            document.getElementById('storageFacility').value = 'EISBERG COLD LOGISTICS INC.';
+            document.getElementById('storageFacility').value = 'POLARIS COLD CHAIN SOLUTIONS';
             document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
         }
 
@@ -574,29 +575,31 @@
             
             const { data: profile } = await supabaseClient
                 .from('profiles')
-                .select('role, username, inventory_access, imports_access, sales_access, audit_access')
+                .select('*')
                 .eq('id', user.id)
                 .single();
             
             if (profile) {
-                currentUserRole = profile.role.toLowerCase().trim();
-                userPermissions = profile; 
+                currentUserRole = (profile.role || 'employee').toLowerCase().trim();
+                userPermissions = profile; // Cache local configuration markers
             }
 
-            if (profile && profile.role === 'Admin') {
+            if (currentUserRole === 'admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
-                document.getElementById('adminEmail').className = "admin-badge";
-                document.getElementById('adminEmail').style.display = "block";
-                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
+                const badge = document.getElementById('adminEmail');
+                badge.className = "admin-badge";
+                badge.style.display = "block";
+                badge.textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
                 const masterAccess = profile ? profile.inventory_access !== false : true;
                 if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                document.getElementById('adminEmail').className = "employee-badge";
-                document.getElementById('adminEmail').style.display = "block";
-                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
+                const badge = document.getElementById('adminEmail');
+                badge.className = "employee-badge";
+                badge.style.display = "block";
+                badge.textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
             }
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
@@ -607,7 +610,7 @@
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('*')
-                .eq('storage_facility', 'EISBERG COLD LOGISTICS INC.')
+                .eq('storage_facility', 'POLARIS COLD CHAIN SOLUTIONS')
                 .order('created_at', { ascending: true });
             if (error) return;
 
@@ -645,7 +648,7 @@
             const { data, error } = await supabaseClient
                 .from('transactions')
                 .select('*')
-                .eq('storage_facility', 'EISBERG COLD LOGISTICS INC.')
+                .eq('storage_facility', 'POLARIS COLD CHAIN SOLUTIONS')
                 .order('created_at', { ascending: false });
             if (error) { showAlert("System error: " + error.message, "error"); return; }
             globallyFetchedHistory = data || [];
@@ -839,7 +842,7 @@
                 unit_price: parseFloat(document.getElementById('rawUnitPrice').value) || 0,
                 transactions_type: "Outbound",
                 processed_by: currentUserEmail,
-                storage_facility: 'EISBERG COLD LOGISTICS INC.',
+                storage_facility: 'POLARIS COLD CHAIN SOLUTIONS',
                 date: document.getElementById('dateReleased').value,
                 buyer_name: targetBuyerName,
                 spsic_number: document.getElementById('activeSpsicNumber').value,
