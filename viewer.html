@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Include pdf-lib for client-side multi-file PDF compilation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background: transparent; padding: 0; overflow: hidden; }
@@ -32,6 +34,8 @@
         
         .viewer-footer { margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
         
+        .download-action-btn { background: #2563eb; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .download-action-btn:hover { background: #1d4ed8; }
         .close-viewer-btn { background: #64748b; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .approve-action-btn { background: #22c55e; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
         .doc-header-title { font-size: 1rem; color: #0f172a; margin: 5px 0 12px 0; display: flex; justify-content: space-between; align-items: center; user-select: none; }
@@ -80,7 +84,7 @@
         <div class="viewer-body" id="viewerTargetBody"></div>
         
         <div class="viewer-footer">
-            <button id="modalDownloadActionBtn" class="download-action-btn" onclick="window.parent.downloadCurrentDocumentPackage()">📥 Download Document Package</button>
+            <button id="modalDownloadActionBtn" class="download-action-btn" onclick="downloadAllAsSinglePDF()">📥 Download Compiled PDF Package</button>
             <button id="modalApproveActionBtn" class="approve-action-btn" onclick="window.parent.approveCurrentDocument()">Approve Documents</button>
             <button class="close-viewer-btn" onclick="window.parent.closeViewer()">Dismiss Viewer</button>
         </div>
@@ -105,6 +109,8 @@
 
     <script>
         let securityWatchActive = false;
+        let activeRecordDoc = null;
+        let activeFilesList = [];
 
         function triggerSecurityAlert() {
             if (!securityWatchActive) return;
@@ -165,6 +171,9 @@
         }
 
         async function setupViewerContent(doc, filesArray, isAdmin, STORAGE_BUCKET_NAME, parentSupabaseClient) {
+            activeRecordDoc = doc;
+            activeFilesList = []; // Clean state compilation array
+
             document.getElementById('viewerTitleDisplay').textContent = `Manifest Viewer: SPSIC-${doc.spsic_number}`;
             const targetBody = document.getElementById('viewerTargetBody');
             targetBody.innerHTML = "";
@@ -180,9 +189,9 @@
             metaPanel.className = "manifest-meta-panel";
             
             let statusClass = "status-pending";
-            if(doc.status === "For Approval") statusClass = "status-for-approval";
-            if(doc.status === "Approved") statusClass = "status-approved";
-            if(doc.status === "Completed") statusClass = "status-completed";
+            if(doc.status === "For Approval" || doc.status === "FOR APPROVAL") statusClass = "status-for-approval";
+            if(doc.status === "Approved" || doc.status === "APPROVED") statusClass = "status-approved";
+            if(doc.status === "Completed" || doc.status === "COMPLETED") statusClass = "status-completed";
 
             metaPanel.innerHTML = `
                 <div class="meta-item">
@@ -222,6 +231,10 @@
                     <span class="meta-value">${(doc.cv_number || 'N/A').toUpperCase()}</span>
                 </div>
                 <div class="meta-item">
+                    <span class="meta-label">Documents Status</span>
+                    <span class="meta-value" style="color: #2563eb; font-weight: bold;">${(doc.documents_status || 'N/A').toUpperCase()}</span>
+                </div>
+                <div class="meta-item">
                     <span class="meta-label">Verification Status</span>
                     <span class="status-badge ${statusClass}">${doc.status || 'Pending'}</span>
                 </div>
@@ -231,12 +244,19 @@
             for (const file of filesArray) {
                 const readableTimestamp = window.parent.formatHumanReadableDate(file.uploadDate);
                 
-                // Using Signed URL
+                // Fetching Signed URL
                 const { data: signedData, error } = await parentSupabaseClient.storage
                     .from(STORAGE_BUCKET_NAME)
-                    .createSignedUrl(file.path, 60);
+                    .createSignedUrl(file.path, 120); // 2 mins token lifespan
 
                 const fileUrl = error ? "" : signedData.signedUrl;
+
+                if (fileUrl) {
+                    activeFilesList.push({
+                        name: file.name,
+                        url: fileUrl
+                    });
+                }
 
                 const lowerPath = file.path.toLowerCase();
                 const isOfficeFile = lowerPath.endsWith('.doc') || lowerPath.endsWith('.docx') || lowerPath.endsWith('.xls') || lowerPath.endsWith('.xlsx');
@@ -270,6 +290,75 @@
 
             const approveBtn = document.getElementById('modalApproveActionBtn');
             approveBtn.style.display = (isAdmin && doc.status === 'For Approval') ? "block" : "none";
+        }
+
+        async function downloadAllAsSinglePDF() {
+            if (!activeFilesList || activeFilesList.length === 0) {
+                alert("No files loaded or prepared to merge!");
+                return;
+            }
+
+            const btn = document.getElementById('modalDownloadActionBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "⏳ Compiling Document Package...";
+            btn.disabled = true;
+
+            try {
+                // Initialize PDF-Lib combined canvas container
+                const mergedPdf = await PDFLib.PDFDocument.create();
+
+                for (const file of activeFilesList) {
+                    const response = await fetch(file.url);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const extension = file.url.split('?')[0].split('.').pop().toLowerCase();
+
+                    if (extension === 'pdf') {
+                        // Load and merge standard PDF
+                        const externalPdf = await PDFLib.PDFDocument.load(arrayBuffer);
+                        const copiedPages = await mergedPdf.copyPages(externalPdf, externalPdf.getPageIndices());
+                        copiedPages.forEach((page) => mergedPdf.addPage(page));
+                    } else if (['jpg', 'jpeg', 'png'].includes(extension)) {
+                        // Convert Image assets directly to a single PDF page dynamic wrap
+                        const page = mergedPdf.addPage();
+                        const { width, height } = page.getSize();
+                        
+                        let embeddedImage;
+                        if (extension === 'png') {
+                            embeddedImage = await mergedPdf.embedPng(arrayBuffer);
+                        } else {
+                            embeddedImage = await mergedPdf.embedJpg(arrayBuffer);
+                        }
+
+                        // Scale image down cleanly to page margin limits
+                        const imgDims = embeddedImage.scaleToFit(width - 40, height - 40);
+                        page.drawImage(embeddedImage, {
+                            x: (width - imgDims.width) / 2,
+                            y: (height - imgDims.height) / 2,
+                            width: imgDims.width,
+                            height: imgDims.height,
+                        });
+                    } else {
+                        console.warn(`File compilation format ignored: .${extension}`);
+                    }
+                }
+
+                const mergedPdfBytes = await mergedPdf.save();
+                const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+                const docName = `SPSIC_${activeRecordDoc?.spsic_number || 'Package'}_Compiled.pdf`;
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = docName;
+                link.click();
+                URL.revokeObjectURL(link.href);
+
+            } catch (err) {
+                console.error(err);
+                alert("Failed compilation process: " + err.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
         }
 
         document.addEventListener('contextmenu', function(e) {
