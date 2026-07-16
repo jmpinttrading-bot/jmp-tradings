@@ -129,7 +129,7 @@
         }
 
         /* --- Workspace Content Styles --- */
-        .main-content { padding: 40px; max-width: 1350px; margin: 0 auto; }
+        .main-content { padding: 40px; max-width: 1400px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
 
         .back-link { 
@@ -336,11 +336,12 @@
                         <table class="bulk-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 30%;">Customer <span style="color:red;">*</span></th>
-                                    <th style="width: 20%;">Quantity <span style="color:red;">*</span></th>
-                                    <th style="width: 20%;">Amount (PHP)</th>
-                                    <th style="width: 20%;">Ref Number</th>
-                                    <th style="width: 10%; text-align: center;">Action</th>
+                                    <th style="width: 25%;">Customer <span style="color:red;">*</span></th>
+                                    <th style="width: 15%;">Quantity <span style="color:red;">*</span></th>
+                                    <th style="width: 15%;">Amount (PHP)</th>
+                                    <th style="width: 15%;">Ref Number</th>
+                                    <th style="width: 22%;">Remarks</th>
+                                    <th style="width: 8%; text-align: center;">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="bulkItemRows">
@@ -351,11 +352,6 @@
 
                     <div class="btn-action-row" style="margin-bottom: 25px;">
                         <button type="button" class="btn-add" onclick="addNewCustomerRow()">+ Add Customer Line</button>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label>Transaction Batch Remarks</label>
-                        <input type="text" id="global_remarks" placeholder="Add optional reference batch notes applied to all records...">
                     </div>
                     
                     <button type="submit" class="btn-primary">Submit Batch Entries to Cloud</button>
@@ -475,6 +471,9 @@
                 </td>
                 <td>
                     <input type="text" class="bulk-input ref-field" placeholder="Ref ID">
+                </td>
+                <td>
+                    <input type="text" class="bulk-input remarks-field" placeholder="Remarks (Optional)">
                 </td>
                 <td style="text-align: center;">
                     <button type="button" class="btn-delete" onclick="removeCustomerRow(${rowCounter})">×</button>
@@ -604,7 +603,6 @@
             const globalDate = document.getElementById('global_date').value;
             const globalCommodity = document.getElementById('global_commodity').value.trim();
             const globalPrice = parseFloat(document.getElementById('global_price').value) || 0;
-            const globalRemarks = document.getElementById('global_remarks').value.trim() || null;
 
             // Generate payload rows for bulk insertion
             const payload = [];
@@ -613,6 +611,7 @@
                 const qty = parseFloat(row.querySelector('.qty-field').value) || 0;
                 const amt = parseFloat(row.querySelector('.amount-field').value) || 0;
                 const ref = row.querySelector('.ref-field').value.trim() || null;
+                const rowRemarks = row.querySelector('.remarks-field').value.trim() || null;
 
                 if (!customer) {
                     showSystemModal("Validation Error", "All active Customer name fields must be filled out.");
@@ -628,7 +627,7 @@
                     quantity: qty,
                     amount: amt,
                     ref_number: ref,
-                    remarks: globalRemarks,
+                    remarks: rowRemarks,
                     processed_by: currentUserEmail
                 });
             }
