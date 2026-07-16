@@ -410,7 +410,7 @@
                 <div class="ledger-header-wrapper">
                     <h3>Active SPSIC & Container Yards Ledger Balance</h3>
                     <div class="ledger-search-box">
-                        <input type="text" id="descSearchQuery" placeholder="Filter by SPSIC / Customer...">
+                        <input type="text" id="descSearchQuery" placeholder="Search SPSIC / Customer...">
                         <button type="button" class="btn-search" onclick="filterLedger()">Search</button>
                         <button type="button" class="btn-search clear-filter" onclick="clearFilter()">Reset</button>
                     </div>
@@ -433,10 +433,20 @@
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Synchronizing with cloud network datasets...</td>
+                                <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Ledger Database Pagination Row -->
+                <div class="btn-action-row" style="margin-top: 20px; padding: 0 20px;">
+                    <div></div>
+                    <div class="pagination-container" id="ledgerPaginationControls" style="display: none;">
+                        <button type="button" class="btn-page" id="ledgerPrevPageBtn" onclick="changeLedgerPage(-1)">Previous</button>
+                        <span class="page-indicator" id="ledgerPageNumberIndicator">Page 1 / 1</span>
+                        <button type="button" class="btn-page" id="ledgerNextPageBtn" onclick="changeLedgerPage(1)">Next</button>
+                    </div>
                 </div>
             </div>
 
@@ -452,7 +462,13 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let globallyFetchedItems = [];
+        let filteredItems = [];
+        let hasSearched = false; // Tracks if a user has run a query yet
         let currentUserPermissions = null;
+
+        /* --- Ledger Pagination Variables --- */
+        let currentLedgerPage = 1;
+        const LEDGER_ROWS_PER_PAGE = 20;
 
         function showSystemModal(title, message) {
             document.getElementById('restrictionModalTitle').textContent = title;
@@ -531,7 +547,6 @@
             return prefix + paddedNumString;
         }
 
-        // Live cascades changes downstream through the raw list data
         function handleRefChange(rowId, inputVal) {
             const index = activeRowsData.findIndex(r => r.id === rowId);
             if (index === -1) return;
@@ -592,7 +607,6 @@
                 remarks: ''
             });
 
-            // Automatically navigate to the next page if this new row creates a new page
             const newPage = Math.ceil(activeRowsData.length / ROWS_PER_PAGE);
             currentPage = newPage;
 
@@ -603,7 +617,6 @@
         function removeCustomerRow(rowId) {
             activeRowsData = activeRowsData.filter(r => r.id !== rowId);
             
-            // Adjust pagination index if the active page becomes completely empty
             const totalPages = Math.max(1, Math.ceil(activeRowsData.length / ROWS_PER_PAGE));
             if (currentPage > totalPages) {
                 currentPage = totalPages;
@@ -674,10 +687,8 @@
             const totalRows = activeRowsData.length;
             const totalPages = Math.max(1, Math.ceil(totalRows / ROWS_PER_PAGE));
 
-            // Update row tracker label
             document.getElementById('batchSizeTracker').textContent = `${totalRows} line items total`;
 
-            // Update Pagination display state
             document.getElementById('pageNumberIndicator').textContent = `Page ${currentPage} of ${totalPages}`;
             document.getElementById('prevPageBtn').disabled = (currentPage === 1);
             document.getElementById('nextPageBtn').disabled = (currentPage === totalPages);
@@ -688,13 +699,11 @@
             const targetItem = globallyFetchedItems.find(item => item.id === id);
             if (!targetItem) return;
 
-            // 1. Populate Shared Global Settings
             document.getElementById('global_spsic').value = targetItem.spsic_number || '';
             document.getElementById('global_date').value = targetItem.date || '';
             document.getElementById('global_commodity').value = targetItem.commodity || '';
             document.getElementById('global_price').value = targetItem.price || '';
 
-            // 2. Populate Customer Line Item batches with this single customer line item
             rowCounter = 1;
             activeRowsData = [{
                 id: rowCounter,
@@ -709,7 +718,6 @@
             updateBatchControls();
             renderActivePageRows();
 
-            // Smooth scroll up back to the entry form
             document.getElementById('spsicEntryForm').scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -717,7 +725,6 @@
         async function initPriceDashboard() {
             document.getElementById('global_date').value = new Date().toISOString().split('T')[0];
 
-            // Setup 2 rows by default
             addNewCustomerRow();
             addNewCustomerRow();
 
@@ -767,17 +774,42 @@
                 
             if (error) { showSystemModal("Sync Failure", error.message); return; }
             globallyFetchedItems = data || [];
-            renderLedgerTable(globallyFetchedItems);
+            
+            // Re-run filter rules if user had already run a search query before submission
+            if (hasSearched) {
+                filterLedger();
+            } else {
+                renderLedgerTable([]);
+            }
         }
 
+        /* --- Ledger Table Rendering with 20-Row Pagination --- */
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
-            if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No SPSIC records logged.</td></tr>`;
+            const paginationEl = document.getElementById('ledgerPaginationControls');
+
+            if (!hasSearched) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td></tr>`;
+                paginationEl.style.display = "none";
                 return;
             }
 
-            tbody.innerHTML = items.map((item) => {
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records matched your query.</td></tr>`;
+                paginationEl.style.display = "none";
+                return;
+            }
+
+            const totalPages = Math.ceil(items.length / LEDGER_ROWS_PER_PAGE);
+            if (currentLedgerPage > totalPages) {
+                currentLedgerPage = totalPages || 1;
+            }
+
+            const startIndex = (currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE;
+            const endIndex = startIndex + LEDGER_ROWS_PER_PAGE;
+            const pageSlice = items.slice(startIndex, endIndex);
+
+            tbody.innerHTML = pageSlice.map((item) => {
                 return `
                     <tr class="clickable-ledger-row" onclick="loadRowForEditing(${item.id})">
                         <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.spsic_number || '—'}</td>
@@ -792,6 +824,21 @@
                     </tr>
                 `;
             }).join('');
+
+            // Update Ledger Pagination Indicators
+            paginationEl.style.display = "flex";
+            document.getElementById('ledgerPageNumberIndicator').textContent = `Page ${currentLedgerPage} of ${totalPages}`;
+            document.getElementById('ledgerPrevPageBtn').disabled = (currentLedgerPage === 1);
+            document.getElementById('ledgerNextPageBtn').disabled = (currentLedgerPage === totalPages);
+        }
+
+        function changeLedgerPage(direction) {
+            const totalPages = Math.ceil(filteredItems.length / LEDGER_ROWS_PER_PAGE);
+            const targetPage = currentLedgerPage + direction;
+            if (targetPage >= 1 && targetPage <= totalPages) {
+                currentLedgerPage = targetPage;
+                renderLedgerTable(filteredItems);
+            }
         }
 
         async function handleFormSubmission(e) {
@@ -845,7 +892,6 @@
 
             showSystemModal("Action Successful", `Successfully uploaded batch containing ${payload.length} records.`);
             
-            // Re-zero operational state arrays
             document.getElementById('spsicEntryForm').reset();
             document.getElementById('global_date').value = new Date().toISOString().split('T')[0];
             
@@ -856,27 +902,37 @@
             addNewCustomerRow();
             addNewCustomerRow();
 
+            // Refresh dataset (retains search state if user was currently filtered)
             fetchLedgerDataset();
         }
 
         // Search engine rules
         function filterLedger() {
             const query = document.getElementById('descSearchQuery').value.trim().toLowerCase();
-            if (!query) { 
-                renderLedgerTable(globallyFetchedItems); 
-                return; 
+            
+            if (!query) {
+                showSystemModal("Input Required", "Please input an SPSIC or Customer search query to pull database balances.");
+                return;
             }
-            const filtered = globallyFetchedItems.filter(i => 
+
+            hasSearched = true;
+            currentLedgerPage = 1; // Reset to page 1 for new queries
+
+            filteredItems = globallyFetchedItems.filter(i => 
                 (i.spsic_number || "").toLowerCase().includes(query) || 
                 (i.customer || "").toLowerCase().includes(query) ||
                 (i.commodity || "").toLowerCase().includes(query)
             );
-            renderLedgerTable(filtered);
+
+            renderLedgerTable(filteredItems);
         }
 
         function clearFilter() {
             document.getElementById('descSearchQuery').value = "";
-            renderLedgerTable(globallyFetchedItems);
+            hasSearched = false;
+            filteredItems = [];
+            currentLedgerPage = 1;
+            renderLedgerTable([]);
         }
 
         function setupSessionCrossCheckListener() {
