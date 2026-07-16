@@ -454,7 +454,7 @@
         /* --- Dynamic Form Row Controls --- */
         let rowCounter = 0;
 
-        // Auto-increment logic helper
+        // Helper to calculate the next sequence number based on string patterns
         function calculateNextRefNumber() {
             const rows = Array.from(document.querySelectorAll('#bulkItemRows tr'));
             if (rows.length === 0) return '';
@@ -473,7 +473,7 @@
 
             // Regex matches the final sequence of numbers in the string
             const match = lastRef.match(/^(.*?)(\d+)$/);
-            if (!match) return lastRef; // Return unchanged if no trailing numbers exist
+            if (!match) return lastRef; 
 
             const prefix = match[1];
             const numString = match[2];
@@ -482,6 +482,36 @@
             // Maintain the exact zero-padding length
             const paddedNumString = String(incrementedVal).padStart(numString.length, '0');
             return prefix + paddedNumString;
+        }
+
+        // Live cascades changes downstream when a user types in a Ref. Number field
+        function cascadeRefNumbers(inputEl) {
+            const rows = Array.from(document.querySelectorAll('#bulkItemRows tr'));
+            const startIndex = rows.findIndex(row => row.querySelector('.ref-field') === inputEl);
+            if (startIndex === -1) return;
+
+            let currentVal = inputEl.value.trim();
+            
+            for (let i = startIndex + 1; i < rows.length; i++) {
+                if (!currentVal) {
+                    rows[i].querySelector('.ref-field').value = '';
+                    continue;
+                }
+                
+                const match = currentVal.match(/^(.*?)(\d+)$/);
+                if (!match) {
+                    rows[i].querySelector('.ref-field').value = currentVal;
+                    continue;
+                }
+
+                const prefix = match[1];
+                const numString = match[2];
+                const incrementedVal = parseInt(numString, 10) + 1;
+                const paddedNumString = String(incrementedVal).padStart(numString.length, '0');
+                
+                currentVal = prefix + paddedNumString;
+                rows[i].querySelector('.ref-field').value = currentVal;
+            }
         }
 
         function addNewCustomerRow() {
@@ -504,7 +534,7 @@
                     <input type="number" class="bulk-input amount-field" readonly placeholder="0.00">
                 </td>
                 <td>
-                    <input type="text" class="bulk-input ref-field" placeholder="Ref ID" value="${generatedRef}">
+                    <input type="text" class="bulk-input ref-field" placeholder="Ref ID" value="${generatedRef}" oninput="cascadeRefNumbers(this)">
                 </td>
                 <td>
                     <input type="text" class="bulk-input remarks-field" placeholder="Remarks (Optional)">
