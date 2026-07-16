@@ -454,11 +454,45 @@
         /* --- Dynamic Form Row Controls --- */
         let rowCounter = 0;
 
+        // Auto-increment logic helper
+        function calculateNextRefNumber() {
+            const rows = Array.from(document.querySelectorAll('#bulkItemRows tr'));
+            if (rows.length === 0) return '';
+
+            // Find the most recent non-empty reference number field, starting from the bottom
+            let lastRef = '';
+            for (let i = rows.length - 1; i >= 0; i--) {
+                const val = rows[i].querySelector('.ref-field').value.trim();
+                if (val) {
+                    lastRef = val;
+                    break;
+                }
+            }
+
+            if (!lastRef) return '';
+
+            // Regex matches the final sequence of numbers in the string
+            const match = lastRef.match(/^(.*?)(\d+)$/);
+            if (!match) return lastRef; // Return unchanged if no trailing numbers exist
+
+            const prefix = match[1];
+            const numString = match[2];
+            const incrementedVal = parseInt(numString, 10) + 1;
+
+            // Maintain the exact zero-padding length
+            const paddedNumString = String(incrementedVal).padStart(numString.length, '0');
+            return prefix + paddedNumString;
+        }
+
         function addNewCustomerRow() {
             rowCounter++;
             const tbody = document.getElementById('bulkItemRows');
             const tr = document.createElement('tr');
             tr.id = `row-${rowCounter}`;
+            
+            // Generate auto-filled reference value
+            const generatedRef = calculateNextRefNumber();
+
             tr.innerHTML = `
                 <td>
                     <input type="text" class="bulk-input customer-field" required placeholder="Customer entity">
@@ -470,7 +504,7 @@
                     <input type="number" class="bulk-input amount-field" readonly placeholder="0.00">
                 </td>
                 <td>
-                    <input type="text" class="bulk-input ref-field" placeholder="Ref ID">
+                    <input type="text" class="bulk-input ref-field" placeholder="Ref ID" value="${generatedRef}">
                 </td>
                 <td>
                     <input type="text" class="bulk-input remarks-field" placeholder="Remarks (Optional)">
