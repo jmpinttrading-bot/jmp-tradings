@@ -168,6 +168,9 @@
             margin-bottom: 15px;
             border-bottom: 2px solid #f1f5f9;
             padding-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .form-grid {
@@ -235,12 +238,35 @@
             align-items: center;
             margin-top: 15px;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .btn-add { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; }
+        .btn-add { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: background 0.2s; }
         .btn-add:hover { background: #059669; }
+        
         .btn-delete { background: #ef4444; color: white; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
         .btn-delete:hover { background: #dc2626; }
+
+        /* Pagination Styling */
+        .pagination-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-page {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-page:hover:not(:disabled) { background: #475569; }
+        .btn-page:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+        .page-indicator { font-size: 0.8rem; font-weight: bold; color: #475569; }
 
         .btn-primary { background: #0b2545; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; width: 100%; transition: background 0.2s; }
         .btn-primary:hover { background: #11355e; }
@@ -317,6 +343,10 @@
                             <input type="text" id="global_spsic" required placeholder="e.g. SPSIC-2026-001">
                         </div>
                         <div class="form-group">
+                            <label>Price (PHP)</label>
+                            <input type="number" id="global_price" step="0.01" required placeholder="0.00" oninput="recalculateAllAmounts()">
+                        </div>
+                        <div class="form-group">
                             <label>Date</label>
                             <input type="date" id="global_date" required>
                         </div>
@@ -324,14 +354,13 @@
                             <label>Commodity</label>
                             <input type="text" id="global_commodity" required placeholder="e.g. Yellowfin Tuna">
                         </div>
-                        <div class="form-group">
-                            <label>Price (PHP)</label>
-                            <input type="number" id="global_price" step="0.01" required placeholder="0.00" oninput="recalculateAllAmounts()">
-                        </div>
                     </div>
 
                     <!-- Dynamic Child Entry Grid -->
-                    <div class="section-subtitle">2. Customer Line Item Batches</div>
+                    <div class="section-subtitle">
+                        <span>2. Customer Line Item Batches (10 Rows Max Per Page)</span>
+                        <span style="font-size: 0.8rem; text-transform: none; color: #64748b;" id="batchSizeTracker">0 rows total</span>
+                    </div>
                     <div style="overflow-x: auto;">
                         <table class="bulk-table">
                             <thead>
@@ -351,7 +380,14 @@
                     </div>
 
                     <div class="btn-action-row" style="margin-bottom: 25px;">
-                        <button type="button" class="btn-add" onclick="addNewCustomerRow()">+ Add Customer Line</button>
+                        <button type="button" class="btn-add" id="addBatchRowBtn" onclick="addNewCustomerRow()">+ Add Customer Line</button>
+                        
+                        <!-- Pagination elements -->
+                        <div class="pagination-container" id="paginationControls">
+                            <button type="button" class="btn-page" id="prevPageBtn" onclick="changePage(-1)">Previous</button>
+                            <span class="page-indicator" id="pageNumberIndicator">Page 1 / 1</span>
+                            <button type="button" class="btn-page" id="nextPageBtn" onclick="changePage(1)">Next</button>
+                        </div>
                     </div>
                     
                     <button type="submit" class="btn-primary">Submit Batch Entries to Cloud</button>
@@ -451,18 +487,20 @@
             }
         }
 
-        /* --- Dynamic Form Row Controls --- */
+        /* --- Dynamic Form & Pagination Controls --- */
+        let activeRowsData = []; // Keeps state array of the current rows
         let rowCounter = 0;
+        let currentPage = 1;
+        const ROWS_PER_PAGE = 10; // Maximized at exactly 10 rows per page limit
 
-        // Helper to calculate the next sequence number based on string patterns
+        // Auto-increment logic helper
         function calculateNextRefNumber() {
-            const rows = Array.from(document.querySelectorAll('#bulkItemRows tr'));
-            if (rows.length === 0) return '';
+            if (activeRowsData.length === 0) return '';
 
-            // Find the most recent non-empty reference number field, starting from the bottom
+            // Scan array backward to find latest valid reference number
             let lastRef = '';
-            for (let i = rows.length - 1; i >= 0; i--) {
-                const val = rows[i].querySelector('.ref-field').value.trim();
+            for (let i = activeRowsData.length - 1; i >= 0; i--) {
+                const val = (activeRowsData[i].ref || '').trim();
                 if (val) {
                     lastRef = val;
                     break;
@@ -471,7 +509,6 @@
 
             if (!lastRef) return '';
 
-            // Regex matches the final sequence of numbers in the string
             const match = lastRef.match(/^(.*?)(\d+)$/);
             if (!match) return lastRef; 
 
@@ -479,104 +516,167 @@
             const numString = match[2];
             const incrementedVal = parseInt(numString, 10) + 1;
 
-            // Maintain the exact zero-padding length
             const paddedNumString = String(incrementedVal).padStart(numString.length, '0');
             return prefix + paddedNumString;
         }
 
-        // Live cascades changes downstream when a user types in a Ref. Number field
-        function cascadeRefNumbers(inputEl) {
-            const rows = Array.from(document.querySelectorAll('#bulkItemRows tr'));
-            const startIndex = rows.findIndex(row => row.querySelector('.ref-field') === inputEl);
-            if (startIndex === -1) return;
+        // Live cascades changes downstream through the raw list data
+        function handleRefChange(rowId, inputVal) {
+            const index = activeRowsData.findIndex(r => r.id === rowId);
+            if (index === -1) return;
 
-            let currentVal = inputEl.value.trim();
-            
-            for (let i = startIndex + 1; i < rows.length; i++) {
+            activeRowsData[index].ref = inputVal;
+            let currentVal = inputVal;
+
+            // Cascade downstream
+            for (let i = index + 1; i < activeRowsData.length; i++) {
                 if (!currentVal) {
-                    rows[i].querySelector('.ref-field').value = '';
+                    activeRowsData[i].ref = '';
                     continue;
                 }
-                
                 const match = currentVal.match(/^(.*?)(\d+)$/);
                 if (!match) {
-                    rows[i].querySelector('.ref-field').value = currentVal;
+                    activeRowsData[i].ref = currentVal;
                     continue;
                 }
-
                 const prefix = match[1];
                 const numString = match[2];
                 const incrementedVal = parseInt(numString, 10) + 1;
                 const paddedNumString = String(incrementedVal).padStart(numString.length, '0');
-                
+
                 currentVal = prefix + paddedNumString;
-                rows[i].querySelector('.ref-field').value = currentVal;
+                activeRowsData[i].ref = currentVal;
             }
+
+            renderActivePageRows();
+        }
+
+        function handleValueChange(rowId, field, val) {
+            const row = activeRowsData.find(r => r.id === rowId);
+            if (!row) return;
+
+            if (field === 'qty') {
+                row.qty = parseFloat(val) || 0;
+                const price = parseFloat(document.getElementById('global_price').value) || 0;
+                row.amount = (row.qty * price).toFixed(2);
+            } else if (field === 'customer') {
+                row.customer = val;
+            } else if (field === 'remarks') {
+                row.remarks = val;
+            }
+
+            renderActivePageRows();
         }
 
         function addNewCustomerRow() {
             rowCounter++;
-            const tbody = document.getElementById('bulkItemRows');
-            const tr = document.createElement('tr');
-            tr.id = `row-${rowCounter}`;
+            const newRef = calculateNextRefNumber();
             
-            // Generate auto-filled reference value
-            const generatedRef = calculateNextRefNumber();
+            activeRowsData.push({
+                id: rowCounter,
+                customer: '',
+                qty: 0,
+                amount: '0.00',
+                ref: newRef,
+                remarks: ''
+            });
 
-            tr.innerHTML = `
-                <td>
-                    <input type="text" class="bulk-input customer-field" required placeholder="Customer entity">
-                </td>
-                <td>
-                    <input type="number" class="bulk-input qty-field" step="any" required placeholder="0.00" oninput="calculateRowAmount(${rowCounter})">
-                </td>
-                <td>
-                    <input type="number" class="bulk-input amount-field" readonly placeholder="0.00">
-                </td>
-                <td>
-                    <input type="text" class="bulk-input ref-field" placeholder="Ref ID" value="${generatedRef}" oninput="cascadeRefNumbers(this)">
-                </td>
-                <td>
-                    <input type="text" class="bulk-input remarks-field" placeholder="Remarks (Optional)">
-                </td>
-                <td style="text-align: center;">
-                    <button type="button" class="btn-delete" onclick="removeCustomerRow(${rowCounter})">×</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-            calculateRowAmount(rowCounter);
+            // Automatically navigate to the next page if this new row creates a new page
+            const newPage = Math.ceil(activeRowsData.length / ROWS_PER_PAGE);
+            currentPage = newPage;
+
+            updateBatchControls();
+            renderActivePageRows();
         }
 
-        function removeCustomerRow(id) {
-            const row = document.getElementById(`row-${id}`);
-            if (row) {
-                row.remove();
+        function removeCustomerRow(rowId) {
+            activeRowsData = activeRowsData.filter(r => r.id !== rowId);
+            
+            // Adjust pagination index if the active page becomes completely empty
+            const totalPages = Math.max(1, Math.ceil(activeRowsData.length / ROWS_PER_PAGE));
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
             }
-        }
 
-        function calculateRowAmount(id) {
-            const price = parseFloat(document.getElementById('global_price').value) || 0;
-            const row = document.getElementById(`row-${id}`);
-            if (row) {
-                const qty = parseFloat(row.querySelector('.qty-field').value) || 0;
-                row.querySelector('.amount-field').value = (qty * price).toFixed(2);
-            }
+            updateBatchControls();
+            renderActivePageRows();
         }
 
         function recalculateAllAmounts() {
             const price = parseFloat(document.getElementById('global_price').value) || 0;
-            const rows = document.querySelectorAll('#bulkItemRows tr');
-            rows.forEach(row => {
-                const qty = parseFloat(row.querySelector('.qty-field').value) || 0;
-                row.querySelector('.amount-field').value = (qty * price).toFixed(2);
+            activeRowsData.forEach(row => {
+                row.amount = (row.qty * price).toFixed(2);
+            });
+            renderActivePageRows();
+        }
+
+        function renderActivePageRows() {
+            const tbody = document.getElementById('bulkItemRows');
+            tbody.innerHTML = '';
+
+            const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+            const endIndex = startIndex + ROWS_PER_PAGE;
+            const pageSlice = activeRowsData.slice(startIndex, endIndex);
+
+            if (pageSlice.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #94a3b8;">No customer line items added. Click "+ Add Customer Line" to start.</td></tr>`;
+                return;
+            }
+
+            pageSlice.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <input type="text" class="bulk-input customer-field" required placeholder="Customer entity" value="${row.customer}" oninput="handleValueChange(${row.id}, 'customer', this.value)">
+                    </td>
+                    <td>
+                        <input type="number" class="bulk-input qty-field" step="any" required placeholder="0.00" value="${row.qty || ''}" oninput="handleValueChange(${row.id}, 'qty', this.value)">
+                    </td>
+                    <td>
+                        <input type="number" class="bulk-input amount-field" readonly placeholder="0.00" value="${row.amount}">
+                    </td>
+                    <td>
+                        <input type="text" class="bulk-input ref-field" placeholder="Ref ID" value="${row.ref}" oninput="handleRefChange(${row.id}, this.value)">
+                    </td>
+                    <td>
+                        <input type="text" class="bulk-input remarks-field" placeholder="Remarks (Optional)" value="${row.remarks}" oninput="handleValueChange(${row.id}, 'remarks', this.value)">
+                    </td>
+                    <td style="text-align: center;">
+                        <button type="button" class="btn-delete" onclick="removeCustomerRow(${row.id})">×</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
         }
 
+        function changePage(direction) {
+            const totalPages = Math.max(1, Math.ceil(activeRowsData.length / ROWS_PER_PAGE));
+            const targetPage = currentPage + direction;
+            if (targetPage >= 1 && targetPage <= totalPages) {
+                currentPage = targetPage;
+                updateBatchControls();
+                renderActivePageRows();
+            }
+        }
+
+        function updateBatchControls() {
+            const totalRows = activeRowsData.length;
+            const totalPages = Math.max(1, Math.ceil(totalRows / ROWS_PER_PAGE));
+
+            // Update row tracker label
+            document.getElementById('batchSizeTracker').textContent = `${totalRows} line items total`;
+
+            // Update Pagination display state
+            document.getElementById('pageNumberIndicator').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('prevPageBtn').disabled = (currentPage === 1);
+            document.getElementById('nextPageBtn').disabled = (currentPage === totalPages);
+        }
+
+        /* --- Global Setup & Auth Logic --- */
         async function initPriceDashboard() {
-            // Set default date input value to today
             document.getElementById('global_date').value = new Date().toISOString().split('T')[0];
 
-            // Initialize form with 2 empty dynamic rows
+            // Setup 2 rows by default
             addNewCustomerRow();
             addNewCustomerRow();
 
@@ -657,8 +757,7 @@
         async function handleFormSubmission(e) {
             e.preventDefault();
             
-            const rows = document.querySelectorAll('#bulkItemRows tr');
-            if (rows.length === 0) {
+            if (activeRowsData.length === 0) {
                 showSystemModal("Validation Error", "Please add at least one Customer Line row to submit data.");
                 return;
             }
@@ -668,17 +767,16 @@
             const globalCommodity = document.getElementById('global_commodity').value.trim();
             const globalPrice = parseFloat(document.getElementById('global_price').value) || 0;
 
-            // Generate payload rows for bulk insertion
             const payload = [];
-            for (let row of rows) {
-                const customer = row.querySelector('.customer-field').value.trim();
-                const qty = parseFloat(row.querySelector('.qty-field').value) || 0;
-                const amt = parseFloat(row.querySelector('.amount-field').value) || 0;
-                const ref = row.querySelector('.ref-field').value.trim() || null;
-                const rowRemarks = row.querySelector('.remarks-field').value.trim() || null;
+            for (let row of activeRowsData) {
+                const customer = row.customer.trim();
+                const qty = parseFloat(row.qty) || 0;
+                const amt = parseFloat(row.amount) || 0;
+                const ref = row.ref.trim() || null;
+                const rowRemarks = row.remarks.trim() || null;
 
                 if (!customer) {
-                    showSystemModal("Validation Error", "All active Customer name fields must be filled out.");
+                    showSystemModal("Validation Error", "All active Customer name fields must be filled out before submitting.");
                     return;
                 }
 
@@ -696,7 +794,6 @@
                 });
             }
 
-            // Bulk upload insert array
             const { error } = await supabaseClient
                 .from('spsic_ledger')
                 .insert(payload);
@@ -708,11 +805,14 @@
 
             showSystemModal("Action Successful", `Successfully uploaded batch containing ${payload.length} records.`);
             
-            // Clear inputs and dynamically rebuild clean rows
+            // Re-zero operational state arrays
             document.getElementById('spsicEntryForm').reset();
             document.getElementById('global_date').value = new Date().toISOString().split('T')[0];
-            document.getElementById('bulkItemRows').innerHTML = '';
+            
+            activeRowsData = [];
             rowCounter = 0;
+            currentPage = 1;
+
             addNewCustomerRow();
             addNewCustomerRow();
 
