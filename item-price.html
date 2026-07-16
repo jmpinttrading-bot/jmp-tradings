@@ -173,9 +173,10 @@
             align-items: center;
         }
 
+        /* Explicit 4-column layout for a single row on desktop */
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             margin-bottom: 25px;
         }
@@ -289,6 +290,13 @@
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
         .master-table tr:hover td { background-color: #f8fafc; }
 
+        /* Responsive stack for smaller screen layout protection */
+        @media (max-width: 992px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 768px) {
             .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
             .ledger-search-box { width: 100%; }
@@ -335,16 +343,12 @@
             <div class="card-panel">
                 <form id="spsicEntryForm" onsubmit="handleFormSubmission(event)">
                     
-                    <!-- Shared Static Headers Group -->
+                    <!-- Shared Static Headers Group (Locked to 1 Single Row, 4 Columns) -->
                     <div class="section-subtitle">1. Shared Global Settings</div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>SPSIC Number</label>
                             <input type="text" id="global_spsic" required placeholder="e.g. SPSIC-2026-001">
-                        </div>
-                        <div class="form-group">
-                            <label>Price (PHP)</label>
-                            <input type="number" id="global_price" step="0.01" required placeholder="0.00" oninput="recalculateAllAmounts()">
                         </div>
                         <div class="form-group">
                             <label>Date</label>
@@ -353,6 +357,10 @@
                         <div class="form-group">
                             <label>Commodity</label>
                             <input type="text" id="global_commodity" required placeholder="e.g. Yellowfin Tuna">
+                        </div>
+                        <div class="form-group">
+                            <label>Price (PHP)</label>
+                            <input type="number" id="global_price" step="0.01" required placeholder="0.00" oninput="recalculateAllAmounts()">
                         </div>
                     </div>
 
@@ -488,10 +496,10 @@
         }
 
         /* --- Dynamic Form & Pagination Controls --- */
-        let activeRowsData = []; // Keeps state array of the current rows
+        let activeRowsData = []; 
         let rowCounter = 0;
         let currentPage = 1;
-        const ROWS_PER_PAGE = 10; // Maximized at exactly 10 rows per page limit
+        const ROWS_PER_PAGE = 10; 
 
         // Auto-increment logic helper
         function calculateNextRefNumber() {
