@@ -463,7 +463,7 @@
         let bypassAuthListener = false;
         let globallyFetchedItems = [];
         let filteredItems = [];
-        let hasSearched = false; // Tracks if a user has run a query yet
+        let hasSearched = false;
         let currentUserPermissions = null;
 
         /* --- Ledger Pagination Variables --- */
@@ -520,11 +520,9 @@
         let currentPage = 1;
         const ROWS_PER_PAGE = 10; 
 
-        // Auto-increment logic helper
         function calculateNextRefNumber() {
             if (activeRowsData.length === 0) return '';
 
-            // Scan array backward to find latest valid reference number
             let lastRef = '';
             for (let i = activeRowsData.length - 1; i >= 0; i--) {
                 const val = (activeRowsData[i].ref || '').trim();
@@ -554,7 +552,6 @@
             activeRowsData[index].ref = inputVal;
             let currentVal = inputVal;
 
-            // Cascade downstream
             for (let i = index + 1; i < activeRowsData.length; i++) {
                 if (!currentVal) {
                     activeRowsData[i].ref = '';
@@ -775,7 +772,6 @@
             if (error) { showSystemModal("Sync Failure", error.message); return; }
             globallyFetchedItems = data || [];
             
-            // Re-run filter rules if user had already run a search query before submission
             if (hasSearched) {
                 filterLedger();
             } else {
@@ -825,7 +821,6 @@
                 `;
             }).join('');
 
-            // Update Ledger Pagination Indicators
             paginationEl.style.display = "flex";
             document.getElementById('ledgerPageNumberIndicator').textContent = `Page ${currentLedgerPage} of ${totalPages}`;
             document.getElementById('ledgerPrevPageBtn').disabled = (currentLedgerPage === 1);
@@ -853,6 +848,24 @@
             const globalDate = document.getElementById('global_date').value;
             const globalCommodity = document.getElementById('global_commodity').value.trim();
             const globalPrice = parseFloat(document.getElementById('global_price').value) || 0;
+
+            // --- Database Validation Step ---
+            // Check if input SPSIC is recorded in imported_shipment_docs table
+            const { data: matchedDoc, error: checkError } = await supabaseClient
+                .from('imported_shipment_docs')
+                .select('spsic_number')
+                .eq('spsic_number', globalSpsic)
+                .maybeSingle();
+
+            if (checkError) {
+                showSystemModal("Database Query Error", "An error occurred while verifying the SPSIC details: " + checkError.message);
+                return;
+            }
+
+            if (!matchedDoc) {
+                showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document");
+                return;
+            }
 
             const payload = [];
             for (let row of activeRowsData) {
@@ -902,11 +915,9 @@
             addNewCustomerRow();
             addNewCustomerRow();
 
-            // Refresh dataset (retains search state if user was currently filtered)
             fetchLedgerDataset();
         }
 
-        // Search engine rules
         function filterLedger() {
             const query = document.getElementById('descSearchQuery').value.trim().toLowerCase();
             
@@ -916,7 +927,7 @@
             }
 
             hasSearched = true;
-            currentLedgerPage = 1; // Reset to page 1 for new queries
+            currentLedgerPage = 1;
 
             filteredItems = globallyFetchedItems.filter(i => 
                 (i.spsic_number || "").toLowerCase().includes(query) || 
