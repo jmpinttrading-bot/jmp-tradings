@@ -313,7 +313,7 @@
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Restricted</h4>
             <p id="restrictionModalMessage">You do not possess the dynamic authorization privileges needed for this module pipeline.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+            <button class="modal-btn" id="restrictionModalBtn" onclick="closeRestrictionModal()">Acknowledge</button>
         </div>
     </div>
 
@@ -351,7 +351,7 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label>SPSIC Number</label>
-                            <input type="text" id="global_spsic" required placeholder="e.g. SPSIC-2026-001">
+                            <input type="text" id="global_spsic" required placeholder="e.g. SPSIC-2026-001" onblur="validateSpsicRealtime()">
                         </div>
                         <div class="form-group">
                             <label>Date</label>
@@ -470,9 +470,21 @@
         let currentLedgerPage = 1;
         const LEDGER_ROWS_PER_PAGE = 20;
 
-        function showSystemModal(title, message) {
+        function showSystemModal(title, message, focusOnCloseId = null) {
             document.getElementById('restrictionModalTitle').textContent = title;
             document.getElementById('restrictionModalMessage').textContent = message;
+            
+            const modalBtn = document.getElementById('restrictionModalBtn');
+            if (focusOnCloseId) {
+                modalBtn.onclick = function() {
+                    closeRestrictionModal();
+                    const el = document.getElementById(focusOnCloseId);
+                    if (el) el.focus();
+                };
+            } else {
+                modalBtn.onclick = closeRestrictionModal;
+            }
+
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
@@ -511,6 +523,31 @@
                 showSystemModal("Access Restricted", "You do not possess the dynamic authorization privileges needed for this module pipeline.");
             } else {
                 window.location.href = url;
+            }
+        }
+
+        /* --- Dynamic Realtime Database SPSIC Validation --- */
+        async function validateSpsicRealtime() {
+            const spsicInput = document.getElementById('global_spsic');
+            const globalSpsic = spsicInput.value.trim();
+            
+            // If the field is empty, let standard browser HTML5 validation handle it on submit
+            if (!globalSpsic) return;
+
+            const { data: matchedDoc, error: checkError } = await supabaseClient
+                .from('imported_shipment_docs')
+                .select('spsic_number')
+                .eq('spsic_number', globalSpsic)
+                .maybeSingle();
+
+            if (checkError) {
+                console.error("SPSIC Verification query fault:", checkError);
+                return;
+            }
+
+            // If not found, pop the restriction alert immediately and redirect focus back to input
+            if (!matchedDoc) {
+                showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
             }
         }
 
@@ -849,8 +886,7 @@
             const globalCommodity = document.getElementById('global_commodity').value.trim();
             const globalPrice = parseFloat(document.getElementById('global_price').value) || 0;
 
-            // --- Database Validation Step ---
-            // Check if input SPSIC is recorded in imported_shipment_docs table
+            // Strict final database check on submit to guarantee data integrity
             const { data: matchedDoc, error: checkError } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('spsic_number')
@@ -863,7 +899,7 @@
             }
 
             if (!matchedDoc) {
-                showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document");
+                showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
                 return;
             }
 
