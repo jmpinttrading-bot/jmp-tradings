@@ -198,6 +198,11 @@
             box-shadow: 0 0 0 3px rgba(238,150,75,0.1); 
         }
 
+        /* Forces typed/visual text uppercase in input components */
+        .uppercase-force {
+            text-transform: uppercase;
+        }
+
         /* Bulk Upload Dynamics */
         .bulk-table {
             width: 100%;
@@ -351,7 +356,7 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label>SPSIC Number</label>
-                            <input type="text" id="global_spsic" required placeholder="e.g. SPSIC-2026-001" onblur="validateSpsicRealtime()">
+                            <input type="text" id="global_spsic" class="uppercase-force" required placeholder="e.g. SPSIC-2026-001" onblur="validateSpsicRealtime()">
                         </div>
                         <div class="form-group">
                             <label>Date</label>
@@ -359,7 +364,7 @@
                         </div>
                         <div class="form-group">
                             <label>Commodity</label>
-                            <input type="text" id="global_commodity" required placeholder="e.g. Yellowfin Tuna">
+                            <input type="text" id="global_commodity" class="uppercase-force" required placeholder="e.g. YELLOWFIN TUNA">
                         </div>
                         <div class="form-group">
                             <label>Price (PHP)</label>
@@ -529,9 +534,8 @@
         /* --- Dynamic Realtime Database SPSIC Validation --- */
         async function validateSpsicRealtime() {
             const spsicInput = document.getElementById('global_spsic');
-            const globalSpsic = spsicInput.value.trim();
+            const globalSpsic = spsicInput.value.trim().toUpperCase();
             
-            // If the field is empty, let standard browser HTML5 validation handle it on submit
             if (!globalSpsic) return;
 
             const { data: matchedDoc, error: checkError } = await supabaseClient
@@ -545,7 +549,6 @@
                 return;
             }
 
-            // If not found, pop the restriction alert immediately and redirect focus back to input
             if (!matchedDoc) {
                 showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
             }
@@ -611,6 +614,7 @@
             renderActivePageRows();
         }
 
+        // Updated handleValueChange to only update array in memory without table wiping
         function handleValueChange(rowId, field, val) {
             const row = activeRowsData.find(r => r.id === rowId);
             if (!row) return;
@@ -619,13 +623,15 @@
                 row.qty = parseFloat(val) || 0;
                 const price = parseFloat(document.getElementById('global_price').value) || 0;
                 row.amount = (row.qty * price).toFixed(2);
+                
+                // Instantly update the corresponding visual amount element without re-rendering row
+                const amountInput = document.getElementById(`amount-field-${rowId}`);
+                if (amountInput) amountInput.value = row.amount;
             } else if (field === 'customer') {
-                row.customer = val;
+                row.customer = val.toUpperCase();
             } else if (field === 'remarks') {
-                row.remarks = val;
+                row.remarks = val.toUpperCase();
             }
-
-            renderActivePageRows();
         }
 
         function addNewCustomerRow() {
@@ -685,19 +691,19 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>
-                        <input type="text" class="bulk-input customer-field" required placeholder="Customer entity" value="${row.customer}" oninput="handleValueChange(${row.id}, 'customer', this.value)">
+                        <input type="text" class="bulk-input customer-field uppercase-force" required placeholder="CUSTOMER ENTITY" value="${row.customer}" oninput="handleValueChange(${row.id}, 'customer', this.value)">
                     </td>
                     <td>
                         <input type="number" class="bulk-input qty-field" step="any" required placeholder="0.00" value="${row.qty || ''}" oninput="handleValueChange(${row.id}, 'qty', this.value)">
                     </td>
                     <td>
-                        <input type="number" class="bulk-input amount-field" readonly placeholder="0.00" value="${row.amount}">
+                        <input type="number" class="bulk-input amount-field" readonly placeholder="0.00" id="amount-field-${row.id}" value="${row.amount}">
                     </td>
                     <td>
                         <input type="text" class="bulk-input ref-field" placeholder="Ref ID" value="${row.ref}" oninput="handleRefChange(${row.id}, this.value)">
                     </td>
                     <td>
-                        <input type="text" class="bulk-input remarks-field" placeholder="Remarks (Optional)" value="${row.remarks}" oninput="handleValueChange(${row.id}, 'remarks', this.value)">
+                        <input type="text" class="bulk-input remarks-field uppercase-force" placeholder="REMARKS (OPTIONAL)" value="${row.remarks}" oninput="handleValueChange(${row.id}, 'remarks', this.value)">
                     </td>
                     <td style="text-align: center;">
                         <button type="button" class="btn-delete" onclick="removeCustomerRow(${row.id})">×</button>
@@ -733,19 +739,19 @@
             const targetItem = globallyFetchedItems.find(item => item.id === id);
             if (!targetItem) return;
 
-            document.getElementById('global_spsic').value = targetItem.spsic_number || '';
+            document.getElementById('global_spsic').value = (targetItem.spsic_number || '').toUpperCase();
             document.getElementById('global_date').value = targetItem.date || '';
-            document.getElementById('global_commodity').value = targetItem.commodity || '';
+            document.getElementById('global_commodity').value = (targetItem.commodity || '').toUpperCase();
             document.getElementById('global_price').value = targetItem.price || '';
 
             rowCounter = 1;
             activeRowsData = [{
                 id: rowCounter,
-                customer: targetItem.customer || '',
+                customer: (targetItem.customer || '').toUpperCase(),
                 qty: targetItem.quantity || 0,
                 amount: parseFloat(targetItem.amount || 0).toFixed(2),
                 ref: targetItem.ref_number || '',
-                remarks: targetItem.remarks || ''
+                remarks: (targetItem.remarks || '').toUpperCase()
             }];
 
             currentPage = 1;
@@ -846,14 +852,14 @@
                 return `
                     <tr class="clickable-ledger-row" onclick="loadRowForEditing(${item.id})">
                         <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.spsic_number || '—'}</td>
-                        <td style="font-weight: 600; color: #2563eb; text-decoration: underline;">${item.customer || '—'}</td>
+                        <td style="font-weight: 600; color: #2563eb; text-decoration: underline; text-transform: uppercase;">${item.customer || '—'}</td>
                         <td>${item.date || '—'}</td>
                         <td style="font-weight: 700;">${item.quantity || 0}</td>
                         <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase;">${item.commodity || ''}</span></td>
                         <td>₱${parseFloat(item.price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                         <td style="font-weight: 700; color: #0f172a;">₱${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                         <td style="color: #64748b; font-weight: 600;">${item.ref_number || '—'}</td>
-                        <td style="white-space: normal; font-size:0.85rem; color:#475569;">${item.remarks || '—'}</td>
+                        <td style="white-space: normal; font-size:0.85rem; color:#475569; text-transform: uppercase;">${item.remarks || '—'}</td>
                     </tr>
                 `;
             }).join('');
@@ -881,12 +887,11 @@
                 return;
             }
 
-            const globalSpsic = document.getElementById('global_spsic').value.trim();
+            const globalSpsic = document.getElementById('global_spsic').value.trim().toUpperCase();
             const globalDate = document.getElementById('global_date').value;
-            const globalCommodity = document.getElementById('global_commodity').value.trim();
+            const globalCommodity = document.getElementById('global_commodity').value.trim().toUpperCase();
             const globalPrice = parseFloat(document.getElementById('global_price').value) || 0;
 
-            // Strict final database check on submit to guarantee data integrity
             const { data: matchedDoc, error: checkError } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('spsic_number')
@@ -905,11 +910,11 @@
 
             const payload = [];
             for (let row of activeRowsData) {
-                const customer = row.customer.trim();
+                const customer = row.customer.trim().toUpperCase();
                 const qty = parseFloat(row.qty) || 0;
                 const amt = parseFloat(row.amount) || 0;
                 const ref = row.ref.trim() || null;
-                const rowRemarks = row.remarks.trim() || null;
+                const rowRemarks = row.remarks.trim().toUpperCase() || null;
 
                 if (!customer) {
                     showSystemModal("Validation Error", "All active Customer name fields must be filled out before submitting.");
