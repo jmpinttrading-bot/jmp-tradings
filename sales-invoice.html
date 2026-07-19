@@ -46,11 +46,13 @@
         .search-box-container input:focus { outline: none; border-color: #ee964b; }
         
         .btn-action { background: #0f172a; color: white; border: none; height: 38px; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: background 0.2s; white-space: nowrap; }
-        .btn-action:hover { background: #1e293b; }
+        .btn-action:hover:not(:disabled) { background: #1e293b; }
         .btn-action.clear-filter { background: #64748b; }
         .btn-action.clear-filter:hover { background: #475569; }
+        
         .btn-save-cloud { background: #10b981; color: white; }
-        .btn-save-cloud:hover { background: #059669; }
+        .btn-save-cloud:hover:not(:disabled) { background: #059669; }
+        .btn-save-cloud:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
         /* Table styling elements */
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; margin-bottom: 15px; }
@@ -176,7 +178,7 @@
                 <div style="font-size: 0.8rem; color: #64748b;" id="recordCountTracker">Showing 0 records</div>
                 
                 <div style="display: flex; gap: 15px; align-items: center;">
-                    <button type="button" class="btn-action btn-save-cloud" onclick="saveModifiedInvoicesToCloud()">Save Invoices to Cloud</button>
+                    <button type="button" class="btn-action btn-save-cloud" id="saveInvoicesBtn" onclick="saveModifiedInvoicesToCloud()" disabled>Save Invoices</button>
                     
                     <div class="pagination-container" id="tablePaginationControls" style="display: none;">
                         <button type="button" class="btn-page" id="prevPageBtn" onclick="movePage(-1)">Previous</button>
@@ -318,15 +320,23 @@
         /* --- Cloud Database Update Persistence Implementation --- */
         async function saveModifiedInvoicesToCloud() {
             let processedUpdatesCount = 0;
+            let changesFound = false;
             
             for (let item of originalLedgerDataset) {
                 const currentInputValue = (item.calculatedInvoiceNo || '').trim();
                 const primaryDatabaseValue = (item.invoice_no || '').trim();
 
                 if (currentInputValue !== primaryDatabaseValue) {
+                    changesFound = true;
+                    
+                    // Only save if the sales invoice number field is NOT blank
+                    if (currentInputValue === "") {
+                        continue;
+                    }
+
                     const { error } = await supabaseClient
                         .from('spsic_ledger')
-                        .update({ invoice_no: currentInputValue || null })
+                        .update({ invoice_no: currentInputValue })
                         .eq('id', item.id);
 
                     if (error) {
@@ -335,6 +345,16 @@
                     }
                     processedUpdatesCount++;
                 }
+            }
+
+            if (!changesFound) {
+                showSystemNotification("No Changes Found", "There are no modified records to save.");
+                return;
+            }
+
+            if (processedUpdatesCount === 0) {
+                showSystemNotification("Validation Notice", "No records were updated. Note: Blank sales invoice values cannot be saved.");
+                return;
             }
 
             showSystemNotification("Sync Successful", `Successfully updated ${processedUpdatesCount} invoice assignments directly on cloud ledger storage.`);
@@ -386,6 +406,7 @@
             const referenceWrapper = document.getElementById('referenceBadgesWrapper');
             const topSpsicValue = document.getElementById('spsicTopBadgeValue');
             const topCommodityValue = document.getElementById('commodityTopBadgeValue');
+            const saveBtn = document.getElementById('saveInvoicesBtn');
 
             // If no search has been entered yet, keep it blank with the instruction message
             if (!isSearchPerformed) {
@@ -393,6 +414,7 @@
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
+                saveBtn.disabled = true; // Disable save button if table is blank
                 return;
             }
 
@@ -401,8 +423,11 @@
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
+                saveBtn.disabled = true; // Keep disabled if search yielded no results
                 return;
             }
+
+            saveBtn.disabled = false; // Enable save button when valid rows are available
 
             if (workingFilteredDataset[0]) {
                 topSpsicValue.textContent = workingFilteredDataset[0].spsic_number || '—';
