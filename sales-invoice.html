@@ -71,12 +71,6 @@
         .invoice-input { width: 100%; max-width: 160px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; font-weight: bold; font-family: monospace; color: #f97316; background: white; }
         .invoice-input:focus { outline: none; border-color: #f97316; box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1); }
 
-        /* Excel-Style Table Consolidation Summary Block Layout */
-        .consolidation-summary-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-        .consolidation-metric-box { background: white; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
-        .consolidation-metric-box label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; }
-        .consolidation-metric-box span { font-size: 1.2rem; font-weight: bold; color: #0f172a; font-family: 'Segoe UI', sans-serif; }
-
         /* Pagination Layout Control Components */
         .pagination-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 5px; flex-wrap: wrap; gap: 15px; }
         .pagination-container { display: flex; align-items: center; gap: 8px; }
@@ -176,26 +170,6 @@
                         </tr>
                     </tbody>
                 </table>
-            </div>
-
-            <!-- Excel Table Consolidation Dashboard Segment -->
-            <div class="consolidation-summary-wrapper">
-                <div class="consolidation-metric-box">
-                    <label>Total Ledger Rows</label>
-                    <span id="consolidatedTotalRows">0</span>
-                </div>
-                <div class="consolidation-metric-box" style="border-left: 3px solid #0284c7;">
-                    <label style="color: #0284c7;">Selected Rows</label>
-                    <span id="consolidatedSelectedCount" style="color: #0284c7;">0</span>
-                </div>
-                <div class="consolidation-metric-box">
-                    <label>Consolidated Quantity</label>
-                    <span id="consolidatedTotalQty">0</span>
-                </div>
-                <div class="consolidation-metric-box">
-                    <label>Consolidated Revenue</label>
-                    <span id="consolidatedTotalAmount">₱0.00</span>
-                </div>
             </div>
 
             <div class="pagination-row">
@@ -378,29 +352,22 @@
 
         /* --- Excel Selection System Logic --- */
         function handleRowClick(event, recordId) {
-            // Guard to make sure interaction isn't swallowed if they are interacting inside the text inputs directly
             if (event.target.classList.contains('invoice-input')) return;
 
-            if (selectedRecordIds.has(recordId)) {
-                // If it's already selected, a normal single click does nothing (waiting for double click to deselect)
-                return;
-            } else {
+            if (!selectedRecordIds.has(recordId)) {
                 selectedRecordIds.add(recordId);
             }
             
             updateVisualRowStates();
-            calculateConsolidatedSummary();
         }
 
         function handleRowDoubleClick(event, recordId) {
             if (event.target.classList.contains('invoice-input')) return;
             
-            if (selectedRecordIds.has(recordId)) {
-                selectedRecordIds.delete(recordId);
-            }
+            // Clear all selected rows on double click
+            selectedRecordIds.clear();
             
             updateVisualRowStates();
-            calculateConsolidatedSummary();
         }
 
         function updateVisualRowStates() {
@@ -412,28 +379,6 @@
                 } else {
                     row.classList.remove('is-selected');
                 }
-            });
-        }
-
-        /* --- Excel Style Consolidation Calculation System --- */
-        function calculateConsolidatedSummary() {
-            let totalQty = 0;
-            let totalAmt = 0;
-
-            // Map and calculate running figures based on global multi-selection configuration
-            originalLedgerDataset.forEach(record => {
-                if (selectedRecordIds.has(record.id)) {
-                    totalQty += parseFloat(record.quantity || 0);
-                    totalAmt += parseFloat(record.amount || 0);
-                }
-            });
-
-            document.getElementById('consolidatedTotalRows').textContent = workingFilteredDataset.length;
-            document.getElementById('consolidatedSelectedCount').textContent = selectedRecordIds.size;
-            document.getElementById('consolidatedTotalQty').textContent = totalQty.toLocaleString();
-            document.getElementById('consolidatedTotalAmount').textContent = '₱' + totalAmt.toLocaleString(undefined, {
-                minimumFractionDigits: 2, 
-                maximumFractionDigits: 2
             });
         }
 
@@ -450,7 +395,6 @@
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
-                calculateConsolidatedSummary();
                 return;
             }
 
@@ -501,8 +445,6 @@
             document.getElementById('pageNumberIndicator').textContent = `Page ${activePage} of ${totalPages}`;
             document.getElementById('prevPageBtn').disabled = (activePage === 1);
             document.getElementById('nextPageBtn').disabled = (activePage === totalPages);
-            
-            calculateConsolidatedSummary();
         }
 
         function executeSearchFilter() {
