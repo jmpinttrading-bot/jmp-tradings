@@ -198,9 +198,8 @@
         let currentUserPermissions = null;
         let originalLedgerDataset = [];
         let workingFilteredDataset = [];
-        let isSearchPerformed = false; // Tracks if an active search operation happened
+        let isSearchPerformed = false; 
         
-        // Track row identifiers selected by the user globally
         let selectedRecordIds = new Set();
         
         /* --- Pagination parameters --- */
@@ -241,10 +240,10 @@
                 return;
             }
 
-            fetchLedgerDataset();
+            fetchLedgerDataset(true); // Initial dataset pull
         }
 
-        async function fetchLedgerDataset() {
+        async function fetchLedgerDataset(isInitialInit = false) {
             const { data, error } = await supabaseClient
                 .from('spsic_ledger')
                 .select('*')
@@ -257,17 +256,32 @@
                 return;
             }
 
+            // Sync structural arrays
             originalLedgerDataset = (data || []).map(record => ({
                 ...record,
                 calculatedInvoiceNo: record.invoice_no || ''
             }));
             
-            // Keep dynamic filtered tracking empty on startup
-            workingFilteredDataset = [];
-            selectedRecordIds.clear();
-            isSearchPerformed = false;
-            activePage = 1;
-            renderInvoiceTable();
+            if (isInitialInit) {
+                workingFilteredDataset = [];
+                selectedRecordIds.clear();
+                isSearchPerformed = false;
+                activePage = 1;
+                renderInvoiceTable();
+            } else {
+                // If refreshing data from an update, preserve current active filter configuration in workspace view
+                const query = document.getElementById('salesSearchQuery').value.trim().toLowerCase();
+                if (isSearchPerformed && query) {
+                    workingFilteredDataset = originalLedgerDataset.filter(item => 
+                        (item.spsic_number || '').toLowerCase().includes(query) ||
+                        (item.customer || '').toLowerCase().includes(query) ||
+                        (item.ref_number || '').toLowerCase().includes(query) ||
+                        (item.commodity || '').toLowerCase().includes(query) ||
+                        (item.calculatedInvoiceNo || '').toLowerCase().includes(query)
+                    );
+                }
+                renderInvoiceTable();
+            }
         }
 
         /* --- Dynamic Reference Prefix Autofill Cascader Mechanism --- */
@@ -358,7 +372,7 @@
             }
 
             showSystemNotification("Sync Successful", `Successfully updated ${processedUpdatesCount} invoice assignments directly on cloud ledger storage.`);
-            fetchLedgerDataset(); 
+            fetchLedgerDataset(false); // Refreshes and retains layout structure cleanly without dumping the table grid state
         }
 
         function showSystemNotification(title, message) {
@@ -380,10 +394,7 @@
 
         function handleRowDoubleClick(event, recordId) {
             if (event.target.classList.contains('invoice-input')) return;
-            
-            // Clear all selected rows on double click
             selectedRecordIds.clear();
-            
             updateVisualRowStates();
         }
 
@@ -414,7 +425,7 @@
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
-                saveBtn.disabled = true; // Disable save button if table is blank
+                saveBtn.disabled = true; 
                 return;
             }
 
@@ -423,11 +434,11 @@
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
-                saveBtn.disabled = true; // Keep disabled if search yielded no results
+                saveBtn.disabled = true; 
                 return;
             }
 
-            saveBtn.disabled = false; // Enable save button when valid rows are available
+            saveBtn.disabled = false; 
 
             if (workingFilteredDataset[0]) {
                 topSpsicValue.textContent = workingFilteredDataset[0].spsic_number || '—';
@@ -482,7 +493,6 @@
             const query = document.getElementById('salesSearchQuery').value.trim().toLowerCase();
             
             if (!query) {
-                // If they search with nothing, treat it as empty reset state
                 workingFilteredDataset = [];
                 isSearchPerformed = false;
             } else {
