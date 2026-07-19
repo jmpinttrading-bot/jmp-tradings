@@ -278,14 +278,14 @@
                 }
             });
 
-            // Instant Spreadsheet-style UI DOM Updates without dropping input element focus
+            // Instant Spreadsheet-style UI DOM Updates using the corrected startIndex view offset lookup
             const allInvoiceInputs = document.querySelectorAll('.invoice-input');
             const startIndex = (activePage - 1) * RECORDS_PER_PAGE;
             
             allInvoiceInputs.forEach((inputEl, domIndex) => {
-                const datasetIndex = startIndex + domIndex;
-                if (workingFilteredDataset[datasetIndex]) {
-                    inputEl.value = workingFilteredDataset[datasetIndex].calculatedInvoiceNo || '';
+                const globalDatasetIndex = startIndex + domIndex;
+                if (workingFilteredDataset[globalDatasetIndex]) {
+                    inputEl.value = workingFilteredDataset[globalDatasetIndex].calculatedInvoiceNo || '';
                 }
             });
         }
