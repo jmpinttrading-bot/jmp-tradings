@@ -27,12 +27,16 @@
         .content-card h3 { font-size: 1.25rem; color: #0f172a; font-weight: 700; margin-bottom: 6px; }
         .content-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; }
 
-        /* SPSIC Top Badge Reference Layout */
-        .spsic-reference-card { background: #fff7ed; border: 1px solid #ffedd5; padding: 12px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; color: #c2410c; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .spsic-reference-card span { font-family: monospace; font-size: 1.1rem; color: #1e293b; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #fed7aa; }
+        /* Dynamic Reference Container Layout */
+        .reference-badges-container { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; width: 100%; }
+        .spsic-reference-card { background: #fff7ed; border: 1px solid #ffedd5; padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; color: #c2410c; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .spsic-reference-card span { font-family: monospace; font-size: 1rem; color: #1e293b; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #fed7aa; }
+        
+        .commodity-reference-card { background: #f0fdf4; border: 1px solid #dcfce7; padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: bold; color: #15803d; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .commodity-reference-card span { font-family: 'Segoe UI', sans-serif; font-size: 1rem; color: #1e293b; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #bbf7d0; }
 
         /* Filter Row Component */
-        .table-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .table-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; }
         .table-header-wrapper h4 { font-size: 1.1rem; color: #0f172a; font-weight: 700; }
         .search-box-container { display: flex; gap: 10px; align-items: center; }
         .search-box-container input { height: 38px; width: 280px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
@@ -117,17 +121,22 @@
         <!-- Ledger Processing Grid -->
         <div class="content-card" style="padding: 20px;">
             
-            <!-- Dynamic SPSIC Title Reference Card Location -->
-            <div class="spsic-reference-card" id="spsicTopReferenceCard" style="display: none;">
-                Current SPSIC Reference: <span id="spsicTopBadgeValue">—</span>
-            </div>
-
             <div class="table-header-wrapper">
                 <h4>Disposition Ledger Data Pipeline</h4>
                 <div class="search-box-container">
                     <input type="text" id="salesSearchQuery" placeholder="Search SPSIC, Customer or Ref No...">
                     <button type="button" class="btn-action" onclick="executeSearchFilter()">Search</button>
                     <button type="button" class="btn-action clear-filter" onclick="resetSearchFilter()">Reset</button>
+                </div>
+            </div>
+
+            <!-- Reference Badges Located Directly Under Header and On Top of Table -->
+            <div class="reference-badges-container" id="referenceBadgesWrapper" style="display: none;">
+                <div class="spsic-reference-card">
+                    SPSIC Reference: <span id="spsicTopBadgeValue">—</span>
+                </div>
+                <div class="commodity-reference-card">
+                    Commodity Reference: <span id="commodityTopBadgeValue">—</span>
                 </div>
             </div>
 
@@ -139,7 +148,6 @@
                             <th>Customer</th>
                             <th>Date</th>
                             <th>Quantity</th>
-                            <th>Commodity</th>
                             <th>Price (PHP)</th>
                             <th>Amount (PHP)</th>
                             <th>Ref Number</th>
@@ -148,7 +156,7 @@
                     </thead>
                     <tbody id="salesInvoiceTableBody">
                         <tr>
-                            <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Loading operational records data stream...</td>
+                            <td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">Loading operational records data stream...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -172,7 +180,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3IDE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentUserPermissions = null;
@@ -235,11 +243,10 @@
             if (error) {
                 console.error("Ledger synchronization failure:", error.message);
                 document.getElementById('salesInvoiceTableBody').innerHTML = `
-                    <tr><td colspan="9" style="text-align: center; color: #ef4444; padding: 20px; font-weight: bold;">Failed to pull information dataset from the cloud.</td></tr>`;
+                    <tr><td colspan="8" style="text-align: center; color: #ef4444; padding: 20px; font-weight: bold;">Failed to pull information dataset from the cloud.</td></tr>`;
                 return;
             }
 
-            // Sync structural fields mapping from the integrated option A invoice_no column
             originalLedgerDataset = (data || []).map(record => ({
                 ...record,
                 calculatedInvoiceNo: record.invoice_no || ''
@@ -279,7 +286,6 @@
                 workingFilteredDataset[i].calculatedInvoiceNo = currentSeedValue;
             }
 
-            // Sync modifications directly to the original tracking array cache
             workingFilteredDataset.forEach(updatedItem => {
                 const globalMatch = originalLedgerDataset.find(orig => orig.id === updatedItem.id);
                 if (globalMatch) {
@@ -287,7 +293,6 @@
                 }
             });
 
-            // Instant Spreadsheet-style UI DOM Updates using the corrected startIndex view offset lookup
             const allInvoiceInputs = document.querySelectorAll('.invoice-input');
             const startIndex = (activePage - 1) * RECORDS_PER_PAGE;
             
@@ -303,7 +308,6 @@
         async function saveModifiedInvoicesToCloud() {
             let processedUpdatesCount = 0;
             
-            // Loop through all records and update rows where input value doesn't match the loaded DB record
             for (let item of originalLedgerDataset) {
                 const currentInputValue = (item.calculatedInvoiceNo || '').trim();
                 const primaryDatabaseValue = (item.invoice_no || '').trim();
@@ -336,23 +340,25 @@
             const tbody = document.getElementById('salesInvoiceTableBody');
             const paginationEl = document.getElementById('tablePaginationControls');
             const trackerEl = document.getElementById('recordCountTracker');
-            const topSpsicCard = document.getElementById('spsicTopReferenceCard');
+            const referenceWrapper = document.getElementById('referenceBadgesWrapper');
             const topSpsicValue = document.getElementById('spsicTopBadgeValue');
+            const topCommodityValue = document.getElementById('commodityTopBadgeValue');
 
             if (workingFilteredDataset.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
-                topSpsicCard.style.display = "none";
+                referenceWrapper.style.display = "none";
                 return;
             }
 
-            // Dynamically query top row reference SPSIC number from background data stream
-            if (workingFilteredDataset[0] && workingFilteredDataset[0].spsic_number) {
-                topSpsicValue.textContent = workingFilteredDataset[0].spsic_number;
-                topSpsicCard.style.display = "flex";
+            // Extract references dynamically from the top dataset item
+            if (workingFilteredDataset[0]) {
+                topSpsicValue.textContent = workingFilteredDataset[0].spsic_number || '—';
+                topCommodityValue.textContent = workingFilteredDataset[0].commodity || '—';
+                referenceWrapper.style.display = "flex";
             } else {
-                topSpsicCard.style.display = "none";
+                referenceWrapper.style.display = "none";
             }
 
             const totalPages = Math.ceil(workingFilteredDataset.length / RECORDS_PER_PAGE);
@@ -374,7 +380,6 @@
                         <td style="font-weight: 600; color: #1e3a8a;">${item.customer || '—'}</td>
                         <td>${item.date || '—'}</td>
                         <td style="font-weight: 700;">${parseFloat(item.quantity || 0).toLocaleString()}</td>
-                        <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase; font-weight:600;">${item.commodity || '—'}</span></td>
                         <td>₱${parseFloat(item.price || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td style="font-weight: 700; color: #0f172a;">₱${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td style="color: #475569; font-weight: 600; font-family: monospace;">${item.ref_number || '—'}</td>
