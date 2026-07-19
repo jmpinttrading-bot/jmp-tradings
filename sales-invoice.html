@@ -6,29 +6,71 @@
     <title>Sales Invoice Management | JMP HQ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
         /* Navbar Styles from import-docs.html */
         .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .logout-btn:hover { background-color: #dc2626; }
         .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; transition: all 0.2s; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
-        .main-content { padding: 40px; }
-        .content-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        /* Content Workspace Layout Layout */
+        .main-content { padding: 40px; max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px; }
+        .content-card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        
+        .content-card h3 { font-size: 1.25rem; color: #0f172a; font-weight: 700; margin-bottom: 6px; }
+        .content-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; }
+
+        /* Filter Row Component */
+        .table-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .table-header-wrapper h4 { font-size: 1.1rem; color: #0f172a; font-weight: 700; }
+        .search-box-container { display: flex; gap: 10px; align-items: center; }
+        .search-box-container input { height: 38px; width: 280px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+        .search-box-container input:focus { outline: none; border-color: #ee964b; }
+        
+        .btn-action { background: #0f172a; color: white; border: none; height: 38px; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: background 0.2s; white-space: nowrap; }
+        .btn-action:hover { background: #1e293b; }
+        .btn-action.clear-filter { background: #64748b; }
+        .btn-action.clear-filter:hover { background: #475569; }
+
+        /* Responsive Table styling elements */
+        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; }
+        .master-data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; table-layout: auto; }
+        .master-data-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
+        .master-data-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        
+        /* Interactive selection highlights */
+        .ledger-row-item { transition: background-color 0.15s ease; }
+        .ledger-row-item:hover td { background-color: #f1f5f9; }
+
+        /* Pagination Layout Control Components */
+        .pagination-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 5px; }
+        .pagination-container { display: flex; align-items: center; gap: 8px; }
+        .btn-page { background: #334155; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .btn-page:hover:not(:disabled) { background: #475569; }
+        .btn-page:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
+        .page-indicator { font-size: 0.8rem; font-weight: bold; color: #475569; }
 
         /* Standardized Notification Modal Styles from inventory-management.html */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; }
-        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; }
+        .restriction-modal-card h4 { margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; font-weight: bold; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5; }
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
+        .modal-btn:hover { background: #11355e; }
+
+        @media (max-width: 768px) {
+            .table-header-wrapper { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .search-box-container { width: 100%; }
+            .search-box-container input { width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -62,6 +104,51 @@
             <h3>Sales Invoice Processing</h3>
             <p>Use this module to generate, view, and manage sales invoices for client transactions.</p>
         </div>
+
+        <!-- Ledger Processing Grid -->
+        <div class="content-card" style="padding: 20px;">
+            <div class="table-header-wrapper">
+                <h4>Disposition Ledger Data Pipeline</h4>
+                <div class="search-box-container">
+                    <input type="text" id="salesSearchQuery" placeholder="Search SPSIC, Customer or Ref No...">
+                    <button type="button" class="btn-action" onclick="executeSearchFilter()">Search</button>
+                    <button type="button" class="btn-action clear-filter" onclick="resetSearchFilter()">Reset</button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="master-data-table">
+                    <thead>
+                        <tr>
+                            <th>Sales Invoice No.</th>
+                            <th>SPSIC No.</th>
+                            <th>Customer</th>
+                            <th>Date</th>
+                            <th>Quantity</th>
+                            <th>Commodity</th>
+                            <th>Price (PHP)</th>
+                            <th>Amount (PHP)</th>
+                            <th>Ref Number</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesInvoiceTableBody">
+                        <tr>
+                            <td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Loading operational records data stream...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pagination-row">
+                <div style="font-size: 0.8rem; color: #64748b;" id="recordCountTracker">Showing 0 records</div>
+                <div class="pagination-container" id="tablePaginationControls" style="display: none;">
+                    <button type="button" class="btn-page" id="prevPageBtn" onclick="movePage(-1)">Previous</button>
+                    <span class="page-indicator" id="pageNumberIndicator">Page 1 / 1</span>
+                    <button type="button" class="btn-page" id="nextPageBtn" onclick="movePage(1)">Next</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -70,6 +157,12 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentUserPermissions = null;
+        let originalLedgerDataset = [];
+        let workingFilteredDataset = [];
+        
+        /* --- Pagination parameters --- */
+        let activePage = 1;
+        const RECORDS_PER_PAGE = 20;
 
         async function initModule() {
             const { data: { user } } = await supabaseClient.auth.getUser();
@@ -110,6 +203,119 @@
                 settingsBtn.style.background = "#475569";
                 settingsBtn.style.color = "white";
             }
+
+            // Initialization pipeline execution
+            fetchLedgerDataset();
+        }
+
+        /* --- Dynamic Auto-Incrementing Reference Algorithm --- */
+        function computeSalesInvoiceNumbers(records) {
+            // Processing in chronological creation order to construct sequential increment logic
+            let baseInvoicePrefix = "INV-2026-";
+            let startingIndex = 1001;
+
+            return records.map((record, index) => {
+                let incrementalPart = startingIndex + (records.length - 1 - index);
+                record.calculatedInvoiceNo = baseInvoicePrefix + incrementalPart;
+                return record;
+            });
+        }
+
+        async function fetchLedgerDataset() {
+            const { data, error } = await supabaseClient
+                .from('spsic_ledger')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Ledger synchronization failure:", error.message);
+                document.getElementById('salesInvoiceTableBody').innerHTML = `
+                    <tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 20px; font-weight: bold;">Failed to pull information dataset from the cloud.</td></tr>`;
+                return;
+            }
+
+            // Run structural auto-fill computations for internal Invoice mappings
+            originalLedgerDataset = computeSalesInvoiceNumbers(data || []);
+            workingFilteredDataset = [...originalLedgerDataset];
+            
+            activePage = 1;
+            renderInvoiceTable();
+        }
+
+        function renderInvoiceTable() {
+            const tbody = document.getElementById('salesInvoiceTableBody');
+            const paginationEl = document.getElementById('tablePaginationControls');
+            const trackerEl = document.getElementById('recordCountTracker');
+
+            if (workingFilteredDataset.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
+                paginationEl.style.display = "none";
+                trackerEl.textContent = "Showing 0 records";
+                return;
+            }
+
+            const totalPages = Math.ceil(workingFilteredDataset.length / RECORDS_PER_PAGE);
+            if (activePage > totalPages) activePage = totalPages;
+
+            const startIndex = (activePage - 1) * RECORDS_PER_PAGE;
+            const endIndex = startIndex + RECORDS_PER_PAGE;
+            const visibleSlice = workingFilteredDataset.slice(startIndex, endIndex);
+
+            tbody.innerHTML = visibleSlice.map(item => {
+                return `
+                    <tr class="ledger-row-item">
+                        <td style="font-weight: 700; color: #f97316; font-family: monospace; font-size: 0.95rem;">${item.calculatedInvoiceNo}</td>
+                        <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.spsic_number || '—'}</td>
+                        <td style="font-weight: 600; color: #1e3a8a;">${item.customer || '—'}</td>
+                        <td>${item.date || '—'}</td>
+                        <td style="font-weight: 700;">${parseFloat(item.quantity || 0).toLocaleString()}</td>
+                        <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase; font-weight:600;">${item.commodity || '—'}</span></td>
+                        <td>₱${parseFloat(item.price || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td style="font-weight: 700; color: #0f172a;">₱${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td style="color: #475569; font-weight: 600; font-family: monospace;">${item.ref_number || '—'}</td>
+                        <td style="white-space: normal; font-size: 0.82rem; color: #64748b; max-width: 200px;">${item.remarks || '—'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            // UI Pagination Element Updates
+            trackerEl.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, workingFilteredDataset.length)} of ${workingFilteredDataset.length} records`;
+            paginationEl.style.display = "flex";
+            document.getElementById('pageNumberIndicator').textContent = `Page ${activePage} of ${totalPages}`;
+            document.getElementById('prevPageBtn').disabled = (activePage === 1);
+            document.getElementById('nextPageBtn').disabled = (activePage === totalPages);
+        }
+
+        function executeSearchFilter() {
+            const query = document.getElementById('salesSearchQuery').value.trim().toLowerCase();
+            if (!query) {
+                workingFilteredDataset = [...originalLedgerDataset];
+            } else {
+                workingFilteredDataset = originalLedgerDataset.filter(item => 
+                    (item.spsic_number || '').toLowerCase().includes(query) ||
+                    (item.customer || '').toLowerCase().includes(query) ||
+                    (item.ref_number || '').toLowerCase().includes(query) ||
+                    (item.commodity || '').toLowerCase().includes(query)
+                );
+            }
+            activePage = 1;
+            renderInvoiceTable();
+        }
+
+        function resetSearchFilter() {
+            document.getElementById('salesSearchQuery').value = '';
+            workingFilteredDataset = [...originalLedgerDataset];
+            activePage = 1;
+            renderInvoiceTable();
+        }
+
+        function movePage(direction) {
+            const totalPages = Math.ceil(workingFilteredDataset.length / RECORDS_PER_PAGE);
+            const targetPage = activePage + direction;
+            if (targetPage >= 1 && targetPage <= totalPages) {
+                activePage = targetPage;
+                renderInvoiceTable();
+            }
         }
 
         function verifyNavigationPrivilege(accessKey, url) {
@@ -128,13 +334,11 @@
                 return;
             }
 
-            // Universal clearance logic for the Audit Report workspace pipeline
             if (accessKey === 'audit_access') {
                 window.location.href = url;
                 return;
             }
 
-            // Fallback cross-check mapping adjustment for Profile permissions validation
             let val = currentUserPermissions[accessKey];
             if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
                 val = currentUserPermissions['profile_access'];
