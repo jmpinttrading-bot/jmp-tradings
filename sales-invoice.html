@@ -166,7 +166,7 @@
                     </thead>
                     <tbody id="salesInvoiceTableBody">
                         <tr>
-                            <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Loading operational records data stream...</td>
+                            <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search for an SPSIC number above to load the data pipeline.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -196,6 +196,7 @@
         let currentUserPermissions = null;
         let originalLedgerDataset = [];
         let workingFilteredDataset = [];
+        let isSearchPerformed = false; // Tracks if an active search operation happened
         
         // Track row identifiers selected by the user globally
         let selectedRecordIds = new Set();
@@ -259,8 +260,10 @@
                 calculatedInvoiceNo: record.invoice_no || ''
             }));
             
-            workingFilteredDataset = [...originalLedgerDataset];
+            // Keep dynamic filtered tracking empty on startup
+            workingFilteredDataset = [];
             selectedRecordIds.clear();
+            isSearchPerformed = false;
             activePage = 1;
             renderInvoiceTable();
         }
@@ -384,6 +387,15 @@
             const topSpsicValue = document.getElementById('spsicTopBadgeValue');
             const topCommodityValue = document.getElementById('commodityTopBadgeValue');
 
+            // If no search has been entered yet, keep it blank with the instruction message
+            if (!isSearchPerformed) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search for an SPSIC number above to load the data pipeline.</td></tr>`;
+                paginationEl.style.display = "none";
+                trackerEl.textContent = "Showing 0 records";
+                referenceWrapper.style.display = "none";
+                return;
+            }
+
             if (workingFilteredDataset.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
                 paginationEl.style.display = "none";
@@ -443,9 +455,13 @@
 
         function executeSearchFilter() {
             const query = document.getElementById('salesSearchQuery').value.trim().toLowerCase();
+            
             if (!query) {
-                workingFilteredDataset = [...originalLedgerDataset];
+                // If they search with nothing, treat it as empty reset state
+                workingFilteredDataset = [];
+                isSearchPerformed = false;
             } else {
+                isSearchPerformed = true;
                 workingFilteredDataset = originalLedgerDataset.filter(item => 
                     (item.spsic_number || '').toLowerCase().includes(query) ||
                     (item.customer || '').toLowerCase().includes(query) ||
@@ -460,7 +476,8 @@
 
         function resetSearchFilter() {
             document.getElementById('salesSearchQuery').value = '';
-            workingFilteredDataset = [...originalLedgerDataset];
+            workingFilteredDataset = [];
+            isSearchPerformed = false;
             activePage = 1;
             renderInvoiceTable();
         }
