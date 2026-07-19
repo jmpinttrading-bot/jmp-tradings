@@ -55,15 +55,27 @@
         /* Table styling elements */
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; margin-bottom: 15px; }
         .master-data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; table-layout: auto; }
-        .master-data-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
-        .master-data-table td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        .master-data-table th { background: #f1f5f9; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
+        .master-data-table td { padding: 10px 16px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; white-space: nowrap; cursor: pointer; user-select: none; }
         
-        .ledger-row-item { transition: background-color 0.15s ease; }
-        .ledger-row-item:hover td { background-color: #f1f5f9; }
+        /* Alternating Zebra Striping */
+        .master-data-table tbody tr:nth-child(even) td { background-color: #f8fafc; }
+        .master-data-table tbody tr:nth-child(odd) td { background-color: #ffffff; }
+        
+        /* Row States: Hover and Excel Selection Styling */
+        .ledger-row-item:hover td { background-color: #f1f5f9 !important; }
+        .ledger-row-item.is-selected td { background-color: #e0f2fe !important; border-bottom-color: #bae6fd; color: #0369a1; }
+        .ledger-row-item.is-selected .invoice-input { border-color: #7dd3fc; }
 
         /* Inline Input Fields for Sales Invoice Column */
-        .invoice-input { width: 100%; max-width: 160px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; font-weight: bold; font-family: monospace; color: #f97316; }
+        .invoice-input { width: 100%; max-width: 160px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; font-weight: bold; font-family: monospace; color: #f97316; background: white; }
         .invoice-input:focus { outline: none; border-color: #f97316; box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1); }
+
+        /* Excel-Style Table Consolidation Summary Block Layout */
+        .consolidation-summary-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .consolidation-metric-box { background: white; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .consolidation-metric-box label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; display: block; margin-bottom: 4px; }
+        .consolidation-metric-box span { font-size: 1.2rem; font-weight: bold; color: #0f172a; font-family: 'Segoe UI', sans-serif; }
 
         /* Pagination Layout Control Components */
         .pagination-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 5px; flex-wrap: wrap; gap: 15px; }
@@ -147,6 +159,7 @@
                 <table class="master-data-table">
                     <thead>
                         <tr>
+                            <th style="width: 50px; text-align: center;">#</th>
                             <th style="width: 180px;">Sales Invoice No.</th>
                             <th>Customer</th>
                             <th>Date</th>
@@ -159,10 +172,30 @@
                     </thead>
                     <tbody id="salesInvoiceTableBody">
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">Loading operational records data stream...</td>
+                            <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Loading operational records data stream...</td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Excel Table Consolidation Dashboard Segment -->
+            <div class="consolidation-summary-wrapper">
+                <div class="consolidation-metric-box">
+                    <label>Total Ledger Rows</label>
+                    <span id="consolidatedTotalRows">0</span>
+                </div>
+                <div class="consolidation-metric-box" style="border-left: 3px solid #0284c7;">
+                    <label style="color: #0284c7;">Selected Rows</label>
+                    <span id="consolidatedSelectedCount" style="color: #0284c7;">0</span>
+                </div>
+                <div class="consolidation-metric-box">
+                    <label>Consolidated Quantity</label>
+                    <span id="consolidatedTotalQty">0</span>
+                </div>
+                <div class="consolidation-metric-box">
+                    <label>Consolidated Revenue</label>
+                    <span id="consolidatedTotalAmount">₱0.00</span>
+                </div>
             </div>
 
             <div class="pagination-row">
@@ -189,6 +222,9 @@
         let currentUserPermissions = null;
         let originalLedgerDataset = [];
         let workingFilteredDataset = [];
+        
+        // Track row identifiers selected by the user globally
+        let selectedRecordIds = new Set();
         
         /* --- Pagination parameters --- */
         let activePage = 1;
@@ -246,17 +282,17 @@
             if (error) {
                 console.error("Ledger synchronization failure:", error.message);
                 document.getElementById('salesInvoiceTableBody').innerHTML = `
-                    <tr><td colspan="8" style="text-align: center; color: #ef4444; padding: 20px; font-weight: bold;">Failed to pull information dataset from the cloud.</td></tr>`;
+                    <tr><td colspan="9" style="text-align: center; color: #ef4444; padding: 20px; font-weight: bold;">Failed to pull information dataset from the cloud.</td></tr>`;
                 return;
             }
 
-            // Sync structural fields mapping from the integrated option A invoice_no column
             originalLedgerDataset = (data || []).map(record => ({
                 ...record,
                 calculatedInvoiceNo: record.invoice_no || ''
             }));
             
             workingFilteredDataset = [...originalLedgerDataset];
+            selectedRecordIds.clear();
             activePage = 1;
             renderInvoiceTable();
         }
@@ -290,7 +326,6 @@
                 workingFilteredDataset[i].calculatedInvoiceNo = currentSeedValue;
             }
 
-            // Sync modifications directly to the original tracking array cache
             workingFilteredDataset.forEach(updatedItem => {
                 const globalMatch = originalLedgerDataset.find(orig => orig.id === updatedItem.id);
                 if (globalMatch) {
@@ -298,7 +333,6 @@
                 }
             });
 
-            // Instant Spreadsheet-style UI DOM Updates using the corrected startIndex view offset lookup
             const allInvoiceInputs = document.querySelectorAll('.invoice-input');
             const startIndex = (activePage - 1) * RECORDS_PER_PAGE;
             
@@ -314,7 +348,6 @@
         async function saveModifiedInvoicesToCloud() {
             let processedUpdatesCount = 0;
             
-            // Loop through all records and update rows where input value doesn't match the loaded DB record
             for (let item of originalLedgerDataset) {
                 const currentInputValue = (item.calculatedInvoiceNo || '').trim();
                 const primaryDatabaseValue = (item.invoice_no || '').trim();
@@ -343,6 +376,67 @@
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
+        /* --- Excel Selection System Logic --- */
+        function handleRowClick(event, recordId) {
+            // Guard to make sure interaction isn't swallowed if they are interacting inside the text inputs directly
+            if (event.target.classList.contains('invoice-input')) return;
+
+            if (selectedRecordIds.has(recordId)) {
+                // If it's already selected, a normal single click does nothing (waiting for double click to deselect)
+                return;
+            } else {
+                selectedRecordIds.add(recordId);
+            }
+            
+            updateVisualRowStates();
+            calculateConsolidatedSummary();
+        }
+
+        function handleRowDoubleClick(event, recordId) {
+            if (event.target.classList.contains('invoice-input')) return;
+            
+            if (selectedRecordIds.has(recordId)) {
+                selectedRecordIds.delete(recordId);
+            }
+            
+            updateVisualRowStates();
+            calculateConsolidatedSummary();
+        }
+
+        function updateVisualRowStates() {
+            const rows = document.querySelectorAll('.ledger-row-item');
+            rows.forEach(row => {
+                const rId = row.getAttribute('data-id');
+                if (selectedRecordIds.has(rId)) {
+                    row.classList.add('is-selected');
+                } else {
+                    row.classList.remove('is-selected');
+                }
+            });
+        }
+
+        /* --- Excel Style Consolidation Calculation System --- */
+        function calculateConsolidatedSummary() {
+            let totalQty = 0;
+            let totalAmt = 0;
+
+            // Map and calculate running figures based on global multi-selection configuration
+            originalLedgerDataset.forEach(record => {
+                if (selectedRecordIds.has(record.id)) {
+                    totalQty += parseFloat(record.quantity || 0);
+                    totalAmt += parseFloat(record.amount || 0);
+                }
+            });
+
+            document.getElementById('consolidatedTotalRows').textContent = workingFilteredDataset.length;
+            document.getElementById('consolidatedSelectedCount').textContent = selectedRecordIds.size;
+            document.getElementById('consolidatedTotalQty').textContent = totalQty.toLocaleString();
+            document.getElementById('consolidatedTotalAmount').textContent = '₱' + totalAmt.toLocaleString(undefined, {
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2
+            });
+        }
+
         function renderInvoiceTable() {
             const tbody = document.getElementById('salesInvoiceTableBody');
             const paginationEl = document.getElementById('tablePaginationControls');
@@ -352,14 +446,14 @@
             const topCommodityValue = document.getElementById('commodityTopBadgeValue');
 
             if (workingFilteredDataset.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
+                calculateConsolidatedSummary();
                 return;
             }
 
-            // Dynamically query top row reference parameters from background data stream
             if (workingFilteredDataset[0]) {
                 topSpsicValue.textContent = workingFilteredDataset[0].spsic_number || '—';
                 topCommodityValue.textContent = workingFilteredDataset[0].commodity || '—';
@@ -375,9 +469,16 @@
             const endIndex = startIndex + RECORDS_PER_PAGE;
             const visibleSlice = workingFilteredDataset.slice(startIndex, endIndex);
 
-            tbody.innerHTML = visibleSlice.map(item => {
+            tbody.innerHTML = visibleSlice.map((item, index) => {
+                const overallRowNumber = startIndex + index + 1;
+                const isSelectedClass = selectedRecordIds.has(item.id) ? 'is-selected' : '';
+
                 return `
-                    <tr class="ledger-row-item">
+                    <tr class="ledger-row-item ${isSelectedClass}" 
+                        data-id="${item.id}"
+                        onclick="handleRowClick(event, '${item.id}')"
+                        ondblclick="handleRowDoubleClick(event, '${item.id}')">
+                        <td style="text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.8rem;">${overallRowNumber}</td>
                         <td>
                             <input type="text" class="invoice-input" 
                                 placeholder="e.g. INV-001" 
@@ -400,6 +501,8 @@
             document.getElementById('pageNumberIndicator').textContent = `Page ${activePage} of ${totalPages}`;
             document.getElementById('prevPageBtn').disabled = (activePage === 1);
             document.getElementById('nextPageBtn').disabled = (activePage === totalPages);
+            
+            calculateConsolidatedSummary();
         }
 
         function executeSearchFilter() {
@@ -469,7 +572,7 @@
             }
         }
 
-        document.closeRestrictionModal = function() {
+        function closeRestrictionModal() {
             document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
