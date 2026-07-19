@@ -116,10 +116,10 @@
 
         <div class="registration-box" style="margin-bottom: 25px;">
             <div class="registration-text-area">
-                <h3>Global Product Pricing Matrix</h3>
-                <p>Configure, update, and manage baseline valuations and financial tiers per product unit.</p>
+                <h3>SPSIC & Customer Valuation Matrix</h3>
+                <p>Configure, update, and manage baseline valuations and financial tiers per customer and product unit.</p>
             </div>
-            <a href="#" onclick="verifyNavigationPrivilege('item_price_access', 'item-price.html')" class="price-trigger-btn"><span>💰</span> Item Price Matrix</a>
+            <a href="#" onclick="verifyNavigationPrivilege('item_price_access', 'item-price.html')" class="price-trigger-btn"><span>💰</span> OR Dispo Metrix</a>
         </div>
 
         <h3 style="margin-bottom: 15px; color: #334155; font-size: 1.1rem;">Cold Storage Logistics Execution Portals</h3>
@@ -240,12 +240,6 @@
                 btn.onclick = () => { window.location.href = "employee-dashboard.html"; };
                 return;
             }
-
-            const settingsBtn = document.getElementById('settingsNavBtn');
-            if (roleClean === 'admin') {
-                settingsBtn.style.background = "#475569";
-                settingsBtn.style.color = "white";
-            }
             
             fetchMasterTransactions();
         }
@@ -266,13 +260,11 @@
                 return;
             }
 
-            // Universal clearance logic for the Audit Report workspace pipeline
             if (accessKey === 'audit_access') {
                 window.location.href = url;
                 return;
             }
 
-            // Fallback cross-check mapping adjustment for Profile permissions validation
             let val = currentUserPermissions[accessKey];
             if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
                 val = currentUserPermissions['profile_access'];
