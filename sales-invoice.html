@@ -230,7 +230,7 @@
                 return;
             }
 
-            // Sync structural fields mapping from the newly integrated option A invoice_no column
+            // Sync structural fields mapping from the integrated option A invoice_no column
             originalLedgerDataset = (data || []).map(record => ({
                 ...record,
                 calculatedInvoiceNo: record.invoice_no || ''
@@ -278,7 +278,16 @@
                 }
             });
 
-            renderInvoiceTable();
+            // Instant Spreadsheet-style UI DOM Updates without dropping input element focus
+            const allInvoiceInputs = document.querySelectorAll('.invoice-input');
+            const startIndex = (activePage - 1) * RECORDS_PER_PAGE;
+            
+            allInvoiceInputs.forEach((inputEl, domIndex) => {
+                const datasetIndex = startIndex + domIndex;
+                if (workingFilteredDataset[datasetIndex]) {
+                    inputEl.value = workingFilteredDataset[datasetIndex].calculatedInvoiceNo || '';
+                }
+            });
         }
 
         /* --- Cloud Database Update Persistence Implementation --- */
