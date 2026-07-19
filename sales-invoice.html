@@ -9,7 +9,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* Navbar Styles from import-docs.html */
+        /* Navbar Styles */
         .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
@@ -20,7 +20,7 @@
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
-        /* Content Workspace Layout Layout */
+        /* Content Workspace Layout */
         .main-content { padding: 40px; max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px; }
         .content-card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         
@@ -38,26 +38,31 @@
         .btn-action:hover { background: #1e293b; }
         .btn-action.clear-filter { background: #64748b; }
         .btn-action.clear-filter:hover { background: #475569; }
+        .btn-save-cloud { background: #10b981; color: white; }
+        .btn-save-cloud:hover { background: #059669; }
 
-        /* Responsive Table styling elements */
-        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; }
+        /* Table styling elements */
+        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; margin-bottom: 15px; }
         .master-data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; table-layout: auto; }
         .master-data-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
-        .master-data-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        .master-data-table td { padding: 10px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
         
-        /* Interactive selection highlights */
         .ledger-row-item { transition: background-color 0.15s ease; }
         .ledger-row-item:hover td { background-color: #f1f5f9; }
 
+        /* Inline Input Fields for Sales Invoice Column */
+        .invoice-input { width: 100%; max-width: 160px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; font-weight: bold; font-family: monospace; color: #f97316; }
+        .invoice-input:focus { outline: none; border-color: #f97316; box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.1); }
+
         /* Pagination Layout Control Components */
-        .pagination-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 5px; }
+        .pagination-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 5px; flex-wrap: wrap; gap: 15px; }
         .pagination-container { display: flex; align-items: center; gap: 8px; }
         .btn-page { background: #334155; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         .btn-page:hover:not(:disabled) { background: #475569; }
         .btn-page:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
         .page-indicator { font-size: 0.8rem; font-weight: bold; color: #475569; }
 
-        /* Standardized Notification Modal Styles from inventory-management.html */
+        /* Standardized Notification Modal Styles */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -120,7 +125,7 @@
                 <table class="master-data-table">
                     <thead>
                         <tr>
-                            <th>Sales Invoice No.</th>
+                            <th style="width: 180px;">Sales Invoice No.</th>
                             <th>SPSIC No.</th>
                             <th>Customer</th>
                             <th>Date</th>
@@ -142,10 +147,15 @@
 
             <div class="pagination-row">
                 <div style="font-size: 0.8rem; color: #64748b;" id="recordCountTracker">Showing 0 records</div>
-                <div class="pagination-container" id="tablePaginationControls" style="display: none;">
-                    <button type="button" class="btn-page" id="prevPageBtn" onclick="movePage(-1)">Previous</button>
-                    <span class="page-indicator" id="pageNumberIndicator">Page 1 / 1</span>
-                    <button type="button" class="btn-page" id="nextPageBtn" onclick="movePage(1)">Next</button>
+                
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <button type="button" class="btn-action btn-save-cloud" onclick="saveModifiedInvoicesToCloud()">Save Invoices to Cloud</button>
+                    
+                    <div class="pagination-container" id="tablePaginationControls" style="display: none;">
+                        <button type="button" class="btn-page" id="prevPageBtn" onclick="movePage(-1)">Previous</button>
+                        <span class="page-indicator" id="pageNumberIndicator">Page 1 / 1</span>
+                        <button type="button" class="btn-page" id="nextPageBtn" onclick="movePage(1)">Next</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -204,21 +214,7 @@
                 settingsBtn.style.color = "white";
             }
 
-            // Initialization pipeline execution
             fetchLedgerDataset();
-        }
-
-        /* --- Dynamic Auto-Incrementing Reference Algorithm --- */
-        function computeSalesInvoiceNumbers(records) {
-            // Processing in chronological creation order to construct sequential increment logic
-            let baseInvoicePrefix = "INV-2026-";
-            let startingIndex = 1001;
-
-            return records.map((record, index) => {
-                let incrementalPart = startingIndex + (records.length - 1 - index);
-                record.calculatedInvoiceNo = baseInvoicePrefix + incrementalPart;
-                return record;
-            });
         }
 
         async function fetchLedgerDataset() {
@@ -234,12 +230,88 @@
                 return;
             }
 
-            // Run structural auto-fill computations for internal Invoice mappings
-            originalLedgerDataset = computeSalesInvoiceNumbers(data || []);
-            workingFilteredDataset = [...originalLedgerDataset];
+            // Sync structural fields mapping from the newly integrated option A invoice_no column
+            originalLedgerDataset = (data || []).map(record => ({
+                ...record,
+                calculatedInvoiceNo: record.invoice_no || ''
+            }));
             
+            workingFilteredDataset = [...originalLedgerDataset];
             activePage = 1;
             renderInvoiceTable();
+        }
+
+        /* --- Dynamic Reference Prefix Autofill Cascader Mechanism --- */
+        function handleInvoiceNumberInput(targetId, enteredValue) {
+            const index = workingFilteredDataset.findIndex(item => item.id === targetId);
+            if (index === -1) return;
+
+            workingFilteredDataset[index].calculatedInvoiceNo = enteredValue;
+            let currentSeedValue = enteredValue;
+
+            for (let i = index + 1; i < workingFilteredDataset.length; i++) {
+                if (!currentSeedValue) {
+                    workingFilteredDataset[i].calculatedInvoiceNo = '';
+                    continue;
+                }
+
+                const segmentMatches = currentSeedValue.match(/^(.*?)(\d+)$/);
+                if (!segmentMatches) {
+                    workingFilteredDataset[i].calculatedInvoiceNo = currentSeedValue;
+                    continue;
+                }
+
+                const alphanumericPrefix = segmentMatches[1];
+                const numericString = segmentMatches[2];
+                const nextIncrementedValue = parseInt(numericString, 10) + 1;
+                const paddedNumericString = String(nextIncrementedValue).padStart(numericString.length, '0');
+
+                currentSeedValue = alphanumericPrefix + paddedNumericString;
+                workingFilteredDataset[i].calculatedInvoiceNo = currentSeedValue;
+            }
+
+            // Sync modifications directly to the original tracking array cache
+            workingFilteredDataset.forEach(updatedItem => {
+                const globalMatch = originalLedgerDataset.find(orig => orig.id === updatedItem.id);
+                if (globalMatch) {
+                    globalMatch.calculatedInvoiceNo = updatedItem.calculatedInvoiceNo;
+                }
+            });
+
+            renderInvoiceTable();
+        }
+
+        /* --- Cloud Database Update Persistence Implementation --- */
+        async function saveModifiedInvoicesToCloud() {
+            let processedUpdatesCount = 0;
+            
+            // Loop through all records and update rows where input value doesn't match the loaded DB record
+            for (let item of originalLedgerDataset) {
+                const currentInputValue = (item.calculatedInvoiceNo || '').trim();
+                const primaryDatabaseValue = (item.invoice_no || '').trim();
+
+                if (currentInputValue !== primaryDatabaseValue) {
+                    const { error } = await supabaseClient
+                        .from('spsic_ledger')
+                        .update({ invoice_no: currentInputValue || null })
+                        .eq('id', item.id);
+
+                    if (error) {
+                        showSystemNotification("Database Error", `Failed updating entry ID ${item.id}: ` + error.message);
+                        return;
+                    }
+                    processedUpdatesCount++;
+                }
+            }
+
+            showSystemNotification("Sync Successful", `Successfully updated ${processedUpdatesCount} invoice assignments directly on cloud ledger storage.`);
+            fetchLedgerDataset(); 
+        }
+
+        function showSystemNotification(title, message) {
+            document.getElementById('restrictionModalTitle').textContent = title;
+            document.getElementById('restrictionModalMessage').textContent = message;
+            document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
         function renderInvoiceTable() {
@@ -264,7 +336,12 @@
             tbody.innerHTML = visibleSlice.map(item => {
                 return `
                     <tr class="ledger-row-item">
-                        <td style="font-weight: 700; color: #f97316; font-family: monospace; font-size: 0.95rem;">${item.calculatedInvoiceNo}</td>
+                        <td>
+                            <input type="text" class="invoice-input" 
+                                placeholder="e.g. INV-001" 
+                                value="${item.calculatedInvoiceNo || ''}" 
+                                oninput="handleInvoiceNumberInput(${item.id}, this.value)">
+                        </td>
                         <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.spsic_number || '—'}</td>
                         <td style="font-weight: 600; color: #1e3a8a;">${item.customer || '—'}</td>
                         <td>${item.date || '—'}</td>
@@ -278,7 +355,6 @@
                 `;
             }).join('');
 
-            // UI Pagination Element Updates
             trackerEl.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, workingFilteredDataset.length)} of ${workingFilteredDataset.length} records`;
             paginationEl.style.display = "flex";
             document.getElementById('pageNumberIndicator').textContent = `Page ${activePage} of ${totalPages}`;
@@ -295,7 +371,8 @@
                     (item.spsic_number || '').toLowerCase().includes(query) ||
                     (item.customer || '').toLowerCase().includes(query) ||
                     (item.ref_number || '').toLowerCase().includes(query) ||
-                    (item.commodity || '').toLowerCase().includes(query)
+                    (item.commodity || '').toLowerCase().includes(query) ||
+                    (item.calculatedInvoiceNo || '').toLowerCase().includes(query)
                 );
             }
             activePage = 1;
@@ -328,9 +405,7 @@
             }
 
             if (accessKey === 'admin_access') {
-                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
-                document.getElementById('restrictionModalMessage').textContent = "Administrative level privileges are required to access System Settings.";
-                document.getElementById('accessBlockerModal').classList.add('is-visible');
+                showSystemNotification("Access Restricted", "Administrative level privileges are required to access System Settings.");
                 return;
             }
 
@@ -348,9 +423,7 @@
             const isRestricted = (val === false || cleanedValStr === 'false' || !val);
 
             if (isRestricted) {
-                document.getElementById('restrictionModalTitle').textContent = "Access Restricted";
-                document.getElementById('restrictionModalMessage').textContent = "You do not possess the dynamic authorization privileges needed for this module pipeline.";
-                document.getElementById('accessBlockerModal').classList.add('is-visible');
+                showSystemNotification("Access Restricted", "You do not possess the dynamic authorization privileges needed for this module pipeline.");
             } else {
                 window.location.href = url;
             }
