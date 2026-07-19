@@ -27,6 +27,10 @@
         .content-card h3 { font-size: 1.25rem; color: #0f172a; font-weight: 700; margin-bottom: 6px; }
         .content-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; }
 
+        /* SPSIC Top Badge Reference Layout */
+        .spsic-reference-card { background: #fff7ed; border: 1px solid #ffedd5; padding: 12px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: bold; color: #c2410c; display: flex; align-items: center; gap: 8px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .spsic-reference-card span { font-family: monospace; font-size: 1.1rem; color: #1e293b; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #fed7aa; }
+
         /* Filter Row Component */
         .table-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .table-header-wrapper h4 { font-size: 1.1rem; color: #0f172a; font-weight: 700; }
@@ -112,6 +116,12 @@
 
         <!-- Ledger Processing Grid -->
         <div class="content-card" style="padding: 20px;">
+            
+            <!-- Dynamic SPSIC Title Reference Card Location -->
+            <div class="spsic-reference-card" id="spsicTopReferenceCard" style="display: none;">
+                Current SPSIC Reference: <span id="spsicTopBadgeValue">—</span>
+            </div>
+
             <div class="table-header-wrapper">
                 <h4>Disposition Ledger Data Pipeline</h4>
                 <div class="search-box-container">
@@ -126,7 +136,6 @@
                     <thead>
                         <tr>
                             <th style="width: 180px;">Sales Invoice No.</th>
-                            <th>SPSIC No.</th>
                             <th>Customer</th>
                             <th>Date</th>
                             <th>Quantity</th>
@@ -139,7 +148,7 @@
                     </thead>
                     <tbody id="salesInvoiceTableBody">
                         <tr>
-                            <td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Loading operational records data stream...</td>
+                            <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Loading operational records data stream...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -226,7 +235,7 @@
             if (error) {
                 console.error("Ledger synchronization failure:", error.message);
                 document.getElementById('salesInvoiceTableBody').innerHTML = `
-                    <tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 20px; font-weight: bold;">Failed to pull information dataset from the cloud.</td></tr>`;
+                    <tr><td colspan="9" style="text-align: center; color: #ef4444; padding: 20px; font-weight: bold;">Failed to pull information dataset from the cloud.</td></tr>`;
                 return;
             }
 
@@ -327,12 +336,23 @@
             const tbody = document.getElementById('salesInvoiceTableBody');
             const paginationEl = document.getElementById('tablePaginationControls');
             const trackerEl = document.getElementById('recordCountTracker');
+            const topSpsicCard = document.getElementById('spsicTopReferenceCard');
+            const topSpsicValue = document.getElementById('spsicTopBadgeValue');
 
             if (workingFilteredDataset.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
+                topSpsicCard.style.display = "none";
                 return;
+            }
+
+            // Dynamically query top row reference SPSIC number from background data stream
+            if (workingFilteredDataset[0] && workingFilteredDataset[0].spsic_number) {
+                topSpsicValue.textContent = workingFilteredDataset[0].spsic_number;
+                topSpsicCard.style.display = "flex";
+            } else {
+                topSpsicCard.style.display = "none";
             }
 
             const totalPages = Math.ceil(workingFilteredDataset.length / RECORDS_PER_PAGE);
@@ -351,7 +371,6 @@
                                 value="${item.calculatedInvoiceNo || ''}" 
                                 oninput="handleInvoiceNumberInput('${item.id}', this.value)">
                         </td>
-                        <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.spsic_number || '—'}</td>
                         <td style="font-weight: 600; color: #1e3a8a;">${item.customer || '—'}</td>
                         <td>${item.date || '—'}</td>
                         <td style="font-weight: 700;">${parseFloat(item.quantity || 0).toLocaleString()}</td>
