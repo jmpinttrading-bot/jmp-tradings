@@ -281,12 +281,6 @@
             if (roleClean === 'admin') {
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
-                
-                const settingsBtn = document.getElementById('settingsNavBtn');
-                if (settingsBtn) {
-                    settingsBtn.style.background = "#475569";
-                    settingsBtn.style.color = "white";
-                }
             } else {
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').textContent = `👤 Staff: ${profile.username || user.email.split('@')[0]}`;
