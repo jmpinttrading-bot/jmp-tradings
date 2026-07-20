@@ -16,7 +16,7 @@
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
         .logout-btn:hover { background-color: #dc2626; }
         .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; transition: all 0.2s; }
         .nav-btn:hover { background-color: #475569; color: white; }
         .nav-btn.active { background: #475569; color: white; }
 
@@ -90,7 +90,10 @@
         .ledger-search-box { display: flex; gap: 10px; align-items: center; }
         .ledger-search-box input { height: 38px; width: 250px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
         .ledger-search-box input:focus { outline: none; border-color: #ee964b; }
-        .ledger-search-box .btn-search { height: 38px; padding: 0 16px; font-size: 0.85rem; }
+        .ledger-search-box .btn-search { height: 38px; padding: 0 16px; font-size: 0.85rem; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .ledger-search-box .btn-search:hover { background: #1e293b; }
+        .ledger-search-box .btn-search.clear-filter { background: #64748b; }
+        .ledger-search-box .btn-search.clear-filter:hover { background: #475569; }
 
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; }
         
@@ -152,10 +155,10 @@
             <a href="dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'Dashboard')">Dashboard</a>
             <a href="employee-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'My Profile')">My Profile</a>
             <a href="import-docs.html" class="nav-btn" onclick="checkModuleAccess(event, 'Imports')">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
+            <a href="inventory-management.html" class="nav-btn active">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn" onclick="checkModuleAccess(event, 'Sales')">Sales</a>
             <a href="audit-report.html" class="nav-btn" onclick="checkModuleAccess(event, 'Audit Report')">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'Settings')">Settings</a>
+            <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn" onclick="checkModuleAccess(event, 'Settings')">Settings</a>
         </div>
     </nav>
 
@@ -339,7 +342,7 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let currentUserRole = "employee"; 
-        let userPermissions = {}; // Dynamic cache container for module privileges matching control-panel.html
+        let userPermissions = {}; 
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
@@ -350,7 +353,6 @@
         
         let permissions = { isAdmin: false, hasMasterAccess: false };
 
-        // Unified layout modal messenger
         function showAlert(msg, type) {
             showSystemModal({
                 title: type === 'error' ? 'System Error' : 'Success',
@@ -368,9 +370,8 @@
             document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
-        // Module Authorization Crosscheck Logic matching your Control Panel layout
         function checkModuleAccess(event, moduleName) {
-            if (currentUserRole === 'admin') return; // Master authorization bypass
+            if (currentUserRole === 'admin') return; 
 
             let permitted = true;
             if (moduleName === 'Settings' || moduleName === 'Audit Report') {
@@ -563,11 +564,6 @@
         }
 
         async function initLogisticsDashboard() {
-            const inventoryBtn = document.querySelector('.nav-links a[href="inventory-management.html"]');
-            if (inventoryBtn) {
-                inventoryBtn.classList.add('active');
-            }
-
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             currentAdminId = user.id;
@@ -581,7 +577,7 @@
             
             if (profile) {
                 currentUserRole = (profile.role || 'employee').toLowerCase().trim();
-                userPermissions = profile; // Save reference values
+                userPermissions = profile; 
             }
 
             if (currentUserRole === 'admin') {
@@ -592,7 +588,6 @@
                 badge.style.display = "block";
                 badge.textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
-                // Confirm tracking node access logic
                 const masterAccess = profile ? profile.inventory_access !== false : true;
                 if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 permissions.isAdmin = false;
