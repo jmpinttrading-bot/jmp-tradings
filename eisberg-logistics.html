@@ -350,7 +350,6 @@
         
         let permissions = { isAdmin: false, hasMasterAccess: false };
 
-        // Universal modular restrictions synchronized with control-panel setup
         function checkModuleAccess(event, moduleName) {
             if (currentUserRole === 'admin') return; 
 
@@ -562,7 +561,6 @@
         }
 
         async function initLogisticsDashboard() {
-            // Fix: Clean other active buttons in navbar layout first to prevent collision highlight
             document.querySelectorAll('.nav-links .nav-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
@@ -593,7 +591,7 @@
                 permissions.hasMasterAccess = true;
                 document.getElementById('adminEmail').className = "admin-badge";
                 document.getElementById('adminEmail').style.display = "block";
-                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
+                document.getElementById('adminEmail').textContent = `${profile.username || user.email.split('@')[0]}`;
             } else {
                 const masterAccess = profile ? profile.inventory_access !== false : true;
                 if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
@@ -601,7 +599,7 @@
                 permissions.hasMasterAccess = true;
                 document.getElementById('adminEmail').className = "employee-badge";
                 document.getElementById('adminEmail').style.display = "block";
-                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
+                document.getElementById('adminEmail').textContent = `${profile ? profile.username : user.email.split('@')[0]}`;
             }
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
