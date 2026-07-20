@@ -345,7 +345,18 @@
         }
 
         function renderUnifiedMasterGraph(labels, inData, outData) {
-            if (masterChartInstance) masterChartInstance.destroy();
+            // 1. Direct canvas query cleanup to fix "Canvas is already in use" errors
+            const existingChart = Chart.getChart("unifiedMasterChart");
+            if (existingChart) {
+                existingChart.destroy();
+            }
+            
+            // 2. Clear canvas and halt if there are no data labels (Prevents datalabels plugin error)
+            if (!labels || labels.length === 0) {
+                const ctx = document.getElementById('unifiedMasterChart').getContext('2d');
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                return; 
+            }
             
             const maxVal = Math.max(...inData, ...outData, 0);
             const suggestedMax = maxVal * 1.25; 
@@ -366,7 +377,15 @@
                     maintainAspectRatio: false,
                     resizeDelay: 100, 
                     plugins: {
-                        datalabels: { anchor: 'end', align: 'top', color: '#1e293b', font: { weight: 'bold' } }
+                        datalabels: { 
+                            anchor: 'end', 
+                            align: 'top', 
+                            color: '#1e293b', 
+                            font: { weight: 'bold' },
+                            formatter: function(value) {
+                                return value !== undefined ? value : 0;
+                            }
+                        }
                     },
                     scales: { y: { beginAtZero: true, suggestedMax: suggestedMax } }
                 }
