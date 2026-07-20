@@ -42,8 +42,10 @@
         .table-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; }
         .table-header-wrapper h4 { font-size: 1.1rem; color: #0f172a; font-weight: 700; }
         .search-box-container { display: flex; gap: 10px; align-items: center; }
-        .search-box-container input { height: 38px; width: 280px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
-        .search-box-container input:focus { outline: none; border-color: #ee964b; }
+        
+        /* Dropdown Styling */
+        .dropdown-select { height: 38px; width: 280px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background-color: white; color: #1e293b; outline: none; }
+        .dropdown-select:focus { border-color: #ee964b; }
         
         .btn-action { background: #0f172a; color: white; border: none; height: 38px; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: background 0.2s; white-space: nowrap; }
         .btn-action:hover:not(:disabled) { background: #1e293b; }
@@ -93,7 +95,7 @@
         @media (max-width: 768px) {
             .table-header-wrapper { flex-direction: column; align-items: flex-start; gap: 12px; }
             .search-box-container { width: 100%; }
-            .search-box-container input { width: 100%; }
+            .search-box-container .dropdown-select { width: 100%; }
         }
     </style>
 </head>
@@ -135,8 +137,10 @@
             <div class="table-header-wrapper">
                 <h4>Disposition Ledger Data Pipeline</h4>
                 <div class="search-box-container">
-                    <input type="text" id="salesSearchQuery" placeholder="Search SPSIC, Customer or Ref No...">
-                    <button type="button" class="btn-action" onclick="executeSearchFilter()">Search</button>
+                    <!-- Changed from type="text" input to a dynamic select element -->
+                    <select id="salesSearchQuery" class="dropdown-select" onchange="executeSearchFilter()">
+                        <option value="">-- Select SPSIC Number --</option>
+                    </select>
                     <button type="button" class="btn-action clear-filter" onclick="resetSearchFilter()">Reset</button>
                 </div>
             </div>
@@ -168,7 +172,7 @@
                     </thead>
                     <tbody id="salesInvoiceTableBody">
                         <tr>
-                            <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search for an SPSIC number above to load the data pipeline.</td>
+                            <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please select an SPSIC number above to load the data pipeline.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -240,7 +244,35 @@
                 return;
             }
 
-            fetchLedgerDataset(true); // Initial dataset pull
+            await fetchLedgerDataset(true); // Initial dataset pull
+            populateSpsicDropdown(); // Populate dropdown on load
+        }
+
+        // Populates the dropdown menu with unique spsic_numbers where invoice_no is empty or null
+        function populateSpsicDropdown() {
+            const dropdown = document.getElementById('salesSearchQuery');
+            
+            // Filter the full localized dataset for items where invoice_no is truly empty or null
+            const filteredForEmptyInvoice = originalLedgerDataset.filter(item => {
+                return !item.invoice_no || item.invoice_no.trim() === '';
+            });
+
+            // Map out the spsic_number strings and reduce down to unique entries
+            const uniqueSpsicNumbers = [...new Set(filteredForEmptyInvoice
+                .map(item => item.spsic_number)
+                .filter(num => num && num.trim() !== '')
+            )];
+
+            // Clear previous menu list options and preserve initial placeholder
+            dropdown.innerHTML = '<option value="">-- Select SPSIC Number --</option>';
+
+            // Generate structural element tags
+            uniqueSpsicNumbers.forEach(spsicNum => {
+                const opt = document.createElement('option');
+                opt.value = spsicNum;
+                opt.textContent = spsicNum;
+                dropdown.appendChild(opt);
+            });
         }
 
         async function fetchLedgerDataset(isInitialInit = false) {
@@ -269,15 +301,11 @@
                 activePage = 1;
                 renderInvoiceTable();
             } else {
-                // If refreshing data from an update, preserve current active filter configuration in workspace view
-                const query = document.getElementById('salesSearchQuery').value.trim().toLowerCase();
-                if (isSearchPerformed && query) {
+                // If refreshing data from an update, preserve current active drop-down option value
+                const dropdownValue = document.getElementById('salesSearchQuery').value;
+                if (isSearchPerformed && dropdownValue) {
                     workingFilteredDataset = originalLedgerDataset.filter(item => 
-                        (item.spsic_number || '').toLowerCase().includes(query) ||
-                        (item.customer || '').toLowerCase().includes(query) ||
-                        (item.ref_number || '').toLowerCase().includes(query) ||
-                        (item.commodity || '').toLowerCase().includes(query) ||
-                        (item.calculatedInvoiceNo || '').toLowerCase().includes(query)
+                        (item.spsic_number || '') === dropdownValue
                     );
                 }
                 renderInvoiceTable();
@@ -372,7 +400,10 @@
             }
 
             showSystemNotification("Sync Successful", `Successfully updated ${processedUpdatesCount} invoice assignments directly on cloud ledger storage.`);
-            fetchLedgerDataset(false); // Refreshes and retains layout structure cleanly without dumping the table grid state
+            
+            // Refreshes data and rebuilds the dropdown choices list dynamically to remove the processed SPSIC numbers
+            await fetchLedgerDataset(false); 
+            populateSpsicDropdown();
         }
 
         function showSystemNotification(title, message) {
@@ -419,9 +450,9 @@
             const topCommodityValue = document.getElementById('commodityTopBadgeValue');
             const saveBtn = document.getElementById('saveInvoicesBtn');
 
-            // If no search has been entered yet, keep it blank with the instruction message
+            // If no option chosen from dropdown list selection parameters
             if (!isSearchPerformed) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search for an SPSIC number above to load the data pipeline.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please select an SPSIC number above to load the data pipeline.</td></tr>`;
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
@@ -490,19 +521,16 @@
         }
 
         function executeSearchFilter() {
-            const query = document.getElementById('salesSearchQuery').value.trim().toLowerCase();
+            const dropdownValue = document.getElementById('salesSearchQuery').value;
             
-            if (!query) {
+            if (!dropdownValue) {
                 workingFilteredDataset = [];
                 isSearchPerformed = false;
             } else {
                 isSearchPerformed = true;
+                // Exact validation match logic against selected dropdown option element
                 workingFilteredDataset = originalLedgerDataset.filter(item => 
-                    (item.spsic_number || '').toLowerCase().includes(query) ||
-                    (item.customer || '').toLowerCase().includes(query) ||
-                    (item.ref_number || '').toLowerCase().includes(query) ||
-                    (item.commodity || '').toLowerCase().includes(query) ||
-                    (item.calculatedInvoiceNo || '').toLowerCase().includes(query)
+                    (item.spsic_number || '') === dropdownValue
                 );
             }
             activePage = 1;
