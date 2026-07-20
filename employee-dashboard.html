@@ -30,6 +30,9 @@
         /* Content Styles */
         .main-content { padding: 40px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        /* Hide role badge visual identifiers if dynamically injected */
+        .admin-badge, .employee-badge { display: none !important; }
         .user-badge { background: white; padding: 8px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: 600; }
         
         .dashboard-layout-wrapper { display: flex; gap: 30px; align-items: flex-start; }
@@ -157,6 +160,8 @@
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             currentEmployeeId = user.id;
+            
+            // Displays only the email text smoothly without prefixes
             document.getElementById('userEmail').textContent = user.email;
             
             const { data: profile, error } = await supabaseClient
@@ -176,13 +181,10 @@
 
             const settingsBtn = document.getElementById('settingsNavBtn');
             if (roleClean === 'admin' && settingsBtn) {
-                // Settings visible for admin without forcing styling overlaps
                 settingsBtn.style.display = "inline-block";
             }
 
-            // Initialize and bind real-time presence synchronization
             initializePresenceSynchronization(user, profile.username, profile.role);
-
             fetchMy201Dossier();
         }
 
