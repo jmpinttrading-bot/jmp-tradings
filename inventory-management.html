@@ -313,8 +313,13 @@
 
             const itemMap = {};
             masterTransactionsCachedData.forEach(item => {
-                const itemDate = item.created_at.split('T')[0];
-                if (item.storage_facility === selectedFacility && itemDate >= startVal && itemDate <= endVal) {
+                const itemDate = item.created_at ? item.created_at.split('T')[0] : '';
+                
+                // Case-insensitive normalization with white space trimming
+                const dbFacility = String(item.storage_facility || '').trim().toUpperCase();
+                const targetFacility = String(selectedFacility || '').trim().toUpperCase();
+
+                if (dbFacility === targetFacility && itemDate >= startVal && itemDate <= endVal) {
                     if (!itemMap[item.item_code]) itemMap[item.item_code] = { in: 0, out: 0 };
                     itemMap[item.item_code].in += (parseInt(item.in_quantity) || 0);
                     itemMap[item.item_code].out += (parseInt(item.out_quantity) || 0);
