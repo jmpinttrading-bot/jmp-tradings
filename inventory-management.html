@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JMP Inventory Management</title>
+    <!-- Mute the favicon 404 console error permanently -->
+    <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
@@ -191,6 +193,11 @@
     </div>
 
     <script>
+        // Globally unregister datalabels from automatic setup to block global background crashing
+        if (window.ChartDataLabels) {
+            Chart.unregister(window.ChartDataLabels);
+        }
+
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -315,7 +322,6 @@
             masterTransactionsCachedData.forEach(item => {
                 const itemDate = item.created_at ? item.created_at.split('T')[0] : '';
                 
-                // Case-insensitive normalization with white space trimming
                 const dbFacility = String(item.storage_facility || '').trim().toUpperCase();
                 const targetFacility = String(selectedFacility || '').trim().toUpperCase();
 
@@ -345,33 +351,34 @@
         }
 
         function renderUnifiedMasterGraph(labels, inData, outData) {
-            // 1. Direct canvas query cleanup to fix "Canvas is already in use" errors
             const existingChart = Chart.getChart("unifiedMasterChart");
             if (existingChart) {
                 existingChart.destroy();
             }
             
-            // 2. Clear canvas and halt if there are no data labels (Prevents datalabels plugin error)
-            if (!labels || labels.length === 0) {
-                const ctx = document.getElementById('unifiedMasterChart').getContext('2d');
-                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                return; 
-            }
+            const hasData = labels && labels.length > 0;
             
-            const maxVal = Math.max(...inData, ...outData, 0);
+            // If empty, pass completely sanitized arrays to prevent inner plugin runtime exceptions
+            const finalLabels = hasData ? labels : [];
+            const finalIn = hasData ? inData : [];
+            const finalOut = hasData ? outData : [];
+            
+            const maxVal = Math.max(...finalIn, ...finalOut, 0);
             const suggestedMax = maxVal * 1.25; 
 
             const ctx = document.getElementById('unifiedMasterChart').getContext('2d');
+            
+            // Explicitly load ChartDataLabels directly in the tracking matrix instance config
             masterChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: finalLabels,
                     datasets: [
-                        { label: 'Total In', data: inData, backgroundColor: '#34d399' },
-                        { label: 'Total Out', data: outData, backgroundColor: '#ef4444' }
+                        { label: 'Total In', data: finalIn, backgroundColor: '#34d399' },
+                        { label: 'Total Out', data: finalOut, backgroundColor: '#ef4444' }
                     ]
                 },
-                plugins: [ChartDataLabels],
+                plugins: hasData ? [ChartDataLabels] : [], 
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
