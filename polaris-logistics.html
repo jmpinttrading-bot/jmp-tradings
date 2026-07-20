@@ -24,8 +24,8 @@
         .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         
-        .admin-badge { display: none; background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
-        .employee-badge { display: none; background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        /* Hidden user badge elements completely for all roles */
+        .admin-badge, .employee-badge, #adminEmail { display: none !important; }
 
         .back-link { 
             display: inline-flex; 
@@ -90,7 +90,10 @@
         .ledger-search-box { display: flex; gap: 10px; align-items: center; }
         .ledger-search-box input { height: 38px; width: 250px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
         .ledger-search-box input:focus { outline: none; border-color: #ee964b; }
-        .ledger-search-box .btn-search { height: 38px; padding: 0 16px; font-size: 0.85rem; }
+        .ledger-search-box .btn-search { height: 38px; padding: 0 16px; font-size: 0.85rem; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .ledger-search-box .btn-search:hover { background: #1e293b; }
+        .ledger-search-box .btn-search.clear-filter { background: #64748b; }
+        .ledger-search-box .btn-search.clear-filter:hover { background: #475569; }
 
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; }
         
@@ -198,7 +201,7 @@
     <div class="main-content">
         <div class="header">
             <h1>Outbound Inventory Management</h1>
-            <div id="adminEmail" class="employee-badge" style="display: block;">Connecting...</div>
+            <div id="adminEmail" style="display: none !important;">Connecting...</div>
         </div>
 
         <a href="inventory-management.html" class="back-link">⬅️ Back to Inventory Dashboard</a>
@@ -339,7 +342,7 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let currentUserRole = "employee"; 
-        let userPermissions = {}; // Permissions placeholder cache matching your control-panel.html system configuration
+        let userPermissions = {}; 
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
@@ -350,7 +353,6 @@
         
         let permissions = { isAdmin: false, hasMasterAccess: false };
 
-        // Unified layout modal messenger
         function showAlert(msg, type) {
             showSystemModal({
                 title: type === 'error' ? 'System Error' : 'Success',
@@ -368,9 +370,8 @@
             document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
-        // Standard Navigation Access Privilege Restriction Router
         function checkModuleAccess(event, moduleName) {
-            if (currentUserRole === 'admin') return; // Master authorization bypass
+            if (currentUserRole === 'admin') return; 
 
             let permitted = true;
             if (moduleName === 'Settings' || moduleName === 'Audit Report') {
@@ -581,25 +582,20 @@
             
             if (profile) {
                 currentUserRole = (profile.role || 'employee').toLowerCase().trim();
-                userPermissions = profile; // Cache local configuration markers
+                userPermissions = profile; 
             }
+
+            // Explicitly force hide badge visually for all accounts
+            document.getElementById('adminEmail').style.setProperty('display', 'none', 'important');
 
             if (currentUserRole === 'admin') {
                 permissions.isAdmin = true;
                 permissions.hasMasterAccess = true;
-                const badge = document.getElementById('adminEmail');
-                badge.className = "admin-badge";
-                badge.style.display = "block";
-                badge.textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
                 const masterAccess = profile ? profile.inventory_access !== false : true;
                 if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
                 permissions.isAdmin = false;
                 permissions.hasMasterAccess = true;
-                const badge = document.getElementById('adminEmail');
-                badge.className = "employee-badge";
-                badge.style.display = "block";
-                badge.textContent = `👤 Staff: ${profile ? profile.username : user.email.split('@')[0]}`;
             }
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
