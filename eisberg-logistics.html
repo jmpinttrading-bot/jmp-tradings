@@ -562,6 +562,11 @@
         }
 
         async function initLogisticsDashboard() {
+            // Fix: Clean other active buttons in navbar layout first to prevent collision highlight
+            document.querySelectorAll('.nav-links .nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
             const inventoryBtn = document.querySelector('.nav-links a[href="inventory-management.html"]');
             if (inventoryBtn) {
                 inventoryBtn.classList.add('active');
