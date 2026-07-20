@@ -104,7 +104,7 @@
         .master-table tr:hover td { background-color: #f8fafc; }
         
         .qty-val { font-weight: 700; color: #d9534f; font-size: 0.95rem; }
-        .qty-in font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
+        .qty-in { font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
         .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
         .qty-pallet { font-weight: 700; color: #8b5cf6; font-size: 0.95rem; }
 
@@ -634,12 +634,6 @@
 
             currentUserPermissions = profile;
             const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
-
-            const settingsBtn = document.getElementById('settingsBtn');
-            if (roleClean === 'admin' && settingsBtn) {
-                settingsBtn.style.background = "#475569";
-                settingsBtn.style.color = "white";
-            }
 
             const hasMasterAccess = roleClean === 'admin' || currentUserPermissions.inventory_access !== false;
             if (!hasMasterAccess) {
