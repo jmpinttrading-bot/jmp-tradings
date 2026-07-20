@@ -188,8 +188,8 @@
 
             const settingsBtn = document.getElementById('settingsNavBtn');
             if (roleClean === 'admin' && settingsBtn) {
-                settingsBtn.style.background = "#475569";
-                settingsBtn.style.color = "white";
+                // Ensure visibility for admins, without overriding active nav styles
+                settingsBtn.style.display = "inline-block";
             }
 
             const { data: docData } = await supabaseClient
