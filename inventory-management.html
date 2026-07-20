@@ -7,8 +7,9 @@
     <!-- Mute the favicon 404 console error permanently -->
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- Synced version endpoints to prevent internal library crash states -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
         * { box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; color: #1e293b; min-height: 100vh; }
@@ -358,7 +359,6 @@
             
             const hasData = labels && labels.length > 0;
             
-            // If empty, pass completely sanitized arrays to prevent inner plugin runtime exceptions
             const finalLabels = hasData ? labels : [];
             const finalIn = hasData ? inData : [];
             const finalOut = hasData ? outData : [];
@@ -368,7 +368,6 @@
 
             const ctx = document.getElementById('unifiedMasterChart').getContext('2d');
             
-            // Explicitly load ChartDataLabels directly in the tracking matrix instance config
             masterChartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
@@ -378,6 +377,7 @@
                         { label: 'Total Out', data: finalOut, backgroundColor: '#ef4444' }
                     ]
                 },
+                // If hasData is false, we completely drop the plugin hook from processing empty datasets
                 plugins: hasData ? [ChartDataLabels] : [], 
                 options: {
                     responsive: true,
