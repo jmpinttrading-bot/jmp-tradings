@@ -644,8 +644,8 @@
 
             const settingsBtn = document.getElementById('settingsBtn');
             if (roleClean === 'admin' && settingsBtn) {
-                settingsBtn.style.background = "#475569";
-                settingsBtn.style.color = "white";
+                // Settings visibility control without adding duplicate layout colors
+                settingsBtn.style.display = "inline-block";
             }
 
             const hasRegistryAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
