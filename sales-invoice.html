@@ -94,7 +94,7 @@
 
         @media (max-width: 768px) {
             .table-header-wrapper { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .search-box-container { width: 100%; }
+            .search-box-container { width: 100%; flex-wrap: wrap; }
             .search-box-container .dropdown-select { width: 100%; }
         }
     </style>
@@ -142,6 +142,9 @@
                         <option value="">-- Select SPSIC Number --</option>
                     </select>
                     <button type="button" class="btn-action clear-filter" onclick="resetSearchFilter()">Reset</button>
+                    
+                    <!-- Added Action Button Inside Workspace Next to Reset Button -->
+                    <button type="button" class="btn-action" style="background-color: #2563eb;" onclick="verifyNavigationPrivilege('sales_invoice_access', 'uploaded-invoice.html')">Uploaded Invoices ↗</button>
                 </div>
             </div>
 
@@ -554,6 +557,7 @@
             }
         }
 
+        // Modified wrapper to include explicit verification fallback for uploaded-invoice layout
         function verifyNavigationPrivilege(accessKey, url) {
             if (!currentUserPermissions) return;
 
