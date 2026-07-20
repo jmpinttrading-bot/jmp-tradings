@@ -480,9 +480,9 @@
             }
 
             const settingsBtn = document.getElementById('settingsNavBtn');
-            if (currentUserRole === 'admin') {
-                settingsBtn.style.background = "#475569";
-                settingsBtn.style.color = "white";
+            if (currentUserRole === 'admin' && settingsBtn) {
+                // Ensure Settings tab stays configured without matching layout design overlaps
+                settingsBtn.style.display = "inline-block";
             }
 
             initializePresenceSynchronization(user, profile.username, profile.role);
