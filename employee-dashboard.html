@@ -176,8 +176,8 @@
 
             const settingsBtn = document.getElementById('settingsNavBtn');
             if (roleClean === 'admin' && settingsBtn) {
-                settingsBtn.style.background = "#475569";
-                settingsBtn.style.color = "white";
+                // Settings visible for admin without forcing styling overlaps
+                settingsBtn.style.display = "inline-block";
             }
 
             // Initialize and bind real-time presence synchronization
