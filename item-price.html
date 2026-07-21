@@ -46,7 +46,7 @@
             cursor: pointer; 
         }
         .logout-btn:hover { 
-            background-color: #dc2626; 
+            background-color: #ef4444; 
         }
         .nav-links { 
             display: flex; 
@@ -564,7 +564,7 @@
             }
         }
 
-        /* --- Dynamic Realtime Database SPSIC Validation --- */
+        /* --- Dynamic Realtime Database SPSIC Validation & Autocomplete Linkage --- */
         async function validateSpsicRealtime() {
             const spsicInput = document.getElementById('global_spsic');
             const globalSpsic = spsicInput.value.trim().toUpperCase();
@@ -573,7 +573,7 @@
 
             const { data: matchedDoc, error: checkError } = await supabaseClient
                 .from('imported_shipment_docs')
-                .select('spsic_number')
+                .select('spsic_number, commodity')
                 .eq('spsic_number', globalSpsic)
                 .maybeSingle();
 
@@ -584,6 +584,12 @@
 
             if (!matchedDoc) {
                 showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
+            } else {
+                // Linkage Autofill Behavior with Regex dynamic clean process matching rules
+                if (matchedDoc.commodity) {
+                    const cleanCommodity = matchedDoc.commodity.replace(/-[123]CV/g, '').trim().toUpperCase();
+                    document.getElementById('global_commodity').value = cleanCommodity;
+                }
             }
         }
 
