@@ -35,6 +35,14 @@
         .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
         .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; }
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+
+        /* Pagination Styling */
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 10px; }
+        .pagination-info { font-size: 0.85rem; color: #64748b; }
+        .pagination-buttons { display: flex; gap: 10px; }
+        .btn-pagination { background-color: #ffffff; color: #334155; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-pagination:hover:not(:disabled) { border-color: #f97316; color: #f97316; }
+        .btn-pagination:disabled { opacity: 0.5; cursor: not-allowed; background-color: #f1f5f9; }
     </style>
 </head>
 <body>
@@ -85,16 +93,27 @@
                 <table class="master-table">
                     <thead>
                         <tr>
+                            <th>Storage Arrival Date</th>
                             <th>SPSIC Number</th>
+                            <th>Commodity</th>
                             <th>Total Qty Balance</th>
                         </tr>
                     </thead>
                     <tbody id="dispoHistoryBody">
                         <tr>
-                            <td colspan="2" style="text-align: center; color: #94a3b8; padding: 20px;">Loading shipment logs...</td>
+                            <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">Loading shipment logs...</td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Table Pagination UI -->
+            <div class="pagination-container">
+                <div class="pagination-info" id="paginationInfo">Showing 0 to 0 of 0 logs</div>
+                <div class="pagination-buttons">
+                    <button class="btn-pagination" id="btnPrev" onclick="changePage(-1)" disabled>Previous</button>
+                    <button class="btn-pagination" id="btnNext" onclick="changePage(1)" disabled>Next</button>
+                </div>
             </div>
         </div>
     </div>
@@ -105,20 +124,22 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let shipmentsCache = [];
+        let currentPage = 1;
+        const rowsPerPage = 20;
 
         async function initializePage() {
             await fetchShipmentData();
         }
 
-        // Pulls records from imported_shipment_docs
+        // Pulls records from imported_shipment_docs sorted by arrival date
         async function fetchShipmentData() {
             const dropdown = document.getElementById('spsic_dropdown');
             const tbody = document.getElementById('dispoHistoryBody');
             
             const { data, error } = await supabaseClient
                 .from('imported_shipment_docs')
-                .select('spsic_number, total_qty_bal')
-                .order('spsic_number', { ascending: true });
+                .select('spsic_number, total_qty_bal, storage_arrival_date, commodity')
+                .order('storage_arrival_date', { ascending: false }); // Newest logs first
 
             if (error) {
                 alert("Failed to pull shipment information: " + error.message);
@@ -132,31 +153,70 @@
 
             if (uniqueSpsic.length === 0) {
                 dropdown.innerHTML = '<option value="">No active SPSIC matches found</option>';
-                tbody.innerHTML = `<tr><td colspan="2" style="text-align: center; color: #94a3b8; padding: 20px;">No shipment docs found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">No shipment docs found.</td></tr>`;
                 return;
             }
 
             dropdown.innerHTML = '<option value="">-- Choose SPSIC Document Target --</option>' + 
                 uniqueSpsic.map(s => `<option value="${s}">${s}</option>`).join('');
 
-            // 2. Render Balances Table Layout
-            renderTable(shipmentsCache);
+            // 2. Render Balances Table with pagination setup
+            currentPage = 1;
+            renderPaginationTable();
         }
 
-        function renderTable(items) {
+        function renderPaginationTable() {
             const tbody = document.getElementById('dispoHistoryBody');
-            tbody.innerHTML = items.map(row => {
+            
+            const totalItems = shipmentsCache.length;
+            const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
+
+            // Page bounds validation
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = Math.min(startIndex + rowsPerPage, totalItems);
+            const paginatedItems = shipmentsCache.slice(startIndex, endIndex);
+
+            if (paginatedItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">No data configuration verified.</td></tr>`;
+                document.getElementById('paginationInfo').innerText = "Showing 0 to 0 of 0 logs";
+                document.getElementById('btnPrev').disabled = true;
+                document.getElementById('btnNext').disabled = true;
+                return;
+            }
+
+            tbody.innerHTML = paginatedItems.map(row => {
                 const displayBal = row.total_qty_bal !== null && row.total_qty_bal !== undefined
                     ? parseFloat(row.total_qty_bal).toLocaleString(undefined, { minimumFractionDigits: 2 })
                     : '<span style="color:#94a3b8; font-style:italic;">Not Configured</span>';
 
+                // Cleans raw commodity text string by filtering out matching structural tag variants
+                const rawCommodity = row.commodity || '';
+                const cleanCommodity = rawCommodity.replace(/-[123]CV/g, '').trim();
+
+                const arrivalDate = row.storage_arrival_date ? row.storage_arrival_date : 'N/A';
+
                 return `
                     <tr>
-                        <td style="font-weight:700;">${row.spsic_number}</td>
+                        <td>${arrivalDate}</td>
+                        <td style="font-weight:700;">${row.spsic_number || 'N/A'}</td>
+                        <td>${cleanCommodity || 'N/A'}</td>
                         <td style="font-weight:600; color:#2563eb;">${displayBal}</td>
                     </tr>
                 `;
             }).join('');
+
+            // UI Label updates
+            document.getElementById('paginationInfo').innerText = `Showing ${startIndex + 1} to ${endIndex} of ${totalItems} logs`;
+            document.getElementById('btnPrev').disabled = currentPage === 1;
+            document.getElementById('btnNext').disabled = currentPage === totalPages;
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            renderPaginationTable();
         }
 
         // Automatically displays the existing quantity when an SPSIC is selected
@@ -177,7 +237,7 @@
             }
         }
 
-        // Form submission handling logic using an UPDATE query targeting the new column
+        // Form submission handling logic using an UPDATE query targeting the balance column
         async function handleFormSubmission(e) {
             e.preventDefault();
             
@@ -189,7 +249,7 @@
                 return;
             }
 
-            // Updates the new column inside imported_shipment_docs directly
+            // Updates the column inside imported_shipment_docs directly
             const { error } = await supabaseClient
                 .from('imported_shipment_docs')
                 .update({ total_qty_bal: qtyBal })
