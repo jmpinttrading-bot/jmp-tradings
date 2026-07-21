@@ -580,9 +580,10 @@
             
             if (!globalSpsic) return;
 
+            // Updated to select item_price along with commodity metadata configuration details
             const { data: matchedDoc, error: checkError } = await supabaseClient
                 .from('imported_shipment_docs')
-                .select('spsic_number, commodity')
+                .select('spsic_number, commodity, item_price')
                 .eq('spsic_number', globalSpsic)
                 .maybeSingle();
 
@@ -594,6 +595,7 @@
             if (!matchedDoc) {
                 showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
                 document.getElementById('global_commodity').value = '';
+                document.getElementById('global_price').value = '';
             } else {
                 // Linkage Autofill Behavior with Regex dynamic clean process matching rules
                 if (matchedDoc.commodity) {
@@ -602,6 +604,16 @@
                 } else {
                     document.getElementById('global_commodity').value = 'N/A';
                 }
+
+                // Auto link item_price field context validation configurations
+                if (matchedDoc.item_price !== null && matchedDoc.item_price !== undefined) {
+                    document.getElementById('global_price').value = parseFloat(matchedDoc.item_price);
+                } else {
+                    document.getElementById('global_price').value = '';
+                }
+                
+                // Recalculate line calculations using newly bound pricing configs
+                recalculateAllAmounts();
             }
         }
 
