@@ -132,6 +132,16 @@
         .main-content { padding: 40px; max-width: 1400px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
 
+        /* Action bar container layout for links above form */
+        .action-bar-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
         .back-link { 
             display: inline-flex; 
             align-items: center; 
@@ -141,7 +151,6 @@
             text-decoration: none; 
             font-weight: 700; 
             font-size: 0.9rem; 
-            margin-bottom: 25px; 
             padding: 10px 18px; 
             border-radius: 8px; 
             border: 1px solid #cbd5e1; 
@@ -153,6 +162,26 @@
             color: #ee964b; 
             border-color: #ee964b; 
             transform: translateX(-2px);
+        }
+
+        .dispo-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #0b2545;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: 1px solid #0b2545;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+        .dispo-link-btn:hover {
+            background-color: #11355e;
+            transform: translateY(-2px);
         }
 
         .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
@@ -343,7 +372,11 @@
             <h1>OR Dispo Ledger Entry</h1>
         </div>
 
-        <a href="inventory-management.html" class="back-link">⬅️ Back to Stock Dashboard</a>
+        <!-- Action Bar Row containing Back Link & New Dispo Button on the other side -->
+        <div class="action-bar-row">
+            <a href="inventory-management.html" class="back-link">⬅️ Back to Stock Dashboard</a>
+            <a href="dispo.html" class="dispo-link-btn">SPSIC Total Balance ➡️</a>
+        </div>
         
         <div class="workspace-grid">
             
@@ -355,7 +388,7 @@
                     <div class="section-subtitle">1. Shared Global Settings</div>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>SPSIC Number</label>
+                            <label><a href="dispo.html" style="color: #475569; text-decoration: underline;">SPSIC Number</a></label>
                             <input type="text" id="global_spsic" class="uppercase-force" required placeholder="e.g. SPSIC-2026-001" onblur="validateSpsicRealtime()">
                         </div>
                         <div class="form-group">
@@ -614,7 +647,6 @@
             renderActivePageRows();
         }
 
-        // Updated handleValueChange to only update array in memory without table wiping
         function handleValueChange(rowId, field, val) {
             const row = activeRowsData.find(r => r.id === rowId);
             if (!row) return;
@@ -624,7 +656,6 @@
                 const price = parseFloat(document.getElementById('global_price').value) || 0;
                 row.amount = (row.qty * price).toFixed(2);
                 
-                // Instantly update the corresponding visual amount element without re-rendering row
                 const amountInput = document.getElementById(`amount-field-${rowId}`);
                 if (amountInput) amountInput.value = row.amount;
             } else if (field === 'customer') {
@@ -734,7 +765,6 @@
             document.getElementById('nextPageBtn').disabled = (currentPage === totalPages);
         }
 
-        /* --- Click to Edit Row Handler --- */
         function loadRowForEditing(id) {
             const targetItem = globallyFetchedItems.find(item => item.id === id);
             if (!targetItem) return;
@@ -761,7 +791,6 @@
             document.getElementById('spsicEntryForm').scrollIntoView({ behavior: 'smooth' });
         }
 
-        /* --- Global Setup & Auth Logic --- */
         async function initPriceDashboard() {
             document.getElementById('global_date').value = new Date().toISOString().split('T')[0];
 
@@ -822,7 +851,6 @@
             }
         }
 
-        /* --- Ledger Table Rendering with 20-Row Pagination --- */
         function renderLedgerTable(items) {
             const tbody = document.getElementById('ledgerTableBody');
             const paginationEl = document.getElementById('ledgerPaginationControls');
