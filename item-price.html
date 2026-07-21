@@ -405,12 +405,12 @@
                         </div>
                         <div class="form-group">
                             <label>Commodity</label>
-                            <!-- Input locked with readonly since it pulls automatically via SPSIC script mapping -->
                             <input type="text" id="global_commodity" class="uppercase-force" readonly placeholder="AUTOFILL UPON SPSIC ENTRY">
                         </div>
                         <div class="form-group">
                             <label>Price (PHP)</label>
-                            <input type="number" id="global_price" step="0.01" required placeholder="0.00" oninput="recalculateAllAmounts()">
+                            <!-- Price input locked with readonly since it pulls automatically via SPSIC matching -->
+                            <input type="number" id="global_price" step="0.01" readonly required placeholder="AUTOFILL UPON SPSIC ENTRY" oninput="recalculateAllAmounts()">
                         </div>
                     </div>
 
@@ -580,7 +580,6 @@
             
             if (!globalSpsic) return;
 
-            // Updated to select item_price along with commodity metadata configuration details
             const { data: matchedDoc, error: checkError } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('spsic_number, commodity, item_price')
@@ -596,25 +595,30 @@
                 showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
                 document.getElementById('global_commodity').value = '';
                 document.getElementById('global_price').value = '';
-            } else {
-                // Linkage Autofill Behavior with Regex dynamic clean process matching rules
-                if (matchedDoc.commodity) {
-                    const cleanCommodity = matchedDoc.commodity.replace(/-[123]CV/g, '').trim().toUpperCase();
-                    document.getElementById('global_commodity').value = cleanCommodity;
-                } else {
-                    document.getElementById('global_commodity').value = 'N/A';
-                }
-
-                // Auto link item_price field context validation configurations
-                if (matchedDoc.item_price !== null && matchedDoc.item_price !== undefined) {
-                    document.getElementById('global_price').value = parseFloat(matchedDoc.item_price);
-                } else {
-                    document.getElementById('global_price').value = '';
-                }
-                
-                // Recalculate line calculations using newly bound pricing configs
                 recalculateAllAmounts();
+                return;
             }
+
+            // Verify if price is missing or unconfigured
+            if (matchedDoc.item_price === null || matchedDoc.item_price === undefined || String(matchedDoc.item_price).trim() === '') {
+                showSystemModal("Missing Price Configurations", "This SPSIC Number does not have an active valuation price/total balance setup. You must upload and configure it via dispo.html first.", "global_spsic");
+                document.getElementById('global_spsic').value = '';
+                document.getElementById('global_commodity').value = '';
+                document.getElementById('global_price').value = '';
+                recalculateAllAmounts();
+                return;
+            }
+
+            // Linkage Autofill Behavior with Regex dynamic clean process matching rules
+            if (matchedDoc.commodity) {
+                const cleanCommodity = matchedDoc.commodity.replace(/-[123]CV/g, '').trim().toUpperCase();
+                document.getElementById('global_commodity').value = cleanCommodity;
+            } else {
+                document.getElementById('global_commodity').value = 'N/A';
+            }
+
+            document.getElementById('global_price').value = parseFloat(matchedDoc.item_price);
+            recalculateAllAmounts();
         }
 
         /* --- Dynamic Form & Pagination Controls --- */
@@ -952,7 +956,7 @@
 
             const { data: matchedDoc, error: checkError } = await supabaseClient
                 .from('imported_shipment_docs')
-                .select('spsic_number')
+                .select('spsic_number, item_price')
                 .eq('spsic_number', globalSpsic)
                 .maybeSingle();
 
@@ -963,6 +967,11 @@
 
             if (!matchedDoc) {
                 showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
+                return;
+            }
+
+            if (matchedDoc.item_price === null || matchedDoc.item_price === undefined || String(matchedDoc.item_price).trim() === '') {
+                showSystemModal("Missing Price Configurations", "This SPSIC Number does not have an active valuation price/total balance setup. You must upload it via dispo.html first.");
                 return;
             }
 
