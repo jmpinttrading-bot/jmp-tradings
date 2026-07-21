@@ -16,6 +16,63 @@
         .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; white-space: nowrap; }
         .nav-btn:hover, .nav-btn.active { background-color: #475569; color: white; }
 
+        /* --- Standardized Notification Modal Styles --- */
+        .restriction-modal-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(11, 37, 69, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 20000; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.2s ease-in-out;
+        }
+        .restriction-modal-container.is-visible { 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
+        .restriction-modal-card { 
+            background: white; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 440px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .restriction-modal-card h4 {
+            margin-bottom: 10px; 
+            color: #1e293b; 
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .restriction-modal-card p {
+            color: #64748b; 
+            font-size: 0.9rem; 
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .modal-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 15px; 
+            width: 100%; 
+            max-width: 150px; 
+        }
+        .modal-btn:hover {
+            background: #11355e;
+        }
+
         .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         .back-link { display: inline-flex; align-items: center; gap: 8px; background-color: #ffffff; color: #475569; text-decoration: none; font-weight: 700; font-size: 0.9rem; margin-bottom: 25px; padding: 10px 18px; border-radius: 8px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
@@ -50,6 +107,15 @@
     </style>
 </head>
 <body>
+
+    <!-- Notification Modal Block -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">System Status</h4>
+            <p id="restrictionModalMessage">Processing your system parameters...</p>
+            <button class="modal-btn" id="restrictionModalBtn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
 
     <nav class="navbar">
         <div class="top-row">
@@ -136,11 +202,33 @@
         let currentPage = 1;
         const rowsPerPage = 20;
 
+        /* --- Modal Presentation Controls --- */
+        function showSystemModal(title, message, focusOnCloseId = null) {
+            document.getElementById('restrictionModalTitle').textContent = title;
+            document.getElementById('restrictionModalMessage').textContent = message;
+            
+            const modalBtn = document.getElementById('restrictionModalBtn');
+            if (focusOnCloseId) {
+                modalBtn.onclick = function() {
+                    closeRestrictionModal();
+                    const el = document.getElementById(focusOnCloseId);
+                    if (el) el.focus();
+                };
+            } else {
+                modalBtn.onclick = closeRestrictionModal;
+            }
+
+            document.getElementById('accessBlockerModal').classList.add('is-visible');
+        }
+
+        function closeRestrictionModal() { 
+            document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
+        }
+
         async function initializePage() {
             await fetchShipmentData();
         }
 
-        // Pulls records from imported_shipment_docs sorted by arrival date
         async function fetchShipmentData() {
             const dropdown = document.getElementById('spsic_dropdown');
             const tbody = document.getElementById('dispoHistoryBody');
@@ -148,16 +236,14 @@
             const { data, error } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('spsic_number, total_qty_bal, item_price, storage_arrival_date, commodity')
-                .order('storage_arrival_date', { ascending: false }); // Newest logs first
+                .order('storage_arrival_date', { ascending: false });
 
             if (error) {
-                alert("Failed to pull shipment information: " + error.message);
+                showSystemModal("Sync Failure", "Failed to pull shipment information: " + error.message);
                 return;
             }
 
             shipmentsCache = data || [];
-
-            // 1. Populate Dropdown with Unique Values
             const uniqueSpsic = [...new Set(shipmentsCache.map(item => item.spsic_number).filter(Boolean))];
 
             if (uniqueSpsic.length === 0) {
@@ -169,18 +255,15 @@
             dropdown.innerHTML = '<option value="">-- Choose SPSIC Document Target --</option>' + 
                 uniqueSpsic.map(s => `<option value="${s}">${s}</option>`).join('');
 
-            // 2. Render Balances Table with pagination setup
             currentPage = 1;
             renderPaginationTable();
         }
 
         function renderPaginationTable() {
             const tbody = document.getElementById('dispoHistoryBody');
-            
             const totalItems = shipmentsCache.length;
             const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
 
-            // Page bounds validation
             if (currentPage > totalPages) currentPage = totalPages;
             if (currentPage < 1) currentPage = 1;
 
@@ -205,10 +288,8 @@
                     ? '₱' + parseFloat(row.item_price).toLocaleString(undefined, { minimumFractionDigits: 2 })
                     : '<span style="color:#94a3b8; font-style:italic;">Not Configured</span>';
 
-                // Cleans raw commodity text string by filtering out matching structural tag variants
                 const rawCommodity = row.commodity || '';
                 const cleanCommodity = rawCommodity.replace(/-[123]CV/g, '').trim();
-
                 const arrivalDate = row.storage_arrival_date ? row.storage_arrival_date : 'N/A';
 
                 return `
@@ -222,7 +303,6 @@
                 `;
             }).join('');
 
-            // UI Label updates
             document.getElementById('paginationInfo').innerText = `Showing ${startIndex + 1} to ${endIndex} of ${totalItems} logs`;
             document.getElementById('btnPrev').disabled = currentPage === 1;
             document.getElementById('btnNext').disabled = currentPage === totalPages;
@@ -233,7 +313,6 @@
             renderPaginationTable();
         }
 
-        // Automatically displays the existing quantity and item price when an SPSIC is selected
         function handleSpsicSelectionChange() {
             const selectedSpsic = document.getElementById('spsic_dropdown').value;
             const targetQtyInput = document.getElementById('total_qty_bal');
@@ -255,7 +334,6 @@
             }
         }
 
-        // Form submission handling logic using an UPDATE query targeting balance and price columns
         async function handleFormSubmission(e) {
             e.preventDefault();
             
@@ -264,11 +342,10 @@
             const priceVal = parseFloat(document.getElementById('item_price').value);
 
             if (!spsicNum) {
-                alert("Please select a valid target SPSIC document string");
+                showSystemModal("Validation Error", "Please select a valid target SPSIC document string.", "spsic_dropdown");
                 return;
             }
 
-            // Updates the columns inside imported_shipment_docs directly
             const { error } = await supabaseClient
                 .from('imported_shipment_docs')
                 .update({ 
@@ -278,11 +355,11 @@
                 .eq('spsic_number', spsicNum);
 
             if (error) {
-                alert("Database update failure executed: " + error.message);
+                showSystemModal("Database Update Failure", error.message);
                 return;
             }
 
-            alert("SPSIC balance records updated successfully!");
+            showSystemModal("Action Successful", "SPSIC balance records updated successfully!");
             document.getElementById('dispoBalanceForm').reset();
             await fetchShipmentData();
         }
