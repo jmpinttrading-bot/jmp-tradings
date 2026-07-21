@@ -22,10 +22,10 @@
         .back-link:hover { color: #f97316; border-color: #f97316; }
 
         .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 30px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; }
         .form-group { display: flex; flex-direction: column; }
         .form-group label { margin-bottom: 6px; font-weight: 700; font-size: 0.8rem; color: #475569; text-transform: uppercase; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; background: white; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: #f97316; }
 
         .btn-primary { background: #0b2545; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; width: 100%; transition: background 0.2s; text-align: center; }
@@ -33,8 +33,8 @@
 
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; }
         .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; }
-        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; white-space: nowrap; }
+        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; white-space: nowrap; }
 
         /* Pagination Styling */
         .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 10px; }
@@ -43,6 +43,10 @@
         .btn-pagination { background-color: #ffffff; color: #334155; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-pagination:hover:not(:disabled) { border-color: #f97316; color: #f97316; }
         .btn-pagination:disabled { opacity: 0.5; cursor: not-allowed; background-color: #f1f5f9; }
+
+        @media (max-width: 992px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -78,6 +82,10 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label>Item Price (PHP)</label>
+                        <input type="number" id="item_price" step="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
                         <label>Total Quantity Balance</label>
                         <input type="number" id="total_qty_bal" step="any" required placeholder="0.00">
                     </div>
@@ -96,12 +104,13 @@
                             <th>Storage Arrival Date</th>
                             <th>SPSIC Number</th>
                             <th>Commodity</th>
+                            <th>Item Price</th>
                             <th>Total Qty Balance</th>
                         </tr>
                     </thead>
                     <tbody id="dispoHistoryBody">
                         <tr>
-                            <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">Loading shipment logs...</td>
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">Loading shipment logs...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -138,7 +147,7 @@
             
             const { data, error } = await supabaseClient
                 .from('imported_shipment_docs')
-                .select('spsic_number, total_qty_bal, storage_arrival_date, commodity')
+                .select('spsic_number, total_qty_bal, item_price, storage_arrival_date, commodity')
                 .order('storage_arrival_date', { ascending: false }); // Newest logs first
 
             if (error) {
@@ -153,7 +162,7 @@
 
             if (uniqueSpsic.length === 0) {
                 dropdown.innerHTML = '<option value="">No active SPSIC matches found</option>';
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">No shipment docs found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">No shipment docs found.</td></tr>`;
                 return;
             }
 
@@ -180,7 +189,7 @@
             const paginatedItems = shipmentsCache.slice(startIndex, endIndex);
 
             if (paginatedItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">No data configuration verified.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">No data configuration verified.</td></tr>`;
                 document.getElementById('paginationInfo').innerText = "Showing 0 to 0 of 0 logs";
                 document.getElementById('btnPrev').disabled = true;
                 document.getElementById('btnNext').disabled = true;
@@ -190,6 +199,10 @@
             tbody.innerHTML = paginatedItems.map(row => {
                 const displayBal = row.total_qty_bal !== null && row.total_qty_bal !== undefined
                     ? parseFloat(row.total_qty_bal).toLocaleString(undefined, { minimumFractionDigits: 2 })
+                    : '<span style="color:#94a3b8; font-style:italic;">Not Configured</span>';
+
+                const displayPrice = row.item_price !== null && row.item_price !== undefined
+                    ? '₱' + parseFloat(row.item_price).toLocaleString(undefined, { minimumFractionDigits: 2 })
                     : '<span style="color:#94a3b8; font-style:italic;">Not Configured</span>';
 
                 // Cleans raw commodity text string by filtering out matching structural tag variants
@@ -203,6 +216,7 @@
                         <td>${arrivalDate}</td>
                         <td style="font-weight:700;">${row.spsic_number || 'N/A'}</td>
                         <td>${cleanCommodity || 'N/A'}</td>
+                        <td style="font-weight:600; color:#0f172a;">${displayPrice}</td>
                         <td style="font-weight:600; color:#2563eb;">${displayBal}</td>
                     </tr>
                 `;
@@ -219,40 +233,48 @@
             renderPaginationTable();
         }
 
-        // Automatically displays the existing quantity when an SPSIC is selected
+        // Automatically displays the existing quantity and item price when an SPSIC is selected
         function handleSpsicSelectionChange() {
             const selectedSpsic = document.getElementById('spsic_dropdown').value;
-            const targetInput = document.getElementById('total_qty_bal');
+            const targetQtyInput = document.getElementById('total_qty_bal');
+            const targetPriceInput = document.getElementById('item_price');
             
             if (!selectedSpsic) {
-                targetInput.value = '';
+                targetQtyInput.value = '';
+                targetPriceInput.value = '';
                 return;
             }
 
             const matchedRecord = shipmentsCache.find(item => item.spsic_number === selectedSpsic);
-            if (matchedRecord && matchedRecord.total_qty_bal !== null) {
-                targetInput.value = matchedRecord.total_qty_bal;
+            if (matchedRecord) {
+                targetQtyInput.value = matchedRecord.total_qty_bal !== null ? matchedRecord.total_qty_bal : '';
+                targetPriceInput.value = matchedRecord.item_price !== null ? matchedRecord.item_price : '';
             } else {
-                targetInput.value = '';
+                targetQtyInput.value = '';
+                targetPriceInput.value = '';
             }
         }
 
-        // Form submission handling logic using an UPDATE query targeting the balance column
+        // Form submission handling logic using an UPDATE query targeting balance and price columns
         async function handleFormSubmission(e) {
             e.preventDefault();
             
             const spsicNum = document.getElementById('spsic_dropdown').value;
             const qtyBal = parseFloat(document.getElementById('total_qty_bal').value);
+            const priceVal = parseFloat(document.getElementById('item_price').value);
 
             if (!spsicNum) {
                 alert("Please select a valid target SPSIC document string");
                 return;
             }
 
-            // Updates the column inside imported_shipment_docs directly
+            // Updates the columns inside imported_shipment_docs directly
             const { error } = await supabaseClient
                 .from('imported_shipment_docs')
-                .update({ total_qty_bal: qtyBal })
+                .update({ 
+                    total_qty_bal: qtyBal,
+                    item_price: priceVal 
+                })
                 .eq('spsic_number', spsicNum);
 
             if (error) {
@@ -260,7 +282,7 @@
                 return;
             }
 
-            alert("SPSIC balance updated successfully!");
+            alert("SPSIC balance records updated successfully!");
             document.getElementById('dispoBalanceForm').reset();
             await fetchShipmentData();
         }
