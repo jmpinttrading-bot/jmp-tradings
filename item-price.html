@@ -132,7 +132,6 @@
         .main-content { padding: 40px; max-width: 1400px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
 
-        /* Action bar container layout for links above form */
         .action-bar-row {
             display: flex;
             justify-content: space-between;
@@ -188,7 +187,6 @@
         
         .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
         
-        /* Form Layout Styling */
         .section-subtitle {
             font-size: 0.9rem;
             text-transform: uppercase;
@@ -202,7 +200,6 @@
             align-items: center;
         }
 
-        /* Explicit 4-column layout for a single row on desktop */
         .form-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -226,87 +223,29 @@
             border-color: #ee964b; 
             box-shadow: 0 0 0 3px rgba(238,150,75,0.1); 
         }
-
-        /* Styling block dedicated to locked readonly layout states */
         .form-group input[readonly] {
             background-color: #f1f5f9;
             color: #64748b;
             cursor: not-allowed;
             border-color: #e2e8f0;
         }
+        .uppercase-force { text-transform: uppercase; }
 
-        /* Forces typed/visual text uppercase in input components */
-        .uppercase-force {
-            text-transform: uppercase;
-        }
+        .bulk-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        .bulk-table th { text-align: left; font-size: 0.75rem; color: #475569; text-transform: uppercase; padding: 8px 10px; background: #f1f5f9; border: 1px solid #e2e8f0; }
+        .bulk-table td { padding: 8px 5px; border: 1px solid #e2e8f0; }
+        .bulk-input { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; }
+        .bulk-input:focus { outline: none; border-color: #3b82f6; }
+        .bulk-input[readonly] { background-color: #f8fafc; color: #64748b; }
 
-        /* Bulk Upload Dynamics */
-        .bulk-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-        }
-        .bulk-table th {
-            text-align: left;
-            font-size: 0.75rem;
-            color: #475569;
-            text-transform: uppercase;
-            padding: 8px 10px;
-            background: #f1f5f9;
-            border: 1px solid #e2e8f0;
-        }
-        .bulk-table td {
-            padding: 8px 5px;
-            border: 1px solid #e2e8f0;
-        }
-        .bulk-input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-        .bulk-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-        .bulk-input[readonly] {
-            background-color: #f8fafc;
-            color: #64748b;
-        }
-
-        .btn-action-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
+        .btn-action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; gap: 10px; flex-wrap: wrap; }
         .btn-add { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: background 0.2s; }
         .btn-add:hover { background: #059669; }
-        
         .btn-delete { background: #ef4444; color: white; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
         .btn-delete:hover { background: #dc2626; }
 
-        /* Pagination Styling */
-        .pagination-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-page {
-            background: #334155;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+        .pagination-container { display: flex; align-items: center; gap: 8px; }
+        .btn-page { background: #334155; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         .btn-page:hover:not(:disabled) { background: #475569; }
         .btn-page:disabled { background: #e2e8f0; color: #94a3b8; cursor: not-allowed; }
         .page-indicator { font-size: 0.8rem; font-weight: bold; color: #475569; }
@@ -314,11 +253,11 @@
         .btn-primary { background: #0b2545; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; width: 100%; transition: background 0.2s; }
         .btn-primary:hover { background: #11355e; }
 
-        /* Ledger Table List styling */
+        /* Ledger Table & Summary List styling */
         .ledger-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 5px; flex-wrap: wrap; gap: 15px; }
         .ledger-header-wrapper h3 { font-size: 1.15rem; color: #0f172a; font-weight: 700; }
         .ledger-search-box { display: flex; gap: 10px; align-items: center; }
-        .ledger-search-box input { height: 38px; width: 250px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+        .ledger-search-box input { height: 38px; width: 220px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
         .ledger-search-box input:focus { outline: none; border-color: #ee964b; }
         .btn-search { background: #0f172a; color: white; border: none; height: 38px; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: background 0.2s; white-space: nowrap; }
         .btn-search:hover { background: #1e293b; }
@@ -326,26 +265,29 @@
         .btn-search.clear-filter:hover { background: #475569; }
 
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; }
-        
         .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; table-layout: auto; }
         .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
-        
-        /* Interactive Row Selection styling */
         .clickable-ledger-row { cursor: pointer; transition: background-color 0.2s ease; }
         .clickable-ledger-row:hover td { background-color: #f1f5f9 !important; }
 
-        /* Responsive stack for smaller screen layout protection */
-        @media (max-width: 992px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
+        /* Summary Container Section Style (Reference: ed5f7194-4ddd-41a9-8afa-ed34b5bc905c) */
+        .summary-section {
+            margin-top: 30px;
+            padding: 20px;
+            border-top: 2px solid #e2e8f0;
+            background-color: #f8fafc;
+            border-radius: 8px;
         }
 
+        @media (max-width: 992px) {
+            .form-grid { grid-template-columns: 1fr; }
+        }
         @media (max-width: 768px) {
             .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .ledger-search-box { width: 100%; }
-            .ledger-search-box input { width: 100%; }
+            .ledger-search-box { width: 100%; flex-wrap: wrap; }
+            .ledger-search-box input { flex: 1; min-width: 150px; }
+            .summary-section table { width: 100% !important; }
         }
     </style>
 </head>
@@ -380,7 +322,6 @@
             <h1>OR Dispo Ledger Entry</h1>
         </div>
 
-        <!-- Action Bar Row containing Back Link & New Dispo Button on the other side -->
         <div class="action-bar-row">
             <a href="inventory-management.html" class="back-link">⬅️ Back to Stock Dashboard</a>
             <a href="dispo.html" class="dispo-link-btn">SPSIC Total Balance ➡️</a>
@@ -391,8 +332,6 @@
             <!-- Dynamic Entry Form Panel -->
             <div class="card-panel">
                 <form id="spsicEntryForm" onsubmit="handleFormSubmission(event)">
-                    
-                    <!-- Shared Static Headers Group (Locked to 1 Single Row, 4 Columns) -->
                     <div class="section-subtitle">1. Shared Global Settings</div>
                     <div class="form-grid">
                         <div class="form-group">
@@ -409,12 +348,10 @@
                         </div>
                         <div class="form-group">
                             <label>Price (PHP)</label>
-                            <!-- Price input locked with readonly since it pulls automatically via SPSIC matching -->
                             <input type="number" id="global_price" step="0.01" readonly required placeholder="AUTOFILL UPON SPSIC ENTRY" oninput="recalculateAllAmounts()">
                         </div>
                     </div>
 
-                    <!-- Dynamic Child Entry Grid -->
                     <div class="section-subtitle">
                         <span>2. Customer Line Item Batches (10 Rows Max Per Page)</span>
                         <span style="font-size: 0.8rem; text-transform: none; color: #64748b;" id="batchSizeTracker">0 rows total</span>
@@ -432,15 +369,13 @@
                                 </tr>
                             </thead>
                             <tbody id="bulkItemRows">
-                                <!-- Populated dynamically by JavaScript -->
+                                <!-- Populated dynamically -->
                             </tbody>
                         </table>
                     </div>
 
                     <div class="btn-action-row" style="margin-bottom: 25px;">
                         <button type="button" class="btn-add" id="addBatchRowBtn" onclick="addNewCustomerRow()">+ Add Customer Line</button>
-                        
-                        <!-- Pagination elements -->
                         <div class="pagination-container" id="paginationControls">
                             <button type="button" class="btn-page" id="prevPageBtn" onclick="changePage(-1)">Previous</button>
                             <span class="page-indicator" id="pageNumberIndicator">Page 1 / 1</span>
@@ -448,7 +383,7 @@
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn-primary">Submit Batch Entries to Cloud</button>
+                    <button type="submit" class="btn-primary">Submit Batch Entries to Ledger</button>
                 </form>
             </div>
 
@@ -457,6 +392,7 @@
                 <div class="ledger-header-wrapper">
                     <h3>Active SPSIC & Container Yards Ledger Balance</h3>
                     <div class="ledger-search-box">
+                        <input type="text" id="activeViewSpsic" readonly placeholder="Active SPSIC View" style="background-color: #f1f5f9; border-color: #cbd5e1; color: #0b2545; font-weight: bold; cursor: default;" class="uppercase-force" title="Currently Viewing Data For This SPSIC">
                         <input type="text" id="descSearchQuery" placeholder="Search SPSIC / Customer...">
                         <button type="button" class="btn-search" onclick="filterLedger()">Search</button>
                         <button type="button" class="btn-search clear-filter" onclick="clearFilter()">Reset</button>
@@ -486,8 +422,7 @@
                     </table>
                 </div>
 
-                <!-- Ledger Database Pagination Row -->
-                <div class="btn-action-row" style="margin-top: 20px; padding: 0 20px;">
+                <div class="btn-action-row" style="margin-top: 15px; padding: 0 20px;">
                     <div></div>
                     <div class="pagination-container" id="ledgerPaginationControls" style="display: none;">
                         <button type="button" class="btn-page" id="ledgerPrevPageBtn" onclick="changeLedgerPage(-1)">Previous</button>
@@ -495,8 +430,31 @@
                         <button type="button" class="btn-page" id="ledgerNextPageBtn" onclick="changeLedgerPage(1)">Next</button>
                     </div>
                 </div>
-            </div>
 
+                <!-- Summary Section replicating Reference "ed5f7194-4ddd-41a9-8afa-ed34b5bc905c" -->
+                <div class="summary-section">
+                    <table class="master-table" style="width: 60%; margin-left: auto; background: white; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 700; color: #475569; width: 45%; border-right: 1px solid #e2e8f0;">OR VOLUME & SALES</td>
+                                <td id="summaryTotalQty" style="font-weight: 700; color: #0f172a; text-align: right; width: 25%; border-right: 1px solid #e2e8f0;">0</td>
+                                <td id="summaryTotalAmount" style="font-weight: 700; color: #0f172a; text-align: right; width: 30%;">₱0.00</td>
+                            </tr>
+                            <tr style="background-color: #f8fafc;">
+                                <td style="font-weight: 700; color: #475569; border-right: 1px solid #e2e8f0;">REMAINING VOLUME AMOUNT</td>
+                                <td id="summaryRemainingQty" style="font-weight: 700; color: #ef4444; text-align: right; border-right: 1px solid #e2e8f0;">0</td>
+                                <td style="text-align: right; color: #94a3b8;">-</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 800; color: #0f172a; font-size: 0.95rem; border-right: 1px solid #e2e8f0;">TOTAL SALES</td>
+                                <td style="text-align: right; color: #94a3b8; border-right: 1px solid #e2e8f0;">-</td>
+                                <td id="summaryTotalSalesFinal" style="font-weight: 800; color: #10b981; font-size: 1rem; text-align: right;">₱0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
         </div>
     </div>
 
@@ -513,9 +471,14 @@
         let hasSearched = false;
         let currentUserPermissions = null;
 
-        /* --- Ledger Pagination Variables --- */
+        /* --- Ledger & Sync Variables --- */
         let currentLedgerPage = 1;
         const LEDGER_ROWS_PER_PAGE = 20;
+
+        let activeRowsData = []; 
+        let rowCounter = 0;
+        let currentPage = 1;
+        const ROWS_PER_PAGE = 10; 
 
         function showSystemModal(title, message, focusOnCloseId = null) {
             document.getElementById('restrictionModalTitle').textContent = title;
@@ -541,22 +504,13 @@
 
         function verifyNavigationPrivilege(accessKey, url) {
             if (!currentUserPermissions) return;
-
             const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
-            if (roleClean === 'admin') {
-                window.location.href = url;
-                return;
-            }
+            if (roleClean === 'admin') { window.location.href = url; return; }
 
             if (accessKey === 'admin_access') {
-                showSystemModal("Access Restricted", "Administrative level privileges are required to access System Settings.");
-                return;
+                showSystemModal("Access Restricted", "Administrative level privileges are required to access System Settings."); return;
             }
-
-            if (accessKey === 'audit_access') {
-                window.location.href = url;
-                return;
-            }
+            if (accessKey === 'audit_access') { window.location.href = url; return; }
 
             let val = currentUserPermissions[accessKey];
             if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
@@ -568,12 +522,10 @@
 
             if (isRestricted) {
                 showSystemModal("Access Restricted", "You do not possess the dynamic authorization privileges needed for this module pipeline.");
-            } else {
-                window.location.href = url;
-            }
+            } else { window.location.href = url; }
         }
 
-        /* --- Dynamic Realtime Database SPSIC Validation & Autocomplete Linkage --- */
+        /* --- Updated Validation Logic (Checking Tally against total_qty_bal without mutating the imported docs table) --- */
         async function validateSpsicRealtime() {
             const spsicInput = document.getElementById('global_spsic');
             const globalSpsic = spsicInput.value.trim().toUpperCase();
@@ -582,34 +534,29 @@
 
             const { data: matchedDoc, error: checkError } = await supabaseClient
                 .from('imported_shipment_docs')
-                .select('spsic_number, commodity, item_price')
+                .select('spsic_number, commodity, item_price, total_qty_bal')
                 .eq('spsic_number', globalSpsic)
                 .maybeSingle();
 
             if (checkError) {
-                console.error("SPSIC Verification query fault:", checkError);
-                return;
+                console.error("SPSIC Verification query fault:", checkError); return;
             }
 
             if (!matchedDoc) {
                 showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
                 document.getElementById('global_commodity').value = '';
                 document.getElementById('global_price').value = '';
-                recalculateAllAmounts();
-                return;
+                recalculateAllAmounts(); return;
             }
 
-            // Verify if price is missing or unconfigured
             if (matchedDoc.item_price === null || matchedDoc.item_price === undefined || String(matchedDoc.item_price).trim() === '') {
-                showSystemModal("Missing Price Configurations", "This SPSIC Number does not have an active valuation price/total balance setup. You must upload and configure it via dispo.html first.", "global_spsic");
+                showSystemModal("Missing Price Configurations", "This SPSIC Number does not have an active valuation price setup. You must configure it via dispo.html first.", "global_spsic");
                 document.getElementById('global_spsic').value = '';
                 document.getElementById('global_commodity').value = '';
                 document.getElementById('global_price').value = '';
-                recalculateAllAmounts();
-                return;
+                recalculateAllAmounts(); return;
             }
 
-            // Linkage Autofill Behavior with Regex dynamic clean process matching rules
             if (matchedDoc.commodity) {
                 const cleanCommodity = matchedDoc.commodity.replace(/-[123]CV/g, '').trim().toUpperCase();
                 document.getElementById('global_commodity').value = cleanCommodity;
@@ -621,158 +568,95 @@
             recalculateAllAmounts();
         }
 
-        /* --- Dynamic Form & Pagination Controls --- */
-        let activeRowsData = []; 
-        let rowCounter = 0;
-        let currentPage = 1;
-        const ROWS_PER_PAGE = 10; 
-
         function calculateNextRefNumber() {
             if (activeRowsData.length === 0) return '';
-
             let lastRef = '';
             for (let i = activeRowsData.length - 1; i >= 0; i--) {
                 const val = (activeRowsData[i].ref || '').trim();
-                if (val) {
-                    lastRef = val;
-                    break;
-                }
+                if (val) { lastRef = val; break; }
             }
-
             if (!lastRef) return '';
-
             const match = lastRef.match(/^(.*?)(\d+)$/);
             if (!match) return lastRef; 
-
-            const prefix = match[1];
-            const numString = match[2];
-            const incrementedVal = parseInt(numString, 10) + 1;
-
-            const paddedNumString = String(incrementedVal).padStart(numString.length, '0');
-            return prefix + paddedNumString;
+            const incrementedVal = parseInt(match[2], 10) + 1;
+            return match[1] + String(incrementedVal).padStart(match[2].length, '0');
         }
 
         function handleRefChange(rowId, inputVal) {
             const index = activeRowsData.findIndex(r => r.id === rowId);
             if (index === -1) return;
-
             activeRowsData[index].ref = inputVal;
             let currentVal = inputVal;
 
             for (let i = index + 1; i < activeRowsData.length; i++) {
-                if (!currentVal) {
-                    activeRowsData[i].ref = '';
-                    continue;
-                }
+                if (!currentVal) { activeRowsData[i].ref = ''; continue; }
                 const match = currentVal.match(/^(.*?)(\d+)$/);
-                if (!match) {
-                    activeRowsData[i].ref = currentVal;
-                    continue;
-                }
-                const prefix = match[1];
-                const numString = match[2];
-                const incrementedVal = parseInt(numString, 10) + 1;
-                const paddedNumString = String(incrementedVal).padStart(numString.length, '0');
-
-                currentVal = prefix + paddedNumString;
+                if (!match) { activeRowsData[i].ref = currentVal; continue; }
+                const incrementedVal = parseInt(match[2], 10) + 1;
+                currentVal = match[1] + String(incrementedVal).padStart(match[2].length, '0');
                 activeRowsData[i].ref = currentVal;
             }
-
             renderActivePageRows();
         }
 
         function handleValueChange(rowId, field, val) {
             const row = activeRowsData.find(r => r.id === rowId);
             if (!row) return;
-
             if (field === 'qty') {
                 row.qty = parseFloat(val) || 0;
                 const price = parseFloat(document.getElementById('global_price').value) || 0;
                 row.amount = (row.qty * price).toFixed(2);
-                
+            } else if (field === 'customer') { row.customer = val.toUpperCase();
+            } else if (field === 'remarks') { row.remarks = val.toUpperCase(); }
+            
+            if (field === 'qty') {
                 const amountInput = document.getElementById(`amount-field-${rowId}`);
                 if (amountInput) amountInput.value = row.amount;
-            } else if (field === 'customer') {
-                row.customer = val.toUpperCase();
-            } else if (field === 'remarks') {
-                row.remarks = val.toUpperCase();
             }
         }
 
         function addNewCustomerRow() {
             rowCounter++;
-            const newRef = calculateNextRefNumber();
-            
             activeRowsData.push({
-                id: rowCounter,
-                customer: '',
-                qty: 0,
-                amount: '0.00',
-                ref: newRef,
-                remarks: ''
+                id: rowCounter, customer: '', qty: 0, amount: '0.00',
+                ref: calculateNextRefNumber(), remarks: ''
             });
-
-            const newPage = Math.ceil(activeRowsData.length / ROWS_PER_PAGE);
-            currentPage = newPage;
-
+            currentPage = Math.ceil(activeRowsData.length / ROWS_PER_PAGE);
             updateBatchControls();
             renderActivePageRows();
         }
 
         function removeCustomerRow(rowId) {
             activeRowsData = activeRowsData.filter(r => r.id !== rowId);
-            
-            const totalPages = Math.max(1, Math.ceil(activeRowsData.length / ROWS_PER_PAGE));
-            if (currentPage > totalPages) {
-                currentPage = totalPages;
-            }
-
+            currentPage = Math.min(currentPage, Math.max(1, Math.ceil(activeRowsData.length / ROWS_PER_PAGE)));
             updateBatchControls();
             renderActivePageRows();
         }
 
         function recalculateAllAmounts() {
             const price = parseFloat(document.getElementById('global_price').value) || 0;
-            activeRowsData.forEach(row => {
-                row.amount = (row.qty * price).toFixed(2);
-            });
+            activeRowsData.forEach(row => { row.amount = (row.qty * price).toFixed(2); });
             renderActivePageRows();
         }
 
         function renderActivePageRows() {
             const tbody = document.getElementById('bulkItemRows');
             tbody.innerHTML = '';
-
-            const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
-            const endIndex = startIndex + ROWS_PER_PAGE;
-            const pageSlice = activeRowsData.slice(startIndex, endIndex);
+            const pageSlice = activeRowsData.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE);
 
             if (pageSlice.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #94a3b8;">No customer line items added. Click "+ Add Customer Line" to start.</td></tr>`;
                 return;
             }
-
             pageSlice.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>
-                        <input type="text" class="bulk-input customer-field uppercase-force" required placeholder="CUSTOMER ENTITY" value="${row.customer}" oninput="handleValueChange(${row.id}, 'customer', this.value)">
-                    </td>
-                    <td>
-                        <input type="number" class="bulk-input qty-field" step="any" required placeholder="0.00" value="${row.qty || ''}" oninput="handleValueChange(${row.id}, 'qty', this.value)">
-                    </td>
-                    <td>
-                        <input type="number" class="bulk-input amount-field" readonly placeholder="0.00" id="amount-field-${row.id}" value="${row.amount}">
-                    </td>
-                    <td>
-                        <input type="text" class="bulk-input ref-field" placeholder="Ref ID" value="${row.ref}" onblur="handleRefChange(${row.id}, this.value)">
-                    </td>
-                    <td>
-                        <input type="text" class="bulk-input remarks-field uppercase-force" placeholder="REMARKS (OPTIONAL)" value="${row.remarks}" oninput="handleValueChange(${row.id}, 'remarks', this.value)">
-                    </td>
-                    <td style="text-align: center;">
-                        <button type="button" class="btn-delete" onclick="removeCustomerRow(${row.id})">×</button>
-                    </td>
+                    <td><input type="text" class="bulk-input uppercase-force" required placeholder="CUSTOMER ENTITY" value="${row.customer}" oninput="handleValueChange(${row.id}, 'customer', this.value)"></td>
+                    <td><input type="number" class="bulk-input" step="any" required placeholder="0.00" value="${row.qty || ''}" oninput="handleValueChange(${row.id}, 'qty', this.value)"></td>
+                    <td><input type="number" class="bulk-input" readonly placeholder="0.00" id="amount-field-${row.id}" value="${row.amount}"></td>
+                    <td><input type="text" class="bulk-input" placeholder="Ref ID" value="${row.ref}" onblur="handleRefChange(${row.id}, this.value)"></td>
+                    <td><input type="text" class="bulk-input uppercase-force" placeholder="REMARKS (OPTIONAL)" value="${row.remarks}" oninput="handleValueChange(${row.id}, 'remarks', this.value)"></td>
+                    <td style="text-align: center;"><button type="button" class="btn-delete" onclick="removeCustomerRow(${row.id})">×</button></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -791,9 +675,7 @@
         function updateBatchControls() {
             const totalRows = activeRowsData.length;
             const totalPages = Math.max(1, Math.ceil(totalRows / ROWS_PER_PAGE));
-
             document.getElementById('batchSizeTracker').textContent = `${totalRows} line items total`;
-
             document.getElementById('pageNumberIndicator').textContent = `Page ${currentPage} of ${totalPages}`;
             document.getElementById('prevPageBtn').disabled = (currentPage === 1);
             document.getElementById('nextPageBtn').disabled = (currentPage === totalPages);
@@ -802,86 +684,54 @@
         function loadRowForEditing(id) {
             const targetItem = globallyFetchedItems.find(item => item.id === id);
             if (!targetItem) return;
-
             document.getElementById('global_spsic').value = (targetItem.spsic_number || '').toUpperCase();
             document.getElementById('global_date').value = targetItem.date || '';
             document.getElementById('global_commodity').value = (targetItem.commodity || '').toUpperCase();
             document.getElementById('global_price').value = targetItem.price || '';
-
+            
             rowCounter = 1;
             activeRowsData = [{
-                id: rowCounter,
-                customer: (targetItem.customer || '').toUpperCase(),
-                qty: targetItem.quantity || 0,
-                amount: parseFloat(targetItem.amount || 0).toFixed(2),
-                ref: targetItem.ref_number || '',
-                remarks: (targetItem.remarks || '').toUpperCase()
+                id: rowCounter, customer: (targetItem.customer || '').toUpperCase(), qty: targetItem.quantity || 0,
+                amount: parseFloat(targetItem.amount || 0).toFixed(2), ref: targetItem.ref_number || '', remarks: (targetItem.remarks || '').toUpperCase()
             }];
-
             currentPage = 1;
             updateBatchControls();
             renderActivePageRows();
-
             document.getElementById('spsicEntryForm').scrollIntoView({ behavior: 'smooth' });
         }
 
         async function initPriceDashboard() {
             document.getElementById('global_date').value = new Date().toISOString().split('T')[0];
-
-            addNewCustomerRow();
-            addNewCustomerRow();
+            addNewCustomerRow(); addNewCustomerRow();
 
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
+            currentAdminId = user.id; currentUserEmail = user.email;
             
-            currentAdminId = user.id;
-            currentUserEmail = user.email;
-            
-            const { data: profile, error } = await supabaseClient
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .maybeSingle();
-
-            if (error || !profile) {
-                console.error("Profile structural query fault:", error);
-                window.location.href = "login.html";
-                return;
-            }
+            const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
+            if (error || !profile) { window.location.href = "login.html"; return; }
 
             currentUserPermissions = profile;
             const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin' && document.getElementById('settingsBtn')) document.getElementById('settingsBtn').style.display = "block";
 
-            const settingsBtn = document.getElementById('settingsBtn');
-            if (roleClean === 'admin' && settingsBtn) {
-                settingsBtn.style.display = "block";
-            }
-
-            const hasAccess = roleClean === 'admin' || (currentUserPermissions.inventory_access !== false);
-
-            if (!hasAccess) {
+            if (roleClean !== 'admin' && currentUserPermissions.inventory_access === false) {
                 showSystemModal("Access Restricted", "Unauthorized entry context: Account configuration prevents viewing ledger logs.");
-                setTimeout(() => { window.location.href = "inventory-management.html"; }, 2500);
-                return;
+                setTimeout(() => { window.location.href = "inventory-management.html"; }, 2500); return;
             }
-            
             fetchLedgerDataset();
             setupSessionCrossCheckListener();
         }
 
         async function fetchLedgerDataset() {
-            const { data, error } = await supabaseClient
-                .from('spsic_ledger')
-                .select('*')
-                .order('created_at', { ascending: false });
-                
+            const { data, error } = await supabaseClient.from('spsic_ledger').select('*').order('created_at', { ascending: false });
             if (error) { showSystemModal("Sync Failure", error.message); return; }
             globallyFetchedItems = data || [];
-            
             if (hasSearched) {
                 filterLedger();
             } else {
                 renderLedgerTable([]);
+                updateLedgerSummary([]);
             }
         }
 
@@ -891,24 +741,16 @@
 
             if (!hasSearched) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td></tr>`;
-                paginationEl.style.display = "none";
-                return;
+                paginationEl.style.display = "none"; return;
             }
-
             if (items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records matched your query.</td></tr>`;
-                paginationEl.style.display = "none";
-                return;
+                paginationEl.style.display = "none"; return;
             }
 
             const totalPages = Math.ceil(items.length / LEDGER_ROWS_PER_PAGE);
-            if (currentLedgerPage > totalPages) {
-                currentLedgerPage = totalPages || 1;
-            }
-
-            const startIndex = (currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE;
-            const endIndex = startIndex + LEDGER_ROWS_PER_PAGE;
-            const pageSlice = items.slice(startIndex, endIndex);
+            if (currentLedgerPage > totalPages) currentLedgerPage = totalPages || 1;
+            const pageSlice = items.slice((currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE, currentLedgerPage * LEDGER_ROWS_PER_PAGE);
 
             tbody.innerHTML = pageSlice.map((item) => {
                 return `
@@ -933,20 +775,51 @@
         }
 
         function changeLedgerPage(direction) {
-            const totalPages = Math.ceil(filteredItems.length / LEDGER_ROWS_PER_PAGE);
             const targetPage = currentLedgerPage + direction;
-            if (targetPage >= 1 && targetPage <= totalPages) {
+            if (targetPage >= 1 && targetPage <= Math.ceil(filteredItems.length / LEDGER_ROWS_PER_PAGE)) {
                 currentLedgerPage = targetPage;
                 renderLedgerTable(filteredItems);
             }
         }
 
+        async function updateLedgerSummary(items) {
+            let totalQty = 0; let totalAmt = 0;
+            items.forEach(item => {
+                totalQty += (parseFloat(item.quantity) || 0);
+                totalAmt += (parseFloat(item.amount) || 0);
+            });
+
+            document.getElementById('summaryTotalQty').textContent = totalQty.toLocaleString();
+            document.getElementById('summaryTotalAmount').textContent = '₱' + totalAmt.toLocaleString(undefined, {minimumFractionDigits: 2});
+            document.getElementById('summaryTotalSalesFinal').textContent = '₱' + totalAmt.toLocaleString(undefined, {minimumFractionDigits: 2});
+
+            let activeSpsic = "";
+            if (items.length > 0) {
+                activeSpsic = items[0].spsic_number || "";
+                document.getElementById('activeViewSpsic').value = activeSpsic;
+                
+                // Fetch the live Remaining Volume Amount (total_qty_bal) from imported docs for display comparison
+                const { data, error } = await supabaseClient
+                    .from('imported_shipment_docs')
+                    .select('total_qty_bal')
+                    .eq('spsic_number', activeSpsic)
+                    .maybeSingle();
+                    
+                if (data && !error) {
+                    document.getElementById('summaryRemainingQty').textContent = (parseFloat(data.total_qty_bal) || 0).toLocaleString();
+                } else {
+                    document.getElementById('summaryRemainingQty').textContent = "0";
+                }
+            } else {
+                document.getElementById('activeViewSpsic').value = "";
+                document.getElementById('summaryRemainingQty').textContent = "0";
+            }
+        }
+
         async function handleFormSubmission(e) {
             e.preventDefault();
-            
             if (activeRowsData.length === 0) {
-                showSystemModal("Validation Error", "Please add at least one Customer Line row to submit data.");
-                return;
+                showSystemModal("Validation Error", "Please add at least one Customer Line row to submit data."); return;
             }
 
             const globalSpsic = document.getElementById('global_spsic').value.trim().toUpperCase();
@@ -954,39 +827,29 @@
             const globalCommodity = document.getElementById('global_commodity').value.trim().toUpperCase();
             const globalPrice = parseFloat(document.getElementById('global_price').value) || 0;
 
+            // Fetch target imported shipment doc to cross-check total quantity balance tally
             const { data: matchedDoc, error: checkError } = await supabaseClient
                 .from('imported_shipment_docs')
-                .select('spsic_number, item_price')
+                .select('spsic_number, item_price, total_qty_bal')
                 .eq('spsic_number', globalSpsic)
                 .maybeSingle();
 
-            if (checkError) {
-                showSystemModal("Database Query Error", "An error occurred while verifying the SPSIC details: " + checkError.message);
-                return;
+            if (checkError) { showSystemModal("Database Query Error", checkError.message); return; }
+            if (!matchedDoc) { showSystemModal("Registration Warning", "SPSIC Number not yet recorded", "global_spsic"); return; }
+            if (matchedDoc.item_price === null || String(matchedDoc.item_price).trim() === '') {
+                showSystemModal("Missing Price Configurations", "Configure price via dispo.html first."); return;
             }
 
-            if (!matchedDoc) {
-                showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
-                return;
-            }
-
-            if (matchedDoc.item_price === null || matchedDoc.item_price === undefined || String(matchedDoc.item_price).trim() === '') {
-                showSystemModal("Missing Price Configurations", "This SPSIC Number does not have an active valuation price/total balance setup. You must upload it via dispo.html first.");
-                return;
-            }
-
+            const dbQtyBalance = parseFloat(matchedDoc.total_qty_bal) || 0;
+            let totalQtyToUpload = 0;
+            
             const payload = [];
             for (let row of activeRowsData) {
                 const customer = row.customer.trim().toUpperCase();
                 const qty = parseFloat(row.qty) || 0;
-                const amt = parseFloat(row.amount) || 0;
-                const ref = row.ref.trim() || null;
-                const rowRemarks = row.remarks.trim().toUpperCase() || null;
+                totalQtyToUpload += qty;
 
-                if (!customer) {
-                    showSystemModal("Validation Error", "All active Customer name fields must be filled out before submitting.");
-                    return;
-                }
+                if (!customer) { showSystemModal("Validation Error", "All active Customer name fields must be filled out."); return; }
 
                 payload.push({
                     spsic_number: globalSpsic,
@@ -995,48 +858,44 @@
                     commodity: globalCommodity,
                     price: globalPrice,
                     quantity: qty,
-                    amount: amt,
-                    ref_number: ref,
-                    remarks: rowRemarks,
+                    amount: parseFloat(row.amount) || 0,
+                    ref_number: row.ref.trim() || null,
+                    remarks: row.remarks.trim().toUpperCase() || null,
                     processed_by: currentUserEmail
                 });
             }
 
-            const { error } = await supabaseClient
-                .from('spsic_ledger')
-                .insert(payload);
-
-            if (error) {
-                showSystemModal("Database Error", error.message);
+            // Tally Validation: Check if uploaded quantity matches or exceeds total_qty_bal target. 
+            // If it doesn't match/tally correctly, block submission and advise editing/creating via dispo.html.
+            if (totalQtyToUpload > dbQtyBalance) {
+                showSystemModal("Quantity Tally Mismatch", `Upload blocked. The total batch quantity (${totalQtyToUpload}) exceeds the designated SPSIC target balance (${dbQtyBalance}). Please adjust your entries or update the SPSIC document balance to proceed.`);
                 return;
             }
 
-            showSystemModal("Action Successful", `Successfully uploaded batch containing ${payload.length} records.`);
+            // Insert directly to spsic_ledger table without modifying/deducting from imported_shipment_docs balance
+            const { error: insertError } = await supabaseClient.from('spsic_ledger').insert(payload);
+            if (insertError) { showSystemModal("Database Error", insertError.message); return; }
+
+            showSystemModal("Action Successful", `Successfully submitted ${payload.length} records to the SPSIC ledger.`);
             
+            // Clean up and shift view to the submitted SPSIC
             document.getElementById('spsicEntryForm').reset();
             document.getElementById('global_date').value = new Date().toISOString().split('T')[0];
             
-            activeRowsData = [];
-            rowCounter = 0;
-            currentPage = 1;
+            activeRowsData = []; rowCounter = 0; currentPage = 1;
+            addNewCustomerRow(); addNewCustomerRow();
 
-            addNewCustomerRow();
-            addNewCustomerRow();
-
+            document.getElementById('descSearchQuery').value = globalSpsic;
+            hasSearched = true;
             fetchLedgerDataset();
         }
 
         function filterLedger() {
             const query = document.getElementById('descSearchQuery').value.trim().toLowerCase();
-            
-            if (!query) {
-                showSystemModal("Input Required", "Please input an SPSIC or Customer search query to pull database balances.");
-                return;
-            }
+            if (!query) { showSystemModal("Input Required", "Please input an SPSIC or Customer search query to pull database balances."); return; }
 
             hasSearched = true;
             currentLedgerPage = 1;
-
             filteredItems = globallyFetchedItems.filter(i => 
                 (i.spsic_number || "").toLowerCase().includes(query) || 
                 (i.customer || "").toLowerCase().includes(query) ||
@@ -1044,32 +903,29 @@
             );
 
             renderLedgerTable(filteredItems);
+            updateLedgerSummary(filteredItems);
         }
 
         function clearFilter() {
             document.getElementById('descSearchQuery').value = "";
-            hasSearched = false;
-            filteredItems = [];
-            currentLedgerPage = 1;
+            document.getElementById('activeViewSpsic').value = "";
+            hasSearched = false; filteredItems = []; currentLedgerPage = 1;
             renderLedgerTable([]);
+            updateLedgerSummary([]);
         }
 
         function setupSessionCrossCheckListener() {
             supabaseClient.auth.onAuthStateChange(async (event, session) => {
                 if (bypassAuthListener) return;
                 if (session && session.user && session.user.id !== currentAdminId) {
-                    bypassAuthListener = true;
-                    await supabaseClient.auth.signOut();
-                    window.location.href = "login.html";
+                    bypassAuthListener = true; await supabaseClient.auth.signOut(); window.location.href = "login.html";
                 }
                 if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
             });
         }
 
         async function handleLogout() {
-            bypassAuthListener = true;
-            await supabaseClient.auth.signOut();
-            window.location.href = "login.html";
+            bypassAuthListener = true; await supabaseClient.auth.signOut(); window.location.href = "login.html";
         }
 
         initPriceDashboard();
