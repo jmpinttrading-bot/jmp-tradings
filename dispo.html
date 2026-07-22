@@ -9,43 +9,67 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
         body { background-color: #f1f5f9; color: #0f172a; min-height: 100vh; padding-bottom: 40px; }
         
-        /* Modern Navbar Styling to match item-price.html */
+        /* --- Synchronized Navbar Layout Components (Identical to item-price.html) --- */
         .navbar { 
-            background: linear-gradient(135deg, #0b2545 0%, #134074 100%); 
+            background-color: #1e293b; 
             color: white; 
             width: 100%; 
-            padding: 15px 30px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex; 
+            flex-direction: column; 
+            padding: 10px; 
+            gap: 10px; 
             position: sticky; 
             top: 0; 
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            z-index: 1000; 
         }
-        .nav-title { font-size: 1.1rem; color: #e2e8f0; font-weight: 800; letter-spacing: 1px; }
-        .nav-links { display: flex; gap: 12px; align-items: center; }
-        .nav-btn { 
-            background-color: rgba(255, 255, 255, 0.1); 
-            color: #e2e8f0; 
-            text-decoration: none; 
-            padding: 8px 16px; 
-            border-radius: 6px; 
-            font-size: 0.85rem; 
-            font-weight: 600; 
+        .top-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+            gap: 10px; 
+        }
+        .nav-title { 
+            font-size: 0.75rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+        }
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 6px 10px; 
+            border-radius: 4px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
             cursor: pointer; 
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
         }
-        .nav-btn:hover { 
-            background-color: rgba(255, 255, 255, 0.2); 
-            color: white; 
+        .logout-btn:hover { 
+            background-color: #dc2626; 
         }
-        .nav-btn.active { 
-            background-color: #f97316; 
-            color: white; 
-            box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+        .nav-links { 
+            display: flex; 
+            gap: 8px; 
+            flex-wrap: wrap; 
+            width: 100%; 
+            padding-bottom: 5px; 
         }
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 6px 12px;  
+            border-radius: 4px; 
+            font-size: 0.75rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            transition: all 0.2s; 
+        }
+        .nav-btn:hover { background-color: #475569; color: white; }
+        .nav-btn.active { background: #475569; color: white; }
 
         /* --- Standardized Notification Modal Styles --- */
         .restriction-modal-container { 
@@ -162,8 +186,6 @@
         .btn-pagination:disabled { opacity: 0.5; cursor: not-allowed; background-color: #f1f5f9; color: #94a3b8; }
 
         @media (max-width: 992px) {
-            .navbar { flex-direction: column; gap: 15px; align-items: flex-start; padding: 15px; }
-            .nav-links { width: 100%; flex-wrap: wrap; }
             .form-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -179,15 +201,20 @@
         </div>
     </div>
 
-    <!-- Match structure and style of item-price.html navbar -->
+    <!-- Match structure and style of item-price.html navbar exactly -->
     <nav class="navbar">
-        <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
+        <div class="top-row">
+            <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="import-docs.html" class="nav-btn">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
-            <a href="item-price.html" class="nav-btn">Item Pricing</a>
-            <a href="despo.html" class="nav-btn active">OR Dispo</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -262,11 +289,13 @@
         let shipmentsCache = [];
         let currentPage = 1;
         const rowsPerPage = 20;
+        let currentUserPermissions = null;
+        let currentAdminId = null;
+        let bypassAuthListener = false;
 
         // Restriction Check to mirror layout requirements
         function checkAccessRestriction() {
             const userRole = localStorage.getItem('userRole');
-            // If restricted roles try to access it directly, display warning
             if (userRole === 'Viewer') {
                 showSystemModal("Access Restriction", "You have read-only permissions. You cannot alter parameters on this panel.");
                 document.querySelectorAll('input, select, button[type="submit"]').forEach(elem => elem.disabled = true);
@@ -296,9 +325,48 @@
             document.getElementById('accessBlockerModal').classList.remove('is-visible'); 
         }
 
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') { window.location.href = url; return; }
+
+            if (accessKey === 'admin_access') {
+                showSystemModal("Access Restricted", "Administrative level privileges are required to access System Settings."); return;
+            }
+            if (accessKey === 'audit_access') { window.location.href = url; return; }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                showSystemModal("Access Restricted", "You do not possess the dynamic authorization privileges needed for this module pipeline.");
+            } else { window.location.href = url; }
+        }
+
         async function initializePage() {
             checkAccessRestriction();
+            
+            // Sync session profiles to match navigation access restrictions
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (user) {
+                currentAdminId = user.id;
+                const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).maybeSingle();
+                if (profile) {
+                    currentUserPermissions = profile;
+                    const roleClean = String(profile.role || '').toLowerCase().trim();
+                    if (roleClean === 'admin' && document.getElementById('settingsBtn')) {
+                        document.getElementById('settingsBtn').style.display = "block";
+                    }
+                }
+            }
+            
             await fetchShipmentData();
+            setupSessionCrossCheckListener();
         }
 
         async function fetchShipmentData() {
@@ -439,6 +507,20 @@
             showSystemModal("Action Successful", "SPSIC balance records updated successfully!");
             document.getElementById('dispoBalanceForm').reset();
             await fetchShipmentData();
+        }
+
+        function setupSessionCrossCheckListener() {
+            supabaseClient.auth.onAuthStateChange(async (event, session) => {
+                if (bypassAuthListener) return;
+                if (session && session.user && session.user.id !== currentAdminId) {
+                    bypassAuthListener = true; await supabaseClient.auth.signOut(); window.location.href = "login.html";
+                }
+                if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
+            });
+        }
+
+        async function handleLogout() {
+            bypassAuthListener = true; await supabaseClient.auth.signOut(); window.location.href = "login.html";
         }
 
         initializePage();
