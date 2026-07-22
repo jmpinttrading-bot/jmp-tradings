@@ -405,7 +405,6 @@
                         <thead>
                             <tr>
                                 <th style="width: 4%; text-align: center;">#</th>
-                                <th>SPSIC No.</th>
                                 <th>Customer</th>
                                 <th>Date</th>
                                 <th>Quantity</th>
@@ -418,7 +417,7 @@
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td>
+                                <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -745,11 +744,11 @@
             const paginationEl = document.getElementById('ledgerPaginationControls');
 
             if (!hasSearched) {
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td></tr>`;
                 paginationEl.style.display = "none"; return;
             }
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#94a3b8;">No records matched your query.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records matched your query.</td></tr>`;
                 paginationEl.style.display = "none"; return;
             }
 
@@ -762,7 +761,6 @@
                 return `
                     <tr class="clickable-ledger-row" onclick="loadRowForEditing(${item.id})">
                         <td style="text-align: center; font-weight: bold; color: #64748b;">${globalIndex}</td>
-                        <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.spsic_number || '—'}</td>
                         <td style="font-weight: 600; color: #2563eb; text-decoration: underline; text-transform: uppercase;">${item.customer || '—'}</td>
                         <td>${item.date || '—'}</td>
                         <td style="font-weight: 700;">${item.quantity || 0}</td>
@@ -873,7 +871,6 @@
             }
 
             // Tally Validation: Check if uploaded quantity matches or exceeds total_qty_bal target. 
-            // If it doesn't match/tally correctly, block submission and advise editing/creating via dispo.html.
             if (totalQtyToUpload > dbQtyBalance) {
                 showSystemModal("Quantity Tally Mismatch", `Upload blocked. The total batch quantity (${totalQtyToUpload}) exceeds the designated SPSIC target balance (${dbQtyBalance}). Please adjust your entries or update the SPSIC document balance to proceed.`);
                 return;
