@@ -360,7 +360,8 @@
                         <table class="bulk-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 25%;">Customer <span style="color:red;">*</span></th>
+                                    <th style="width: 5%; text-align: center;">#</th>
+                                    <th style="width: 20%;">Customer <span style="color:red;">*</span></th>
                                     <th style="width: 15%;">Quantity <span style="color:red;">*</span></th>
                                     <th style="width: 15%;">Amount (PHP)</th>
                                     <th style="width: 15%;">Ref Number</th>
@@ -403,6 +404,7 @@
                     <table class="master-table">
                         <thead>
                             <tr>
+                                <th style="width: 4%; text-align: center;">#</th>
                                 <th>SPSIC No.</th>
                                 <th>Customer</th>
                                 <th>Date</th>
@@ -416,7 +418,7 @@
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td>
+                                <td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -544,6 +546,7 @@
 
             if (!matchedDoc) {
                 showSystemModal("Registration Warning", "Your SPSIC Number was not yet recorded on importation document", "global_spsic");
+                spsicInput.value = ''; 
                 document.getElementById('global_commodity').value = '';
                 document.getElementById('global_price').value = '';
                 recalculateAllAmounts(); return;
@@ -551,7 +554,7 @@
 
             if (matchedDoc.item_price === null || matchedDoc.item_price === undefined || String(matchedDoc.item_price).trim() === '') {
                 showSystemModal("Missing Price Configurations", "This SPSIC Number does not have an active valuation price setup. You must configure it via dispo.html first.", "global_spsic");
-                document.getElementById('global_spsic').value = '';
+                spsicInput.value = ''; 
                 document.getElementById('global_commodity').value = '';
                 document.getElementById('global_price').value = '';
                 recalculateAllAmounts(); return;
@@ -645,12 +648,14 @@
             const pageSlice = activeRowsData.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE);
 
             if (pageSlice.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #94a3b8;">No customer line items added. Click "+ Add Customer Line" to start.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #94a3b8;">No customer line items added. Click "+ Add Customer Line" to start.</td></tr>`;
                 return;
             }
-            pageSlice.forEach(row => {
+            pageSlice.forEach((row, index) => {
+                const dynamicIndex = ((currentPage - 1) * ROWS_PER_PAGE) + index + 1;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td style="text-align: center; font-weight: bold; color: #64748b;">${dynamicIndex}</td>
                     <td><input type="text" class="bulk-input uppercase-force" required placeholder="CUSTOMER ENTITY" value="${row.customer}" oninput="handleValueChange(${row.id}, 'customer', this.value)"></td>
                     <td><input type="number" class="bulk-input" step="any" required placeholder="0.00" value="${row.qty || ''}" oninput="handleValueChange(${row.id}, 'qty', this.value)"></td>
                     <td><input type="number" class="bulk-input" readonly placeholder="0.00" id="amount-field-${row.id}" value="${row.amount}"></td>
@@ -740,11 +745,11 @@
             const paginationEl = document.getElementById('ledgerPaginationControls');
 
             if (!hasSearched) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td></tr>`;
                 paginationEl.style.display = "none"; return;
             }
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records matched your query.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#94a3b8;">No records matched your query.</td></tr>`;
                 paginationEl.style.display = "none"; return;
             }
 
@@ -752,9 +757,11 @@
             if (currentLedgerPage > totalPages) currentLedgerPage = totalPages || 1;
             const pageSlice = items.slice((currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE, currentLedgerPage * LEDGER_ROWS_PER_PAGE);
 
-            tbody.innerHTML = pageSlice.map((item) => {
+            tbody.innerHTML = pageSlice.map((item, index) => {
+                const globalIndex = ((currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE) + index + 1;
                 return `
                     <tr class="clickable-ledger-row" onclick="loadRowForEditing(${item.id})">
+                        <td style="text-align: center; font-weight: bold; color: #64748b;">${globalIndex}</td>
                         <td style="font-weight: 700; color: #0f172a; text-transform: uppercase;">${item.spsic_number || '—'}</td>
                         <td style="font-weight: 600; color: #2563eb; text-decoration: underline; text-transform: uppercase;">${item.customer || '—'}</td>
                         <td>${item.date || '—'}</td>
