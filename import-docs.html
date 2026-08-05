@@ -64,6 +64,13 @@
         .item-list-table th, .item-list-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; white-space: nowrap; }
         .action-link-btn { background: #0f172a; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: none; }
         
+        /* Pagination Controls Styling */
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 5px 2px; }
+        .pagination-btn { background-color: #0f172a; color: white; border: none; padding: 8px 14px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+        .pagination-btn:hover:not(:disabled) { background-color: #334155; }
+        .pagination-btn:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+        .pagination-info { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+
         .viewer-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
         .empty-placeholder { background: #f8fafc; border: 2px dashed #e2e8f0; padding: 30px; text-align: center; border-radius: 8px; color: #64748b; font-size: 0.9rem; margin-top: 15px; }
     </style>
@@ -127,6 +134,12 @@
                             <tr><td colspan="4" style="text-align:center; color:#64748b;">Loading actionable logs...</td></tr>
                         </tbody>
                     </table>
+                </div>
+                <!-- Pagination Controls -->
+                <div class="pagination-container">
+                    <button class="pagination-btn" id="prevActionLogsBtn" onclick="changeActionLogsPage(-1)">❮ Previous</button>
+                    <span class="pagination-info" id="actionLogsPageInfo">Page 1 of 1</span>
+                    <button class="pagination-btn" id="nextActionLogsBtn" onclick="changeActionLogsPage(1)">Next ❯</button>
                 </div>
             </div>
 
@@ -196,6 +209,11 @@
         let activeInspectingRecordId = null;
         let currentLoadedWorkspaceRows = [];
         let realTimePresenceChannel = null;
+
+        // Pagination state variables for Action Required Table
+        let actionLogsData = [];
+        let actionLogsCurrentPage = 1;
+        const actionLogsRowsPerPage = 10;
 
         const monthsLabels = [
             { text: "Jan", value: "01" }, { text: "Feb", value: "02" },
@@ -562,16 +580,8 @@
                 .neq('status', 'APPROVED')
                 .order('s_date', { ascending: false });
 
-            const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
-            globalTbody.innerHTML = actionableData?.map(doc => {
-                const cleanStatus = (doc.status || '').toLowerCase().replace(/\s+/g, '-');
-                return `<tr>
-                    <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
-                    <td>${formatHumanReadableDate(doc.s_date)}</td>
-                    <td><span class="status-badge ${cleanStatus}">${(doc.status || '').toUpperCase()}</span></td>
-                    <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
-                </tr>`;
-            }).join('') || '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
+            actionLogsData = actionableData || [];
+            renderActionLogsTable();
 
             if (!selectedFolderMonth) return;
             
@@ -607,6 +617,43 @@
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
             }).join('') || '<tr><td colspan="12" style="text-align:center; color:#64748b;">No approved entries found for this directory month.</td></tr>';
+        }
+
+        function renderActionLogsTable() {
+            const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
+            const totalItems = actionLogsData.length;
+            const totalPages = Math.ceil(totalItems / actionLogsRowsPerPage) || 1;
+
+            if (actionLogsCurrentPage > totalPages) actionLogsCurrentPage = totalPages;
+            if (actionLogsCurrentPage < 1) actionLogsCurrentPage = 1;
+
+            const startIndex = (actionLogsCurrentPage - 1) * actionLogsRowsPerPage;
+            const endIndex = startIndex + actionLogsRowsPerPage;
+            const paginatedData = actionLogsData.slice(startIndex, endIndex);
+
+            if (paginatedData.length === 0) {
+                globalTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
+            } else {
+                globalTbody.innerHTML = paginatedData.map(doc => {
+                    const cleanStatus = (doc.status || '').toLowerCase().replace(/\s+/g, '-');
+                    return `<tr>
+                        <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
+                        <td>${formatHumanReadableDate(doc.s_date)}</td>
+                        <td><span class="status-badge ${cleanStatus}">${(doc.status || '').toUpperCase()}</span></td>
+                        <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
+                    </tr>`;
+                }).join('');
+            }
+
+            // Update pagination UI controls
+            document.getElementById('actionLogsPageInfo').textContent = `Page ${actionLogsCurrentPage} of ${totalPages}`;
+            document.getElementById('prevActionLogsBtn').disabled = actionLogsCurrentPage <= 1;
+            document.getElementById('nextActionLogsBtn').disabled = actionLogsCurrentPage >= totalPages || totalPages === 0;
+        }
+
+        function changeActionLogsPage(direction) {
+            actionLogsCurrentPage += direction;
+            renderActionLogsTable();
         }
 
         function formatHumanReadableDate(dateString) {
