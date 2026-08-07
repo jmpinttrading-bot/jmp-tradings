@@ -247,8 +247,8 @@
                 return;
             }
 
-            await fetchLedgerDataset(true); // Initial dataset pull
-            populateSpsicDropdown(); // Populate dropdown on load
+            await fetchLedgerDataset(true); // Added await here to ensure data is fetched before populating dropdown
+            populateSpsicDropdown(); 
         }
 
         // Populates the dropdown menu with unique spsic_numbers where status is empty, null, or ongoing
