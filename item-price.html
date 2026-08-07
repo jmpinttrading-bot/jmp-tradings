@@ -621,7 +621,7 @@
             rowCounter++;
             activeRowsData.push({
                 id: rowCounter, customer: '', qty: 0, amount: '0.00',
-                ref: calculateNextRefNumber(), remarks: ''
+                ref: calculateNextRefNumber(), remarks: 'PROCEED'
             });
             currentPage = Math.ceil(activeRowsData.length / ROWS_PER_PAGE);
             updateBatchControls();
@@ -659,7 +659,13 @@
                     <td><input type="number" class="bulk-input" step="any" required placeholder="0.00" value="${row.qty || ''}" oninput="handleValueChange(${row.id}, 'qty', this.value)"></td>
                     <td><input type="number" class="bulk-input" readonly placeholder="0.00" id="amount-field-${row.id}" value="${row.amount}"></td>
                     <td><input type="text" class="bulk-input" placeholder="Ref ID" value="${row.ref}" onblur="handleRefChange(${row.id}, this.value)"></td>
-                    <td><input type="text" class="bulk-input uppercase-force" placeholder="REMARKS (OPTIONAL)" value="${row.remarks}" oninput="handleValueChange(${row.id}, 'remarks', this.value)"></td>
+                    <td>
+                        <select class="bulk-input" onchange="handleValueChange(${row.id}, 'remarks', this.value)">
+                            <option value="PROCEED" ${row.remarks === 'PROCEED' ? 'selected' : ''}>PROCEED</option>
+                            <option value="HOLD" ${row.remarks === 'HOLD' ? 'selected' : ''}>HOLD</option>
+                            <option value="CANCELLED" ${row.remarks === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
+                        </select>
+                    </td>
                     <td style="text-align: center;"><button type="button" class="btn-delete" onclick="removeCustomerRow(${row.id})">×</button></td>
                 `;
                 tbody.appendChild(tr);
@@ -696,7 +702,7 @@
             rowCounter = 1;
             activeRowsData = [{
                 id: rowCounter, customer: (targetItem.customer || '').toUpperCase(), qty: targetItem.quantity || 0,
-                amount: parseFloat(targetItem.amount || 0).toFixed(2), ref: targetItem.ref_number || '', remarks: (targetItem.remarks || '').toUpperCase()
+                amount: parseFloat(targetItem.amount || 0).toFixed(2), ref: targetItem.ref_number || '', remarks: (targetItem.remarks || 'PROCEED').toUpperCase()
             }];
             currentPage = 1;
             updateBatchControls();
