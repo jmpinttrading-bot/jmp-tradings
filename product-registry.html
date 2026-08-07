@@ -180,7 +180,7 @@
         
         .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { background-color: #f1f5f9; color: #64748b; cursor: not-allowed; }
         
-        #storageFacility, #itemCode, #itemCommodity { text-transform: uppercase; }
+        #storageFacility, #itemCode, #itemCommodity, #itemName { text-transform: uppercase; }
 
         .btn-primary { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; width: 100%; }
         .btn-primary:hover { background: #11355e; }
@@ -303,7 +303,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Unique SKU Code / Item Code</label>
-                            <input type="text" id="itemCode" required placeholder="Auto-Generated" readonly>
+                            <input type="text" id="itemCode" required placeholder="Enter SKU Code">
                         </div>
                         <div class="form-group">
                             <label>Commodity</label>
@@ -321,7 +321,7 @@
 
                     <div class="form-group">
                         <label>Sizes</label>
-                        <input type="text" id="itemSizes" placeholder="Auto-Generated" readonly>
+                        <input type="text" id="itemSizes" placeholder="Enter Size">
                     </div>
                     
                     <div class="form-row" id="initialQtyWrapper">
@@ -490,80 +490,20 @@
 
         // Automatically map Sizes and calculate dynamic SKUs when Item Description changes
         function handleItemDescriptionChange() {
-            const selectedDesc = document.getElementById('itemName').value.trim().toUpperCase();
+            const inputField = document.getElementById('itemName');
+            inputField.value = inputField.value.trim().toUpperCase(); // Force transformation to upper case
+            
+            const selectedDesc = inputField.value;
             const matchedRow = fetchedDescriptions.find(d => (d.item_description || '').toUpperCase() === selectedDesc);
             
             if (matchedRow) {
                 document.getElementById('itemSizes').value = matchedRow.sizes || '';
-            } else {
-                document.getElementById('itemSizes').value = '';
             }
-            autoGenerateSkuCode();
         }
 
+        // Neutralized to support manual input entry
         async function autoGenerateSkuCode() {
-            const id = document.getElementById('itemId').value;
-            if (id) return;
-
-            const itemName = document.getElementById('itemName').value.trim();
-            const spsicNum = document.getElementById('activeSpsicNumber').value.trim();
-            const commodity = document.getElementById('itemCommodity').value.trim();
-            const sizes = document.getElementById('itemSizes').value.trim();
-            const skuInput = document.getElementById('itemCode');
-
-            const itemWords = itemName.split(/\s+/);
-            const firstWordClean = itemWords[0] ? itemWords[0].replace(/[^a-zA-Z]/g, '') : '';
-            
-            if (firstWordClean.length < 3) {
-                skuInput.value = "";
-                return;
-            }
-            const prefix = firstWordClean.substring(0, 3).toUpperCase();
-
-            if (!spsicNum || !commodity || !sizes) {
-                skuInput.value = "AWAITING REQUIRED PARAMETERS...";
-                return;
-            }
-
-            const spsicLast4 = spsicNum.length >= 4 ? spsicNum.slice(-4) : spsicNum;
-            const commAbbr = commodity.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
-
-            try {
-                const { data, error } = await supabaseClient
-                    .from('inventory')
-                    .select('sizes, item_code')
-                    .eq('spsic_number', spsicNum)
-                    .eq('commodity', commodity.toUpperCase());
-
-                if (error) throw error;
-
-                let matchedSizes = [];
-                if (data) {
-                    data.forEach(row => {
-                        if (row.item_code && row.item_code.startsWith(prefix + spsicLast4)) {
-                            if (!matchedSizes.includes(row.sizes.trim().toLowerCase())) {
-                                matchedSizes.push(row.sizes.trim().toLowerCase());
-                            }
-                        }
-                    });
-                }
-
-                const currentSizeLower = sizes.toLowerCase();
-                let sizeIndex = matchedSizes.indexOf(currentSizeLower);
-
-                let sequenceNum;
-                if (sizeIndex !== -1) {
-                    sequenceNum = String(sizeIndex + 1).padStart(2, '0');
-                } else {
-                    sequenceNum = String(matchedSizes.length + 1).padStart(2, '0');
-                }
-
-                skuInput.value = `${prefix}${spsicLast4}-${commAbbr}-${sequenceNum}`;
-
-            } catch (err) {
-                console.error("SKU tracking dynamic calculation error: ", err.message);
-                skuInput.value = "GENERATION ENG ERROR";
-            }
+            return; 
         }
 
         async function querySpsicRecordDataset() {
@@ -644,7 +584,6 @@
 
             const settingsBtn = document.getElementById('settingsBtn');
             if (roleClean === 'admin' && settingsBtn) {
-                // Settings visibility control without adding duplicate layout colors
                 settingsBtn.style.display = "inline-block";
             }
 
@@ -660,6 +599,7 @@
             await fetchDescriptionsDirectory();
             fetchLedgerDataset(hasRegistryAccess);
             
+            // Listen for typing events to immediately convert input to Upper Case
             document.getElementById('itemName').addEventListener('input', handleItemDescriptionChange);
 
             setupSessionCrossCheckListener();
@@ -821,7 +761,7 @@
             const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
             const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
             const item_name = document.getElementById('itemName').value.trim().toUpperCase();
-            const sizes = document.getElementById('itemSizes').value.trim();
+            const sizes = document.getElementById('itemSizes').value.trim().toUpperCase(); // Saved clean manual uppercase sizes
             const commodity = document.getElementById('itemCommodity').value.toUpperCase();
             const storage_facility = document.getElementById('storageFacility').value.toUpperCase();
             const chosen_date = document.getElementById('dateReceived').value;
@@ -897,7 +837,7 @@
             const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
             const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
             const item_name = document.getElementById('itemName').value.trim().toUpperCase();
-            const sizes = document.getElementById('itemSizes').value.trim();
+            const sizes = document.getElementById('itemSizes').value.trim().toUpperCase(); // Manual uppercase value
             const commodity = document.getElementById('itemCommodity').value.toUpperCase();
             const storage_facility = document.getElementById('storageFacility').value.toUpperCase();
             const chosen_date = document.getElementById('dateReceived').value;
