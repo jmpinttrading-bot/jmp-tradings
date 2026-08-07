@@ -137,13 +137,11 @@
             <div class="table-header-wrapper">
                 <h4>Disposition Ledger Data Pipeline</h4>
                 <div class="search-box-container">
-                    <!-- Changed from type="text" input to a dynamic select element -->
                     <select id="salesSearchQuery" class="dropdown-select" onchange="executeSearchFilter()">
                         <option value="">-- Select SPSIC Number --</option>
                     </select>
                     <button type="button" class="btn-action clear-filter" onclick="resetSearchFilter()">Reset</button>
                     
-                    <!-- Added Action Button Inside Workspace Next to Reset Button -->
                     <button type="button" class="btn-action" style="background-color: #2563eb;" onclick="verifyNavigationPrivilege('sales_invoice_access', 'uploaded-invoice.html')">Uploaded Invoices ↗</button>
                 </div>
             </div>
@@ -163,19 +161,18 @@
                     <thead>
                         <tr>
                             <th style="width: 50px; text-align: center;">#</th>
-                            <th style="width: 180px;">Sales Invoice No.</th>
                             <th>Customer</th>
                             <th>Date</th>
                             <th>Quantity</th>
                             <th>Price (PHP)</th>
                             <th>Amount (PHP)</th>
-                            <th>Ref Number</th>
+                            <th>SALES INVOICE NO. / REF NO.</th>
                             <th>Remarks</th>
                         </tr>
                     </thead>
                     <tbody id="salesInvoiceTableBody">
                         <tr>
-                            <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please select an SPSIC number above to load the data pipeline.</td>
+                            <td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">Please select an SPSIC number above to load the data pipeline.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -199,7 +196,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3IDE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentUserPermissions = null;
@@ -247,29 +244,24 @@
                 return;
             }
 
-            await fetchLedgerDataset(true); // Initial dataset pull
-            populateSpsicDropdown(); // Populate dropdown on load
+            await fetchLedgerDataset(true); 
+            populateSpsicDropdown(); 
         }
 
-        // Populates the dropdown menu with unique spsic_numbers where invoice_no is empty or null
         function populateSpsicDropdown() {
             const dropdown = document.getElementById('salesSearchQuery');
             
-            // Filter the full localized dataset for items where invoice_no is truly empty or null
             const filteredForEmptyInvoice = originalLedgerDataset.filter(item => {
                 return !item.invoice_no || item.invoice_no.trim() === '';
             });
 
-            // Map out the spsic_number strings and reduce down to unique entries
             const uniqueSpsicNumbers = [...new Set(filteredForEmptyInvoice
                 .map(item => item.spsic_number)
                 .filter(num => num && num.trim() !== '')
             )];
 
-            // Clear previous menu list options and preserve initial placeholder
             dropdown.innerHTML = '<option value="">-- Select SPSIC Number --</option>';
 
-            // Generate structural element tags
             uniqueSpsicNumbers.forEach(spsicNum => {
                 const opt = document.createElement('option');
                 opt.value = spsicNum;
@@ -287,11 +279,10 @@
             if (error) {
                 console.error("Ledger synchronization failure:", error.message);
                 document.getElementById('salesInvoiceTableBody').innerHTML = `
-                    <tr><td colspan="9" style="text-align: center; color: #ef4444; padding: 20px; font-weight: bold;">Failed to pull information dataset from the cloud.</td></tr>`;
+                    <tr><td colspan="8" style="text-align: center; color: #ef4444; padding: 20px; font-weight: bold;">Failed to pull information dataset from the cloud.</td></tr>`;
                 return;
             }
 
-            // Sync structural arrays
             originalLedgerDataset = (data || []).map(record => ({
                 ...record,
                 calculatedInvoiceNo: record.invoice_no || ''
@@ -304,7 +295,6 @@
                 activePage = 1;
                 renderInvoiceTable();
             } else {
-                // If refreshing data from an update, preserve current active drop-down option value
                 const dropdownValue = document.getElementById('salesSearchQuery').value;
                 if (isSearchPerformed && dropdownValue) {
                     workingFilteredDataset = originalLedgerDataset.filter(item => 
@@ -315,7 +305,6 @@
             }
         }
 
-        /* --- Dynamic Reference Prefix Autofill Cascader Mechanism --- */
         function handleInvoiceNumberInput(targetId, enteredValue) {
             const index = workingFilteredDataset.findIndex(item => item.id === targetId);
             if (index === -1) return;
@@ -362,7 +351,6 @@
             });
         }
 
-        /* --- Cloud Database Update Persistence Implementation --- */
         async function saveModifiedInvoicesToCloud() {
             let processedUpdatesCount = 0;
             let changesFound = false;
@@ -374,7 +362,6 @@
                 if (currentInputValue !== primaryDatabaseValue) {
                     changesFound = true;
                     
-                    // Only save if the sales invoice number field is NOT blank
                     if (currentInputValue === "") {
                         continue;
                     }
@@ -404,7 +391,6 @@
 
             showSystemNotification("Sync Successful", `Successfully updated ${processedUpdatesCount} invoice assignments directly on cloud ledger storage.`);
             
-            // Refreshes data and rebuilds the dropdown choices list dynamically to remove the processed SPSIC numbers
             await fetchLedgerDataset(false); 
             populateSpsicDropdown();
         }
@@ -415,7 +401,6 @@
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
-        /* --- Excel Selection System Logic --- */
         function handleRowClick(event, recordId) {
             if (event.target.classList.contains('invoice-input')) return;
 
@@ -453,9 +438,8 @@
             const topCommodityValue = document.getElementById('commodityTopBadgeValue');
             const saveBtn = document.getElementById('saveInvoicesBtn');
 
-            // If no option chosen from dropdown list selection parameters
             if (!isSearchPerformed) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please select an SPSIC number above to load the data pipeline.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">Please select an SPSIC number above to load the data pipeline.</td></tr>`;
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
@@ -464,7 +448,7 @@
             }
 
             if (workingFilteredDataset.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
@@ -499,12 +483,6 @@
                         onclick="handleRowClick(event, '${item.id}')"
                         ondblclick="handleRowDoubleClick(event, '${item.id}')">
                         <td style="text-align: center; font-weight: bold; color: #94a3b8; font-size: 0.8rem;">${overallRowNumber}</td>
-                        <td>
-                            <input type="text" class="invoice-input" 
-                                placeholder="e.g. INV-001" 
-                                value="${item.calculatedInvoiceNo || ''}" 
-                                oninput="handleInvoiceNumberInput('${item.id}', this.value)">
-                        </td>
                         <td style="font-weight: 600; color: #1e3a8a;">${item.customer || '—'}</td>
                         <td>${item.date || '—'}</td>
                         <td style="font-weight: 700;">${parseFloat(item.quantity || 0).toLocaleString()}</td>
@@ -531,7 +509,6 @@
                 isSearchPerformed = false;
             } else {
                 isSearchPerformed = true;
-                // Exact validation match logic against selected dropdown option element
                 workingFilteredDataset = originalLedgerDataset.filter(item => 
                     (item.spsic_number || '') === dropdownValue
                 );
@@ -557,7 +534,6 @@
             }
         }
 
-        // Modified wrapper to include explicit verification fallback for uploaded-invoice layout
         function verifyNavigationPrivilege(accessKey, url) {
             if (!currentUserPermissions) return;
 
