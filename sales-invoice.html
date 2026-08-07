@@ -169,8 +169,8 @@
                             <th>Price (PHP)</th>
                             <th>Amount (PHP)</th>
                             <th>Ref Number</th>
-                            <th>Status</th>
                             <th>Remarks</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="salesInvoiceTableBody">
@@ -254,6 +254,7 @@
         // Populates the dropdown menu with unique spsic_numbers where status is empty, null, or ongoing
         function populateSpsicDropdown() {
             const dropdown = document.getElementById('salesSearchQuery');
+            const currentSelectedValue = dropdown.value;
             
             // Filter the full dataset for items where status isn't marked final 'DONE / COMPLETE'
             const filteredForActiveWorkflow = originalLedgerDataset.filter(item => {
@@ -277,6 +278,14 @@
                 opt.textContent = spsicNum;
                 dropdown.appendChild(opt);
             });
+
+            // Re-apply the selected value if it still exists in the refreshed options list
+            if (uniqueSpsicNumbers.includes(currentSelectedValue)) {
+                dropdown.value = currentSelectedValue;
+            } else if (currentSelectedValue && !uniqueSpsicNumbers.includes(currentSelectedValue)) {
+                // If the currently filtered SPSIC number has no more ongoing items, clear the table display
+                resetSearchFilter();
+            }
         }
 
         async function fetchLedgerDataset(isInitialInit = false) {
@@ -420,31 +429,37 @@
                 return;
             }
 
-            if (workingFilteredDataset.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">No matching records found inside database pipeline.</td></tr>`;
+            // For the active workspace interface view, only present records that are actively marked 'ONGOING'
+            const visibleOngoingRecords = workingFilteredDataset.filter(item => {
+                return String(item.calculatedStatus || 'ONGOING').toUpperCase().trim() !== 'DONE / COMPLETE';
+            });
+
+            if (visibleOngoingRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">No matching ongoing records found inside database pipeline.</td></tr>`;
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
-                saveBtn.disabled = true; 
+                saveBtn.disabled = false; // Allow saving if user just shifted a row state to DONE / COMPLETE
                 return;
             }
 
             saveBtn.disabled = false; 
 
-            if (workingFilteredDataset[0]) {
-                topSpsicValue.textContent = workingFilteredDataset[0].spsic_number || '—';
-                topCommodityValue.textContent = workingFilteredDataset[0].commodity || '—';
+            if (visibleOngoingRecords[0]) {
+                topSpsicValue.textContent = visibleOngoingRecords[0].spsic_number || '—';
+                topCommodityValue.textContent = visibleOngoingRecords[0].commodity || '—';
                 referenceWrapper.style.display = "flex";
             } else {
                 referenceWrapper.style.display = "none";
             }
 
-            const totalPages = Math.ceil(workingFilteredDataset.length / RECORDS_PER_PAGE);
+            const totalPages = Math.ceil(visibleOngoingRecords.length / RECORDS_PER_PAGE);
             if (activePage > totalPages) activePage = totalPages;
+            if (activePage < 1) activePage = 1;
 
             const startIndex = (activePage - 1) * RECORDS_PER_PAGE;
             const endIndex = startIndex + RECORDS_PER_PAGE;
-            const visibleSlice = workingFilteredDataset.slice(startIndex, endIndex);
+            const visibleSlice = visibleOngoingRecords.slice(startIndex, endIndex);
 
             tbody.innerHTML = visibleSlice.map((item, index) => {
                 const overallRowNumber = startIndex + index + 1;
@@ -465,18 +480,18 @@
                         <td>
                             <span class="highlighted-ref-badge">${item.ref_number || '—'}</span>
                         </td>
+                        <td style="white-space: normal; font-size: 0.82rem; color: #64748b; max-width: 200px;">${item.remarks || '—'}</td>
                         <td>
                             <select class="table-inline-select" onchange="handleStatusChangeInput('${item.id}', this.value)">
                                 <option value="ONGOING" ${currentStatus === 'ONGOING' ? 'selected' : ''}>ONGOING</option>
                                 <option value="DONE / COMPLETE" ${currentStatus === 'DONE / COMPLETE' ? 'selected' : ''}>DONE / COMPLETE</option>
                             </select>
                         </td>
-                        <td style="white-space: normal; font-size: 0.82rem; color: #64748b; max-width: 200px;">${item.remarks || '—'}</td>
                     </tr>
                 `;
             }).join('');
 
-            trackerEl.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, workingFilteredDataset.length)} of ${workingFilteredDataset.length} records`;
+            trackerEl.textContent = `Showing ${startIndex + 1}-${Math.min(endIndex, visibleOngoingRecords.length)} of ${visibleOngoingRecords.length} records`;
             paginationEl.style.display = "flex";
             document.getElementById('pageNumberIndicator').textContent = `Page ${activePage} of ${totalPages}`;
             document.getElementById('prevPageBtn').disabled = (activePage === 1);
@@ -508,7 +523,12 @@
         }
 
         function movePage(direction) {
-            const totalPages = Math.ceil(workingFilteredDataset.length / RECORDS_PER_PAGE);
+            // Find all matching ongoing records for pagination metrics evaluation
+            const visibleOngoingRecords = workingFilteredDataset.filter(item => {
+                return String(item.calculatedStatus || 'ONGOING').toUpperCase().trim() !== 'DONE / COMPLETE';
+            });
+            
+            const totalPages = Math.ceil(visibleOngoingRecords.length / RECORDS_PER_PAGE);
             const targetPage = activePage + direction;
             if (targetPage >= 1 && targetPage <= totalPages) {
                 activePage = targetPage;
