@@ -168,6 +168,42 @@
         .form-group input, .form-group select { width: 100%; padding: 11px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; background: white; transition: all 0.2s; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: #f97316; box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15); }
 
+        /* --- Searchable Dropdown Interface Styles --- */
+        .searchable-dropdown-container {
+            position: relative;
+            width: 100%;
+        }
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1050;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .dropdown-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #1e293b;
+            transition: background 0.15s;
+        }
+        .dropdown-item:hover {
+            background-color: #f1f5f9;
+            color: #f97316;
+        }
+        .dropdown-item.no-results {
+            color: #94a3b8;
+            cursor: default;
+            font-style: italic;
+        }
+
         .btn-primary { background: #0b2545; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; width: 100%; transition: background 0.2s; text-align: center; box-shadow: 0 2px 4px rgba(11, 37, 69, 0.2); }
         .btn-primary:hover { background: #134074; }
 
@@ -231,9 +267,10 @@
                 <div class="form-grid">
                     <div class="form-group">
                         <label>SPSIC Number</label>
-                        <select id="spsic_dropdown" required onchange="handleSpsicSelectionChange()">
-                            <option value="">-- Loading Active SPSIC Numbers --</option>
-                        </select>
+                        <div class="searchable-dropdown-container">
+                            <input type="text" id="spsic_search" placeholder="Type to search SPSIC..." autocomplete="off" required oninput="filterSpsicOptions()" onfocus="showSpsicDropdown()">
+                            <div id="spsic_dropdown_list" class="dropdown-list"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Item Price (PHP)</label>
@@ -287,6 +324,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let shipmentsCache = [];
+        let uniqueSpsicList = [];
         let currentPage = 1;
         const rowsPerPage = 20;
         let currentUserPermissions = null;
@@ -298,7 +336,7 @@
             const userRole = localStorage.getItem('userRole');
             if (userRole === 'Viewer') {
                 showSystemModal("Access Restriction", "You have read-only permissions. You cannot alter parameters on this panel.");
-                document.querySelectorAll('input, select, button[type="submit"]').forEach(elem => elem.disabled = true);
+                document.querySelectorAll('input, button[type="submit"]').forEach(elem => elem.disabled = true);
             }
         }
 
@@ -370,7 +408,6 @@
         }
 
         async function fetchShipmentData() {
-            const dropdown = document.getElementById('spsic_dropdown');
             const tbody = document.getElementById('dispoHistoryBody');
             
             const { data, error } = await supabaseClient
@@ -384,20 +421,57 @@
             }
 
             shipmentsCache = data || [];
-            const uniqueSpsic = [...new Set(shipmentsCache.map(item => item.spsic_number).filter(Boolean))];
+            uniqueSpsicList = [...new Set(shipmentsCache.map(item => item.spsic_number).filter(Boolean))];
 
-            if (uniqueSpsic.length === 0) {
-                dropdown.innerHTML = '<option value="">No active SPSIC matches found</option>';
+            if (uniqueSpsicList.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">No shipment docs found.</td></tr>`;
                 return;
             }
 
-            dropdown.innerHTML = '<option value="">-- Choose SPSIC Document Target --</option>' + 
-                uniqueSpsic.map(s => `<option value="${s}">${s}</option>`).join('');
+            renderSpsicDropdownList(uniqueSpsicList);
 
             currentPage = 1;
             renderPaginationTable();
         }
+
+        /* --- Searchable Dropdown List Operations --- */
+        function renderSpsicDropdownList(list) {
+            const dropdownList = document.getElementById('spsic_dropdown_list');
+            if (list.length === 0) {
+                dropdownList.innerHTML = '<div class="dropdown-item no-results">No matches found</div>';
+                return;
+            }
+            
+            dropdownList.innerHTML = list.map(item => 
+                `<div class="dropdown-item" onclick="selectSpsicOption('${item.replace(/'/g, "\\'")}')">${item}</div>`
+            ).join('');
+        }
+
+        function showSpsicDropdown() {
+            if (localStorage.getItem('userRole') === 'Viewer') return;
+            document.getElementById('spsic_dropdown_list').style.display = 'block';
+            filterSpsicOptions();
+        }
+
+        function filterSpsicOptions() {
+            const inputVal = document.getElementById('spsic_search').value.toLowerCase().trim();
+            const filtered = uniqueSpsicList.filter(item => item.toLowerCase().includes(inputVal));
+            renderSpsicDropdownList(filtered);
+        }
+
+        function selectSpsicOption(val) {
+            document.getElementById('spsic_search').value = val;
+            document.getElementById('spsic_dropdown_list').style.display = 'none';
+            handleSpsicSelectionChange(val);
+        }
+
+        // Close dropdown when user clicks outside the container element boundary
+        document.addEventListener('click', function(e) {
+            const container = document.querySelector('.searchable-dropdown-container');
+            if (container && !container.contains(e.target)) {
+                document.getElementById('spsic_dropdown_list').style.display = 'none';
+            }
+        });
 
         function renderPaginationTable() {
             const tbody = document.getElementById('dispoHistoryBody');
@@ -453,8 +527,7 @@
             renderPaginationTable();
         }
 
-        function handleSpsicSelectionChange() {
-            const selectedSpsic = document.getElementById('spsic_dropdown').value;
+        function handleSpsicSelectionChange(selectedSpsic) {
             const targetQtyInput = document.getElementById('total_qty_bal');
             const targetPriceInput = document.getElementById('item_price');
             
@@ -482,12 +555,12 @@
                 return;
             }
 
-            const spsicNum = document.getElementById('spsic_dropdown').value;
+            const spsicNum = document.getElementById('spsic_search').value.trim();
             const qtyBal = parseFloat(document.getElementById('total_qty_bal').value);
             const priceVal = parseFloat(document.getElementById('item_price').value);
 
             if (!spsicNum) {
-                showSystemModal("Validation Error", "Please select a valid target SPSIC document string.", "spsic_dropdown");
+                showSystemModal("Validation Error", "Please select or type a valid target SPSIC document string.", "spsic_search");
                 return;
             }
 
