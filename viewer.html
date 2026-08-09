@@ -304,21 +304,39 @@
             btn.disabled = true;
 
             try {
-                // Initialize PDF-Lib combined canvas container
+                // If there's only 1 document in the compilation list (e.g. only SPSIC attached)
+                // download it directly instead of pushing through PDFLib compilation engine.
+                if (activeFilesList.length === 1) {
+                    const file = activeFilesList[0];
+                    const response = await fetch(file.url);
+                    const blob = await response.blob();
+                    
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = file.name.toLowerCase().endsWith('.pdf') ? file.name : `${file.name}.pdf`;
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                    return;
+                }
+
+                // Initialize PDF-Lib combined canvas container for multi-document packages
                 const mergedPdf = await PDFLib.PDFDocument.create();
+                let validPagesAdded = 0;
 
                 for (const file of activeFilesList) {
                     const response = await fetch(file.url);
                     const arrayBuffer = await response.arrayBuffer();
-                    const extension = file.url.split('?')[0].split('.').pop().toLowerCase();
+                    
+                    // Safely extract extension by inspecting the custom file object name variable 
+                    // instead of splitting the query param token URL directly.
+                    const extension = file.name.split('.').pop().toLowerCase();
 
                     if (extension === 'pdf') {
-                        // Load and merge standard PDF
                         const externalPdf = await PDFLib.PDFDocument.load(arrayBuffer);
                         const copiedPages = await mergedPdf.copyPages(externalPdf, externalPdf.getPageIndices());
                         copiedPages.forEach((page) => mergedPdf.addPage(page));
-                    } else if (['jpg', 'jpeg', 'png'].includes(extension)) {
-                        // Convert Image assets directly to a single PDF page dynamic wrap
+                        validPagesAdded += copiedPages.length;
+                    } else if (['jpg', 'jpeg', 'png', 'webp'].includes(extension)) {
                         const page = mergedPdf.addPage();
                         const { width, height } = page.getSize();
                         
@@ -329,7 +347,6 @@
                             embeddedImage = await mergedPdf.embedJpg(arrayBuffer);
                         }
 
-                        // Scale image down cleanly to page margin limits
                         const imgDims = embeddedImage.scaleToFit(width - 40, height - 40);
                         page.drawImage(embeddedImage, {
                             x: (width - imgDims.width) / 2,
@@ -337,9 +354,14 @@
                             width: imgDims.width,
                             height: imgDims.height,
                         });
+                        validPagesAdded++;
                     } else {
-                        console.warn(`File compilation format ignored: .${extension}`);
+                        console.warn(`File compilation format skipped (Office Docs cannot be merged client-side): .${extension}`);
                     }
+                }
+
+                if (validPagesAdded === 0) {
+                    throw new Error("No compatible PDFs or Images found in the packet pipeline to merge.");
                 }
 
                 const mergedPdfBytes = await mergedPdf.save();
