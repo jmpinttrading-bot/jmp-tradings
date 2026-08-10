@@ -43,10 +43,19 @@
         .generate-btn:hover { background: #0f172a; }
 
         .facility-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        .facility-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; }
+        .facility-header h2 { font-size: 1rem; margin: 0; color: white; }
+        .btn-export-facility { background: #16a34a; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.78rem; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-export-facility:hover { background: #15803d; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem; }
         th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; white-space: nowrap; }
         .sub-header { font-size: 0.72rem; font-weight: bold; background: #f8fafc; color: #475569; text-transform: uppercase; }
-        h2 { font-size: 1rem; margin-top: 0; padding: 10px; border-radius: 6px; color: white; }
+
+        /* Highlight Row for Single Pallet */
+        tr.single-pallet-highlight { background-color: #fef2f2 !important; }
+        tr.single-pallet-highlight td { border-color: #fca5a5 !important; }
+        .pallet-warning-badge { color: #dc2626 !important; font-weight: 800 !important; }
 
         /* Storage Summary Metrics Layout */
         .facility-summary-card { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px 18px; margin-top: 15px; border-radius: 8px; display: inline-flex; flex-direction: column; gap: 4px; min-width: 240px; }
@@ -109,6 +118,7 @@
         let currentUserPermissions = null;
         let currentAdminId = null;
         let realTimePresenceChannel = null;
+        let renderedFacilityData = {}; 
 
         const facilityThemes = {
             "VVS COLD STORAGE & PROCESSING PLANT CORP.": "#0f172a",
@@ -188,7 +198,6 @@
 
             const settingsBtn = document.getElementById('settingsNavBtn');
             if (roleClean === 'admin' && settingsBtn) {
-                // Ensure visibility for admins, without overriding active nav styles
                 settingsBtn.style.display = "inline-block";
             }
 
@@ -204,7 +213,6 @@
                 document.getElementById('welcomeMsg').textContent = `Welcome back, ${user.email.split('@')[0]}!`;
             }
 
-            // Fire and initialize the session presence beacon for this dashboard view
             initializePresenceSynchronization(user, profile.username, profile.role);
 
             const now = new Date();
@@ -251,6 +259,8 @@
             if (error) { container.innerHTML = 'Error loading data: ' + error.message; return; }
 
             container.innerHTML = '';
+            renderedFacilityData = {}; 
+
             Object.keys(facilityThemes).forEach(f => renderFacility(f, data || [], start, end));
         }
 
@@ -279,31 +289,41 @@
 
             dates.reverse();
 
-            let html = `<div class="facility-container">
-                <h2 style="background-color: ${color};">${name}</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Item Code</th>`;
-            
-            dates.forEach(d => {
-                const [y, m, day] = d.split('-');
-                const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                html += `<th colspan="2" style="background-color: ${color}; color: white;">${formatted}</th>`;
-            });
-            
-            html += `</tr><tr>`;
-            dates.forEach(() => {
-                html += `<th class="sub-header">Bal</th><th class="sub-header">Pallet</th>`;
-            });
-            html += `</tr></thead><tbody>`;
-
+            let tableRowsHtml = "";
             let columnTotals = new Array(dates.length).fill(0);
+            let exportedRows = [];
 
             itemsAtFacility.forEach(code => {
-                html += `<tr>
-                            <td style="font-weight: 700;">${code}</td>`;
+                // Fetch the active/latest date transaction match to check for zero balance & single pallet
+                const activeMatch = facilityData.filter(d => d.item_code === code && d.date <= dates[0])
+                                                 .sort((a, b) => {
+                                                     const dateCompare = b.date.localeCompare(a.date);
+                                                     if (dateCompare !== 0) return dateCompare;
+                                                     const soA = a.sales_order_no ? String(a.sales_order_no) : '';
+                                                     const soB = b.sales_order_no ? String(b.sales_order_no) : '';
+                                                     const soCompare = soB.localeCompare(soA);
+                                                     if (soCompare !== 0) return soCompare;
+                                                     return b.id - a.id;
+                                                 })[0];
+
+                const activeBalance = activeMatch ? parseInt(activeMatch.balance) || 0 : 0;
                 
+                // 1. OMIT ZERO BALANCE ROWS (Skip items where current active balance is 0)
+                if (activeBalance <= 0) {
+                    return; 
+                }
+
+                // Check if current/active date pallet count is 1
+                const activePallets = (activeMatch && activeMatch.total_pallet) ? String(activeMatch.total_pallet).trim() : '—';
+                const isSinglePallet = activePallets === '1' || activePallets === '1.0' || activePallets === '1.00';
+                
+                const rowClass = isSinglePallet ? 'class="single-pallet-highlight"' : '';
+                
+                let rowHtml = `<tr ${rowClass}>
+                                  <td style="font-weight: 700;">${code}</td>`;
+                
+                let exportRowObj = { item_code: code, datesData: [] };
+
                 dates.forEach((date, index) => {
                     const match = facilityData.filter(d => d.item_code === code && d.date <= date)
                                               .sort((a, b) => {
@@ -323,11 +343,55 @@
                     
                     columnTotals[index] += balance;
                     
-                    html += `<td>${balance.toLocaleString()}</td>
-                             <td style="color: #64748b; font-weight: 600;">${pallets}</td>`;
+                    const palletStyleClass = (index === 0 && isSinglePallet) ? 'class="pallet-warning-badge"' : '';
+
+                    rowHtml += `<td>${balance.toLocaleString()}</td>
+                                <td style="color: #64748b; font-weight: 600;" ${palletStyleClass}>${pallets}</td>`;
+                    
+                    exportRowObj.datesData.push({ balance, pallets });
                 });
-                html += `</tr>`;
+                
+                rowHtml += `</tr>`;
+                tableRowsHtml += rowHtml;
+                exportedRows.push(exportRowObj);
             });
+
+            // If no active non-zero items exist for this facility
+            if (!tableRowsHtml) {
+                tableRowsHtml = `<tr><td colspan="${(dates.length * 2) + 1}" style="color:#94a3b8; padding:20px;">No non-zero active stock available for this facility in the selected range.</td></tr>`;
+            }
+
+            // Save data reference for Excel export
+            const safeFacilityId = name.replace(/[^a-zA-Z0-9]/g, '_');
+            renderedFacilityData[safeFacilityId] = {
+                facilityName: name,
+                dates: dates,
+                rows: exportedRows
+            };
+
+            let html = `<div class="facility-container">
+                <div class="facility-header" style="background-color: ${color};">
+                    <h2>${name}</h2>
+                    <button class="btn-export-facility" onclick="exportFacilityExcel('${safeFacilityId}')">📊 Export Excel</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Item Code</th>`;
+            
+            dates.forEach(d => {
+                const [y, m, day] = d.split('-');
+                const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                html += `<th colspan="2" style="background-color: ${color}; color: white;">${formatted}</th>`;
+            });
+            
+            html += `</tr><tr>`;
+            dates.forEach(() => {
+                html += `<th class="sub-header">Bal</th><th class="sub-header">Pallet</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            html += tableRowsHtml;
 
             html += `</tbody></table>`;
 
@@ -341,6 +405,107 @@
             </div>`;
 
             document.getElementById('reportContainer').insertAdjacentHTML('beforeend', html);
+        }
+
+        function exportFacilityExcel(facilityKey) {
+            const dataObj = renderedFacilityData[facilityKey];
+            if (!dataObj || !dataObj.rows || dataObj.rows.length === 0) {
+                document.getElementById('restrictionModalTitle').textContent = "Export Ignored";
+                document.getElementById('restrictionModalMessage').textContent = "There is no active stock data to export for this facility.";
+                document.getElementById('accessBlockerModal').classList.add('is-visible');
+                return;
+            }
+
+            let dateHeadersHtml = "";
+            let subHeadersHtml = "";
+
+            dataObj.dates.forEach(d => {
+                const [y, m, day] = d.split('-');
+                const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                dateHeadersHtml += `<th colspan="2">${formatted}</th>`;
+                subHeadersHtml += `<th>Bal</th><th>Pallet</th>`;
+            });
+
+            let tableRowsHtml = "";
+            dataObj.rows.forEach(r => {
+                let rowDataCells = "";
+                r.datesData.forEach(dd => {
+                    rowDataCells += `<td>${dd.balance}</td><td>${dd.pallets}</td>`;
+                });
+
+                tableRowsHtml += `
+                    <tr>
+                        <td style="font-weight:bold;">${r.item_code}</td>
+                        ${rowDataCells}
+                    </tr>
+                `;
+            });
+
+            let excelTemplate = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <meta charset="UTF-8">
+                    <!--[if gte mso 9]>
+                    <xml>
+                        <x:ExcelWorkbook>
+                            <x:ExcelWorksheets>
+                                <x:ExcelWorksheet>
+                                    <x:Name>${dataObj.facilityName.substring(0, 30)}</x:Name>
+                                    <x:WorksheetOptions>
+                                        <x:DisplayGridlines/>
+                                    </x:WorksheetOptions>
+                                </x:ExcelWorksheet>
+                            </x:ExcelWorksheets>
+                        </x:ExcelWorkbook>
+                    </xml>
+                    <![endif]-->
+                    <style>
+                        table { border-collapse: collapse; width: 100%; }
+                        th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-family: Arial, sans-serif; font-size: 11px; }
+                        th { background-color: #1e293b; color: #ffffff; font-weight: bold; }
+                        .title-cell { font-size: 16px; font-weight: bold; text-align: left; padding: 10px 0; border: none; }
+                        .facility-cell { font-size: 13px; font-weight: bold; text-align: left; padding-bottom: 10px; color: #3b82f6; border: none; }
+                    </style>
+                </head>
+                <body>
+                    <table>
+                        <thead>
+                            <tr>
+                                <td colspan="${(dataObj.dates.length * 2) + 1}" class="title-cell">
+                                    JMP INTERNATIONAL FISH TRADING
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="${(dataObj.dates.length * 2) + 1}" class="facility-cell">
+                                    Facility: ${dataObj.facilityName}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th rowspan="2">Item Code</th>
+                                ${dateHeadersHtml}
+                            </tr>
+                            <tr>
+                                ${subHeadersHtml}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsHtml}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            let blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+            let url = URL.createObjectURL(blob);
+            let link = document.createElement("a");
+            
+            const sanitizedFileName = dataObj.facilityName.replace(/[^a-zA-Z0-9]/g, '_');
+            link.setAttribute("href", url);
+            link.setAttribute("download", `${sanitizedFileName}_Inventory_${new Date().toISOString().split('T')[0]}.xls`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function setupSessionCrossCheckListener() {
