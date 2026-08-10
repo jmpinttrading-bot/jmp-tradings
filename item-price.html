@@ -466,7 +466,7 @@
                             <tr style="background-color: #f8fafc;">
                                 <td style="font-weight: 700; color: #475569; border-right: 1px solid #e2e8f0;">REMAINING VOLUME AMOUNT</td>
                                 <td id="summaryRemainingQty" style="font-weight: 700; color: #ef4444; text-align: right; border-right: 1px solid #e2e8f0;">0</td>
-                                <td style="text-align: right; color: #94a3b8;">-</td>
+                                <td id="summaryRemainingAmount" style="font-weight: 700; color: #ef4444; text-align: right;">₱0.00</td>
                             </tr>
                             <tr>
                                 <td style="font-weight: 800; color: #0f172a; font-size: 0.95rem; border-right: 1px solid #e2e8f0;">TOTAL SALES</td>
@@ -863,21 +863,31 @@
                 activeSpsic = items[0].spsic_number || "";
                 document.getElementById('activeViewSpsic').value = activeSpsic;
                 
-                // Fetch live Remaining Volume Amount (total_qty_bal) from imported docs
+                // Fetch target total_qty_bal and item_price for remaining volume & amount calculation
                 const { data, error } = await supabaseClient
                     .from('imported_shipment_docs')
-                    .select('total_qty_bal')
+                    .select('total_qty_bal, item_price')
                     .eq('spsic_number', activeSpsic)
                     .maybeSingle();
                     
                 if (data && !error) {
-                    document.getElementById('summaryRemainingQty').textContent = (parseFloat(data.total_qty_bal) || 0).toLocaleString();
+                    const originalTargetQty = parseFloat(data.total_qty_bal) || 0;
+                    const activeUnitPrice = parseFloat(data.item_price) || 0;
+                    
+                    // Auto minus OR Volume & Sales quantity from total target balance
+                    const remainingQty = originalTargetQty - totalQty;
+                    const remainingAmount = remainingQty * activeUnitPrice;
+
+                    document.getElementById('summaryRemainingQty').textContent = remainingQty.toLocaleString();
+                    document.getElementById('summaryRemainingAmount').textContent = '₱' + remainingAmount.toLocaleString(undefined, {minimumFractionDigits: 2});
                 } else {
                     document.getElementById('summaryRemainingQty').textContent = "0";
+                    document.getElementById('summaryRemainingAmount').textContent = "₱0.00";
                 }
             } else {
                 document.getElementById('activeViewSpsic').value = "";
                 document.getElementById('summaryRemainingQty').textContent = "0";
+                document.getElementById('summaryRemainingAmount').textContent = "₱0.00";
             }
         }
 
