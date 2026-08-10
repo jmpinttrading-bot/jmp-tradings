@@ -435,27 +435,6 @@
                 return;
             }
 
-            const imgElement = new Image();
-            imgElement.crossOrigin = "Anonymous";
-            imgElement.src = "jmp.jpg";
-
-            imgElement.onload = function () {
-                const canvas = document.createElement("canvas");
-                canvas.width = imgElement.width;
-                canvas.height = imgElement.height;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(imgElement, 0, 0);
-                const base64Logo = canvas.toDataURL("image/jpeg");
-
-                generateExcelWithBase64Logo(base64Logo);
-            };
-
-            imgElement.onerror = function () {
-                generateExcelWithBase64Logo("");
-            };
-        }
-
-        function generateExcelWithBase64Logo(base64Logo) {
             const allSorted = [...globallyFetchedHistory].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const balanceMap = new Map();
             const itemRunningBalances = {};
@@ -495,10 +474,6 @@
                 `;
             });
 
-            const logoHtml = base64Logo 
-                ? `<img src="${base64Logo}" alt="JMP Logo" style="height: 60px; width: auto;" />` 
-                : `<h2 style="color:#0f172a; font-family:Arial, sans-serif;">JMP INTERNATIONAL FISH TRADING</h2>`;
-
             let excelTemplate = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
                 <head>
@@ -521,7 +496,7 @@
                         table { border-collapse: collapse; width: 100%; }
                         th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-family: Arial, sans-serif; font-size: 11px; }
                         th { background-color: #1e293b; color: #ffffff; font-weight: bold; }
-                        .header-cell { text-align: left; padding: 10px 0px; border: none; }
+                        .header-cell { text-align: left; padding: 10px 0px; border: none; font-size: 16px; font-weight: bold; color: #0f172a; }
                     </style>
                 </head>
                 <body>
@@ -529,7 +504,7 @@
                         <thead>
                             <tr>
                                 <td colspan="15" class="header-cell">
-                                    ${logoHtml}
+                                    JMP INTERNATIONAL FISH TRADING
                                 </td>
                             </tr>
                             <tr><td colspan="15" style="border:none; height:10px;"></td></tr>
