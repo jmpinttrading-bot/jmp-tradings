@@ -13,7 +13,6 @@
         .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; font-family: 'Inter', sans-serif; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
         .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
-        .nav-title img { height: 24px; width: auto; object-fit: contain; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
         .logout-btn:hover { background-color: #dc2626; }
         .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
@@ -122,7 +121,6 @@
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">
-                <img src="jmp.jpg" alt="JMP Logo" id="navLogo">
                 JMP INTERNATIONAL FISH TRADING
             </div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
@@ -448,50 +446,98 @@
                 balanceMap.set(tx.id, itemRunningBalances[uniqueKey]);
             });
 
-            let csvRows = [
-                ["Storage Facility Node", "SPSIC Number", "Date Processed", "Sales Order No", "Item Code", "Item Description", "Sizes", "Qty Per Pallet", "Total Pallets", "In Qty", "Out Qty", "Running Balance", "Buyer Name", "Transacted By", "Remarks"]
-            ];
+            let tableRowsHtml = "";
 
             currentActiveFilteredList.forEach(item => {
                 const operatorName = item.processed_by ? item.processed_by.replace('@jmp-corporate.local', '') : 'System';
                 const runningBal = balanceMap.get(item.id) ?? 0;
-                
-                // Explicitly format size as a text string so Excel won't interpret fractions as dates
-                const sizeVal = item.sizes ? `="${String(item.sizes).replace(/"/g, '""')}"` : '—';
+                const sizeVal = item.sizes || '—';
 
-                csvRows.push([
-                    item.storage_facility || '—',
-                    item.spsic_number || '—',
-                    item.date || '—',
-                    item.sales_order_no || '—',
-                    item.item_code || '',
-                    item.item_name || '',
-                    sizeVal,
-                    item.qty_per_pallet || '—',
-                    item.total_pallet || '—',
-                    item.in_quantity || '0',
-                    item.out_quantity || '0',
-                    runningBal,
-                    item.buyer_name || '—',
-                    operatorName,
-                    item.remarks || '—'
-                ]);
+                tableRowsHtml += `
+                    <tr>
+                        <td>${item.storage_facility || '—'}</td>
+                        <td>${item.spsic_number || '—'}</td>
+                        <td>${item.date || '—'}</td>
+                        <td>${item.sales_order_no || '—'}</td>
+                        <td>${item.item_code || ''}</td>
+                        <td>${item.item_name || ''}</td>
+                        <td style="mso-number-format:'\\@';">${sizeVal}</td>
+                        <td>${item.qty_per_pallet || '—'}</td>
+                        <td>${item.total_pallet || '—'}</td>
+                        <td>${item.in_quantity || '0'}</td>
+                        <td>${item.out_quantity || '0'}</td>
+                        <td>${runningBal}</td>
+                        <td>${item.buyer_name || '—'}</td>
+                        <td>${operatorName}</td>
+                        <td>${item.remarks || '—'}</td>
+                    </tr>
+                `;
             });
 
-            let csvContent = "\uFEFF" + csvRows.map(e => e.map(val => {
-                // Keep pre-formatted Excel formula strings intact, wrap standard strings with quotes
-                if (typeof val === 'string' && val.startsWith('=')) {
-                    return val;
-                }
-                return `"${String(val).replace(/"/g, '""')}"`;
-            }).join(",")).join("\n");
-            
-            let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            let excelTemplate = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                    <meta charset="UTF-8">
+                    <!--[if gte mso 9]>
+                    <xml>
+                        <x:ExcelWorkbook>
+                            <x:ExcelWorksheets>
+                                <x:ExcelWorksheet>
+                                    <x:Name>Audit Ledger</x:Name>
+                                    <x:WorksheetOptions>
+                                        <x:DisplayGridlines/>
+                                    </x:WorksheetOptions>
+                                </x:ExcelWorksheet>
+                            </x:ExcelWorksheets>
+                        </x:ExcelWorkbook>
+                    </xml>
+                    <![endif]-->
+                    <style>
+                        table { border-collapse: collapse; width: 100%; }
+                        th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; font-family: Arial, sans-serif; font-size: 12px; }
+                        th { background-color: #1e293b; color: #ffffff; font-weight: bold; }
+                        .logo-container { margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="logo-container">
+                        <img src="jmp.jpg" alt="JMP Logo" width="180" />
+                    </div>
+                    <br/>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Storage Facility Node</th>
+                                <th>SPSIC Number</th>
+                                <th>Date Processed</th>
+                                <th>Sales Order No</th>
+                                <th>Item Code</th>
+                                <th>Item Description</th>
+                                <th>Sizes</th>
+                                <th>Qty Per Pallet</th>
+                                <th>Total Pallets</th>
+                                <th>In Qty</th>
+                                <th>Out Qty</th>
+                                <th>Running Balance</th>
+                                <th>Buyer Name</th>
+                                <th>Transacted By</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsHtml}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `;
+
+            let blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8;' });
             let url = URL.createObjectURL(blob);
             let link = document.createElement("a");
             
             link.setAttribute("href", url);
-            link.setAttribute("download", `JMP_Global_Audit_Ledger_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute("download", `JMP_Global_Audit_Ledger_${new Date().toISOString().split('T')[0]}.xls`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
