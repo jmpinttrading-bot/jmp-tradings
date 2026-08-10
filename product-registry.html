@@ -220,6 +220,47 @@
         .btn-edit:hover { background: #ee964b; color: #0f172a; }
         .btn-edit:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
 
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px 5px 25px;
+            background: white;
+        }
+        .pagination-info {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+        .pagination-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .btn-page {
+            background: #ffffff;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-page:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+            color: #0f172a;
+        }
+        .btn-page:disabled {
+            background: #f8fafc;
+            color: #cbd5e1;
+            border-color: #e2e8f0;
+            cursor: not-allowed;
+        }
+
         .form-lock-message { background: rgba(241, 245, 249, 0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; z-index: 10; color: #64748b; font-weight: 600; font-size: 0.95rem; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
@@ -233,6 +274,7 @@
             .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
             .ledger-search-box { width: 100%; }
             .ledger-search-box input { width: 100%; }
+            .pagination-container { flex-direction: column; gap: 10px; align-items: flex-start; }
         }
     </style>
 </head>
@@ -378,6 +420,15 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination Container -->
+                <div class="pagination-container">
+                    <div class="pagination-info" id="paginationInfo">Showing 0 to 0 of 0 entries</div>
+                    <div class="pagination-controls">
+                        <button type="button" class="btn-page" id="prevPageBtn" onclick="changePage(-1)">Previous</button>
+                        <button type="button" class="btn-page" id="nextPageBtn" onclick="changePage(1)">Next</button>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -408,8 +459,13 @@
         let currentUserEmail = "";
         let bypassAuthListener = false;
         let globallyFetchedItems = [];
+        let filteredItems = [];
         let fetchedDescriptions = [];
         let currentUserPermissions = null;
+
+        // Pagination State
+        let currentPage = 1;
+        const pageSize = 10;
 
         function showSystemModal(title, message) {
             document.getElementById('restrictionModalTitle').textContent = title;
@@ -537,26 +593,30 @@
         }
 
         function filterLedgerByDescription() {
+            currentPage = 1;
             const filterQuery = document.getElementById('descSearchQuery').value.trim().toLowerCase();
             if (!filterQuery) {
-                renderLedgerTable(globallyFetchedItems);
+                filteredItems = [...globallyFetchedItems];
+                renderLedgerTable();
                 return;
             }
             
-            const filteredArray = globallyFetchedItems.filter(item => {
+            filteredItems = globallyFetchedItems.filter(item => {
                 const itemDesc = (item.item_name || "").toLowerCase();
                 return itemDesc.includes(filterQuery);
             });
             
-            renderLedgerTable(filteredArray);
-            if (filteredArray.length === 0) {
+            renderLedgerTable();
+            if (filteredItems.length === 0) {
                 showSystemModal("Filter Alert", "No registered ledger line matches that description context string.");
             }
         }
 
         function clearDescriptionFilter() {
+            currentPage = 1;
             document.getElementById('descSearchQuery').value = "";
-            renderLedgerTable(globallyFetchedItems);
+            filteredItems = [...globallyFetchedItems];
+            renderLedgerTable();
         }
 
         async function initRegistryDashboard() {
@@ -596,7 +656,7 @@
             
             applyFormUIRestrictions(hasRegistryAccess);
             await fetchDescriptionsDirectory();
-            fetchLedgerDataset(hasRegistryAccess);
+            fetchLedgerDataset();
             
             // Listen for typing events to immediately convert input to Upper Case
             document.getElementById('itemName').addEventListener('input', handleItemDescriptionChange);
@@ -617,7 +677,7 @@
             }
         }
 
-        async function fetchLedgerDataset(hasAccess) {
+        async function fetchLedgerDataset() {
             const { data, error } = await supabaseClient
                 .from('inventory')
                 .select('*')
@@ -629,19 +689,36 @@
             }
 
             globallyFetchedItems = data || [];
-            renderLedgerTable(globallyFetchedItems, hasAccess);
+            filteredItems = [...globallyFetchedItems];
+            currentPage = 1;
+            renderLedgerTable();
         }
 
-        function renderLedgerTable(items, hasAccess) {
+        function renderLedgerTable() {
             const tbody = document.getElementById('ledgerTableBody');
-            if (items.length === 0) {
+            const roleClean = String(currentUserPermissions?.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions?.product_registry_access !== false && currentUserPermissions?.inventory_access !== false);
+
+            if (filteredItems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records logged inside storage profiles.</td></tr>`;
+                updatePaginationControls(0, 0, 0);
                 return;
             }
 
+            const totalItems = filteredItems.length;
+            const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, totalItems);
+            const itemsToRender = filteredItems.slice(startIndex, endIndex);
+
             const currentActiveId = document.getElementById('itemId').value;
 
-            tbody.innerHTML = items.map((item, index) => {
+            tbody.innerHTML = itemsToRender.map((item) => {
+                const globalIndex = globallyFetchedItems.findIndex(i => i.id === item.id);
                 const disabledAttr = hasAccess ? '' : 'disabled';
                 const isSelectedClass = (currentActiveId && currentActiveId === item.id) ? 'selected-row' : '';
                 
@@ -668,12 +745,43 @@
                         </td>
                         <td>
                             <div class="action-btn-group">
-                                <button class="btn-edit" ${disabledAttr} onclick="populateFormByIndex(${index})">Edit</button>
+                                <button class="btn-edit" ${disabledAttr} onclick="populateFormByIndex(${globalIndex})">Edit</button>
                             </div>
                         </td>
                     </tr>
                 `;
             }).join('');
+
+            updatePaginationControls(startIndex + 1, endIndex, totalItems);
+        }
+
+        function updatePaginationControls(start, end, total) {
+            const infoElem = document.getElementById('paginationInfo');
+            const prevBtn = document.getElementById('prevPageBtn');
+            const nextBtn = document.getElementById('nextPageBtn');
+
+            if (total === 0) {
+                infoElem.textContent = "Showing 0 to 0 of 0 entries";
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+
+            const totalPages = Math.ceil(total / pageSize);
+            infoElem.textContent = `Showing ${start} to ${end} of ${total} entries (Page ${currentPage} of ${totalPages})`;
+
+            prevBtn.disabled = (currentPage <= 1);
+            nextBtn.disabled = (currentPage >= totalPages);
+        }
+
+        function changePage(direction) {
+            const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
+            const newPage = currentPage + direction;
+
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                renderLedgerTable();
+            }
         }
 
         function populateFormByIndex(index) {
@@ -826,10 +934,7 @@
 
             closeEditRemarksModal();
             resetFormState();
-            
-            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
-            const hasAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
-            await fetchLedgerDataset(hasAccess);
+            await fetchLedgerDataset();
         }
 
         async function executeRegistration() {
@@ -898,10 +1003,7 @@
 
             showSystemModal("Action Successful", `Successfully processed Gate Arrival and registered item "${item_code}" with ${quantity} cases.`);
             resetFormState();
-            
-            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
-            const hasAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
-            fetchLedgerDataset(hasAccess);
+            fetchLedgerDataset();
         }
 
         function resetFormState() {
@@ -921,8 +1023,8 @@
                 row.classList.remove('selected-row');
             });
 
-            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
-            const hasAccess = roleClean === 'admin' || (currentUserPermissions.product_registry_access !== false && currentUserPermissions.inventory_access !== false);
+            const roleClean = String(currentUserPermissions?.role || '').toLowerCase().trim();
+            const hasAccess = roleClean === 'admin' || (currentUserPermissions?.product_registry_access !== false && currentUserPermissions?.inventory_access !== false);
             applyFormUIRestrictions(hasAccess);
         }
 
