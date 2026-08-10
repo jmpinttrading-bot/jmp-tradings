@@ -244,6 +244,27 @@
         .btn-delete { background: #ef4444; color: white; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
         .btn-delete:hover { background: #dc2626; }
 
+        /* Ledger Row Delete Button */
+        .btn-row-delete {
+            background-color: #fee2e2;
+            color: #ef4444;
+            border: 1px solid #fca5a5;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-row-delete:hover {
+            background-color: #ef4444;
+            color: white;
+            border-color: #dc2626;
+        }
+
         .pagination-container { display: flex; align-items: center; gap: 8px; }
         .btn-page { background: #334155; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         .btn-page:hover:not(:disabled) { background: #475569; }
@@ -271,7 +292,7 @@
         .clickable-ledger-row { cursor: pointer; transition: background-color 0.2s ease; }
         .clickable-ledger-row:hover td { background-color: #f1f5f9 !important; }
 
-        /* Summary Container Section Style (Reference: ed5f7194-4ddd-41a9-8afa-ed34b5bc905c) */
+        /* Summary Container Section Style */
         .summary-section {
             margin-top: 30px;
             padding: 20px;
@@ -413,11 +434,12 @@
                                 <th>Amount (PHP)</th>
                                 <th>Ref Number</th>
                                 <th>Remarks</th>
+                                <th style="text-align: center;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="ledgerTableBody">
                             <tr>
-                                <td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td>
+                                <td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -432,7 +454,7 @@
                     </div>
                 </div>
 
-                <!-- Summary Section replicating Reference "ed5f7194-4ddd-41a9-8afa-ed34b5bc905c" -->
+                <!-- Summary Section -->
                 <div class="summary-section">
                     <table class="master-table" style="width: 60%; margin-left: auto; background: white; border: 1px solid #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                         <tbody>
@@ -526,7 +548,6 @@
             } else { window.location.href = url; }
         }
 
-        /* --- Updated Validation Logic (Checking Tally against total_qty_bal without mutating the imported docs table) --- */
         async function validateSpsicRealtime() {
             const spsicInput = document.getElementById('global_spsic');
             const globalSpsic = spsicInput.value.trim().toUpperCase();
@@ -750,11 +771,11 @@
             const paginationEl = document.getElementById('ledgerPaginationControls');
 
             if (!hasSearched) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">Please enter and search an SPSIC Number or Customer above to view ledger balances.</td></tr>`;
                 paginationEl.style.display = "none"; return;
             }
             if (items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">No records matched your query.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:30px; color:#94a3b8;">No records matched your query.</td></tr>`;
                 paginationEl.style.display = "none"; return;
             }
 
@@ -762,19 +783,28 @@
             if (currentLedgerPage > totalPages) currentLedgerPage = totalPages || 1;
             const pageSlice = items.slice((currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE, currentLedgerPage * LEDGER_ROWS_PER_PAGE);
 
+            const userRole = localStorage.getItem('userRole');
+
             tbody.innerHTML = pageSlice.map((item, index) => {
                 const globalIndex = ((currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE) + index + 1;
+                const safeCustomer = (item.customer || '').replace(/'/g, "\\'");
+                
                 return `
-                    <tr class="clickable-ledger-row" onclick="loadRowForEditing(${item.id})">
-                        <td style="text-align: center; font-weight: bold; color: #64748b;">${globalIndex}</td>
-                        <td style="font-weight: 600; color: #2563eb; text-decoration: underline; text-transform: uppercase;">${item.customer || '—'}</td>
-                        <td>${item.date || '—'}</td>
-                        <td style="font-weight: 700;">${item.quantity || 0}</td>
-                        <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase;">${item.commodity || ''}</span></td>
-                        <td>₱${parseFloat(item.price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                        <td style="font-weight: 700; color: #0f172a;">₱${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                        <td style="color: #64748b; font-weight: 600;">${item.ref_number || '—'}</td>
-                        <td style="white-space: normal; font-size:0.85rem; color:#475569; text-transform: uppercase;">${item.remarks || '—'}</td>
+                    <tr class="clickable-ledger-row">
+                        <td style="text-align: center; font-weight: bold; color: #64748b;" onclick="loadRowForEditing(${item.id})">${globalIndex}</td>
+                        <td style="font-weight: 600; color: #2563eb; text-decoration: underline; text-transform: uppercase;" onclick="loadRowForEditing(${item.id})">${item.customer || '—'}</td>
+                        <td onclick="loadRowForEditing(${item.id})">${item.date || '—'}</td>
+                        <td style="font-weight: 700;" onclick="loadRowForEditing(${item.id})">${item.quantity || 0}</td>
+                        <td onclick="loadRowForEditing(${item.id})"><span style="background:#f1f5f9; padding:4px 8px; border-radius:4px; font-size:0.8rem; text-transform: uppercase;">${item.commodity || ''}</span></td>
+                        <td onclick="loadRowForEditing(${item.id})">₱${parseFloat(item.price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td style="font-weight: 700; color: #0f172a;" onclick="loadRowForEditing(${item.id})">₱${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td style="color: #64748b; font-weight: 600;" onclick="loadRowForEditing(${item.id})">${item.ref_number || '—'}</td>
+                        <td style="white-space: normal; font-size:0.85rem; color:#475569; text-transform: uppercase;" onclick="loadRowForEditing(${item.id})">${item.remarks || '—'}</td>
+                        <td style="text-align: center;">
+                            <button type="button" class="btn-row-delete" ${userRole === 'Viewer' ? 'disabled' : ''} onclick="deleteLedgerRow(${item.id}, '${safeCustomer}')">
+                                🗑️ Delete
+                            </button>
+                        </td>
                     </tr>
                 `;
             }).join('');
@@ -783,6 +813,30 @@
             document.getElementById('ledgerPageNumberIndicator').textContent = `Page ${currentLedgerPage} of ${totalPages}`;
             document.getElementById('ledgerPrevPageBtn').disabled = (currentLedgerPage === 1);
             document.getElementById('ledgerNextPageBtn').disabled = (currentLedgerPage === totalPages);
+        }
+
+        async function deleteLedgerRow(id, customerName) {
+            if (localStorage.getItem('userRole') === 'Viewer') {
+                showSystemModal("Action Denied", "You do not have authorization parameters to delete ledger entries.");
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete the ledger entry for customer: ${customerName}?`)) {
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('spsic_ledger')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                showSystemModal("Deletion Error", "Failed to delete row entry: " + error.message);
+                return;
+            }
+
+            showSystemModal("Action Successful", "Ledger entry deleted successfully!");
+            await fetchLedgerDataset();
         }
 
         function changeLedgerPage(direction) {
@@ -809,7 +863,7 @@
                 activeSpsic = items[0].spsic_number || "";
                 document.getElementById('activeViewSpsic').value = activeSpsic;
                 
-                // Fetch the live Remaining Volume Amount (total_qty_bal) from imported docs for display comparison
+                // Fetch live Remaining Volume Amount (total_qty_bal) from imported docs
                 const { data, error } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('total_qty_bal')
@@ -838,7 +892,6 @@
             const globalCommodity = document.getElementById('global_commodity').value.trim().toUpperCase();
             const globalPrice = parseFloat(document.getElementById('global_price').value) || 0;
 
-            // Fetch target imported shipment doc to cross-check total quantity balance tally
             const { data: matchedDoc, error: checkError } = await supabaseClient
                 .from('imported_shipment_docs')
                 .select('spsic_number, item_price, total_qty_bal')
@@ -876,19 +929,16 @@
                 });
             }
 
-            // Tally Validation: Check if uploaded quantity matches or exceeds total_qty_bal target. 
             if (totalQtyToUpload > dbQtyBalance) {
                 showSystemModal("Quantity Tally Mismatch", `Upload blocked. The total batch quantity (${totalQtyToUpload}) exceeds the designated SPSIC target balance (${dbQtyBalance}). Please adjust your entries or update the SPSIC document balance to proceed.`);
                 return;
             }
 
-            // Insert directly to spsic_ledger table without modifying/deducting from imported_shipment_docs balance
             const { error: insertError } = await supabaseClient.from('spsic_ledger').insert(payload);
             if (insertError) { showSystemModal("Database Error", insertError.message); return; }
 
             showSystemModal("Action Successful", `Successfully submitted ${payload.length} records to the SPSIC ledger.`);
             
-            // Clean up and shift view to the submitted SPSIC
             document.getElementById('spsicEntryForm').reset();
             document.getElementById('global_date').value = new Date().toISOString().split('T')[0];
             

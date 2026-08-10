@@ -213,27 +213,6 @@
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; white-space: nowrap; }
         .master-table tr:hover { background-color: #f8fafc; }
 
-        /* Delete Button Action Styles */
-        .btn-delete {
-            background-color: #fee2e2;
-            color: #ef4444;
-            border: 1px solid #fca5a5;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-delete:hover {
-            background-color: #ef4444;
-            color: white;
-            border-color: #dc2626;
-        }
-
         /* Pagination Styling */
         .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 10px; }
         .pagination-info { font-size: 0.85rem; color: #64748b; font-weight: 500; }
@@ -308,7 +287,7 @@
 
         <!-- Ledger View from imported_shipment_docs -->
         <div class="card-panel">
-            <h3>Active SPSIC & Container Yards Ledger Balance</h3>
+            <h3>SPSIC Master Shipment Balances</h3>
             <div class="table-responsive">
                 <table class="master-table">
                     <thead>
@@ -318,12 +297,11 @@
                             <th>Commodity</th>
                             <th>Item Price</th>
                             <th>Total Qty Balance</th>
-                            <th style="text-align: center;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="dispoHistoryBody">
                         <tr>
-                            <td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">Loading shipment logs...</td>
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">Loading shipment logs...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -446,7 +424,7 @@
             uniqueSpsicList = [...new Set(shipmentsCache.map(item => item.spsic_number).filter(Boolean))];
 
             if (uniqueSpsicList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">No shipment docs found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">No shipment docs found.</td></tr>`;
                 return;
             }
 
@@ -508,14 +486,12 @@
             const paginatedItems = shipmentsCache.slice(startIndex, endIndex);
 
             if (paginatedItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">No data configuration verified.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">No data configuration verified.</td></tr>`;
                 document.getElementById('paginationInfo').innerText = "Showing 0 to 0 of 0 logs";
                 document.getElementById('btnPrev').disabled = true;
                 document.getElementById('btnNext').disabled = true;
                 return;
             }
-
-            const userRole = localStorage.getItem('userRole');
 
             tbody.innerHTML = paginatedItems.map(row => {
                 const displayBal = row.total_qty_bal !== null && row.total_qty_bal !== undefined
@@ -529,7 +505,6 @@
                 const rawCommodity = row.commodity || '';
                 const cleanCommodity = rawCommodity.replace(/-[123]CV/g, '').trim();
                 const arrivalDate = row.storage_arrival_date ? row.storage_arrival_date : 'N/A';
-                const spsicSafe = row.spsic_number ? row.spsic_number.replace(/'/g, "\\'") : '';
 
                 return `
                     <tr>
@@ -538,11 +513,6 @@
                         <td>${cleanCommodity || 'N/A'}</td>
                         <td style="font-weight:600; color:#0f172a;">${displayPrice}</td>
                         <td style="font-weight:600; color:#2563eb;">${displayBal}</td>
-                        <td style="text-align: center;">
-                            <button class="btn-delete" ${userRole === 'Viewer' ? 'disabled' : ''} onclick="deleteSpsicRow('${spsicSafe}')">
-                                🗑️ Delete
-                            </button>
-                        </td>
                     </tr>
                 `;
             }).join('');
@@ -550,35 +520,6 @@
             document.getElementById('paginationInfo').innerText = `Showing ${startIndex + 1} to ${endIndex} of ${totalItems} logs`;
             document.getElementById('btnPrev').disabled = currentPage === 1;
             document.getElementById('btnNext').disabled = currentPage === totalPages;
-        }
-
-        async function deleteSpsicRow(spsicNumber) {
-            if (localStorage.getItem('userRole') === 'Viewer') {
-                showSystemModal("Action Denied", "You do not have authorization to delete records.");
-                return;
-            }
-
-            if (!spsicNumber) {
-                showSystemModal("Delete Failed", "Invalid SPSIC record target.");
-                return;
-            }
-
-            if (!confirm(`Are you sure you want to delete the record for SPSIC Number: ${spsicNumber}?`)) {
-                return;
-            }
-
-            const { error } = await supabaseClient
-                .from('imported_shipment_docs')
-                .delete()
-                .eq('spsic_number', spsicNumber);
-
-            if (error) {
-                showSystemModal("Deletion Error", "Could not remove record: " + error.message);
-                return;
-            }
-
-            showSystemModal("Record Removed", `SPSIC record ${spsicNumber} deleted successfully.`);
-            await fetchShipmentData();
         }
 
         function changePage(direction) {
