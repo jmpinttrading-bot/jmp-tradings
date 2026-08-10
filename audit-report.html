@@ -12,7 +12,8 @@
         /* --- Navbar Styles --- */
         .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; font-family: 'Inter', sans-serif; }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+        .nav-title img { height: 24px; width: auto; object-fit: contain; }
         .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
         .logout-btn:hover { background-color: #dc2626; }
         .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
@@ -120,7 +121,10 @@
 
     <nav class="navbar">
         <div class="top-row">
-            <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
+            <div class="nav-title">
+                <img src="jmp.jpg" alt="JMP Logo" id="navLogo">
+                JMP INTERNATIONAL FISH TRADING
+            </div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
@@ -205,7 +209,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI62A5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentAdminId = null;
@@ -451,6 +455,9 @@
             currentActiveFilteredList.forEach(item => {
                 const operatorName = item.processed_by ? item.processed_by.replace('@jmp-corporate.local', '') : 'System';
                 const runningBal = balanceMap.get(item.id) ?? 0;
+                
+                // Explicitly format size as a text string so Excel won't interpret fractions as dates
+                const sizeVal = item.sizes ? `="${String(item.sizes).replace(/"/g, '""')}"` : '—';
 
                 csvRows.push([
                     item.storage_facility || '—',
@@ -459,7 +466,7 @@
                     item.sales_order_no || '—',
                     item.item_code || '',
                     item.item_name || '',
-                    item.sizes || '—',
+                    sizeVal,
                     item.qty_per_pallet || '—',
                     item.total_pallet || '—',
                     item.in_quantity || '0',
@@ -471,7 +478,13 @@
                 ]);
             });
 
-            let csvContent = "\uFEFF" + csvRows.map(e => e.map(val => `"${String(val).replace(/"/g, '""')}"`).join(",")).join("\n");
+            let csvContent = "\uFEFF" + csvRows.map(e => e.map(val => {
+                // Keep pre-formatted Excel formula strings intact, wrap standard strings with quotes
+                if (typeof val === 'string' && val.startsWith('=')) {
+                    return val;
+                }
+                return `"${String(val).replace(/"/g, '""')}"`;
+            }).join(",")).join("\n");
             
             let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             let url = URL.createObjectURL(blob);
