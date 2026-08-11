@@ -538,10 +538,19 @@
         // Automatically map Sizes and calculate dynamic SKUs when Item Description changes
         function handleItemDescriptionChange() {
             const inputField = document.getElementById('itemName');
-            inputField.value = inputField.value.trim().toUpperCase(); // Force transformation to upper case
             
-            const selectedDesc = inputField.value;
-            const matchedRow = fetchedDescriptions.find(d => (d.item_description || '').toUpperCase() === selectedDesc);
+            // Retain cursor tracking positions so layout text entries don't jump while typing spaces
+            const cursorPosition = inputField.selectionStart;
+            
+            // Transmit text inputs straight into upper-case parameters WITHOUT trimming active trailing space characters
+            inputField.value = inputField.value.toUpperCase();
+            
+            // Restore selection index tracking
+            inputField.setSelectionRange(cursorPosition, cursorPosition);
+            
+            // Extract clean values solely for the directory structural cross-check lookup
+            const selectedDesc = inputField.value.trim();
+            const matchedRow = fetchedDescriptions.find(d => (d.item_description || '').toUpperCase().trim() === selectedDesc);
             
             if (matchedRow) {
                 document.getElementById('itemSizes').value = matchedRow.sizes || '';
