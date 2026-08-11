@@ -260,10 +260,28 @@
         .btn-action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; gap: 10px; flex-wrap: wrap; }
         .btn-add { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: background 0.2s; }
         .btn-add:hover { background: #059669; }
-        .btn-delete { background: #ef4444; color: white; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+        
+        .btn-delete { background: #ef4444; color: white; border: none; width: 32px; height: 32px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
         .btn-delete:hover { background: #dc2626; }
 
-        /* Ledger Row Delete Button */
+        /* Dynamic Row Action Controls */
+        .btn-row-edit {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            height: auto;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            margin: 0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s ease;
+        }
+        .btn-row-edit:hover {
+            background-color: #1d4ed8;
+        }
+
         .btn-row-delete {
             background-color: #fee2e2;
             color: #ef4444;
@@ -309,7 +327,6 @@
         .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
         .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
         
-        /* Removed row click styling / highlights */
         .clickable-ledger-row { cursor: pointer; }
 
         /* Summary Container Section Style */
@@ -785,7 +802,7 @@
             renderActivePageRows();
             document.getElementById('spsicEntryForm').scrollIntoView({ behavior: 'smooth' });
             
-            showSystemModal("Data Loaded", `Ledger record for entry #${id} has been moved to the workspace above.`);
+            showSystemModal("Data Loaded", `Ledger record for customer "${targetItem.customer || 'N/A'}" has been moved to the workspace above.`);
         }
 
         async function initPriceDashboard() {
@@ -859,7 +876,7 @@
                         <td style="color: #64748b; font-weight: 600;" onclick="loadRowForEditing('${item.id}')">${item.ref_number || '—'}</td>
                         <td style="white-space: normal; font-size:0.85rem; color:#475569; text-transform: uppercase;" onclick="loadRowForEditing('${item.id}')">${item.remarks || '—'}</td>
                         <td style="text-align: center; display: flex; gap: 6px; justify-content: center; align-items: center;">
-                            <button type="button" class="btn-search" style="height: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0;" 
+                            <button type="button" class="btn-row-edit" 
                                 onclick="event.stopPropagation(); loadRowForEditing('${item.id}');">
                                 ✏️ Edit
                             </button>
