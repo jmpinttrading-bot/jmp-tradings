@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OR Dispo Ledger Entry - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS Library for Excel Export Generation -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
@@ -321,6 +323,8 @@
         .btn-search:hover { background: #1e293b; }
         .btn-search.clear-filter { background: #64748b; }
         .btn-search.clear-filter:hover { background: #475569; }
+        .btn-excel { background: #16a34a; color: white; border: none; height: 38px; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: background 0.2s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-excel:hover { background: #15803d; }
 
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; }
         .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; table-layout: auto; }
@@ -457,6 +461,7 @@
                         <input type="text" id="descSearchQuery" placeholder="Search SPSIC / Customer...">
                         <button type="button" class="btn-search" onclick="filterLedger()">Search</button>
                         <button type="button" class="btn-search clear-filter" onclick="clearFilter()">Reset</button>
+                        <button type="button" class="btn-excel" onclick="exportLedgerToExcel()">📊 Export Excel</button>
                     </div>
                 </div>
                 
@@ -1063,6 +1068,90 @@
             hasSearched = false; filteredItems = []; currentLedgerPage = 1;
             renderLedgerTable([]);
             updateLedgerSummary([]);
+        }
+
+        /* --- Excel Generation and Structured Matrix Export Engine --- */
+        function exportLedgerToExcel() {
+            if (!hasSearched || filteredItems.length === 0) {
+                showSystemModal("Export Interrupted", "There is no active filtered dataset selected to generate an Excel sheet report. Please execute a search lookup query first.");
+                return;
+            }
+
+            const activeSpsic = document.getElementById('activeViewSpsic').value || "ALL";
+            const totalQtyText = document.getElementById('summaryTotalQty').textContent || "0";
+            const totalAmountText = document.getElementById('summaryTotalAmount').textContent || "₱0.00";
+            const remainingQtyText = document.getElementById('summaryRemainingQty').textContent || "0";
+            const remainingAmountText = document.getElementById('summaryRemainingAmount').textContent || "₱0.00";
+            const totalSalesText = document.getElementById('summaryTotalSalesFinal').textContent || "₱0.00";
+
+            // Define worksheet structural rows matching requested layout matrix
+            const matrixData = [
+                ["JMP INTERNATIONAL FISH TRADING", "", "", "", "", "", "", "", ""], // Row 1
+                ["", "", "", "", "", "", "", "", ""],                             // Row 2 (Blank padding)
+                [`SPSIC Reference: ${activeSpsic}`, "", "", "", "", "", "", "", ""], // Row 3
+                [`Total Balance: ${totalQtyText}`, "", "", "", "", "", "", "", ""],  // Row 4
+                [
+                    "#", 
+                    "Customer", 
+                    "Date", 
+                    "Quantity", 
+                    "Commodity", 
+                    "Price (PHP)", 
+                    "Amount (PHP)", 
+                    "Ref Number", 
+                    "Remarks"
+                ] // Row 5 (Headers)
+            ];
+
+            // Build dynamic collection dataset rows starting at index 6
+            filteredItems.forEach((item, index) => {
+                matrixData.push([
+                    index + 1,
+                    (item.customer || "").toUpperCase(),
+                    item.date || "",
+                    parseFloat(item.quantity) || 0,
+                    (item.commodity || "").toUpperCase(),
+                    parseFloat(item.price) || 0,
+                    parseFloat(item.amount) || 0,
+                    item.ref_number || "",
+                    (item.remarks || "").toUpperCase()
+                ]);
+            });
+
+            // Append standard footer rows as requested
+            matrixData.push(["OR VOLUME & SALES", "", "", totalQtyText, "", "", totalAmountText, "", ""]);
+            matrixData.push(["REMAINING VOLUME AMOUNT", "", "", remainingQtyText, "", "", remainingAmountText, "", ""]);
+            matrixData.push(["TOTAL SALES", "", "", "-", "", "", totalSalesText, "", ""]);
+
+            // Build structural workbook
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(matrixData);
+
+            // Execute explicit grid cell column span merge rules to comply with parameters
+            ws['!merges'] = [
+                { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, // Row 1 Company Name
+                { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } }, // Row 3 Center-aligned SPSIC Reference Target
+                { s: { r: 3, c: 0 }, e: { r: 3, c: 8 } }  // Row 4 Center-aligned Total Balance Target
+            ];
+
+            // Assign standard cell width tracking parameters
+            ws['!cols'] = [
+                { wch: 6 },  // #
+                { wch: 28 }, // Customer
+                { wch: 14 }, // Date
+                { wch: 14 }, // Quantity
+                { wch: 16 }, // Commodity
+                { wch: 14 }, // Price (PHP)
+                { wch: 16 }, // Amount (PHP)
+                { wch: 16 }, // Ref Number
+                { wch: 22 }  // Remarks
+            ];
+
+            XLSX.utils.book_append_sheet(wb, ws, "Ledger Balance Report");
+            
+            // Generate system timestamp for standard naming structure filenames
+            const fileTimestamp = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `JMP_Ledger_Balance_${activeSpsic.replace(/[^a-zA-Z0-9]/g, '_')}_${fileTimestamp}.xlsx`);
         }
 
         function setupSessionCrossCheckListener() {
