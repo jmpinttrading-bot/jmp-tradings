@@ -783,7 +783,9 @@
             if (currentLedgerPage > totalPages) currentLedgerPage = totalPages || 1;
             const pageSlice = items.slice((currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE, currentLedgerPage * LEDGER_ROWS_PER_PAGE);
 
-            const userRole = localStorage.getItem('userRole');
+            // Correct validation against database profile configuration instead of localStorage
+            const userRole = currentUserPermissions ? String(currentUserPermissions.role || '').trim() : '';
+            const isViewer = (userRole === 'Viewer');
 
             tbody.innerHTML = pageSlice.map((item, index) => {
                 const globalIndex = ((currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE) + index + 1;
@@ -800,8 +802,11 @@
                         <td style="font-weight: 700; color: #0f172a;" onclick="loadRowForEditing(${item.id})">₱${parseFloat(item.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                         <td style="color: #64748b; font-weight: 600;" onclick="loadRowForEditing(${item.id})">${item.ref_number || '—'}</td>
                         <td style="white-space: normal; font-size:0.85rem; color:#475569; text-transform: uppercase;" onclick="loadRowForEditing(${item.id})">${item.remarks || '—'}</td>
-                        <td style="text-align: center;">
-                            <button type="button" class="btn-row-delete" ${userRole === 'Viewer' ? 'disabled' : ''} onclick="deleteLedgerRow(${item.id}, '${safeCustomer}')">
+                        <td style="text-align: center; display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <button type="button" class="btn-search" style="height: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0;" onclick="loadRowForEditing(${item.id})">
+                                ✏️ Edit
+                            </button>
+                            <button type="button" class="btn-row-delete" ${isViewer ? 'disabled' : ''} onclick="deleteLedgerRow(${item.id}, '${safeCustomer}')">
                                 🗑️ Delete
                             </button>
                         </td>
@@ -816,7 +821,8 @@
         }
 
         async function deleteLedgerRow(id, customerName) {
-            if (localStorage.getItem('userRole') === 'Viewer') {
+            const userRole = currentUserPermissions ? String(currentUserPermissions.role || '').trim() : '';
+            if (userRole === 'Viewer') {
                 showSystemModal("Action Denied", "You do not have authorization parameters to delete ledger entries.");
                 return;
             }
