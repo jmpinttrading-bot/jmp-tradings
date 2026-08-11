@@ -341,9 +341,6 @@
             background-color: #f8fafc;
             border-radius: 8px;
         }
-        .summary-section table {
-            margin-top: 60px; /* Added padding space before summary headers on layout */
-        }
 
         @media (max-width: 992px) {
             .form-grid { grid-template-columns: 1fr; }
@@ -530,7 +527,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3IDE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let currentAdminId = null;
@@ -1120,11 +1117,6 @@
                     (item.remarks || "").toUpperCase()
                 ]);
             });
-
-            // Insert 3 blank structural alignment padding rows before calculation indicators
-            matrixData.push(["", "", "", "", "", "", "", "", ""]);
-            matrixData.push(["", "", "", "", "", "", "", "", ""]);
-            matrixData.push(["", "", "", "", "", "", "", "", ""]);
 
             // Append standard footer rows as requested
             matrixData.push(["OR VOLUME & SALES", "", "", totalQtyText, "", "", totalAmountText, "", ""]);
