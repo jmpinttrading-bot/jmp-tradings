@@ -783,7 +783,6 @@
             if (currentLedgerPage > totalPages) currentLedgerPage = totalPages || 1;
             const pageSlice = items.slice((currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE, currentLedgerPage * LEDGER_ROWS_PER_PAGE);
 
-            // Correct validation against database profile configuration instead of localStorage
             const userRole = currentUserPermissions ? String(currentUserPermissions.role || '').trim() : '';
             const isViewer = (userRole === 'Viewer');
 
@@ -803,10 +802,12 @@
                         <td style="color: #64748b; font-weight: 600;" onclick="loadRowForEditing(${item.id})">${item.ref_number || '—'}</td>
                         <td style="white-space: normal; font-size:0.85rem; color:#475569; text-transform: uppercase;" onclick="loadRowForEditing(${item.id})">${item.remarks || '—'}</td>
                         <td style="text-align: center; display: flex; gap: 6px; justify-content: center; align-items: center;">
-                            <button type="button" class="btn-search" style="height: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0;" onclick="loadRowForEditing(${item.id})">
+                            <button type="button" class="btn-search" style="height: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0;" 
+                                onclick="event.stopPropagation(); loadRowForEditing(${item.id});">
                                 ✏️ Edit
                             </button>
-                            <button type="button" class="btn-row-delete" ${isViewer ? 'disabled' : ''} onclick="deleteLedgerRow(${item.id}, '${safeCustomer}')">
+                            <button type="button" class="btn-row-delete" ${isViewer ? 'disabled' : ''} 
+                                onclick="event.stopPropagation(); deleteLedgerRow(${item.id}, '${safeCustomer}');">
                                 🗑️ Delete
                             </button>
                         </td>
