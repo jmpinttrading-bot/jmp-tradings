@@ -354,10 +354,7 @@
                     
                     <div class="form-group">
                         <label>Item Description</label>
-                        <input type="text" id="itemName" list="itemOptions" required placeholder="Type to search or select..." onchange="handleItemDescriptionChange()">
-                        <datalist id="itemOptions">
-                            <!-- Populated dynamically from descriptions table -->
-                        </datalist>
+                        <input type="text" id="itemName" required placeholder="Enter Item Description..." onchange="handleItemDescriptionChange()">
                     </div>
 
                     <div class="form-group">
@@ -533,11 +530,6 @@
 
                 if (error) throw error;
                 fetchedDescriptions = data || [];
-                
-                const datalist = document.getElementById('itemOptions');
-                datalist.innerHTML = fetchedDescriptions.map(d => 
-                    `<option value="${(d.item_description || '').toUpperCase()}">`
-                ).join('');
             } catch (err) {
                 console.error("Error fetching descriptions registry system data:", err.message);
             }
