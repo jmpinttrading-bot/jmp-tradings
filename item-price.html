@@ -1078,18 +1078,20 @@
             }
 
             const activeSpsic = document.getElementById('activeViewSpsic').value || "ALL";
-            const totalQtyText = document.getElementById('summaryTotalQty').textContent || "0";
-            const totalAmountText = document.getElementById('summaryTotalAmount').textContent || "₱0.00";
-            const remainingQtyText = document.getElementById('summaryRemainingQty').textContent || "0";
-            const remainingAmountText = document.getElementById('summaryRemainingAmount').textContent || "₱0.00";
-            const totalSalesText = document.getElementById('summaryTotalSalesFinal').textContent || "₱0.00";
+            
+            // Extract and parse numeric raw balances from DOM cleanly
+            const totalQtyVal = parseFloat(document.getElementById('summaryTotalQty').textContent.replace(/,/g, '')) || 0;
+            const totalAmountVal = parseFloat(document.getElementById('summaryTotalAmount').textContent.replace(/[₱,]/g, '')) || 0;
+            const remainingQtyVal = parseFloat(document.getElementById('summaryRemainingQty').textContent.replace(/,/g, '')) || 0;
+            const remainingAmountVal = parseFloat(document.getElementById('summaryRemainingAmount').textContent.replace(/[₱,]/g, '')) || 0;
+            const totalSalesVal = parseFloat(document.getElementById('summaryTotalSalesFinal').textContent.replace(/[₱,]/g, '')) || 0;
 
             // Define worksheet structural rows matching requested layout matrix
             const matrixData = [
                 ["JMP INTERNATIONAL FISH TRADING", "", "", "", "", "", "", "", ""], // Row 1
                 ["", "", "", "", "", "", "", "", ""],                             // Row 2 (Blank padding)
                 [`SPSIC Reference: ${activeSpsic}`, "", "", "", "", "", "", "", ""], // Row 3
-                [`Total Balance: ${totalQtyText}`, "", "", "", "", "", "", "", ""],  // Row 4
+                [`Total Balance: ${totalQtyVal.toLocaleString()}`, "", "", "", "", "", "", "", ""],  // Row 4
                 [
                     "#", 
                     "Customer", 
@@ -1106,26 +1108,63 @@
             // Build dynamic collection dataset rows starting at index 6
             filteredItems.forEach((item, index) => {
                 matrixData.push([
-                    index + 3,
+                    index + 1,
                     (item.customer || "").toUpperCase(),
                     item.date || "",
-                    parseFloat(item.quantity) || 0,
+                    parseFloat(item.quantity) || 0, // Injected as numeric type
                     (item.commodity || "").toUpperCase(),
-                    parseFloat(item.price) || 0,
-                    parseFloat(item.amount) || 0,
+                    parseFloat(item.price) || 0,    // Injected as numeric type
+                    parseFloat(item.amount) || 0,   // Injected as numeric type
                     item.ref_number || "",
                     (item.remarks || "").toUpperCase()
                 ]);
             });
 
-            // Append standard footer rows as requested
-            matrixData.push(["OR VOLUME & SALES", "", "", totalQtyText, "", "", totalAmountText, "", ""]);
-            matrixData.push(["REMAINING VOLUME AMOUNT", "", "", remainingQtyText, "", "", remainingAmountText, "", ""]);
-            matrixData.push(["TOTAL SALES", "", "", "-", "", "", totalSalesText, "", ""]);
+            // ADDING 3 BLANK ROWS BEFORE THE SUMMARY SECTION
+            matrixData.push(["", "", "", "", "", "", "", "", ""]);
+            matrixData.push(["", "", "", "", "", "", "", "", ""]);
+            matrixData.push(["", "", "", "", "", "", "", "", ""]);
+
+            // Append standard footer rows using numeric values for accurate formatting
+            matrixData.push(["OR VOLUME & SALES", "", "", totalQtyVal, "", "", totalAmountVal, "", ""]);
+            matrixData.push(["REMAINING VOLUME AMOUNT", "", "", remainingQtyVal, "", "", remainingAmountVal, "", ""]);
+            matrixData.push(["TOTAL SALES", "", "", "-", "", "", totalSalesVal, "", ""]);
 
             // Build structural workbook
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(matrixData);
+
+            // Loop through generated cells to assign exact Excel formats properties
+            for (let cellRef in ws) {
+                if (cellRef[0] === '!') continue; // Skip configuration keys
+                
+                const cell = ws[cellRef];
+                const colIdx = cellRef.replace(/[0-9]/g, ''); // Get column character string (e.g. 'D')
+                const rowIdx = parseInt(cellRef.replace(/[^0-9]/g, ''), 10); // Get numeric row position
+
+                // Process cell rules if type is numeric and falls beneath the header layout (Row 5)
+                if (cell.t === 'n' && rowIdx > 5) {
+                    if (colIdx === 'D') {
+                        cell.z = '#,##0'; // Quantities format rule
+                    } else if (colIdx === 'F' || colIdx === 'G') {
+                        cell.z = '#,##0.00'; // Currencies/Prices format rule
+                    }
+                }
+            }
+
+            // Explicitly force number formats onto the exact coordinates of the bottom footer blocks
+            const lastRowIdx = matrixData.length;
+            
+            // Target Row: OR VOLUME & SALES
+            if (ws[`D${lastRowIdx - 2}`]) ws[`D${lastRowIdx - 2}`].z = '#,##0';
+            if (ws[`G${lastRowIdx - 2}`]) ws[`G${lastRowIdx - 2}`].z = '#,##0.00';
+            
+            // Target Row: REMAINING VOLUME AMOUNT
+            if (ws[`D${lastRowIdx - 1}`]) ws[`D${lastRowIdx - 1}`].z = '#,##0';
+            if (ws[`G${lastRowIdx - 1}`]) ws[`G${lastRowIdx - 1}`].z = '#,##0.00';
+            
+            // Target Row: TOTAL SALES
+            if (ws[`G${lastRowIdx}`]) ws[`G${lastRowIdx}`].z = '#,##0.00';
 
             // Execute explicit grid cell column span merge rules to comply with parameters
             ws['!merges'] = [
