@@ -43,7 +43,7 @@
         .table-header-wrapper h4 { font-size: 1.1rem; color: #0f172a; font-weight: 700; }
         .search-box-container { display: flex; gap: 10px; align-items: center; }
         
-        /* Dropdown Styling */
+        /* Dropdown/Input Styling */
         .dropdown-select { height: 38px; width: 280px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background-color: white; color: #1e293b; outline: none; }
         .dropdown-select:focus { border-color: #ee964b; }
         
@@ -97,6 +97,7 @@
         @media (max-width: 768px) {
             .table-header-wrapper { flex-direction: column; align-items: flex-start; gap: 12px; }
             .search-box-container { width: 100%; flex-wrap: wrap; }
+            .search-box-container .combobox-wrapper { width: 100% !important; }
             .search-box-container .dropdown-select { width: 100%; }
         }
     </style>
@@ -139,11 +140,13 @@
             <div class="table-header-wrapper">
                 <h4>Disposition Ledger Data Pipeline</h4>
                 <div class="search-box-container">
-                    <select id="salesSearchQuery" class="dropdown-select" onchange="executeSearchFilter()">
-                        <option value="">-- Select SPSIC Number --</option>
-                    </select>
+                    <div class="combobox-wrapper" style="position: relative; width: 280px;">
+                        <input type="text" id="salesComboboxInput" class="dropdown-select" placeholder="Select or Type SPSIC Number..." oninput="filterComboboxOptions()" onclick="toggleComboboxDropdown(true)" autocomplete="off">
+                        <div id="comboboxDropdownList" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 6px; max-height: 200px; overflow-y: auto; z-index: 1010; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                            <!-- Dynamic dropdown elements inject here -->
+                        </div>
+                    </div>
                     <button type="button" class="btn-action clear-filter" onclick="resetSearchFilter()">Reset</button>
-                    
                     <button type="button" class="btn-action" style="background-color: #2563eb;" onclick="verifyNavigationPrivilege('sales_invoice_access', 'uploaded-invoice.html')">Uploaded Invoices ↗</button>
                 </div>
             </div>
@@ -206,6 +209,7 @@
         let originalLedgerDataset = [];
         let workingFilteredDataset = [];
         let isSearchPerformed = false; 
+        let activeComboboxValue = "";
         
         let selectedRecordIds = new Set();
         
@@ -247,45 +251,88 @@
                 return;
             }
 
-            await fetchLedgerDataset(true); // Added await here to ensure data is fetched before populating dropdown
+            await fetchLedgerDataset(true); 
             populateSpsicDropdown(); 
         }
 
-        // Populates the dropdown menu with unique spsic_numbers where status is empty, null, or ongoing
+        // Populates and sets up custom combobox architecture
         function populateSpsicDropdown() {
-            const dropdown = document.getElementById('salesSearchQuery');
-            const currentSelectedValue = dropdown.value;
+            const inputField = document.getElementById('salesComboboxInput');
             
-            // Filter the full dataset for items where status isn't marked final 'DONE / COMPLETE'
             const filteredForActiveWorkflow = originalLedgerDataset.filter(item => {
                 const cleanedStatus = String(item.status || '').toUpperCase().trim();
                 return cleanedStatus !== 'DONE / COMPLETE';
             });
 
-            // Map out the spsic_number strings and reduce down to unique entries
             const uniqueSpsicNumbers = [...new Set(filteredForActiveWorkflow
                 .map(item => item.spsic_number)
                 .filter(num => num && num.trim() !== '')
             )];
 
-            // Clear previous menu list options and preserve initial placeholder
-            dropdown.innerHTML = '<option value="">-- Select SPSIC Number --</option>';
+            renderComboboxRows(uniqueSpsicNumbers);
 
-            // Generate structural options elements
-            uniqueSpsicNumbers.forEach(spsicNum => {
-                const opt = document.createElement('option');
-                opt.value = spsicNum;
-                opt.textContent = spsicNum;
-                dropdown.appendChild(opt);
+            // Handle global clicks out of element box
+            document.removeEventListener('click', handleGlobalClick);
+            document.addEventListener('click', handleGlobalClick);
+        }
+
+        function handleGlobalClick(e) {
+            const inputField = document.getElementById('salesComboboxInput');
+            if (!e.target.closest('.combobox-wrapper')) {
+                toggleComboboxDropdown(false);
+                if (!activeComboboxValue) {
+                    inputField.value = "";
+                } else {
+                    inputField.value = activeComboboxValue;
+                }
+            }
+        }
+
+        function renderComboboxRows(itemsList) {
+            const dropdownList = document.getElementById('comboboxDropdownList');
+            if (itemsList.length === 0) {
+                dropdownList.innerHTML = '<div style="padding: 10px; color: #94a3b8; font-size: 0.9rem; text-align: center;">No active SPSIC found</div>';
+                return;
+            }
+
+            dropdownList.innerHTML = itemsList.map(num => `
+                <div class="combobox-item-option" 
+                     style="padding: 10px 12px; cursor: pointer; font-size: 0.9rem; color: #1e293b; transition: background 0.15s;"
+                     onclick="selectComboboxOption('${num}')"
+                     onmouseover="this.style.backgroundColor='#f1f5f9'"
+                     onmouseout="this.style.backgroundColor='transparent'">
+                    ${num}
+                </div>
+            `).join('');
+        }
+
+        function filterComboboxOptions() {
+            toggleComboboxDropdown(true);
+            const inputVal = document.getElementById('salesComboboxInput').value.toLowerCase().trim();
+            
+            const filteredForActiveWorkflow = originalLedgerDataset.filter(item => {
+                const cleanedStatus = String(item.status || '').toUpperCase().trim();
+                return cleanedStatus !== 'DONE / COMPLETE';
             });
 
-            // Re-apply the selected value if it still exists in the refreshed options list
-            if (uniqueSpsicNumbers.includes(currentSelectedValue)) {
-                dropdown.value = currentSelectedValue;
-            } else if (currentSelectedValue && !uniqueSpsicNumbers.includes(currentSelectedValue)) {
-                // If the currently filtered SPSIC number has no more ongoing items, clear the table display
-                resetSearchFilter();
-            }
+            const uniqueSpsicNumbers = [...new Set(filteredForActiveWorkflow
+                .map(item => item.spsic_number)
+                .filter(num => num && num.trim() !== '')
+            )];
+
+            const matches = uniqueSpsicNumbers.filter(num => num.toLowerCase().includes(inputVal));
+            renderComboboxRows(matches);
+        }
+
+        function toggleComboboxDropdown(show) {
+            document.getElementById('comboboxDropdownList').style.display = show ? 'block' : 'none';
+        }
+
+        function selectComboboxOption(val) {
+            activeComboboxValue = val;
+            document.getElementById('salesComboboxInput').value = val;
+            toggleComboboxDropdown(false);
+            executeSearchFilter();
         }
 
         async function fetchLedgerDataset(isInitialInit = false) {
@@ -304,7 +351,7 @@
             // Sync structural arrays and map cloud response payload structure
             originalLedgerDataset = (data || []).map(record => ({
                 ...record,
-                calculatedStatus: record.status || 'ONGOING' // Default fallback status configuration
+                calculatedStatus: record.status || 'ONGOING' 
             }));
             
             if (isInitialInit) {
@@ -314,12 +361,11 @@
                 activePage = 1;
                 renderInvoiceTable();
             } else {
-                // Preserve current active drop-down option validation value parameters
-                const dropdownValue = document.getElementById('salesSearchQuery').value;
-                if (isSearchPerformed && dropdownValue) {
-                    workingFilteredDataset = originalLedgerDataset.filter(item => 
-                        (item.spsic_number || '') === dropdownValue
-                    );
+                if (isSearchPerformed && activeComboboxValue) {
+                    // Extract, filter match, and apply alphanumeric sorting sequence based onto "REF NUMBER" column
+                    workingFilteredDataset = originalLedgerDataset
+                        .filter(item => (item.spsic_number || '') === activeComboboxValue)
+                        .sort((a, b) => String(a.ref_number || '').localeCompare(String(b.ref_number || ''), undefined, {numeric: true, sensitivity: 'base'}));
                 }
                 renderInvoiceTable();
             }
@@ -439,7 +485,7 @@
                 paginationEl.style.display = "none";
                 trackerEl.textContent = "Showing 0 records";
                 referenceWrapper.style.display = "none";
-                saveBtn.disabled = false; // Allow saving if user just shifted a row state to DONE / COMPLETE
+                saveBtn.disabled = false; 
                 return;
             }
 
@@ -499,27 +545,28 @@
         }
 
         function executeSearchFilter() {
-            const dropdownValue = document.getElementById('salesSearchQuery').value;
-            
-            if (!dropdownValue) {
+            if (!activeComboboxValue) {
                 workingFilteredDataset = [];
                 isSearchPerformed = false;
             } else {
                 isSearchPerformed = true;
-                workingFilteredDataset = originalLedgerDataset.filter(item => 
-                    (item.spsic_number || '') === dropdownValue
-                );
+                // Pull active subsets matching target choice, ordering explicitly by ref_number property structures via natural numeric sort
+                workingFilteredDataset = originalLedgerDataset
+                    .filter(item => (item.spsic_number || '') === activeComboboxValue)
+                    .sort((a, b) => String(a.ref_number || '').localeCompare(String(b.ref_number || ''), undefined, {numeric: true, sensitivity: 'base'}));
             }
             activePage = 1;
             renderInvoiceTable();
         }
 
         function resetSearchFilter() {
-            document.getElementById('salesSearchQuery').value = '';
+            activeComboboxValue = "";
+            document.getElementById('salesComboboxInput').value = '';
             workingFilteredDataset = [];
             isSearchPerformed = false;
             activePage = 1;
             renderInvoiceTable();
+            populateSpsicDropdown(); 
         }
 
         function movePage(direction) {
