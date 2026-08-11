@@ -112,6 +112,13 @@
             margin-bottom: 20px;
             line-height: 1.5;
         }
+        .modal-btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            width: 100%;
+        }
         .modal-btn { 
             background: #0b2545; 
             color: white; 
@@ -120,12 +127,24 @@
             border-radius: 6px; 
             cursor: pointer; 
             font-weight: bold; 
-            margin-top: 15px; 
             width: 100%; 
             max-width: 150px; 
         }
         .modal-btn:hover {
             background: #11355e;
+        }
+        .modal-btn.btn-cancel {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        .modal-btn.btn-cancel:hover {
+            background: #cbd5e1;
+        }
+        .modal-btn.btn-danger {
+            background: #ef4444;
+        }
+        .modal-btn.btn-danger:hover {
+            background: #dc2626;
         }
 
         /* --- Workspace Content Styles --- */
@@ -319,7 +338,9 @@
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Restricted</h4>
             <p id="restrictionModalMessage">You do not possess the dynamic authorization privileges needed for this module pipeline.</p>
-            <button class="modal-btn" id="restrictionModalBtn" onclick="closeRestrictionModal()">Acknowledge</button>
+            <div class="modal-btn-row" id="modalBtnContainer">
+                <button class="modal-btn" id="restrictionModalBtn" onclick="closeRestrictionModal()">Acknowledge</button>
+            </div>
         </div>
     </div>
 
@@ -508,17 +529,50 @@
             document.getElementById('restrictionModalTitle').textContent = title;
             document.getElementById('restrictionModalMessage').textContent = message;
             
-            const modalBtn = document.getElementById('restrictionModalBtn');
+            const btnContainer = document.getElementById('modalBtnContainer');
+            btnContainer.innerHTML = '';
+            
+            const ackBtn = document.createElement('button');
+            ackBtn.className = 'modal-btn';
+            ackBtn.id = 'restrictionModalBtn';
+            ackBtn.textContent = 'Acknowledge';
+            
             if (focusOnCloseId) {
-                modalBtn.onclick = function() {
+                ackBtn.onclick = function() {
                     closeRestrictionModal();
                     const el = document.getElementById(focusOnCloseId);
                     if (el) el.focus();
                 };
             } else {
-                modalBtn.onclick = closeRestrictionModal;
+                ackBtn.onclick = closeRestrictionModal;
             }
+            
+            btnContainer.appendChild(ackBtn);
+            document.getElementById('accessBlockerModal').classList.add('is-visible');
+        }
 
+        function showSystemConfirmModal(title, message, onConfirmCallback) {
+            document.getElementById('restrictionModalTitle').textContent = title;
+            document.getElementById('restrictionModalMessage').textContent = message;
+            
+            const btnContainer = document.getElementById('modalBtnContainer');
+            btnContainer.innerHTML = '';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'modal-btn btn-cancel';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.onclick = closeRestrictionModal;
+            
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'modal-btn btn-danger';
+            confirmBtn.textContent = 'Confirm Delete';
+            confirmBtn.onclick = function() {
+                closeRestrictionModal();
+                onConfirmCallback();
+            };
+            
+            btnContainer.appendChild(cancelBtn);
+            btnContainer.appendChild(confirmBtn);
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
@@ -730,6 +784,8 @@
             updateBatchControls();
             renderActivePageRows();
             document.getElementById('spsicEntryForm').scrollIntoView({ behavior: 'smooth' });
+            
+            showSystemModal("Data Loaded", `Ledger record for entry #${id} has been moved to the workspace above.`);
         }
 
         async function initPriceDashboard() {
@@ -791,7 +847,6 @@
                 const globalIndex = ((currentLedgerPage - 1) * LEDGER_ROWS_PER_PAGE) + index + 1;
                 const safeCustomer = (item.customer || '').replace(/'/g, "\\'");
                 
-                /* Added quotes around ${item.id} inside onclick methods to prevent unexpected token exceptions */
                 return `
                     <tr class="clickable-ledger-row">
                         <td style="text-align: center; font-weight: bold; color: #64748b;" onclick="loadRowForEditing('${item.id}')">${globalIndex}</td>
@@ -809,7 +864,7 @@
                                 ✏️ Edit
                             </button>
                             <button type="button" class="btn-row-delete" ${isViewer ? 'disabled' : ''} 
-                                onclick="event.stopPropagation(); deleteLedgerRow('${item.id}', '${safeCustomer}');">
+                                onclick="event.stopPropagation(); confirmDeleteLedgerRow('${item.id}', '${safeCustomer}');">
                                 🗑️ Delete
                             </button>
                         </td>
@@ -823,29 +878,31 @@
             document.getElementById('ledgerNextPageBtn').disabled = (currentLedgerPage === totalPages);
         }
 
-        async function deleteLedgerRow(id, customerName) {
+        function confirmDeleteLedgerRow(id, customerName) {
             const userRole = currentUserPermissions ? String(currentUserPermissions.role || '').trim() : '';
             if (userRole === 'Viewer') {
                 showSystemModal("Action Denied", "You do not have authorization parameters to delete ledger entries.");
                 return;
             }
 
-            if (!confirm(`Are you sure you want to delete the ledger entry for customer: ${customerName}?`)) {
-                return;
-            }
+            showSystemConfirmModal(
+                "Confirm Deletion", 
+                `Are you sure you want to delete the ledger entry for customer: ${customerName}? This operation cannot be undone.`,
+                async () => {
+                    const { error } = await supabaseClient
+                        .from('spsic_ledger')
+                        .delete()
+                        .eq('id', id);
 
-            const { error } = await supabaseClient
-                .from('spsic_ledger')
-                .delete()
-                .eq('id', id);
+                    if (error) {
+                        showSystemModal("Deletion Error", "Failed to delete row entry: " + error.message);
+                        return;
+                    }
 
-            if (error) {
-                showSystemModal("Deletion Error", "Failed to delete row entry: " + error.message);
-                return;
-            }
-
-            showSystemModal("Action Successful", "Ledger entry deleted successfully!");
-            await fetchLedgerDataset();
+                    showSystemModal("Action Successful", "Ledger entry deleted successfully!");
+                    await fetchLedgerDataset();
+                }
+            );
         }
 
         function changeLedgerPage(direction) {
@@ -872,7 +929,6 @@
                 activeSpsic = items[0].spsic_number || "";
                 document.getElementById('activeViewSpsic').value = activeSpsic;
                 
-                // Fetch target total_qty_bal and item_price for remaining volume & amount calculation
                 const { data, error } = await supabaseClient
                     .from('imported_shipment_docs')
                     .select('total_qty_bal, item_price')
@@ -883,7 +939,6 @@
                     const originalTargetQty = parseFloat(data.total_qty_bal) || 0;
                     const activeUnitPrice = parseFloat(data.item_price) || 0;
                     
-                    // Auto minus OR Volume & Sales quantity from total target balance
                     const remainingQty = originalTargetQty - totalQty;
                     const remainingAmount = remainingQty * activeUnitPrice;
 
