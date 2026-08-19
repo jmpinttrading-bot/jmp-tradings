@@ -175,12 +175,34 @@
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
             </div>
 
+            <!-- Review Table Panel -->
+            <div class="panel-card" id="reviewTablePanel">
+                <h3>Documentation Review Log Table</h3>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">Review items pending approval or needing active inspection prior to archive integration.</p>
+                <div class="table-responsive-wrapper">
+                    <table class="item-list-table">
+                        <thead>
+                            <tr>
+                                <th>SPSIC Ref</th>
+                                <th>Client Name</th>
+                                <th>Commodity</th>
+                                <th>Storage Location</th>
+                                <th>Status</th>
+                                <th>Control Interfaces</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reviewTableBody">
+                            <tr><td colspan="6" style="text-align:center; color:#64748b;">Loading review entries...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Always Visible Folder Workspace -->
             <div class="folder-workspace" id="folderWorkspaceWrapper">
                 <div class="workspace-title" id="workspaceTitleDisplay">📂 Folder Context Log Table</div>
                 <div class="search-container">
-                    <input type="text" id="folderSpsicSearch" class="search-box" placeholder="Search by SPSIC Number..." onkeyup="if(event.key==='Enter') executeFolderSearch()">
-                    <input type="text" id="folderClientSearch" class="search-box" placeholder="Search by Client Name..." onkeyup="if(event.key==='Enter') executeFolderSearch()">
+                    <input type="text" id="folderGlobalSearch" class="search-box" placeholder="Search by SPSIC Number or Client Name..." onkeyup="if(event.key==='Enter') executeFolderSearch()">
                     <button class="action-search-btn" onclick="executeFolderSearch()">🔍 Search</button>
                     <button class="action-clear-btn" onclick="clearFolderSearch()">Reset</button>
                     <button class="export-excel-btn" onclick="checkAdminAccess(exportWorkspaceTableToExcel)">📊 Export to Excel</button>
@@ -584,21 +606,19 @@
             await fetchDocuments();
         }
 
-        // Folder Context Search Helpers
+        // Folder Context Unified Search Helpers
         async function executeFolderSearch() {
             await fetchDocuments();
         }
 
         async function clearFolderSearch() {
-            document.getElementById('folderSpsicSearch').value = '';
-            document.getElementById('folderClientSearch').value = '';
+            document.getElementById('folderGlobalSearch').value = '';
             await fetchDocuments();
         }
 
         async function fetchDocuments() {
             const actionGlobalSearch = document.getElementById('actionGlobalSearch').value.trim();
-            const folderSpsicSearch = document.getElementById('folderSpsicSearch').value.trim();
-            const folderClientSearch = document.getElementById('folderClientSearch').value.trim();
+            const folderGlobalSearch = document.getElementById('folderGlobalSearch').value.trim();
             
             // 1. ACTION REQUIRED TABLE: Show non-APPROVED records filtered by single search input (SPSIC OR Client Name)
             let actionQuery = supabaseClient
@@ -614,8 +634,17 @@
 
             actionLogsData = actionableData || [];
             renderActionLogsTable();
+
+            // 2. REVIEW LOG TABLE: Items awaiting approval/review
+            const { data: reviewData } = await supabaseClient
+                .from('imported_shipment_docs')
+                .select('*')
+                .or('status.ilike.%FOR APPROVAL%,status.ilike.%PENDING%')
+                .order('s_date', { ascending: false });
+
+            renderReviewTable(reviewData || []);
             
-            // 2. FOLDER CONTEXT LOGS TABLE (Always Visible)
+            // 3. FOLDER CONTEXT LOGS TABLE (Single Unified Search Field)
             let query = supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
@@ -631,12 +660,8 @@
                 document.getElementById('workspaceTitleDisplay').textContent = `📂 Folder Context Log Table (All Approved - ${currentYear})`;
             }
 
-            if (folderSpsicSearch) {
-                query = query.ilike('spsic_number', `%${folderSpsicSearch}%`);
-            }
-
-            if (folderClientSearch) {
-                query = query.ilike('client_name', `%${folderClientSearch}%`);
+            if (folderGlobalSearch) {
+                query = query.or(`spsic_number.ilike.%${folderGlobalSearch}%,client_name.ilike.%${folderGlobalSearch}%`);
             }
             
             const { data } = await query.order('updated_at', { ascending: false });
@@ -660,6 +685,26 @@
                     <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
                 </tr>`;
             }).join('') || '<tr><td colspan="12" style="text-align:center; color:#64748b;">No approved entries found matching the filter criteria.</td></tr>';
+        }
+
+        function renderReviewTable(records) {
+            const tbody = document.getElementById('reviewTableBody');
+            if (records.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">No pending review records found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = records.map(doc => {
+                const cleanStatus = (doc.status || '').toLowerCase().replace(/\s+/g, '-');
+                return `<tr>
+                    <td><strong>SPSIC-${(doc.spsic_number || '').toUpperCase()}</strong></td>
+                    <td>${(doc.client_name || 'N/A').toUpperCase()}</td>
+                    <td>${(doc.commodity || 'N/A').toUpperCase()}</td>
+                    <td>${(doc.storage_location || 'N/A').toUpperCase()}</td>
+                    <td><span class="status-badge ${cleanStatus}">${(doc.status || '').toUpperCase()}</span></td>
+                    <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
+                </tr>`;
+            }).join('');
         }
 
         function renderActionLogsTable() {
