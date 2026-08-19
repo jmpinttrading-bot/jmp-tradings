@@ -62,11 +62,10 @@
         
         /* Status Badge Utilities */
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-        .status-badge.pending { background: #fef3c7; color: #b45309; }
-        .status-badge.completed { background: #d1fae5; color: #065f46; }
+        .status-badge.pending, .status-badge.review { background: #fef3c7; color: #b45309; }
+        .status-badge.completed, .status-badge.approved { background: #d1fae5; color: #065f46; }
         .status-badge.incomplete { background: #fee2e2; color: #991b1b; }
         .status-badge.for-approval { background: #e0e7ff; color: #3730a3; }
-        .status-badge.approved { background: #d1fae5; color: #065f46; }
         
         .table-responsive-wrapper { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -126,10 +125,10 @@
                 </div>
             </div>
 
-            <!-- Action Required Log Data Table Panel -->
+            <!-- Review / Action Required Log Data Table Panel -->
             <div class="panel-card" id="globalUncompletedLogsWrapper">
-                <h3>Documentation Log Data Table (Action Required)</h3>
-                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
+                <h3>Documentation Review Table (Action Required)</h3>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">A tracking roster of pending review state pipeline items globally awaiting inspection or execution approvals.</p>
                 
                 <!-- Combined Unified Search Bar -->
                 <div class="action-search-bar">
@@ -150,7 +149,7 @@
                             </tr>
                         </thead>
                         <tbody id="globalUncompletedLogsTableBody">
-                            <tr><td colspan="5" style="text-align:center; color:#64748b;">Loading actionable logs...</td></tr>
+                            <tr><td colspan="5" style="text-align:center; color:#64748b;">Loading actionable review items...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -175,34 +174,12 @@
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
             </div>
 
-            <!-- Review Table Panel -->
-            <div class="panel-card" id="reviewTablePanel">
-                <h3>Documentation Review Log Table</h3>
-                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">Review items pending approval or needing active inspection prior to archive integration.</p>
-                <div class="table-responsive-wrapper">
-                    <table class="item-list-table">
-                        <thead>
-                            <tr>
-                                <th>SPSIC Ref</th>
-                                <th>Client Name</th>
-                                <th>Commodity</th>
-                                <th>Storage Location</th>
-                                <th>Status</th>
-                                <th>Control Interfaces</th>
-                            </tr>
-                        </thead>
-                        <tbody id="reviewTableBody">
-                            <tr><td colspan="6" style="text-align:center; color:#64748b;">Loading review entries...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Always Visible Folder Workspace -->
+            <!-- Folder Context Log Table -->
             <div class="folder-workspace" id="folderWorkspaceWrapper">
                 <div class="workspace-title" id="workspaceTitleDisplay">📂 Folder Context Log Table</div>
                 <div class="search-container">
-                    <input type="text" id="folderGlobalSearch" class="search-box" placeholder="Search by SPSIC Number or Client Name..." onkeyup="if(event.key==='Enter') executeFolderSearch()">
+                    <input type="text" id="folderSpsicSearch" class="search-box" placeholder="Search by SPSIC Number..." onkeyup="if(event.key==='Enter') executeFolderSearch()">
+                    <input type="text" id="folderClientSearch" class="search-box" placeholder="Search by Client Name..." onkeyup="if(event.key==='Enter') executeFolderSearch()">
                     <button class="action-search-btn" onclick="executeFolderSearch()">🔍 Search</button>
                     <button class="action-clear-btn" onclick="clearFolderSearch()">Reset</button>
                     <button class="export-excel-btn" onclick="checkAdminAccess(exportWorkspaceTableToExcel)">📊 Export to Excel</button>
@@ -253,7 +230,7 @@
         let currentLoadedWorkspaceRows = [];
         let realTimePresenceChannel = null;
 
-        // Pagination & Search state variables for Action Required Table
+        // Pagination & Search state variables for Action Required Review Table
         let actionLogsData = [];
         let actionLogsCurrentPage = 1;
         const actionLogsRowsPerPage = 10;
@@ -594,7 +571,7 @@
             });
         }
 
-        // Action Required Table Search Helper Functions
+        // Action Required Review Table Search Helpers
         async function executeActionLogsSearch() {
             actionLogsCurrentPage = 1;
             await fetchDocuments();
@@ -606,21 +583,23 @@
             await fetchDocuments();
         }
 
-        // Folder Context Unified Search Helpers
+        // Folder Context Search Helpers
         async function executeFolderSearch() {
             await fetchDocuments();
         }
 
         async function clearFolderSearch() {
-            document.getElementById('folderGlobalSearch').value = '';
+            document.getElementById('folderSpsicSearch').value = '';
+            document.getElementById('folderClientSearch').value = '';
             await fetchDocuments();
         }
 
         async function fetchDocuments() {
             const actionGlobalSearch = document.getElementById('actionGlobalSearch').value.trim();
-            const folderGlobalSearch = document.getElementById('folderGlobalSearch').value.trim();
+            const folderSpsicSearch = document.getElementById('folderSpsicSearch').value.trim();
+            const folderClientSearch = document.getElementById('folderClientSearch').value.trim();
             
-            // 1. ACTION REQUIRED TABLE: Show non-APPROVED records filtered by single search input (SPSIC OR Client Name)
+            // 1. REVIEW / ACTION REQUIRED TABLE: Include non-approved and REVIEW status items
             let actionQuery = supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
@@ -634,17 +613,8 @@
 
             actionLogsData = actionableData || [];
             renderActionLogsTable();
-
-            // 2. REVIEW LOG TABLE: Items awaiting approval/review
-            const { data: reviewData } = await supabaseClient
-                .from('imported_shipment_docs')
-                .select('*')
-                .or('status.ilike.%FOR APPROVAL%,status.ilike.%PENDING%')
-                .order('s_date', { ascending: false });
-
-            renderReviewTable(reviewData || []);
             
-            // 3. FOLDER CONTEXT LOGS TABLE (Single Unified Search Field)
+            // 2. FOLDER CONTEXT LOGS TABLE (Always Visible)
             let query = supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
@@ -660,8 +630,12 @@
                 document.getElementById('workspaceTitleDisplay').textContent = `📂 Folder Context Log Table (All Approved - ${currentYear})`;
             }
 
-            if (folderGlobalSearch) {
-                query = query.or(`spsic_number.ilike.%${folderGlobalSearch}%,client_name.ilike.%${folderGlobalSearch}%`);
+            if (folderSpsicSearch) {
+                query = query.ilike('spsic_number', `%${folderSpsicSearch}%`);
+            }
+
+            if (folderClientSearch) {
+                query = query.ilike('client_name', `%${folderClientSearch}%`);
             }
             
             const { data } = await query.order('updated_at', { ascending: false });
@@ -687,26 +661,6 @@
             }).join('') || '<tr><td colspan="12" style="text-align:center; color:#64748b;">No approved entries found matching the filter criteria.</td></tr>';
         }
 
-        function renderReviewTable(records) {
-            const tbody = document.getElementById('reviewTableBody');
-            if (records.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b;">No pending review records found.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = records.map(doc => {
-                const cleanStatus = (doc.status || '').toLowerCase().replace(/\s+/g, '-');
-                return `<tr>
-                    <td><strong>SPSIC-${(doc.spsic_number || '').toUpperCase()}</strong></td>
-                    <td>${(doc.client_name || 'N/A').toUpperCase()}</td>
-                    <td>${(doc.commodity || 'N/A').toUpperCase()}</td>
-                    <td>${(doc.storage_location || 'N/A').toUpperCase()}</td>
-                    <td><span class="status-badge ${cleanStatus}">${(doc.status || '').toUpperCase()}</span></td>
-                    <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
-                </tr>`;
-            }).join('');
-        }
-
         function renderActionLogsTable() {
             const globalTbody = document.getElementById('globalUncompletedLogsTableBody');
             const totalItems = actionLogsData.length;
@@ -720,7 +674,7 @@
             const paginatedData = actionLogsData.slice(startIndex, endIndex);
 
             if (paginatedData.length === 0) {
-                globalTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">No matching items require attention.</td></tr>';
+                globalTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">No items under review or requiring attention.</td></tr>';
             } else {
                 globalTbody.innerHTML = paginatedData.map(doc => {
                     const cleanStatus = (doc.status || '').toLowerCase().replace(/\s+/g, '-');
