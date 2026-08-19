@@ -130,10 +130,9 @@
                 <h3>Documentation Log Data Table (Action Required)</h3>
                 <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
                 
-                <!-- Search Inputs and Controls -->
+                <!-- Single Unified Search Input and Controls -->
                 <div class="action-search-bar">
-                    <input type="text" id="actionSpsicSearch" class="search-box" placeholder="Filter by SPSIC Number..." onkeyup="if(event.key==='Enter') executeActionLogsSearch()">
-                    <input type="text" id="actionClientSearch" class="search-box" placeholder="Filter by Client Name..." onkeyup="if(event.key==='Enter') executeActionLogsSearch()">
+                    <input type="text" id="actionSearchInput" class="search-box" placeholder="Search SPSIC Number or Client Name..." onkeyup="if(event.key==='Enter') executeActionLogsSearch()">
                     <button class="action-search-btn" onclick="executeActionLogsSearch()">🔍 Search</button>
                     <button class="action-clear-btn" onclick="clearActionLogsSearch()">Reset</button>
                 </div>
@@ -217,7 +216,7 @@
 
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRefiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
         let selectedFolderMonth = ""; 
@@ -591,28 +590,23 @@
         }
 
         async function clearActionLogsSearch() {
-            document.getElementById('actionSpsicSearch').value = '';
-            document.getElementById('actionClientSearch').value = '';
+            document.getElementById('actionSearchInput').value = '';
             actionLogsCurrentPage = 1;
             await fetchDocuments();
         }
 
         async function fetchDocuments() {
-            const spsicActionSearch = document.getElementById('actionSpsicSearch').value.trim();
-            const clientActionSearch = document.getElementById('actionClientSearch').value.trim();
+            const actionSearchQuery = document.getElementById('actionSearchInput').value.trim();
             const docSearchQuery = document.getElementById('docSearchBox').value.trim();
             
-            // 1. ACTION REQUIRED TABLE: Show non-APPROVED records filtered by SPSIC Number and Client Name
+            // 1. ACTION REQUIRED TABLE: Show non-APPROVED records filtered by SPSIC Number or Client Name using a single input
             let actionQuery = supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
                 .neq('status', 'APPROVED');
 
-            if (spsicActionSearch) {
-                actionQuery = actionQuery.ilike('spsic_number', `%${spsicActionSearch}%`);
-            }
-            if (clientActionSearch) {
-                actionQuery = actionQuery.ilike('client_name', `%${clientActionSearch}%`);
+            if (actionSearchQuery) {
+                actionQuery = actionQuery.or(`spsic_number.ilike.%${actionSearchQuery}%,client_name.ilike.%${actionSearchQuery}%`);
             }
 
             const { data: actionableData } = await actionQuery.order('s_date', { ascending: false });
