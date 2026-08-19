@@ -42,8 +42,16 @@
         .year-btn { background: #0f172a; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
         .download-year-btn { background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .export-excel-btn { background: #10b981; color: white; border: none; padding: 12px 18px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+        
+        /* Action Table Controls & General Search Styling */
+        .action-search-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .action-search-btn { background: #0f172a; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .action-search-btn:hover { background: #334155; }
+        .action-clear-btn { background: #e2e8f0; color: #334155; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .action-clear-btn:hover { background: #cbd5e1; }
         .search-container { display: flex; gap: 15px; margin-bottom: 20px; }
-        .search-box { flex: 1; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .search-box { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+        
         .month-folder-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 25px; }
         .folder-node { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px 5px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; }
         .folder-node:hover, .folder-node.active { background: #0f172a; color: white; }
@@ -117,24 +125,36 @@
                 </div>
             </div>
 
+            <!-- Action Required Log Data Table Panel -->
             <div class="panel-card" id="globalUncompletedLogsWrapper">
                 <h3>Documentation Log Data Table (Action Required)</h3>
                 <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
+                
+                <!-- Search Inputs and Controls -->
+                <div class="action-search-bar">
+                    <input type="text" id="actionSpsicSearch" class="search-box" placeholder="Filter by SPSIC Number..." onkeyup="if(event.key==='Enter') executeActionLogsSearch()">
+                    <input type="text" id="actionClientSearch" class="search-box" placeholder="Filter by Client Name..." onkeyup="if(event.key==='Enter') executeActionLogsSearch()">
+                    <button class="action-search-btn" onclick="executeActionLogsSearch()">🔍 Search</button>
+                    <button class="action-clear-btn" onclick="clearActionLogsSearch()">Reset</button>
+                </div>
+
                 <div class="table-responsive-wrapper">
                     <table class="item-list-table">
                         <thead>
                             <tr>
                                 <th>SPSIC Ref</th>
+                                <th>Client Name</th>
                                 <th>Created Date</th>
                                 <th>Tracking Status</th>
                                 <th>Control Interfaces</th>
                             </tr>
                         </thead>
                         <tbody id="globalUncompletedLogsTableBody">
-                            <tr><td colspan="4" style="text-align:center; color:#64748b;">Loading actionable logs...</td></tr>
+                            <tr><td colspan="5" style="text-align:center; color:#64748b;">Loading actionable logs...</td></tr>
                         </tbody>
                     </table>
                 </div>
+                
                 <!-- Pagination Controls -->
                 <div class="pagination-container">
                     <button class="pagination-btn" id="prevActionLogsBtn" onclick="changeActionLogsPage(-1)">❮ Previous</button>
@@ -210,7 +230,7 @@
         let currentLoadedWorkspaceRows = [];
         let realTimePresenceChannel = null;
 
-        // Pagination state variables for Action Required Table
+        // Pagination & Search state variables for Action Required Table
         let actionLogsData = [];
         let actionLogsCurrentPage = 1;
         const actionLogsRowsPerPage = 10;
@@ -279,14 +299,10 @@
                     .header-title { font-size: 16pt; font-weight: bold; color: #1e293b; vertical-align: middle; }
                     .table-th { background-color: #f1f5f9; font-weight: bold; border: 0.5pt solid #cbd5e1; padding: 6px; text-align: left; }
                     .table-td { border: 0.5pt solid #e2e8f0; padding: 6px; }
-                    
-                    /* Status Styles for Exported Excel spreadsheets */
                     .status-cell-completed { background-color: #d1fae5; color: #065f46; font-weight: bold; text-align: center; }
                     .status-cell-pending { background-color: #fef3c7; color: #b45309; font-weight: bold; text-align: center; }
                     .status-cell-incomplete { background-color: #fee2e2; color: #991b1b; font-weight: bold; text-align: center; }
                     .status-cell-for-approval { background-color: #e0e7ff; color: #3730a3; font-weight: bold; text-align: center; }
-                    
-                    /* Documents Status Styling */
                     .doc-status-cell { font-weight: 500; font-size: 10pt; border: 0.5pt solid #cbd5e1; }
                 </style>
                 </head>
@@ -440,7 +456,6 @@
             if (!activeInspectingRecordId) return;
             if (!confirm("Confirm approval of this document package?")) return;
 
-            // Approving sets workflow status to 'APPROVED' and default document state to 'APPROVED'
             const { error } = await supabaseClient
                 .from('imported_shipment_docs')
                 .update({ 
@@ -499,7 +514,6 @@
 
             const settingsBtn = document.getElementById('settingsNavBtn');
             if (currentUserRole === 'admin' && settingsBtn) {
-                // Ensure Settings tab stays configured without matching layout design overlaps
                 settingsBtn.style.display = "inline-block";
             }
 
@@ -570,30 +584,53 @@
             }
         }
 
+        // Action Required Table Search Helper Functions
+        async function executeActionLogsSearch() {
+            actionLogsCurrentPage = 1;
+            await fetchDocuments();
+        }
+
+        async function clearActionLogsSearch() {
+            document.getElementById('actionSpsicSearch').value = '';
+            document.getElementById('actionClientSearch').value = '';
+            actionLogsCurrentPage = 1;
+            await fetchDocuments();
+        }
+
         async function fetchDocuments() {
-            const searchQuery = document.getElementById('docSearchBox').value.trim();
+            const spsicActionSearch = document.getElementById('actionSpsicSearch').value.trim();
+            const clientActionSearch = document.getElementById('actionClientSearch').value.trim();
+            const docSearchQuery = document.getElementById('docSearchBox').value.trim();
             
-            // 1. ACTION REQUIRED TABLE: Show only non-APPROVED records (Pending, Incomplete, For Approval)
-            const { data: actionableData } = await supabaseClient
+            // 1. ACTION REQUIRED TABLE: Show non-APPROVED records filtered by SPSIC Number and Client Name
+            let actionQuery = supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
-                .neq('status', 'APPROVED')
-                .order('s_date', { ascending: false });
+                .neq('status', 'APPROVED');
+
+            if (spsicActionSearch) {
+                actionQuery = actionQuery.ilike('spsic_number', `%${spsicActionSearch}%`);
+            }
+            if (clientActionSearch) {
+                actionQuery = actionQuery.ilike('client_name', `%${clientActionSearch}%`);
+            }
+
+            const { data: actionableData } = await actionQuery.order('s_date', { ascending: false });
 
             actionLogsData = actionableData || [];
             renderActionLogsTable();
 
             if (!selectedFolderMonth) return;
             
-            // 2. FOLDER CONTEXT: Show only APPROVED status records matching month target
+            // 2. FOLDER CONTEXT: Show APPROVED status records matching month target
             let query = supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
                 .eq('target_month', selectedFolderMonth)
                 .eq('status', 'APPROVED');
                 
-            if (searchQuery) {
-                query = query.ilike('spsic_number', `%${searchQuery}%`);
+            if (docSearchQuery) {
+                query = query.ilike('spsic_number', `%${docSearchQuery}%`);
             }
             
             const { data } = await query.order('updated_at', { ascending: false });
@@ -632,12 +669,13 @@
             const paginatedData = actionLogsData.slice(startIndex, endIndex);
 
             if (paginatedData.length === 0) {
-                globalTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#64748b;">No items require attention.</td></tr>';
+                globalTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">No matching items require attention.</td></tr>';
             } else {
                 globalTbody.innerHTML = paginatedData.map(doc => {
                     const cleanStatus = (doc.status || '').toLowerCase().replace(/\s+/g, '-');
                     return `<tr>
-                        <td><strong>SPSIC-${doc.spsic_number.toUpperCase()}</strong></td>
+                        <td><strong>SPSIC-${(doc.spsic_number || '').toUpperCase()}</strong></td>
+                        <td>${(doc.client_name || 'N/A').toUpperCase()}</td>
                         <td>${formatHumanReadableDate(doc.s_date)}</td>
                         <td><span class="status-badge ${cleanStatus}">${(doc.status || '').toUpperCase()}</span></td>
                         <td><button class="action-link-btn" onclick="openDocCompiler('${doc.id}')">Inspect / View</button></td>
