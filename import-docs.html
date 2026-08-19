@@ -62,10 +62,11 @@
         
         /* Status Badge Utilities */
         .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-        .status-badge.pending, .status-badge.review { background: #fef3c7; color: #b45309; }
-        .status-badge.completed, .status-badge.approved { background: #d1fae5; color: #065f46; }
+        .status-badge.pending { background: #fef3c7; color: #b45309; }
+        .status-badge.completed { background: #d1fae5; color: #065f46; }
         .status-badge.incomplete { background: #fee2e2; color: #991b1b; }
         .status-badge.for-approval { background: #e0e7ff; color: #3730a3; }
+        .status-badge.approved { background: #d1fae5; color: #065f46; }
         
         .table-responsive-wrapper { width: 100%; overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; }
         .item-list-table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -125,10 +126,10 @@
                 </div>
             </div>
 
-            <!-- Review / Action Required Log Data Table Panel -->
+            <!-- Action Required Log Data Table Panel -->
             <div class="panel-card" id="globalUncompletedLogsWrapper">
-                <h3>Documentation Review Table (Action Required)</h3>
-                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">A tracking roster of pending review state pipeline items globally awaiting inspection or execution approvals.</p>
+                <h3>Documentation Log Data Table (Action Required)</h3>
+                <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px; margin-top: 0;">A tracking roster of pipeline items globally awaiting configuration file pairs or execution approvals.</p>
                 
                 <!-- Combined Unified Search Bar -->
                 <div class="action-search-bar">
@@ -149,7 +150,7 @@
                             </tr>
                         </thead>
                         <tbody id="globalUncompletedLogsTableBody">
-                            <tr><td colspan="5" style="text-align:center; color:#64748b;">Loading actionable review items...</td></tr>
+                            <tr><td colspan="5" style="text-align:center; color:#64748b;">Loading actionable logs...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -174,12 +175,11 @@
                 <div class="month-folder-grid" id="monthFolderContainer"></div>
             </div>
 
-            <!-- Folder Context Log Table -->
+            <!-- Always Visible Folder Workspace -->
             <div class="folder-workspace" id="folderWorkspaceWrapper">
                 <div class="workspace-title" id="workspaceTitleDisplay">📂 Folder Context Log Table</div>
                 <div class="search-container">
-                    <input type="text" id="folderSpsicSearch" class="search-box" placeholder="Search by SPSIC Number..." onkeyup="if(event.key==='Enter') executeFolderSearch()">
-                    <input type="text" id="folderClientSearch" class="search-box" placeholder="Search by Client Name..." onkeyup="if(event.key==='Enter') executeFolderSearch()">
+                    <input type="text" id="folderGlobalSearch" class="search-box" placeholder="Search by SPSIC Number or Client Name..." onkeyup="if(event.key==='Enter') executeFolderSearch()">
                     <button class="action-search-btn" onclick="executeFolderSearch()">🔍 Search</button>
                     <button class="action-clear-btn" onclick="clearFolderSearch()">Reset</button>
                     <button class="export-excel-btn" onclick="checkAdminAccess(exportWorkspaceTableToExcel)">📊 Export to Excel</button>
@@ -230,7 +230,7 @@
         let currentLoadedWorkspaceRows = [];
         let realTimePresenceChannel = null;
 
-        // Pagination & Search state variables for Action Required Review Table
+        // Pagination & Search state variables for Action Required Table
         let actionLogsData = [];
         let actionLogsCurrentPage = 1;
         const actionLogsRowsPerPage = 10;
@@ -571,7 +571,7 @@
             });
         }
 
-        // Action Required Review Table Search Helpers
+        // Action Required Table Search Helper Functions
         async function executeActionLogsSearch() {
             actionLogsCurrentPage = 1;
             await fetchDocuments();
@@ -589,17 +589,15 @@
         }
 
         async function clearFolderSearch() {
-            document.getElementById('folderSpsicSearch').value = '';
-            document.getElementById('folderClientSearch').value = '';
+            document.getElementById('folderGlobalSearch').value = '';
             await fetchDocuments();
         }
 
         async function fetchDocuments() {
             const actionGlobalSearch = document.getElementById('actionGlobalSearch').value.trim();
-            const folderSpsicSearch = document.getElementById('folderSpsicSearch').value.trim();
-            const folderClientSearch = document.getElementById('folderClientSearch').value.trim();
+            const folderGlobalSearch = document.getElementById('folderGlobalSearch').value.trim();
             
-            // 1. REVIEW / ACTION REQUIRED TABLE: Include non-approved and REVIEW status items
+            // 1. ACTION REQUIRED TABLE: Show non-APPROVED records filtered by single search input (SPSIC OR Client Name)
             let actionQuery = supabaseClient
                 .from('imported_shipment_docs')
                 .select('*')
@@ -630,12 +628,8 @@
                 document.getElementById('workspaceTitleDisplay').textContent = `📂 Folder Context Log Table (All Approved - ${currentYear})`;
             }
 
-            if (folderSpsicSearch) {
-                query = query.ilike('spsic_number', `%${folderSpsicSearch}%`);
-            }
-
-            if (folderClientSearch) {
-                query = query.ilike('client_name', `%${folderClientSearch}%`);
+            if (folderGlobalSearch) {
+                query = query.or(`spsic_number.ilike.%${folderGlobalSearch}%,client_name.ilike.%${folderGlobalSearch}%`);
             }
             
             const { data } = await query.order('updated_at', { ascending: false });
@@ -674,7 +668,7 @@
             const paginatedData = actionLogsData.slice(startIndex, endIndex);
 
             if (paginatedData.length === 0) {
-                globalTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">No items under review or requiring attention.</td></tr>';
+                globalTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">No matching items require attention.</td></tr>';
             } else {
                 globalTbody.innerHTML = paginatedData.map(doc => {
                     const cleanStatus = (doc.status || '').toLowerCase().replace(/\s+/g, '-');
