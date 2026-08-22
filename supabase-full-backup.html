@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Database Backup Utility - JMP Console</title>
+    <!-- Load Supabase JS Client & SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        
+        /* Modal Overlay Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
+        .notify-card { background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 25px; text-align: center; border-top: 6px solid #f97316; }
+        .notify-card h3 { margin-top: 0; color: #1e293b; }
+        .btn-close { background: #334155; color: white; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; margin-top: 20px; }
+
+        /* Navbar Styles */
+        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
+        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
+        .nav-btn:hover { background-color: #475569; color: white; }
+
+        /* Main Content & Cards */
+        .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 30px; }
+        .card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .card h3 { margin-top: 0; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.1rem; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: #334155; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+
+        /* Action Buttons */
+        .btn { background: #ee964b; color: #0f172a; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; text-align: center; display: block; text-decoration: none; margin-bottom: 10px; font-size: 0.9rem; }
+        .btn:hover { opacity: 0.9; }
+        .btn-restore { background: #0284c7; color: white; }
+        .btn-excel { background: #16a34a; color: white; }
+        .btn-file { background: #334155; color: white; width: auto; font-weight: normal; margin-top: 8px; }
+
+        .file-input-wrapper { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+        .badge { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 4px; font-size: 0.82em; font-weight: 600; margin-right: 6px; display: inline-block; margin-bottom: 6px; border: 1px solid #e2e8f0; }
+        .note { background: #fffbe3; border-left: 4px solid #f59e0b; padding: 10px; margin-top: 8px; font-size: 0.85em; color: #78350f; border-radius: 0 4px 4px 0; }
+
+        /* Console Output Box */
+        #status { padding: 15px; background: #0f172a; color: #38bdf8; border-radius: 6px; white-space: pre-wrap; font-family: 'Consolas', monospace; min-height: 120px; max-height: 300px; overflow-y: auto; font-size: 0.85rem; border: 1px solid #1e293b; }
+    </style>
+</head>
+<body>
+
+    <!-- Notification Modal -->
+    <div class="modal-overlay" id="notificationModal">
+        <div class="notify-card">
+            <h3>System Notification</h3>
+            <p id="notifyMessage"></p>
+            <button class="btn-close" onclick="document.getElementById('notificationModal').style.display='none'">Dismiss</button>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="top-row">
+            <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
+            <button class="logout-btn" onclick="handleLogout()">Logout Admin</button>
+        </div>
+        <div class="nav-links">
+            <a href="dashboard.html" class="nav-btn">Dashboard</a>
+            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
+            <a href="import-docs.html" class="nav-btn">Imports</a>
+            <a href="inventory-management.html" class="nav-btn">Inventory</a>
+            <a href="sales-invoice.html" class="nav-btn">Sales</a>
+            <a href="audit-report.html" class="nav-btn">Audit Report</a>
+            <a href="supabase-full-backup.html" class="nav-btn" style="background: #475569; color: white;">Backup</a>
+            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Database & Storage Backup Console</h1>
+            <div class="admin-badge" id="adminEmail">Admin System</div>
+        </div>
+
+        <div class="grid">
+            <!-- 1. Credentials Card -->
+            <div class="card">
+                <h3>1. System Credentials</h3>
+                <div class="form-group">
+                    <label>Project URL</label>
+                    <input type="text" id="supabaseUrl" value="https://ebicabxnzeexucggrmbo.supabase.co">
+                </div>
+                <div class="form-group">
+                    <label>API Key (service_role recommended)</label>
+                    <input type="password" id="supabaseKey" placeholder="Paste your key or upload file">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="keyFileInput" accept=".txt,.key" style="display: none;" onchange="handleKeyFileUpload(event)">
+                        <button type="button" class="btn btn-file" onclick="document.getElementById('keyFileInput').click()">📁 Load Key File (.txt)</button>
+                        <span id="fileNameDisplay" style="font-size: 0.8rem; color: #64748b;">No key file loaded</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Targets Card -->
+            <div class="card">
+                <h3>2. Selected System Targets</h3>
+                <p style="margin-top:0;"><b>Tables (10):</b><br>
+                    <span class="badge">Descriptions</span><span class="badge">active_document_locks</span><span class="badge">employee_201_docs</span><span class="badge">imported_shipment_docs</span><span class="badge">inventory</span><span class="badge">profiles</span><span class="badge">spsic_ledger</span><span class="badge">supplier</span><span class="badge">transaction_ledger</span><span class="badge">transactions</span>
+                </p>
+                <p><b>Storage Buckets (2):</b><br>
+                    <span class="badge">avatars</span><span class="badge">shipment-documents</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- 3. Backup Execution Card -->
+        <div class="card" style="margin-bottom: 25px;">
+            <h3>3. Choose Backup Strategy</h3>
+            
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-restore" onclick="backupFullRestorePackage()">1. Download Complete Restoration SQL Package (.sql + Bucket Files)</button>
+                <div class="note">Generates a single <b>Full_Database_Restore.sql</b> script containing table structure, column schemas, RLS enabling queries, and row insertions for all 10 tables, plus downloads all storage bucket files.</div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+            <div>
+                <button class="btn btn-excel" onclick="backupFullExcelPackage()">2. Download Complete Excel Package (.xlsx + Bucket Files)</button>
+                <div class="note">Generates a <b>Full_Database_Export.xlsx</b> workbook containing 10 separate worksheet tabs (one for each table) and downloads raw bucket files.</div>
+            </div>
+        </div>
+
+        <!-- Console Log Output -->
+        <div class="card">
+            <h3>Execution Status Console</h3>
+            <div id="status">Ready. Load credentials and select an action strategy to begin...</div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Initialization
+        const supabaseClient = supabase.createClient("https://ebicabxnzeexucggrmbo.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8");
+
+        const TABLES = [
+            "Descriptions", "active_document_locks", "employee_201_docs",
+            "imported_shipment_docs", "inventory", "profiles",
+            "spsic_ledger", "supplier", "transaction_ledger", "transactions"
+        ];
+        
+        const BUCKETS = ["avatars", "shipment-documents"];
+
+        function showNotification(msg) {
+            document.getElementById('notifyMessage').textContent = msg;
+            document.getElementById('notificationModal').style.display = 'flex';
+        }
+
+        async function initAdmin() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) { window.location.href = "login.html"; return; }
+            document.getElementById('adminEmail').textContent = `⚙️ ${user.email}`;
+        }
+
+        async function handleLogout() { 
+            await supabaseClient.auth.signOut(); 
+            window.location.href = "login.html"; 
+        }
+
+        function log(msg) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText += `\n${msg}`;
+            statusDiv.scrollTop = statusDiv.scrollHeight;
+        }
+
+        function resetLog(msg) {
+            document.getElementById('status').innerText = msg;
+        }
+
+        function handleKeyFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('supabaseKey').value = e.target.result.trim();
+                document.getElementById('fileNameDisplay').innerText = `Loaded: ${file.name}`;
+                resetLog(`Key file '${file.name}' loaded successfully into memory.`);
+            };
+            reader.readAsText(file);
+        }
+
+        function getActiveClient() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            if (!url || !key) {
+                showNotification("Please enter or upload an API key first.");
+                return null;
+            }
+            return supabase.createClient(url, key);
+        }
+
+        function triggerDownload(blob, filename) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // --- OPTION 1: COMPLETE RESTORATION SQL PACKAGE ---
+        async function backupFullRestorePackage() {
+            resetLog("Initializing Full Database Restore Backup...");
+            const client = getActiveClient();
+            if (!client) return;
+
+            let masterSql = `-- ====================================================\n`;
+            masterSql += `-- SUPABASE MASTER RESTORATION SCRIPT\n`;
+            masterSql += `-- Generated: ${new Date().toISOString()}\n`;
+            masterSql += `-- ====================================================\n\n`;
+
+            for (const table of TABLES) {
+                log(`Processing structure & records for table: '${table}'...`);
+                const { data: rows, error } = await client.from(table).select('*');
+
+                if (error) {
+                    log(`⚠️ Error fetching '${table}': ${error.message}`);
+                    continue;
+                }
+
+                masterSql += `-- ----------------------------------------------------\n`;
+                masterSql += `-- TABLE: public."${table}"\n`;
+                masterSql += `-- ----------------------------------------------------\n`;
+                masterSql += `CREATE TABLE IF NOT EXISTS public."${table}" (\n`;
+
+                if (rows.length > 0) {
+                    const cols = Object.keys(rows[0]);
+                    masterSql += cols.map(c => `  "${c}" TEXT`).join(',\n');
+                } else {
+                    masterSql += `  id UUID PRIMARY KEY DEFAULT gen_random_uuid()`;
+                }
+                masterSql += `\n);\n\n`;
+
+                masterSql += `ALTER TABLE public."${table}" ENABLE ROW LEVEL SECURITY;\n\n`;
+
+                if (rows.length > 0) {
+                    const columns = Object.keys(rows[0]).map(c => `"${c}"`).join(', ');
+                    rows.forEach(row => {
+                        const values = Object.values(row).map(v => {
+                            if (v === null) return 'NULL';
+                            if (typeof v === 'object') return `'${JSON.stringify(v).replace(/'/g, "''")}'`;
+                            return `'${String(v).replace(/'/g, "''")}'`;
+                        }).join(', ');
+                        masterSql += `INSERT INTO public."${table}" (${columns}) VALUES (${values});\n`;
+                    });
+                    masterSql += `\n`;
+                } else {
+                    masterSql += `-- Table was empty. No records inserted.\n\n`;
+                }
+
+                log(`✔ Extracted ${rows.length} rows for '${table}'`);
+            }
+
+            const blob = new Blob([masterSql], { type: 'text/plain' });
+            triggerDownload(blob, `Full_Database_Restore_${Date.now()}.sql`);
+            log(`\n✔ MASTER RESTORE SQL FILE DOWNLOADED!`);
+
+            await downloadAllBuckets(client);
+        }
+
+        // --- OPTION 2: EXCEL WORKBOOK PACKAGE ---
+        async function backupFullExcelPackage() {
+            resetLog("Initializing Full Excel & Storage Backup...");
+            const client = getActiveClient();
+            if (!client) return;
+
+            const workbook = XLSX.utils.book_new();
+            let tablesAdded = 0;
+
+            for (const table of TABLES) {
+                log(`Exporting '${table}' to Excel worksheet...`);
+                const { data, error } = await client.from(table).select('*');
+
+                if (error) {
+                    log(`⚠️ Error reading '${table}': ${error.message}`);
+                    continue;
+                }
+
+                const sheetName = table.length > 30 ? table.substring(0, 30) : table;
+                const worksheet = data.length > 0 ? XLSX.utils.json_to_sheet(data) : XLSX.utils.json_to_sheet([{ status: "Table is empty" }]);
+                XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+                tablesAdded++;
+                log(`✔ Worksheet added: '${sheetName}' (${data.length} rows)`);
+            }
+
+            if (tablesAdded > 0) {
+                XLSX.writeFile(workbook, `Full_Database_Export_${Date.now()}.xlsx`);
+                log(`\n✔ MASTER EXCEL WORKBOOK DOWNLOADED!`);
+            }
+
+            await downloadAllBuckets(client);
+        }
+
+        // Helper: Iterate & Download Storage Buckets
+        async function downloadAllBuckets(client) {
+            log(`\n====================================`);
+            log(`Processing Storage Buckets...`);
+            log(`====================================`);
+
+            for (const bucket of BUCKETS) {
+                log(`Scanning bucket '${bucket}'...`);
+                const { data: files, error } = await client.storage.from(bucket).list('', { limit: 100 });
+
+                if (error) {
+                    log(`⚠️ Bucket '${bucket}' error: ${error.message}`);
+                    continue;
+                }
+
+                if (!files || files.length === 0) {
+                    log(`Bucket '${bucket}' is empty.`);
+                    continue;
+                }
+
+                log(`Found ${files.length} file(s) in '${bucket}'. Downloading...`);
+                for (const file of files) {
+                    if (!file.name || file.id === null) continue;
+
+                    const { data, error: downloadErr } = await client.storage.from(bucket).download(file.name);
+                    if (!downloadErr) {
+                        triggerDownload(data, `${bucket}_${file.name}`);
+                        log(`✔ Downloaded file: ${bucket}/${file.name}`);
+                    } else {
+                        log(`❌ Failed download '${file.name}': ${downloadErr.message}`);
+                    }
+                }
+            }
+            log(`\n✔ ALL BACKUP TASKS COMPLETED SUCCESSFULLY!`);
+        }
+
+        initAdmin();
+    </script>
+</body>
+</html>
