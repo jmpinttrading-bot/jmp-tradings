@@ -44,9 +44,12 @@
         .btn-restore { background: #0284c7; color: white; }
         .btn-excel { background: #16a34a; color: white; }
         .btn-file { background: #334155; color: white; width: auto; font-weight: normal; margin-top: 8px; }
+        .btn-small { padding: 4px 10px; font-size: 0.75rem; background: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; margin-bottom: 10px; }
+
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 10px; }
+        .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0; }
 
         .file-input-wrapper { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
-        .badge { background: #f1f5f9; color: #475569; padding: 4px 10px; border-radius: 4px; font-size: 0.82em; font-weight: 600; margin-right: 6px; display: inline-block; margin-bottom: 6px; border: 1px solid #e2e8f0; }
         .note { background: #fffbe3; border-left: 4px solid #f59e0b; padding: 10px; margin-top: 8px; font-size: 0.85em; color: #78350f; border-radius: 0 4px 4px 0; }
 
         /* Console Output Box */
@@ -77,8 +80,7 @@
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
             <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <a href="supabase-full-backup.html" class="nav-btn" style="background: #475569; color: white;">Backup</a>
-            <a href="admin-dashboard.html" class="nav-btn">Settings</a>
+            <a href="admin-dashboard.html" class="nav-btn" style="background: #475569; color: white;">Settings</a>
         </div>
     </nav>
 
@@ -108,60 +110,108 @@
                 </div>
             </div>
 
-            <!-- 2. Targets Card -->
+            <!-- 2. Targets Pickers Card -->
             <div class="card">
-                <h3>2. Selected System Targets</h3>
-                <p style="margin-top:0;"><b>Tables (10):</b><br>
-                    <span class="badge">Descriptions</span><span class="badge">active_document_locks</span><span class="badge">employee_201_docs</span><span class="badge">imported_shipment_docs</span><span class="badge">inventory</span><span class="badge">profiles</span><span class="badge">spsic_ledger</span><span class="badge">supplier</span><span class="badge">transaction_ledger</span><span class="badge">transactions</span>
-                </p>
-                <p><b>Storage Buckets (2):</b><br>
-                    <span class="badge">avatars</span><span class="badge">shipment-documents</span>
-                </p>
+                <h3>2. Select System Targets</h3>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-weight: 700; font-size: 0.9rem;">Database Tables:</label>
+                    <div>
+                        <button class="btn-small" onclick="toggleSelectAll('table-cb', true)">All</button>
+                        <button class="btn-small" onclick="toggleSelectAll('table-cb', false)">None</button>
+                    </div>
+                </div>
+                <div class="checkbox-grid" id="tablesCheckboxContainer"></div>
+
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-weight: 700; font-size: 0.9rem;">Storage Buckets:</label>
+                    <div>
+                        <button class="btn-small" onclick="toggleSelectAll('bucket-cb', true)">All</button>
+                        <button class="btn-small" onclick="toggleSelectAll('bucket-cb', false)">None</button>
+                    </div>
+                </div>
+                <div class="checkbox-grid" id="bucketsCheckboxContainer"></div>
             </div>
         </div>
 
         <!-- 3. Backup Execution Card -->
         <div class="card" style="margin-bottom: 25px;">
-            <h3>3. Choose Backup Strategy</h3>
+            <h3>3. Choose Action Strategy</h3>
             
             <div style="margin-bottom: 20px;">
-                <button class="btn btn-restore" onclick="backupFullRestorePackage()">1. Download Complete Restoration SQL Package (.sql + Bucket Files)</button>
-                <div class="note">Generates a single <b>Full_Database_Restore.sql</b> script containing table structure, column schemas, RLS enabling queries, and row insertions for all 10 tables, plus downloads all storage bucket files.</div>
+                <button class="btn btn-restore" onclick="backupRestorePackage(false)">1. Download SQL Restoration Package (.sql + Selected Buckets)</button>
+                <div class="note">Generates a SQL script containing structure, schemas, RLS enabling queries, and row insertions for <b>selected tables only</b>. (Safe for recreating missing or deleted tables).</div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <button class="btn btn-restore" style="background: #dc2626;" onclick="backupRestorePackage(true)">⚠️ Single/Selected Table Replacement Package (DROP / TRUNCATE SQL)</button>
+                <div class="note"><b>Single-Table Recovery Mode:</b> Includes <code>DROP TABLE IF EXISTS...</code> to completely wipe and recreate selected missing/corrupted tables before re-inserting records.</div>
             </div>
 
             <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
 
             <div>
-                <button class="btn btn-excel" onclick="backupFullExcelPackage()">2. Download Complete Excel Package (.xlsx + Bucket Files)</button>
-                <div class="note">Generates a <b>Full_Database_Export.xlsx</b> workbook containing 10 separate worksheet tabs (one for each table) and downloads raw bucket files.</div>
+                <button class="btn btn-excel" onclick="backupExcelPackage()">2. Download Excel Package (.xlsx + Selected Buckets)</button>
+                <div class="note">Generates an Excel workbook containing worksheet tabs for <b>selected tables only</b> and downloads selected bucket files.</div>
             </div>
         </div>
 
         <!-- Console Log Output -->
         <div class="card">
             <h3>Execution Status Console</h3>
-            <div id="status">Ready. Load credentials and select an action strategy to begin...</div>
+            <div id="status">Ready. Select targets and choose an action strategy to begin...</div>
         </div>
     </div>
 
     <script>
-        // Supabase Initialization
         const supabaseClient = supabase.createClient("https://ebicabxnzeexucggrmbo.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8");
 
-        const TABLES = [
+        const ALL_TABLES = [
             "Descriptions", "active_document_locks", "employee_201_docs",
             "imported_shipment_docs", "inventory", "profiles",
             "spsic_ledger", "supplier", "transaction_ledger", "transactions"
         ];
         
-        const BUCKETS = ["avatars", "shipment-documents"];
+        const ALL_BUCKETS = ["avatars", "shipment-documents"];
 
         function showNotification(msg) {
             document.getElementById('notifyMessage').textContent = msg;
             document.getElementById('notificationModal').style.display = 'flex';
         }
 
+        // Render target checkboxes
+        function renderCheckboxes() {
+            const tableContainer = document.getElementById('tablesCheckboxContainer');
+            tableContainer.innerHTML = ALL_TABLES.map(table => `
+                <label class="checkbox-label">
+                    <input type="checkbox" class="table-cb" value="${table}" checked>
+                    ${table}
+                </label>
+            `).join('');
+
+            const bucketContainer = document.getElementById('bucketsCheckboxContainer');
+            bucketContainer.innerHTML = ALL_BUCKETS.map(bucket => `
+                <label class="checkbox-label">
+                    <input type="checkbox" class="bucket-cb" value="${bucket}" checked>
+                    ${bucket}
+                </label>
+            `).join('');
+        }
+
+        function toggleSelectAll(className, isChecked) {
+            document.querySelectorAll(`.${className}`).forEach(cb => cb.checked = isChecked);
+        }
+
+        function getSelectedTargets() {
+            const tables = Array.from(document.querySelectorAll('.table-cb:checked')).map(cb => cb.value);
+            const buckets = Array.from(document.querySelectorAll('.bucket-cb:checked')).map(cb => cb.value);
+            return { tables, buckets };
+        }
+
         async function initAdmin() {
+            renderCheckboxes();
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
             document.getElementById('adminEmail').textContent = `⚙️ ${user.email}`;
@@ -214,18 +264,25 @@
             document.body.removeChild(a);
         }
 
-        // --- OPTION 1: COMPLETE RESTORATION SQL PACKAGE ---
-        async function backupFullRestorePackage() {
-            resetLog("Initializing Full Database Restore Backup...");
+        // --- SQL RESTORATION PACKAGE GENERATOR ---
+        async function backupRestorePackage(includeDropTable = false) {
+            resetLog("Initializing Database SQL Restore Export...");
             const client = getActiveClient();
             if (!client) return;
 
+            const { tables, buckets } = getSelectedTargets();
+            if (tables.length === 0 && buckets.length === 0) {
+                showNotification("Please select at least one table or bucket.");
+                return;
+            }
+
             let masterSql = `-- ====================================================\n`;
-            masterSql += `-- SUPABASE MASTER RESTORATION SCRIPT\n`;
+            masterSql += `-- SUPABASE RESTORATION SCRIPT\n`;
+            masterSql += `-- Mode: ${includeDropTable ? "Table Replacement (DROP IF EXISTS)" : "Standard Creation"}\n`;
             masterSql += `-- Generated: ${new Date().toISOString()}\n`;
             masterSql += `-- ====================================================\n\n`;
 
-            for (const table of TABLES) {
+            for (const table of tables) {
                 log(`Processing structure & records for table: '${table}'...`);
                 const { data: rows, error } = await client.from(table).select('*');
 
@@ -237,6 +294,11 @@
                 masterSql += `-- ----------------------------------------------------\n`;
                 masterSql += `-- TABLE: public."${table}"\n`;
                 masterSql += `-- ----------------------------------------------------\n`;
+
+                if (includeDropTable) {
+                    masterSql += `DROP TABLE IF EXISTS public."${table}" CASCADE;\n\n`;
+                }
+
                 masterSql += `CREATE TABLE IF NOT EXISTS public."${table}" (\n`;
 
                 if (rows.length > 0) {
@@ -267,23 +329,34 @@
                 log(`✔ Extracted ${rows.length} rows for '${table}'`);
             }
 
-            const blob = new Blob([masterSql], { type: 'text/plain' });
-            triggerDownload(blob, `Full_Database_Restore_${Date.now()}.sql`);
-            log(`\n✔ MASTER RESTORE SQL FILE DOWNLOADED!`);
+            if (tables.length > 0) {
+                const blob = new Blob([masterSql], { type: 'text/plain' });
+                const prefix = includeDropTable ? "Targeted_Table_Recovery" : "Database_Restore";
+                triggerDownload(blob, `${prefix}_${Date.now()}.sql`);
+                log(`\n✔ RESTORE SQL FILE DOWNLOADED!`);
+            }
 
-            await downloadAllBuckets(client);
+            if (buckets.length > 0) {
+                await downloadSelectedBuckets(client, buckets);
+            }
         }
 
-        // --- OPTION 2: EXCEL WORKBOOK PACKAGE ---
-        async function backupFullExcelPackage() {
-            resetLog("Initializing Full Excel & Storage Backup...");
+        // --- EXCEL WORKBOOK PACKAGE GENERATOR ---
+        async function backupExcelPackage() {
+            resetLog("Initializing Excel & Storage Backup...");
             const client = getActiveClient();
             if (!client) return;
+
+            const { tables, buckets } = getSelectedTargets();
+            if (tables.length === 0 && buckets.length === 0) {
+                showNotification("Please select at least one table or bucket.");
+                return;
+            }
 
             const workbook = XLSX.utils.book_new();
             let tablesAdded = 0;
 
-            for (const table of TABLES) {
+            for (const table of tables) {
                 log(`Exporting '${table}' to Excel worksheet...`);
                 const { data, error } = await client.from(table).select('*');
 
@@ -300,20 +373,22 @@
             }
 
             if (tablesAdded > 0) {
-                XLSX.writeFile(workbook, `Full_Database_Export_${Date.now()}.xlsx`);
-                log(`\n✔ MASTER EXCEL WORKBOOK DOWNLOADED!`);
+                XLSX.writeFile(workbook, `Selected_Database_Export_${Date.now()}.xlsx`);
+                log(`\n✔ EXCEL WORKBOOK DOWNLOADED!`);
             }
 
-            await downloadAllBuckets(client);
+            if (buckets.length > 0) {
+                await downloadSelectedBuckets(client, buckets);
+            }
         }
 
-        // Helper: Iterate & Download Storage Buckets
-        async function downloadAllBuckets(client) {
+        // Helper: Download Selected Storage Buckets
+        async function downloadSelectedBuckets(client, selectedBuckets) {
             log(`\n====================================`);
             log(`Processing Storage Buckets...`);
             log(`====================================`);
 
-            for (const bucket of BUCKETS) {
+            for (const bucket of selectedBuckets) {
                 log(`Scanning bucket '${bucket}'...`);
                 const { data: files, error } = await client.storage.from(bucket).list('', { limit: 100 });
 
@@ -340,7 +415,7 @@
                     }
                 }
             }
-            log(`\n✔ ALL BACKUP TASKS COMPLETED SUCCESSFULLY!`);
+            log(`\n✔ ALL SELECTED TASKS COMPLETED SUCCESSFULLY!`);
         }
 
         initAdmin();
