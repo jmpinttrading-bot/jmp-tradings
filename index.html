@@ -406,6 +406,38 @@
             width: 90px;
         }
 
+        /* Shared Carousel Arrow Styles */
+        .slider-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #0b2545;
+            color: #fff;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        .slider-arrow:hover {
+            background-color: #ee964b;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .slider-arrow:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .arrow-left { left: -5px; }
+        .arrow-right { right: -5px; }
+
         /* ==========================================================================
            5. About Section
            ========================================================================== */
@@ -487,24 +519,43 @@
         }
 
         /* ==========================================================================
-           6. Core Competencies / Logistics Strengths
+           6. Core Competencies / Strengths Animated Carousel
            ========================================================================== */
         .strengths {
             background-color: #f4f8fb; 
             border-top: 1px solid #e2e8f0;
+            position: relative;
         }
         
-        .strengths-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 30px;
+        .strengths-slider-wrapper {
             max-width: 1200px;
             margin: 45px auto 0;
+            position: relative;
+            padding: 0 40px;
+        }
+
+        .strengths-slider-container {
+            overflow: hidden;
+            cursor: grab;
+            user-select: none;
+            padding: 15px 0;
+            border-radius: 12px;
+        }
+
+        .strengths-slider-container:active {
+            cursor: grabbing;
+        }
+
+        .strengths-grid-track {
+            display: flex;
+            gap: 25px;
+            transition: transform 0.1s linear;
+            will-change: transform;
         }
 
         .strength-card {
             background: #ffffff; 
-            padding: 35px 25px;
+            padding: 35px 28px;
             border-radius: 12px;
             border: 1px solid #e2e8f0;
             text-align: center;
@@ -512,6 +563,11 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.02);
             position: relative;
             overflow: hidden;
+            flex: 0 0 calc(33.333% - 17px);
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .strength-card::before {
@@ -536,15 +592,16 @@
 
         .strength-icon {
             color: #0b2545;
-            margin-bottom: 18px;
+            margin-bottom: 20px;
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            width: 64px;
-            height: 64px;
+            width: 68px;
+            height: 68px;
             background-color: #e0eaf4;
             border-radius: 50%;
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         .strength-card:hover .strength-icon {
@@ -557,24 +614,26 @@
             font-size: 1.25rem;
             color: #0b2545;
             margin-bottom: 12px;
+            font-weight: 700;
         }
 
         .strength-card p {
             font-size: 0.95rem;
             color: #64748b;
+            line-height: 1.7;
         }
 
         .compliance-logo-group {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 16px;
             margin-top: 20px;
             flex-wrap: wrap;
         }
 
         .compliance-logo {
-            height: 45px;
+            height: 42px;
             width: auto;
             object-fit: contain;
             filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.08));
@@ -740,38 +799,6 @@
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
-
-        /* Carousel Nav Arrows */
-        .slider-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: #0b2545;
-            color: #fff;
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 10;
-            transition: all 0.3s ease;
-        }
-
-        .slider-arrow:hover {
-            background-color: #ee964b;
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .slider-arrow:active {
-            transform: translateY(-50%) scale(0.95);
-        }
-
-        .arrow-left { left: -5px; }
-        .arrow-right { right: -5px; }
 
         /* Lightbox Modal */
         .lightbox-modal {
@@ -1248,10 +1275,10 @@
             .product-context-container {
                 padding: 0 15px;
             }
-            .slider-wrapper {
+            .slider-wrapper, .strengths-slider-wrapper {
                 padding: 0 10px;
             }
-            .product-card {
+            .product-card, .strength-card {
                 flex: 0 0 100%; 
             }
             .slider-arrow {
@@ -1343,32 +1370,56 @@
 
     <section class="strengths reveal" id="strengths">
         <h2>Why Partner With JMP International</h2>
-        <div class="strengths-grid">
-            <div class="strength-card reveal reveal-delay-1">
-                <div class="strength-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        
+        <div class="strengths-slider-wrapper">
+            <button class="slider-arrow arrow-left" id="prevStrength" aria-label="Previous Strength">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button class="slider-arrow arrow-right" id="nextStrength" aria-label="Next Strength">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+
+            <div class="strengths-slider-container" id="strengthsContainer">
+                <div class="strengths-grid-track" id="strengthsTrack">
+                    
+                    <div class="strength-card">
+                        <div class="strength-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        </div>
+                        <h3>Strict Regulatory Compliance</h3>
+                        <p>End-to-end conformance with national and international trade regulations. We streamline imports through meticulous health certification and full hazard control traceability.</p>
+                        <div class="compliance-logo-group">
+                            <img class="compliance-logo" src="bfar-logo.png" alt="BFAR Logo">
+                            <img class="compliance-logo" src="fda-logo.png" alt="FDA Logo">
+                            <img class="compliance-logo" src="haccp-logo.png" alt="HACCP Logo">
+                        </div>
+                    </div>
+
+                    <div class="strength-card">
+                        <div class="strength-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        </div>
+                        <h3>Cold Chain Integrity</h3>
+                        <p>Precision temperature management from ocean vessel harvest to final delivery. Our flash-freezing technology locks in cellular moisture and natural nutrients without micro-crystallization.</p>
+                    </div>
+
+                    <div class="strength-card">
+                        <div class="strength-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        </div>
+                        <h3>Global Sourcing Infrastructure</h3>
+                        <p>Direct supply partnerships with certified global fisheries ensure volume scalability, competitive wholesale pricing, and consistent inventory availability year-round.</p>
+                    </div>
+
+                    <div class="strength-card">
+                        <div class="strength-icon">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        </div>
+                        <h3>Customizable Processing Specs</h3>
+                        <p>Tailored processing options including exact portion cuts, specialized vacuum seals, and custom packaging sizes engineered to minimize kitchen prep waste and optimize profitability.</p>
+                    </div>
+
                 </div>
-                <h3>Strict Regulatory Compliance</h3>
-                <p>Full conformance with domestic and international trading legalities, standardizing safe sanitary certifications for smooth trade protocols.</p>
-                <div class="compliance-logo-group">
-                    <img class="compliance-logo" src="bfar-logo.png" alt="BFAR Logo">
-                    <img class="compliance-logo" src="fda-logo.png" alt="FDA Logo">
-                    <img class="compliance-logo" src="haccp-logo.png" alt="HACCP Logo">
-                </div>
-            </div>
-            <div class="strength-card reveal reveal-delay-2">
-                <div class="strength-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                </div>
-                <h3>Cold Chain Integrity</h3>
-                <p>Flash-frozen processing monitors baseline temperatures seamlessly, reducing macro-crystallization and optimizing structural tissue yield variables.</p>
-            </div>
-            <div class="strength-card reveal reveal-delay-3">
-                <div class="strength-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                </div>
-                <h3>Global Sourcing Infrastructure</h3>
-                <p>Dynamic seafood tracking networks guarantee resilient wholesale sourcing channels and volume scalability regardless of shifts in season.</p>
             </div>
         </div>
     </section>
@@ -1850,118 +1901,150 @@
 
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        // Slider Carousel Drag & Auto-Play Script
-        const container = document.getElementById('sliderContainer');
-        const track = document.getElementById('sliderTrack');
-        const prevBtn = document.getElementById('prevSlide');
-        const nextBtn = document.getElementById('nextSlide');
-        
+        // Reusable Carousel Helper Function
+        function createCarousel({ containerId, trackId, prevBtnId, nextBtnId, speed = 1.2 }) {
+            const container = document.getElementById(containerId);
+            const track = document.getElementById(trackId);
+            const prevBtn = document.getElementById(prevBtnId);
+            const nextBtn = document.getElementById(nextBtnId);
+
+            if (!container || !track) return;
+
+            let isDragging = false;
+            let startX;
+            let currentTranslate = 0;
+            let prevTranslate = 0;
+            let autoPlayInterval;
+
+            const getMaxScroll = () => container.clientWidth - track.scrollWidth;
+
+            function applyTranslate(withTransition = true) {
+                track.style.transition = withTransition ? 'transform 0.4s ease-out' : 'none';
+                track.style.transform = `translateX(${currentTranslate}px)`;
+            }
+
+            function startAutoPlay() {
+                const modal = document.getElementById('lightboxModal');
+                if (modal && modal.classList.contains('active')) return;
+                stopAutoPlay();
+                autoPlayInterval = setInterval(() => {
+                    if (isDragging) return;
+                    currentTranslate -= speed;
+                    const maxScroll = getMaxScroll();
+                    if (currentTranslate <= maxScroll) {
+                        currentTranslate = 0;
+                    }
+                    applyTranslate(false);
+                    prevTranslate = currentTranslate;
+                }, 30);
+            }
+
+            function stopAutoPlay() {
+                clearInterval(autoPlayInterval);
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    let step = container.clientWidth * 0.4;
+                    currentTranslate = Math.max(prevTranslate - step, getMaxScroll());
+                    prevTranslate = currentTranslate;
+                    applyTranslate(true);
+                });
+            }
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    let step = container.clientWidth * 0.4;
+                    currentTranslate = Math.min(prevTranslate + step, 0);
+                    prevTranslate = currentTranslate;
+                    applyTranslate(true);
+                });
+            }
+
+            container.addEventListener('mouseenter', stopAutoPlay);
+            container.addEventListener('mouseleave', startAutoPlay);
+
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.pageX - currentTranslate;
+                stopAutoPlay();
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (!isDragging) return;
+                isDragging = false;
+                if (currentTranslate > 0) currentTranslate = 0;
+                const maxScroll = getMaxScroll();
+                if (currentTranslate < maxScroll) currentTranslate = maxScroll;
+                prevTranslate = currentTranslate;
+                applyTranslate(true);
+                startAutoPlay();
+            });
+
+            container.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const x = e.pageX;
+                currentTranslate = x - startX;
+                applyTranslate(false);
+            });
+
+            container.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                startX = e.touches[0].pageX - currentTranslate;
+                stopAutoPlay();
+            }, {passive: true});
+
+            container.addEventListener('touchend', () => {
+                isDragging = false;
+                if (currentTranslate > 0) currentTranslate = 0;
+                const maxScroll = getMaxScroll();
+                if (currentTranslate < maxScroll) currentTranslate = maxScroll;
+                prevTranslate = currentTranslate;
+                applyTranslate(true);
+                startAutoPlay();
+            });
+
+            container.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const x = e.touches[0].pageX;
+                currentTranslate = x - startX;
+                applyTranslate(false);
+            }, {passive: true});
+
+            startAutoPlay();
+
+            return { stopAutoPlay, startAutoPlay };
+        }
+
+        // Initialize Strengths Capabilities Carousel
+        const strengthsCarousel = createCarousel({
+            containerId: 'strengthsContainer',
+            trackId: 'strengthsTrack',
+            prevBtnId: 'prevStrength',
+            nextBtnId: 'nextStrength',
+            speed: 1.0
+        });
+
+        // Initialize Product Portfolio Carousel
+        const productCarousel = createCarousel({
+            containerId: 'sliderContainer',
+            trackId: 'sliderTrack',
+            prevBtnId: 'prevSlide',
+            nextBtnId: 'nextSlide',
+            speed: 1.2
+        });
+
+        // Lightbox Zoom Handler
         const lightboxModal = document.getElementById('lightboxModal');
         const lightboxImg = document.getElementById('lightboxImg');
         const lightboxClose = document.getElementById('lightboxClose');
-
-        let isDragging = false;
-        let startX;
-        let currentTranslate = 0;
-        let prevTranslate = 0;
-        let autoPlayInterval;
         let lastTap = 0;
-
-        const getMaxScroll = () => container.clientWidth - track.scrollWidth;
-
-        nextBtn.addEventListener('click', () => {
-            let step = container.clientWidth * 0.4;
-            currentTranslate = Math.max(prevTranslate - step, getMaxScroll());
-            prevTranslate = currentTranslate;
-            applyTranslate(true);
-        });
-
-        prevBtn.addEventListener('click', () => {
-            let step = container.clientWidth * 0.4;
-            currentTranslate = Math.min(prevTranslate + step, 0);
-            prevTranslate = currentTranslate;
-            applyTranslate(true);
-        });
-
-        function startAutoPlay() {
-            if (lightboxModal.classList.contains('active')) return;
-            stopAutoPlay(); 
-            autoPlayInterval = setInterval(() => {
-                if (isDragging) return;
-                currentTranslate -= 1.2; 
-                const maxScroll = getMaxScroll();
-                if (currentTranslate <= maxScroll) {
-                    currentTranslate = 0; 
-                }
-                applyTranslate(false);
-                prevTranslate = currentTranslate;
-            }, 30);
-        }
-
-        function stopAutoPlay() {
-            clearInterval(autoPlayInterval);
-        }
-
-        function applyTranslate(withTransition = true) {
-            track.style.transition = withTransition ? 'transform 0.4s ease-out' : 'none';
-            track.style.transform = `translateX(${currentTranslate}px)`;
-        }
-
-        container.addEventListener('mouseenter', stopAutoPlay);
-        container.addEventListener('mouseleave', startAutoPlay);
-
-        container.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.pageX - currentTranslate;
-            stopAutoPlay();
-        });
-
-        window.addEventListener('mouseup', () => {
-            if (!isDragging) return;
-            isDragging = false;
-            if (currentTranslate > 0) currentTranslate = 0;
-            const maxScroll = getMaxScroll();
-            if (currentTranslate < maxScroll) currentTranslate = maxScroll;
-            prevTranslate = currentTranslate;
-            applyTranslate(true);
-            startAutoPlay();
-        });
-
-        container.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            const x = e.pageX;
-            currentTranslate = x - startX;
-            applyTranslate(false);
-        });
-
-        container.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            startX = e.touches[0].pageX - currentTranslate;
-            stopAutoPlay();
-        }, {passive: true});
-
-        container.addEventListener('touchend', () => {
-            isDragging = false;
-            if (currentTranslate > 0) currentTranslate = 0;
-            const maxScroll = getMaxScroll();
-            if (currentTranslate < maxScroll) currentTranslate = maxScroll;
-            prevTranslate = currentTranslate;
-            applyTranslate(true);
-            startAutoPlay();
-        });
-
-        container.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            const x = e.touches[0].pageX;
-            currentTranslate = x - startX;
-            applyTranslate(false);
-        }, {passive: true});
 
         function openZoom(card) {
             const imgElement = card.querySelector('.product-img');
             if (imgElement) {
-                stopAutoPlay();
+                if (productCarousel) productCarousel.stopAutoPlay();
                 lightboxImg.src = imgElement.src;
                 lightboxModal.classList.add('active');
             }
@@ -1970,7 +2053,9 @@
         function setupCardEvents() {
             const productCards = document.querySelectorAll('.product-card');
             productCards.forEach(card => {
-                card.addEventListener('mouseenter', stopAutoPlay);
+                card.addEventListener('mouseenter', () => {
+                    if (productCarousel) productCarousel.stopAutoPlay();
+                });
                 
                 card.addEventListener('dblclick', (e) => {
                     e.preventDefault();
@@ -1991,7 +2076,7 @@
 
         function closeZoom() {
             lightboxModal.classList.remove('active');
-            startAutoPlay();
+            if (productCarousel) productCarousel.startAutoPlay();
         }
 
         lightboxClose.addEventListener('click', closeZoom);
@@ -2009,7 +2094,6 @@
         });
 
         setupCardEvents();
-        startAutoPlay();
     </script>
 </body>
 </html>
