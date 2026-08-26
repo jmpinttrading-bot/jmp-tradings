@@ -282,12 +282,18 @@
         }
 
         /* ==========================================================================
-           3. Hero Section
+           3. Hero Section (Updated Zoom & Brightness)
            ========================================================================== */
         .hero {
             position: relative;
-            background: linear-gradient(rgba(11, 37, 69, 0.88), rgba(7, 22, 44, 0.92)), 
-                        url('hero.png') no-repeat center center/cover;
+            /* Lightened overlay gradient */
+            background: linear-gradient(rgba(11, 37, 69, 0.45), rgba(7, 22, 44, 0.55)), 
+                        url('hero.png') no-repeat center center;
+            
+            /* Zoomed out background size */
+            background-size: contain; 
+            background-color: #0b2545; 
+            
             height: 65vh; 
             min-height: 480px;
             color: #fff;
