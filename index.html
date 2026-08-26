@@ -76,38 +76,53 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 24px;
             animation: zoomInIntro 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             padding: 0 20px;
         }
 
+        /* Container wrapping both the logo and the surrounding spinner ring */
+        .logo-spinner-wrapper {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         .intro-logo {
-            width: 110px;
-            height: 110px;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
             background: #ffffff;
             border-radius: 50%;
-            padding: 6px;
+            padding: 10px;
             box-shadow: 0 0 35px rgba(244, 211, 94, 0.35);
             animation: pulseLogo 2s ease-in-out infinite alternate;
         }
 
+        /* Circular ring spinner encircling the logo */
+        .intro-spinner-ring {
+            position: absolute;
+            top: -12px;
+            left: -12px;
+            right: -12px;
+            bottom: -12px;
+            border: 4px solid rgba(255, 255, 255, 0.15);
+            border-top: 4px solid #f4d35e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            pointer-events: none;
+        }
+
         .intro-title {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: 800;
             letter-spacing: 2px;
             color: #ffffff;
             text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        }
-
-        .intro-spinner {
-            width: 36px;
-            height: 36px;
-            border: 3px solid rgba(255, 255, 255, 0.15);
-            border-top: 3px solid #f4d35e;
-            border-radius: 50%;
-            margin-top: 10px;
-            animation: spin 0.9s linear infinite;
+            margin-top: 8px;
         }
 
         @keyframes spin {
@@ -117,7 +132,7 @@
 
         @keyframes pulseLogo {
             0% { transform: scale(0.98); box-shadow: 0 0 20px rgba(244, 211, 94, 0.2); }
-            100% { transform: scale(1.05); box-shadow: 0 0 40px rgba(244, 211, 94, 0.6); }
+            100% { transform: scale(1.03); box-shadow: 0 0 45px rgba(244, 211, 94, 0.6); }
         }
 
         @keyframes zoomInIntro {
@@ -1250,6 +1265,13 @@
             }
             .testimonials-container::before { left: 0; }
             .testimonials-container::after { right: 0; }
+            .logo-spinner-wrapper {
+                width: 160px;
+                height: 160px;
+            }
+            .intro-title {
+                font-size: 1.25rem;
+            }
         }
     </style>
 </head>
@@ -1257,9 +1279,11 @@
 
     <div id="intro-overlay">
         <div class="intro-content">
-            <img src="logo.png" alt="JMP International Logo" class="intro-logo">
+            <div class="logo-spinner-wrapper">
+                <img src="logo.png" alt="JMP International Logo" class="intro-logo">
+                <div class="intro-spinner-ring"></div>
+            </div>
             <h1 class="intro-title">JMP INTERNATIONAL FISH TRADING</h1>
-            <div class="intro-spinner"></div>
         </div>
     </div>
 
