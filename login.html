@@ -16,29 +16,39 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Animated Moving Background Setup */
         body {
-            background: linear-gradient(rgba(11, 37, 69, 0.85), rgba(11, 37, 69, 0.95)), 
-                        url('hero.png') no-repeat;
-            background-size: 120% 120%; /* Expanded to allow room for panning */
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
-            animation: moveBg 30s ease-in-out infinite alternate;
+            position: relative;
+            overflow: hidden; /* Prevents scrollbars from background movement */
         }
 
-        /* Keyframe to smoothly animate background position */
-        @keyframes moveBg {
+        /* Fixed Background Wrapper to display image in full view with animation */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(11, 37, 69, 0.85), rgba(11, 37, 69, 0.95)), 
+                        url('hero.png') no-repeat center center / cover;
+            z-index: -1;
+            animation: fullViewMotion 20s ease-in-out infinite alternate;
+        }
+
+        /* Gentle zoom-and-pan animation for full background image view */
+        @keyframes fullViewMotion {
             0% {
-                background-position: 0% 50%;
+                transform: scale(1) translate(0, 0);
             }
             50% {
-                background-position: 100% 50%;
+                transform: scale(1.08) translate(-1%, -1%);
             }
             100% {
-                background-position: 0% 50%;
+                transform: scale(1.03) translate(1%, 1%);
             }
         }
 
@@ -51,7 +61,8 @@
             border-radius: 12px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
             text-align: left;
-            z-index: 1; /* Ensures card sits nicely above background */
+            position: relative;
+            z-index: 1; /* Keeps login card on top of animated background */
         }
 
         /* Branding Block inside form */
@@ -272,10 +283,13 @@
 </head>
 <body>
 
+    <!-- Full view animated background layer -->
+    <div class="bg-animation"></div>
+
     <div class="login-card">
         <div class="brand-header">
             <img class="brand-logo" src="logo.png" alt="JMP Logo">
-            <h2>JMP International Fish Trading</h2>
+            <h2>JMP International Platform</h2>
             <p>Internal Employee System Access</p>
         </div>
 
