@@ -2,27 +2,137 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>JMP Inventory Management</title>
-    <!-- Mute the favicon 404 console error permanently -->
     <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Synced version endpoints to prevent internal library crash states -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; color: #1e293b; min-height: 100vh; }
         
-        /* Navigation Styles */
-        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background: #475569; color: white; }
+        /* Enforce Desktop Viewport across all devices */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            min-width: 1280px; 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #f4f6f9; 
+            color: #1e293b; 
+            min-height: 100vh; 
+        }
+        
+        /* --- ANIMATED TOP NAVIGATION --- */
+        @keyframes slideDownNavbar {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .navbar { 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 12px 24px; 
+            gap: 12px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            /* Entrance Animation */
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .top-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+        }
+
+        .nav-title { 
+            font-size: 0.85rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            transition: color 0.3s ease;
+        }
+
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%; 
+            padding-bottom: 2px; 
+            flex-wrap: nowrap; /* Keep links horizontally structured on desktop */
+        }
+
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            /* Smooth transitions on hover/active */
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: #ffffff; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-btn.active { 
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
 
         /* Standardized Modal Styles */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
@@ -33,23 +143,24 @@
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
 
         /* Content Styles */
-        .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; }
+        .main-content { padding: 40px; max-width: 1200px; margin: 0 auto; min-width: 1200px; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .header h1 { margin: 0; color: #0f172a; font-size: 1.75rem; }
         
         .registration-box { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; gap: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .registration-text-area h3 { color: #0f172a; font-size: 1.1rem; }
-        .registration-text-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
+        .registration-text-area h3 { color: #0f172a; font-size: 1.1rem; margin: 0; }
+        .registration-text-area p { color: #64748b; font-size: 0.85rem; margin-top: 4px; margin-bottom: 0; }
 
-        .dashboard-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: wrap; }
-        .report-controls { background: white; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .dashboard-actions-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; gap: 15px; flex-wrap: nowrap; }
+        .report-controls { background: white; border: 1px solid #e2e8f0; padding: 15px 20px; border-radius: 8px; width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: nowrap; }
         .report-title-area { flex: 1; min-width: 250px; }
-        .report-title-area h3 { color: #0f172a; font-size: 1.1rem; }
-        .report-title-area p { color: #64748b; font-size: 0.85rem; margin-top: 2px; }
+        .report-title-area h3 { color: #0f172a; font-size: 1.1rem; margin: 0; }
+        .report-title-area p { color: #64748b; font-size: 0.85rem; margin-top: 4px; margin-bottom: 0; }
         
-        .controls-selectors-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .time-filter-select { padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; font-weight: 600; background-color: white; color: #1e293b; cursor: pointer; min-width: 150px; outline: none; }
+        .controls-selectors-group { display: flex; gap: 12px; align-items: center; flex-wrap: nowrap; }
+        .time-filter-select { padding: 10px 16px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.9rem; font-weight: 600; background-color: white; color: #1e293b; cursor: pointer; min-width: 180px; outline: none; }
         
-        .date-range-container { display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 4px 12px; border-radius: 6px; border: 1px solid #cbd5e1; }
+        .date-range-container { display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; }
         .date-range-container label { font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; }
         .calendar-input { border: none; background: transparent; font-size: 0.85rem; font-weight: 600; color: #1e293b; outline: none; cursor: pointer; }
         
@@ -64,7 +175,7 @@
         .logistics-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #cbd5e1; }
         
         .facility-identity-header { display: flex; align-items: center; gap: 15px; width: 100%; min-height: 65px; }
-        .facility-logo-container { width: 65px; height: 65px; display: flex; align-items: center; shrink: 0; justify-content: center; overflow: hidden; }
+        .facility-logo-container { width: 65px; height: 65px; display: flex; align-items: center; flex-shrink: 0; justify-content: center; overflow: hidden; }
         .facility-logo-container img { max-height: 100%; max-width: 100%; object-fit: contain; border-radius: 4px; }
 
         .logistics-card h4 { font-size: 0.95rem; color: #0f172a; line-height: 1.3; font-weight: 600; flex: 1; margin: 0; }
@@ -73,7 +184,7 @@
 
         .analytics-full-width-container { width: 100%; margin-top: 5px; }
         .chart-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .chart-card h3 { font-size: 1.1rem; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .chart-card h3 { font-size: 1.1rem; margin-top: 0; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         
         .chart-container { position: relative; width: 100%; height: 380px; max-height: 380px; }
     </style>
@@ -377,7 +488,7 @@
                         { label: 'Total Out', data: finalOut, backgroundColor: '#ef4444' }
                     ]
                 },
-                // If hasData is false, we completely drop the plugin hook from processing empty datasets
+                // If hasData is false, drop the plugin hook from processing empty datasets
                 plugins: hasData ? [ChartDataLabels] : [], 
                 options: {
                     responsive: true,
