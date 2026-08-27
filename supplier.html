@@ -2,30 +2,181 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>Supplier Directory | JMP HQ</title>
+    <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; color: #1e293b; min-height: 100vh; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* Navigation Styles */
-        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; display: inline-block; }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background: #475569; color: white; }
+        /* Enforce Desktop Viewport across all devices */
+        html, body { 
+            width: 100%; 
+            min-width: 1280px; 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #f8fafc; 
+            color: #1e293b; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+        }
+        
+        /* --- ANIMATED TOP NAVIGATION --- */
+        @keyframes slideDownNavbar {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .navbar { 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 12px 24px; 
+            gap: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+            font-family: 'Segoe UI', sans-serif;
+            /* Entrance Animation */
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .top-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+        }
+
+        .nav-title { 
+            font-size: 0.85rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            transition: color 0.3s ease;
+        }
+
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn:hover { 
+            background-color: #dc2626; 
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%; 
+            padding-bottom: 2px; 
+            flex-wrap: nowrap;
+        }
+
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: #ffffff; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-btn.active { 
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
 
         /* Standardized Modals */
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; backdrop-filter: blur(4px); }
+        .restriction-modal-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(11, 37, 69, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 9999; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.2s ease; 
+            backdrop-filter: blur(4px); 
+        }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card { 
+            background: white; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 440px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            border-top: 6px solid #3b82f6;
+        }
         .restriction-modal-card h4 { margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; font-weight: 700; }
-        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; line-height: 1.5; }
-        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; transition: background 0.15s; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5; }
+        .modal-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            width: 100%; 
+            max-width: 150px; 
+            transition: background 0.15s; 
+        }
         .modal-btn:hover { opacity: 0.9; }
 
         /* Professional Structured Edit Modal */
@@ -36,40 +187,122 @@
         .edit-save-btn:hover { background-color: #1d4ed8; }
 
         /* Workspace Layouts */
-        .main-content { padding: 40px; max-width: 800px; margin: 0 auto; display: none; } 
-        .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin: 0 0 5px 0; }
-        .back-link { background: #0f172a; color: white; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
+        .main-content { 
+            flex: 1; 
+            padding: 40px; 
+            min-width: 1200px; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            width: 100%; 
+            display: none; 
+        } 
+        
+        .header-panel { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            margin-bottom: 30px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .header-panel h1 { color: #0f172a; font-size: 1.5rem; font-weight: 700; margin: 0 0 5px 0; }
+        .header-panel p { color: #64748b; font-size: 0.9rem; margin: 0; }
 
-        .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 25px; }
-        .panel-card h3 { color: #0b2545; margin-top: 0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f4f6f9; }
+        .back-link { 
+            background: #0f172a; 
+            color: white; 
+            text-decoration: none; 
+            padding: 9px 16px; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 0.85rem; 
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .back-link:hover { opacity: 0.9; }
+
+        .panel-card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); 
+            margin-bottom: 25px; 
+        }
+        .panel-card h3 { 
+            color: #0b2545; 
+            margin-top: 0; 
+            margin-bottom: 20px; 
+            padding-bottom: 10px; 
+            border-bottom: 2px solid #f1f5f9; 
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
 
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 700; font-size: 0.8rem; color: #475569; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; }
+        .form-group input { 
+            width: 100%; 
+            padding: 10px 12px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 6px; 
+            font-size: 0.9rem; 
+            color: #1e293b;
+            background: white;
+            height: 42px;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
         .uppercase-input { text-transform: uppercase; }
 
-        .submit-btn { background: #0b2545; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s; }
-        .submit-btn:hover { opacity: 0.9; }
+        .submit-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 0.9rem;
+            width: 100%; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+        }
+        .submit-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+        .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; transform: none; }
 
         /* Table Components & Pagination */
-        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        th { background: #f1f5f9; text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; color: #475569; font-weight: bold; }
-        td { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .table-responsive {
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+        th { background: #f8fafc; color: #475569; font-weight: 700; padding: 12px 14px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        tr:hover td { background-color: #f8fafc; }
         
         /* Action Utility Layout */
-        .inline-edit-btn { background-color: #2563eb; color: white; border: none; padding: 5px 10px; font-size: 0.75rem; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
+        .inline-edit-btn { background-color: #2563eb; color: white; border: none; padding: 6px 12px; font-size: 0.75rem; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.15s; }
         .inline-edit-btn:hover { background-color: #1d4ed8; }
 
         .pagination-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 10px; }
-        .page-btn { background: #334155; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; font-weight: 600; }
+        .page-btn { background: #334155; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; font-weight: 600; transition: background 0.2s; }
+        .page-btn:hover:not(:disabled) { background: #475569; }
         .page-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
         .page-info { font-size: 0.8rem; color: #64748b; font-weight: 500; }
     </style>
 </head>
 <body>
 
-    <!-- Notification System Modal -->
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Restricted</h4>
@@ -78,10 +311,9 @@
         </div>
     </div>
 
-    <!-- Professional Pop-Up Edit Module Modal -->
     <div class="restriction-modal-container" id="editSupplierModal">
         <div class="restriction-modal-card edit-modal-card">
-            <h4 style="margin-bottom: 20px; border-bottom: 2px solid #f4f6f9; padding-bottom: 10px;">Update Supplier Entry</h4>
+            <h4 style="margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Update Supplier Entry</h4>
             <input type="hidden" id="editTargetId">
             <div class="form-group">
                 <label for="editSupplierName">Supplier Name</label>
@@ -132,7 +364,7 @@
 
         <div class="panel-card">
             <h3>Supplier Ledger Index (Sorted A-Z)</h3>
-            <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+            <div class="table-responsive">
                 <table>
                     <thead>
                         <tr>
