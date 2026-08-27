@@ -988,7 +988,7 @@
                 const originalRecord = globallyFetchedHistory.find(row => row.id == targetRowId);
                 if (originalRecord) {
                     if (targetBuyerName !== originalRecord.buyer_name) { remark = "EDIT BUYER"; }
-                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSSITIVE ADJ."; }
+                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSITIVE ADJ."; }
                     else if (targetDispatchQuantity < originalRecord.out_quantity) { remark = "NEGATIVE ADJ."; }
                 }
             }
