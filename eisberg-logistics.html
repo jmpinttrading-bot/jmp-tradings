@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280, initial-scale=1.0">
-    <title>Outbound Logistics Clearance Node - JMP System</title>
+    <title>Eisberg Logistics Outbound Node - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; }
         
+        /* Enforce Desktop Viewport across all devices */
         html, body { 
             margin: 0; 
             padding: 0; 
             width: 100%; 
             min-width: 1280px; 
             font-family: 'Segoe UI', sans-serif; 
-            background-color: #f4f6f9; 
+            background-color: #f8fafc; 
+            color: #1e293b;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
         }
         
-        /* --- ANIMATED TOP NAVIGATION (Exact copy from dashboard.html) --- */
+        /* --- ANIMATED TOP NAVIGATION --- */
         @keyframes slideDownNavbar {
             from {
                 transform: translateY(-100%);
@@ -44,7 +46,6 @@
             top: 0; 
             z-index: 1000;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-            /* Entrance Animation */
             animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
@@ -57,7 +58,7 @@
 
         .nav-title { 
             font-size: 0.85rem; 
-            color: #f97316; 
+            color: #38bdf8; 
             font-weight: bold; 
             text-transform: uppercase; 
             letter-spacing: 0.8px;
@@ -123,17 +124,24 @@
         }
 
         .nav-btn.active { 
-            background: #3b82f6; 
+            background: #0284c7; 
             color: #ffffff; 
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
         }
 
-        /* --- Main Content Area --- */
-        .main-content { flex: 1; padding: 40px; min-width: 1280px; overflow-y: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        /* --- MAIN CONTENT LAYOUT --- */
+        .main-content { 
+            flex: 1; 
+            padding: 40px; 
+            min-width: 1200px; 
+            overflow-y: auto; 
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         
         .admin-badge { display: none; background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .employee-badge { display: none; background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
         .back-link { 
             display: inline-flex; 
@@ -153,8 +161,8 @@
         }
         .back-link:hover { 
             background-color: #f8fafc; 
-            color: #ee964b; 
-            border-color: #ee964b; 
+            color: #0284c7; 
+            border-color: #0284c7; 
             transform: translateX(-2px);
         }
 
@@ -172,7 +180,7 @@
         .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
         .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; height: 42px; }
         .form-group textarea { height: 80px; resize: vertical; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #0284c7; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1); }
         
         .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { 
             background: #cbd5e1; 
@@ -184,7 +192,7 @@
 
         .form-actions { display: flex; gap: 10px; margin-top: 20px; }
         .btn-primary { flex: 1; background: #0f172a; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; transition: 0.2s; }
-        .btn-primary:hover { background: #ee964b; color: #0f172a; }
+        .btn-primary:hover { background: #0284c7; color: #ffffff; }
         .btn-primary:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
         .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
         .btn-secondary:hover { background: #b8c5d6; }
@@ -197,11 +205,11 @@
         .ledger-header-wrapper h3 { border-bottom: none !important; padding-bottom: 0 !important; margin: 0 !important; }
         .ledger-search-box { display: flex; gap: 10px; align-items: center; }
         .ledger-search-box input { height: 38px; width: 250px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
-        .ledger-search-box input:focus { outline: none; border-color: #ee964b; }
-        .ledger-search-box .btn-search { height: 38px; padding: 0 16px; font-size: 0.85rem; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
-        .ledger-search-box .btn-search:hover { background: #ee964b; color: #0f172a; }
-        .ledger-search-box .clear-filter { background: #cbd5e1; color: #334155; }
-        .ledger-search-box .clear-filter:hover { background: #b8c5d6; color: #1e293b; }
+        .ledger-search-box input:focus { outline: none; border-color: #0284c7; }
+        .ledger-search-box .btn-search { height: 38px; padding: 0 16px; font-size: 0.85rem; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .ledger-search-box .btn-search:hover { background: #1e293b; }
+        .ledger-search-box .btn-search.clear-filter { background: #64748b; }
+        .ledger-search-box .btn-search.clear-filter:hover { background: #475569; }
 
         .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; }
         
@@ -233,32 +241,89 @@
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-        /* Notification Modal */
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; font-family: 'Segoe UI', sans-serif; }
-        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .restriction-modal-card h4 { margin-bottom: 12px; font-size: 1.25rem; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
-        .restriction-modal-card p { margin-bottom: 20px; color: #475569; font-size: 0.95rem; line-height: 1.5; }
-        .modal-btn { background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; transition: background 0.2s; }
-        .modal-btn:hover { background: #f97316; }
+        /* Notification Modal Styles */
+        .restriction-modal-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(11, 37, 69, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 20000; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.2s ease-in-out;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .restriction-modal-container.is-visible { 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
+        .restriction-modal-card { 
+            background: white; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 440px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .restriction-modal-card h4 {
+            margin-bottom: 10px; 
+            color: #1e293b; 
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .restriction-modal-card p {
+            color: #64748b; 
+            font-size: 0.9rem; 
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .modal-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 15px; 
+            width: 100%; 
+            max-width: 150px; 
+        }
+        .modal-btn:hover {
+            background: #11355e;
+        }
     </style>
 </head>
 <body>
 
-    <!-- NAVBAR MATCHED EXACTLY FROM dashboard.html -->
+    <!-- Notification Modal UI -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">Notification</h4>
+            <p id="restrictionModalMessage">Execution status telemetry readout frame.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn">My Profile</a>
-            <a href="import-docs.html" class="nav-btn" onclick="checkModuleAccess(event, 'imports')">Imports</a>
-            <a href="inventory-management.html" class="nav-btn active" onclick="checkModuleAccess(event, 'inventory')">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn" onclick="checkModuleAccess(event, 'sales')">Sales</a>
-            <a href="audit-report.html" class="nav-btn" onclick="checkModuleAccess(event, 'audit')">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" id="settingsNavBtn" onclick="checkModuleAccess(event, 'settings')">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -279,7 +344,6 @@
             <select id="targetFacility">
                 <option value="VVS COLD STORAGE & PROCESSING PLANT CORP.">VVS Cold Storage & Processing Plant Corp.</option>
                 <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">Hightower Storage & Trading Centre, Inc.</option>
-                <option value="EISBERG COLD LOGISTICS INC.">Eisberg Cold Logistics Inc.</option>
                 <option value="POLARIS COLD CHAIN SOLUTIONS">Polaris Cold Chain Solutions</option>
             </select>
         </div>
@@ -291,7 +355,7 @@
 
     <div class="main-content">
         <div class="header">
-            <h1>Outbound Inventory Management</h1>
+            <h1>Eisberg Outbound Inventory Management</h1>
             <div class="admin-badge" id="adminEmail"></div>
         </div>
 
@@ -424,15 +488,6 @@
         </div>
     </div>
 
-    <!-- Notification Modal Container -->
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage">Execution status telemetry readout frame.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
-    </div>
-
     <script>
         const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
@@ -441,8 +496,6 @@
         let currentAdminId = null;
         let currentUserEmail = "";
         let bypassAuthListener = false;
-        let currentUserRole = "employee"; 
-        let userPermissions = {}; 
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
@@ -451,36 +504,11 @@
         let currentPage = 1;
         const rowsPerPage = 15;
         
-        let permissions = { isAdmin: false, hasMasterAccess: false };
-
-        function checkModuleAccess(event, moduleName) {
-            if (currentUserRole === 'admin') return; 
-
-            if (moduleName === 'settings') {
-                event.preventDefault();
-                showSystemModal({ title: 'Access Restricted', message: 'Administrative privileges are required to access System Settings.' });
-                return;
-            }
-
-            const accessMap = {
-                'imports': userPermissions.imports_access,
-                'inventory': userPermissions.inventory_access,
-                'sales': userPermissions.sales_access,
-                'audit': userPermissions.audit_access
-            };
-
-            if (accessMap[moduleName] === false) {
-                event.preventDefault();
-                showSystemModal({ 
-                    title: 'Access Denied', 
-                    message: `Your employee profile does not hold permissions to view the ${moduleName.toUpperCase()} module.` 
-                });
-            }
-        }
+        let currentUserPermissions = null;
 
         function showSystemModal(options = {}) {
-            document.getElementById('alertTitle').textContent = options.title || 'Notification';
-            document.getElementById('alertMessage').textContent = options.message || '';
+            document.getElementById('restrictionModalTitle').textContent = options.title || 'Notification';
+            document.getElementById('restrictionModalMessage').textContent = options.message || '';
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
@@ -488,11 +516,38 @@
             document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
-        function showAlert(msg, type) {
-            showSystemModal({
-                title: type === 'error' ? 'System Error' : 'Success',
-                message: msg
-            });
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
+            }
+
+            if (accessKey === 'admin_access') {
+                showSystemModal({ title: "Access Restricted", message: "Administrative level privileges are required to access System Settings." });
+                return;
+            }
+
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                showSystemModal({ title: "Access Restricted", message: "You do not possess the dynamic authorization privileges needed for this module pipeline." });
+            } else {
+                window.location.href = url;
+            }
         }
 
         function generateSalesOrderNumber(isTransfer = false, direction = "", targetFacility = "") {
@@ -528,12 +583,12 @@
             const qtyPerPallet = baseQtyPerPallet > 0 ? baseQtyPerPallet : 1;
             
             if (!itemId || currentQty <= 0) {
-                showAlert("Please select an item and ensure a valid quantity is set.", "error");
+                showSystemModal({ title: "Validation Error", message: "Please select an item and ensure a valid quantity is set." });
                 return;
             }
 
             if (currentQty > maxQty) {
-                showAlert(`Transfer quantity (${currentQty}) cannot exceed current available quantity (${maxQty}).`, "error");
+                showSystemModal({ title: "Validation Error", message: `Transfer quantity (${currentQty}) cannot exceed current available quantity (${maxQty}).` });
                 return;
             }
 
@@ -599,9 +654,9 @@
             const { error } = await supabaseClient.from('transactions').insert(transferPayload);
 
             if (error) {
-                showAlert("Error during transfer: " + error.message, "error");
+                showSystemModal({ title: "System Error", message: "Error during transfer: " + error.message });
             } else {
-                showAlert("Transfer successful! Cargo moved to " + targetFacility, "success");
+                showSystemModal({ title: "Success", message: "Transfer successful! Cargo moved to " + targetFacility });
                 document.getElementById('transferModal').close();
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
@@ -643,7 +698,7 @@
                     document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 1;
                 }
 
-                showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
+                showSystemModal({ title: "Success", message: `Loaded ledger parameters for item code: ${stockItem.item_code}` });
             }
         }
 
@@ -669,33 +724,35 @@
             currentAdminId = user.id;
             currentUserEmail = user.email;
             
-            const { data: profile } = await supabaseClient
+            const { data: profile, error } = await supabaseClient
                 .from('profiles')
-                .select('role, username, inventory_access, imports_access, sales_access, audit_access')
+                .select('*')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
-            if (profile) {
-                currentUserRole = profile.role.toLowerCase().trim();
-                userPermissions = profile; 
-
-                const settingsBtn = document.getElementById('settingsNavBtn');
-                if (currentUserRole === 'admin' && settingsBtn) {
-                    settingsBtn.style.display = "inline-block";
-                }
+            if (error || !profile) {
+                window.location.href = "login.html";
+                return;
             }
 
-            if (profile && profile.role === 'Admin') {
-                permissions.isAdmin = true;
-                permissions.hasMasterAccess = true;
-                document.getElementById('adminEmail').style.display = "none";
+            currentUserPermissions = profile;
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+
+            const hasMasterAccess = roleClean === 'admin' || currentUserPermissions.inventory_access !== false;
+            if (!hasMasterAccess) {
+                showSystemModal({ title: "Access Restricted", message: "Unauthorized entry context: Account configuration prevents changing inventory metrics." });
+                setTimeout(() => { window.location.href = "employee-dashboard.html"; }, 2500);
+                return;
+            }
+
+            if (roleClean === 'admin') {
+                document.getElementById('adminEmail').className = "admin-badge";
+                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
-                const masterAccess = profile ? profile.inventory_access !== false : true;
-                if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
-                permissions.isAdmin = false;
-                permissions.hasMasterAccess = true;
-                document.getElementById('adminEmail').style.display = "none";
+                document.getElementById('adminEmail').className = "employee-badge";
+                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile.username || user.email.split('@')[0]}`;
             }
+
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
             setupSessionCrossCheckListener();
@@ -745,7 +802,7 @@
                 .select('*')
                 .eq('storage_facility', 'EISBERG COLD LOGISTICS INC.')
                 .order('created_at', { ascending: false });
-            if (error) { showAlert("System error: " + error.message, "error"); return; }
+            if (error) { showSystemModal({ title: "System Error", message: error.message }); return; }
             globallyFetchedHistory = data || [];
             currentActiveFilteredList = [...globallyFetchedHistory];
             currentPage = 1; 
@@ -859,10 +916,15 @@
             document.getElementById('rawUnitPrice').value = item.unit_price;
             document.getElementById('qtyPerPallet').value = item.qty_per_pallet || 1;
             
-            const stockMatch = globallyAvailableStock.find(stock => stock.item_code === item.item_code);
-            const currentAvailable = stockMatch ? stockMatch.calculated_balance : 0;
-            document.getElementById('maxAvailableQty').value = currentAvailable + (item.out_quantity || 0);
-            document.getElementById('displayAvailableQty').value = `${currentAvailable + (item.out_quantity || 0)} Units Remaining`;
+            const itemCode = item.item_code;
+            const totalBalance = globallyFetchedHistory
+                .filter(tx => tx.item_code === itemCode)
+                .reduce((acc, tx) => acc + ((parseInt(tx.in_quantity) || 0) - (parseInt(tx.out_quantity) || 0)), 0);
+
+            const maxQty = totalBalance + (parseInt(item.out_quantity) || 0);
+
+            document.getElementById('maxAvailableQty').value = maxQty;
+            document.getElementById('displayAvailableQty').value = `${maxQty} Units Remaining`;
 
             document.getElementById('formTitle').textContent = "Editing Transaction: " + item.sales_order_no;
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -885,9 +947,9 @@
                 .update({ out_quantity: 0, remarks: "CANCELLED ORDER" })
                 .eq('id', item.id);
 
-            if (error) { showAlert("Error cancelling: " + error.message, "error"); }
+            if (error) { showSystemModal({ title: "System Error", message: error.message }); }
             else {
-                showAlert("Transaction successfully cancelled.", "success");
+                showSystemModal({ title: "Success", message: "Transaction successfully cancelled." });
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
             }
@@ -903,7 +965,7 @@
             const qtyPerPallet = baseQtyPerPallet > 0 ? baseQtyPerPallet : 1;
 
             if (targetDispatchQuantity > maxQty) {
-                showAlert(`Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).`, "error");
+                showSystemModal({ title: "Validation Error", message: `Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).` });
                 return;
             }
 
@@ -918,7 +980,7 @@
                 const originalRecord = globallyFetchedHistory.find(row => row.id == targetRowId);
                 if (originalRecord) {
                     if (targetBuyerName !== originalRecord.buyer_name) { remark = "EDIT BUYER"; }
-                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSSITIVE ADJ."; }
+                    else if (targetDispatchQuantity > originalRecord.out_quantity) { remark = "POSITIVE ADJ."; }
                     else if (targetDispatchQuantity < originalRecord.out_quantity) { remark = "NEGATIVE ADJ."; }
                 }
             }
@@ -951,11 +1013,11 @@
             try {
                 const { error } = await supabaseClient.from('transactions').upsert([payload]);
                 if (error) throw error;
-                showAlert("Success: Ledger updated.", "success");
+                showSystemModal({ title: "Success", message: "Ledger updated successfully." });
                 resetFormState();
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
-            } catch (err) { showAlert("Error: " + err.message, "error"); }
+            } catch (err) { showSystemModal({ title: "Error", message: err.message }); }
             finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Upload Outbound Transactions";
@@ -984,6 +1046,7 @@
                     await supabaseClient.auth.signOut();
                     window.location.href = "login.html";
                 }
+                if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
             });
         }
 
