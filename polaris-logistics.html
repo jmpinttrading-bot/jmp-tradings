@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280, initial-scale=1.0">
-    <title>Outbound Logistics Clearance Node - JMP System</title>
+    <title>Polaris Logistics Outbound Node - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; }
         
-        /* Enforce Desktop Viewport across all devices (Identical to dashboard.html) */
+        /* Enforce Desktop Viewport across all devices */
         html, body { 
             margin: 0; 
             padding: 0; 
@@ -22,7 +22,7 @@
             min-height: 100vh;
         }
 
-        /* --- ANIMATED TOP NAVIGATION (Exact Match to dashboard.html) --- */
+        /* --- ANIMATED TOP NAVIGATION --- */
         @keyframes slideDownNavbar {
             from {
                 transform: translateY(-100%);
@@ -46,7 +46,6 @@
             top: 0; 
             z-index: 1000;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-            /* Entrance Animation */
             animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
@@ -94,7 +93,7 @@
             gap: 10px; 
             width: 100%; 
             padding-bottom: 2px; 
-            flex-wrap: nowrap; /* Prevent wrapping for desktop layout */
+            flex-wrap: nowrap;
         }
 
         .nav-btn { 
@@ -110,7 +109,6 @@
             white-space: nowrap; 
             position: relative;
             overflow: hidden;
-            /* Smooth animations on hover/focus */
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
