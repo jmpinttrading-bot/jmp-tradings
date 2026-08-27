@@ -73,20 +73,20 @@
 
         /* Floating Circle Sizes & Trajectories */
         .circle-1 {
-            width: 220px;
-            height: 220px;
+            width: 200px;
+            height: 200px;
             animation: bouncePath1 20s linear infinite;
         }
 
         .circle-2 {
-            width: 250px;
-            height: 250px;
+            width: 220px;
+            height: 220px;
             animation: bouncePath2 24s linear infinite;
         }
 
         .circle-3 {
-            width: 230px;
-            height: 230px;
+            width: 210px;
+            height: 210px;
             animation: bouncePath3 18s linear infinite;
         }
 
@@ -117,62 +117,56 @@
             100% { top: 10vh; left: 75vw; }
         }
 
-        /* Login Card Frame (1280px Desktop Content Width) */
+        /* Compact Centered Login Card Frame */
         .login-card {
             background: #ffffff;
             width: 100%;
-            max-width: 1280px; /* Set directly to 1280px for desktop view */
-            padding: 60px 40px;     
-            border-radius: 16px;
+            max-width: 450px; /* Reduced frame size for a focused, compact look */
+            padding: 40px;     
+            border-radius: 14px;
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.45);
             text-align: left;
             position: relative;
             z-index: 10; /* Ensures form remains interactive above moving objects */
         }
 
-        /* Inner Form Container (Keeps form structured and readable inside 1280px canvas) */
-        .card-inner {
-            max-width: 480px;
-            margin: 0 auto;
-        }
-
         /* Branding Block inside form */
         .brand-header {
             text-align: center;
-            margin-bottom: 35px;
+            margin-bottom: 30px;
         }
 
         .brand-logo {
-            height: 95px;
-            width: 95px;
+            height: 85px;
+            width: 85px;
             object-fit: contain;
             background: #f4f8fb;
             border-radius: 50%;
             padding: 4px;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             border: 1px solid #e2e8f0;
         }
 
         .brand-header h2 {
             color: #0b2545; 
-            font-size: 1.65rem;
+            font-size: 1.5rem;
             font-weight: 700;
             letter-spacing: 0.5px;
         }
 
         .brand-header p {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #ee964b; 
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1.2px;
-            margin-top: 6px;
+            margin-top: 4px;
         }
 
         /* Input Controls */
         .form-group {
-            margin-bottom: 24px;
+            margin-bottom: 22px;
             position: relative;
         }
 
@@ -181,15 +175,15 @@
             margin-bottom: 8px;
             font-weight: 600;
             color: #334155;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         .form-group input {
             width: 100%;
-            padding: 14px 16px;
+            padding: 12px 15px;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
-            font-size: 1.05rem;
+            font-size: 1rem;
             color: #1e293b;
             transition: all 0.3s ease;
             background-color: #f8fafc;
@@ -210,7 +204,7 @@
         }
 
         .password-wrapper input {
-            padding-right: 55px; 
+            padding-right: 50px; 
         }
 
         .toggle-password {
@@ -235,15 +229,15 @@
             background-color: #0b2545;
             color: #ffffff;
             border: none;
-            padding: 16px;
+            padding: 14px;
             width: 100%;
             border-radius: 6px;
             font-weight: 700;
             cursor: pointer;
-            font-size: 1.05rem;
+            font-size: 1rem;
             transition: background 0.3s;
             box-shadow: 0 4px 12px rgba(11, 37, 69, 0.2);
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .submit-btn:hover {
@@ -257,16 +251,16 @@
 
         /* Auxiliary Utilities link */
         .utilities {
-            margin-top: 28px;
+            margin-top: 25px;
             text-align: center;
             border-top: 1px solid #edf2f7;
-            padding-top: 22px;
+            padding-top: 20px;
         }
 
         .back-home {
             color: #64748b;
             text-decoration: none;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -367,36 +361,34 @@
     </div>
 
     <div class="login-card">
-        <div class="card-inner">
-            <div class="brand-header">
-                <img class="brand-logo" src="logo.png" alt="JMP Logo">
-                <h2>JMP International Platform</h2>
-                <p>Internal Employee System Access</p>
+        <div class="brand-header">
+            <img class="brand-logo" src="logo.png" alt="JMP Logo">
+            <h2>JMP International Platform</h2>
+            <p>Internal Employee System Access</p>
+        </div>
+
+        <form onsubmit="handlePlatformLogin(event)">
+            <div class="form-group">
+                <label for="employeeUsername">Employee Username</label>
+                <input type="text" id="employeeUsername" required autocomplete="username" placeholder="e.g., jsmith2026">
             </div>
 
-            <form onsubmit="handlePlatformLogin(event)">
-                <div class="form-group">
-                    <label for="employeeUsername">Employee Username</label>
-                    <input type="text" id="employeeUsername" required autocomplete="username" placeholder="e.g., jsmith2026">
+            <div class="form-group">
+                <label for="employeePassword">Secure Token / Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="employeePassword" required autocomplete="current-password" placeholder="••••••••">
+                    <button type="button" class="toggle-password" id="togglePassBtn" onclick="togglePasswordVisibility()">SHOW</button>
                 </div>
-
-                <div class="form-group">
-                    <label for="employeePassword">Secure Token / Password</label>
-                    <div class="password-wrapper">
-                        <input type="password" id="employeePassword" required autocomplete="current-password" placeholder="••••••••">
-                        <button type="button" class="toggle-password" id="togglePassBtn" onclick="togglePasswordVisibility()">SHOW</button>
-                    </div>
-                </div>
-
-                <button type="submit" id="submitBtn" class="submit-btn">Verify & Enter System</button>
-            </form>
-
-            <div class="utilities">
-                <a href="index.html" class="back-home">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                    Return to Public Website
-                </a>
             </div>
+
+            <button type="submit" id="submitBtn" class="submit-btn">Verify & Enter System</button>
+        </form>
+
+        <div class="utilities">
+            <a href="index.html" class="back-home">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                Return to Public Website
+            </a>
         </div>
     </div>
 
