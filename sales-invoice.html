@@ -2,30 +2,140 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>Sales Invoice Management | JMP HQ</title>
+    <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* Navbar Styles */
-        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .logout-btn:hover { background-color: #dc2626; }
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; transition: all 0.2s; }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background: #475569; color: white; }
+        /* Enforce Desktop Viewport across all devices */
+        html, body { 
+            width: 100%; 
+            min-width: 1280px; 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #f8fafc; 
+            color: #1e293b; 
+            min-height: 100vh; 
+        }
+        
+        /* --- ANIMATED TOP NAVIGATION --- */
+        @keyframes slideDownNavbar {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .navbar { 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 12px 24px; 
+            gap: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+            /* Entrance Animation */
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .top-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+        }
+
+        .nav-title { 
+            font-size: 0.85rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            transition: color 0.3s ease;
+        }
+
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn:hover { 
+            background-color: #dc2626; 
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%; 
+            padding-bottom: 2px; 
+            flex-wrap: nowrap; /* Keep links horizontally structured on desktop */
+        }
+
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            /* Smooth transitions on hover/active */
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: #ffffff; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-btn.active { 
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
 
         /* Content Workspace Layout */
-        .main-content { padding: 40px; max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px; }
+        .main-content { padding: 40px; max-width: 1600px; margin: 0 auto; min-width: 1200px; display: flex; flex-direction: column; gap: 25px; }
         .content-card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
         
         .content-card h3 { font-size: 1.25rem; color: #0f172a; font-weight: 700; margin-bottom: 6px; }
-        .content-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; }
+        .content-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 0; }
 
         /* Reference Badges Container Layout */
         .reference-badges-container { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; width: 100%; }
@@ -39,9 +149,9 @@
         .commodity-reference-card span { font-family: 'Segoe UI', sans-serif; font-size: 1rem; color: #1e293b; background: white; padding: 2px 8px; border-radius: 4px; border: 1px solid #bbf7d0; }
 
         /* Filter Row Component */
-        .table-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 15px; }
-        .table-header-wrapper h4 { font-size: 1.1rem; color: #0f172a; font-weight: 700; }
-        .search-box-container { display: flex; gap: 10px; align-items: center; }
+        .table-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: nowrap; gap: 15px; }
+        .table-header-wrapper h4 { font-size: 1.1rem; color: #0f172a; font-weight: 700; margin: 0; }
+        .search-box-container { display: flex; gap: 10px; align-items: center; flex-wrap: nowrap; }
         
         /* Dropdown/Input Styling */
         .dropdown-select { height: 38px; width: 280px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; background-color: white; color: #1e293b; outline: none; }
@@ -78,7 +188,7 @@
         .highlighted-ref-badge { background-color: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-family: monospace; font-size: 0.88rem; display: inline-block; }
 
         /* Pagination Layout Control Components */
-        .pagination-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 5px; flex-wrap: wrap; gap: 15px; }
+        .pagination-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 0 5px; flex-wrap: nowrap; gap: 15px; }
         .pagination-container { display: flex; align-items: center; gap: 8px; }
         .btn-page { background: #334155; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         .btn-page:hover:not(:disabled) { background: #475569; }
@@ -93,13 +203,6 @@
         .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5; }
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
         .modal-btn:hover { background: #11355e; }
-
-        @media (max-width: 768px) {
-            .table-header-wrapper { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .search-box-container { width: 100%; flex-wrap: wrap; }
-            .search-box-container .combobox-wrapper { width: 100% !important; }
-            .search-box-container .dropdown-select { width: 100%; }
-        }
     </style>
 </head>
 <body>
@@ -134,7 +237,6 @@
             <p>Use this module to generate, view, and manage sales invoices for client transactions.</p>
         </div>
 
-        <!-- Ledger Processing Grid -->
         <div class="content-card" style="padding: 20px;">
             
             <div class="table-header-wrapper">
@@ -143,15 +245,13 @@
                     <div class="combobox-wrapper" style="position: relative; width: 280px;">
                         <input type="text" id="salesComboboxInput" class="dropdown-select" placeholder="Select or Type SPSIC Number..." oninput="filterComboboxOptions()" onclick="toggleComboboxDropdown(true)" autocomplete="off">
                         <div id="comboboxDropdownList" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 6px; max-height: 200px; overflow-y: auto; z-index: 1010; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                            <!-- Dynamic dropdown elements inject here -->
-                        </div>
+                            </div>
                     </div>
                     <button type="button" class="btn-action clear-filter" onclick="resetSearchFilter()">Reset</button>
                     <button type="button" class="btn-action" style="background-color: #2563eb;" onclick="verifyNavigationPrivilege('sales_invoice_access', 'uploaded-invoice.html')">Uploaded Invoices ↗</button>
                 </div>
             </div>
 
-            <!-- Dynamic Reference Badges Container Located Below Heading, On Top of Table -->
             <div class="reference-badges-container" id="referenceBadgesWrapper" style="display: none;">
                 <div class="spsic-reference-card">
                     Current SPSIC Reference: <span id="spsicTopBadgeValue">—</span>
