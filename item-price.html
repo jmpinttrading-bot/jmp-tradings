@@ -10,19 +10,33 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* --- Synchronized Navbar Layout Components --- */
+        /* --- Animated & Synchronized Navbar Layout Components --- */
         .navbar { 
             background-color: #1e293b; 
             color: white; 
             width: 100%; 
             display: flex; 
             flex-direction: column; 
-            padding: 10px; 
+            padding: 12px 20px; 
             gap: 10px; 
             position: sticky; 
             top: 0; 
             z-index: 1000; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: navbarSlideDown 0.5s ease-out forwards;
         }
+
+        @keyframes navbarSlideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
         .top-row { 
             display: flex; 
             justify-content: space-between; 
@@ -30,47 +44,89 @@
             width: 100%; 
             gap: 10px; 
         }
+
         .nav-title { 
-            font-size: 0.75rem; 
+            font-size: 0.85rem; 
             color: #f97316; 
             font-weight: bold; 
             text-transform: uppercase; 
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
         }
+
         .logout-btn { 
             background-color: #ef4444; 
             color: white; 
             border: none; 
-            padding: 6px 10px; 
-            border-radius: 4px; 
+            padding: 6px 14px; 
+            border-radius: 6px; 
             font-size: 0.75rem; 
             font-weight: bold; 
             cursor: pointer; 
+            transition: all 0.2s ease-in-out;
         }
+
         .logout-btn:hover { 
             background-color: #dc2626; 
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
         }
+
         .nav-links { 
             display: flex; 
-            gap: 8px; 
+            gap: 10px; 
             flex-wrap: wrap; 
             width: 100%; 
-            padding-bottom: 5px; 
+            padding-bottom: 2px; 
         }
+
         .nav-btn { 
+            position: relative;
             background-color: #334155; 
             color: #cbd5e1; 
             text-decoration: none; 
-            padding: 6px 12px;  
-            border-radius: 4px; 
+            padding: 8px 14px;  
+            border-radius: 6px; 
             font-size: 0.75rem; 
-            font-weight: 500; 
+            font-weight: 600; 
             cursor: pointer; 
             border: none; 
             white-space: nowrap; 
-            transition: all 0.2s; 
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
         }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background: #475569; color: white; }
+
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: #ffffff; 
+            transform: translateY(-1px);
+        }
+
+        .nav-btn.active { 
+            background-color: #0f172a; 
+            color: #f97316; 
+            font-weight: bold;
+            box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.3);
+        }
+
+        /* Animated Accent Line Indicator */
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 3px;
+            background-color: #f97316;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+            border-radius: 2px 2px 0 0;
+        }
+
+        .nav-btn:hover::after,
+        .nav-btn.active::after {
+            width: 80%;
+        }
 
         /* --- Standardized Notification Modal Styles --- */
         .restriction-modal-container { 
