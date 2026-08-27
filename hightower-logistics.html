@@ -11,7 +11,7 @@
         body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
         
         /* --- Synchronized Dashboard Navbar & Slide Animation --- */
-        @keyframes slideDown {
+        @keyframes slideDownNavbar {
             from { transform: translateY(-100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
@@ -28,7 +28,7 @@
             top: 0; 
             z-index: 1000; 
             font-family: 'Inter', sans-serif;
-            animation: slideDown 0.4s ease-out;
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
@@ -51,7 +51,12 @@
             transition: all 0.2s ease-in-out; 
         }
         .nav-btn:hover { background-color: #475569; color: white; transform: translateY(-1px); }
-        .nav-btn.active { background: #475569; color: white; border-bottom: 2px solid #f97316; }
+        .nav-btn.active { 
+            background-color: #2563eb; 
+            color: #ffffff; 
+            border-bottom: none; 
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35); 
+        }
 
         /* --- Main Content Layout --- */
         .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
