@@ -2,31 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>OR Dispo Ledger Entry - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; min-height: 100vh; }
         
-        /* --- Animated & Synchronized Navbar Layout Components --- */
-        .navbar { 
-            background-color: #1e293b; 
-            color: white; 
+        /* Enforce Standard Desktop Viewport across all devices */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
             width: 100%; 
-            display: flex; 
-            flex-direction: column; 
-            padding: 12px 20px; 
-            gap: 10px; 
-            position: sticky; 
-            top: 0; 
-            z-index: 1000; 
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            animation: navbarSlideDown 0.5s ease-out forwards;
+            min-width: 1280px; 
+            background-color: #f8fafc; 
+            color: #1e293b; 
+            min-height: 100vh; 
         }
-
-        @keyframes navbarSlideDown {
+        
+        /* --- Synchronized Navbar Layout Components --- */
+        @keyframes slideDownNavbar {
             from {
                 transform: translateY(-100%);
                 opacity: 0;
@@ -37,12 +32,26 @@
             }
         }
 
+        .navbar { 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 12px 24px; 
+            gap: 12px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
         .top-row { 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
             width: 100%; 
-            gap: 10px; 
         }
 
         .nav-title { 
@@ -50,7 +59,7 @@
             color: #f97316; 
             font-weight: bold; 
             text-transform: uppercase; 
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
             transition: color 0.3s ease;
         }
 
@@ -58,26 +67,31 @@
             background-color: #ef4444; 
             color: white; 
             border: none; 
-            padding: 6px 14px; 
+            padding: 7px 14px; 
             border-radius: 6px; 
             font-size: 0.75rem; 
             font-weight: bold; 
             cursor: pointer; 
-            transition: all 0.2s ease-in-out;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
         }
 
         .logout-btn:hover { 
             background-color: #dc2626; 
             transform: translateY(-1px);
-            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
         }
 
         .nav-links { 
             display: flex; 
             gap: 10px; 
-            flex-wrap: wrap; 
             width: 100%; 
             padding-bottom: 2px; 
+            flex-wrap: nowrap;
         }
 
         .nav-btn { 
@@ -85,10 +99,10 @@
             background-color: #334155; 
             color: #cbd5e1; 
             text-decoration: none; 
-            padding: 8px 14px;  
+            padding: 8px 16px;  
             border-radius: 6px; 
-            font-size: 0.75rem; 
-            font-weight: 600; 
+            font-size: 0.8rem; 
+            font-weight: 500; 
             cursor: pointer; 
             border: none; 
             white-space: nowrap; 
@@ -99,33 +113,19 @@
         .nav-btn:hover { 
             background-color: #475569; 
             color: #ffffff; 
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
         }
 
         .nav-btn.active { 
-            background-color: #0f172a; 
-            color: #f97316; 
-            font-weight: bold;
-            box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.3);
-        }
-
-        /* Animated Accent Line Indicator */
-        .nav-btn::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 3px;
-            background-color: #f97316;
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
-            border-radius: 2px 2px 0 0;
-        }
-
-        .nav-btn:hover::after,
-        .nav-btn.active::after {
-            width: 80%;
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
         }
 
         /* --- Standardized Notification Modal Styles --- */
@@ -205,7 +205,7 @@
         }
 
         /* --- Workspace Content Styles --- */
-        .main-content { padding: 40px; max-width: 1400px; margin: 0 auto; }
+        .main-content { padding: 40px; min-width: 1200px; max-width: 1400px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
 
         .action-bar-row {
@@ -214,7 +214,7 @@
             align-items: center;
             margin-bottom: 25px;
             gap: 15px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
         }
 
         .back-link { 
@@ -396,16 +396,6 @@
             background-color: #f8fafc;
             border-radius: 8px;
         }
-
-        @media (max-width: 992px) {
-            .form-grid { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 768px) {
-            .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .ledger-search-box { width: 100%; flex-wrap: wrap; }
-            .ledger-search-box input { flex: 1; min-width: 150px; }
-            .summary-section table { width: 100% !important; }
-        }
     </style>
 </head>
 <body>
@@ -432,7 +422,7 @@
             <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
             <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
-            <a href="#" class="nav-btn" id="settingsBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
+            <a href="#" class="nav-btn" id="settingsNavBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
 
@@ -488,7 +478,7 @@
                                 </tr>
                             </thead>
                             <tbody id="bulkItemRows">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
 
@@ -874,7 +864,8 @@
 
             currentUserPermissions = profile;
             const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
-            if (roleClean === 'admin' && document.getElementById('settingsBtn')) document.getElementById('settingsBtn').style.display = "block";
+            const settingsBtn = document.getElementById('settingsNavBtn');
+            if (roleClean === 'admin' && settingsBtn) settingsBtn.style.display = "inline-block";
 
             if (roleClean !== 'admin' && currentUserPermissions.inventory_access === false) {
                 showSystemModal("Access Restricted", "Unauthorized entry context: Account configuration prevents viewing ledger logs.");
