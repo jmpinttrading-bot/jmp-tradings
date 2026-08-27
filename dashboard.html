@@ -2,24 +2,133 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>JMP Dashboard | Inventory View</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; }
         
-        /* Navigation Styles - Exactly matched with employee-dashboard.html */
-        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background: #475569; color: white; }
+        /* Enforce Desktop Viewport across all devices */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            min-width: 1280px; 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #f4f6f9; 
+        }
+        
+        /* --- ANIMATED TOP NAVIGATION --- */
+        @keyframes slideDownNavbar {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
 
-        /* Standardized Notification Modal Styles from inventory-management.html */
+        .navbar { 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 12px 24px; 
+            gap: 12px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            /* Entrance Animation */
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .top-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+        }
+
+        .nav-title { 
+            font-size: 0.85rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            transition: color 0.3s ease;
+        }
+
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%; 
+            padding-bottom: 2px; 
+            flex-wrap: nowrap; /* Prevent wrapping for desktop layout */
+        }
+
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            position: relative;
+            overflow: hidden;
+            /* Smooth animations on hover/focus */
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: #ffffff; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-btn.active { 
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        /* --- REST OF STYLES --- */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -28,13 +137,13 @@
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; }
 
         /* Content Area Alignment */
-        .main-content { padding: 40px; }
+        .main-content { padding: 40px; min-width: 1200px; }
         
         .welcome-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
         .welcome-logo { width: 80px; height: 80px; object-fit: contain; }
         #welcomeMsg { font-size: 1.8rem; margin: 0; color: #1e293b; }
         
-        .filter-section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; }
+        .filter-section { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; display: flex; gap: 15px; align-items: flex-end; }
         .filter-section .filter-group { display: flex; flex-direction: column; gap: 5px; }
         .filter-group label { font-size: 0.75rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
         .filter-group input { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; outline: none; }
@@ -294,7 +403,6 @@
             let exportedRows = [];
 
             itemsAtFacility.forEach(code => {
-                // Fetch the active/latest date transaction match to check for zero balance & single pallet
                 const activeMatch = facilityData.filter(d => d.item_code === code && d.date <= dates[0])
                                                  .sort((a, b) => {
                                                      const dateCompare = b.date.localeCompare(a.date);
@@ -308,12 +416,10 @@
 
                 const activeBalance = activeMatch ? parseInt(activeMatch.balance) || 0 : 0;
                 
-                // 1. OMIT ZERO BALANCE ROWS (Skip items where current active balance is 0)
                 if (activeBalance <= 0) {
                     return; 
                 }
 
-                // Check if current/active date pallet count is 1
                 const activePallets = (activeMatch && activeMatch.total_pallet) ? String(activeMatch.total_pallet).trim() : '—';
                 const isSinglePallet = activePallets === '1' || activePallets === '1.0' || activePallets === '1.00';
                 
@@ -356,12 +462,10 @@
                 exportedRows.push(exportRowObj);
             });
 
-            // If no active non-zero items exist for this facility
             if (!tableRowsHtml) {
                 tableRowsHtml = `<tr><td colspan="${(dates.length * 2) + 1}" style="color:#94a3b8; padding:20px;">No non-zero active stock available for this facility in the selected range.</td></tr>`;
             }
 
-            // Save data reference for Excel export
             const safeFacilityId = name.replace(/[^a-zA-Z0-9]/g, '_');
             renderedFacilityData[safeFacilityId] = {
                 facilityName: name,
@@ -445,20 +549,6 @@
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
                 <head>
                     <meta charset="UTF-8">
-                    <!--[if gte mso 9]>
-                    <xml>
-                        <x:ExcelWorkbook>
-                            <x:ExcelWorksheets>
-                                <x:ExcelWorksheet>
-                                    <x:Name>${dataObj.facilityName.substring(0, 30)}</x:Name>
-                                    <x:WorksheetOptions>
-                                        <x:DisplayGridlines/>
-                                    </x:WorksheetOptions>
-                                </x:ExcelWorksheet>
-                            </x:ExcelWorksheets>
-                        </x:ExcelWorkbook>
-                    </xml>
-                    <![endif]-->
                     <style>
                         table { border-collapse: collapse; width: 100%; }
                         th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-family: Arial, sans-serif; font-size: 11px; }
