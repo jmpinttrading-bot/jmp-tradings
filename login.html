@@ -23,7 +23,7 @@
             align-items: center;
             padding: 20px;
             position: relative;
-            overflow: hidden; /* Prevents scrollbars from background movement */
+            overflow: hidden; /* Prevents scrollbars during movement */
         }
 
         /* Fixed Background Wrapper to display image in full view with animation */
@@ -52,20 +52,16 @@
             }
         }
 
-        /* Animated Bouncing Circular Images Overlay (Much Larger Sizes) */
+        /* Base Floating Circle Setup */
         .floating-circle {
-            position: absolute;
+            position: fixed;
             border-radius: 50%;
             overflow: hidden;
             border: 4px solid rgba(255, 255, 255, 0.9);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            z-index: 2; /* Sits above background, visible around login card */
-            animation: bounceFloat 6s ease-in-out infinite alternate;
-            transition: transform 0.3s ease;
-        }
-
-        .floating-circle:hover {
-            transform: scale(1.05); /* Slight magnification when hovered */
+            z-index: 2; /* Visual layer between background and card */
+            pointer-events: none; /* Allows click-through to login form controls */
+            will-change: transform, top, left;
         }
 
         .floating-circle img {
@@ -75,57 +71,69 @@
             display: block;
         }
 
-        /* Substantially Larger Sizes & Positions for Desktop */
+        /* Floating Circle Sizes & Trajectories */
         .circle-1 {
             width: 220px;
             height: 220px;
-            top: 6%;
-            left: 5%;
-            animation-duration: 5s;
+            animation: bouncePath1 20s linear infinite;
         }
 
         .circle-2 {
             width: 250px;
             height: 250px;
-            bottom: 6%;
-            left: 6%;
-            animation-duration: 7s;
-            animation-delay: -2s;
+            animation: bouncePath2 24s linear infinite;
         }
 
         .circle-3 {
             width: 230px;
             height: 230px;
-            top: 8%;
-            right: 5%;
-            animation-duration: 6s;
-            animation-delay: -1s;
+            animation: bouncePath3 18s linear infinite;
         }
 
-        /* Smooth Bouncing and Floating Animation */
-        @keyframes bounceFloat {
-            0% {
-                transform: translateY(0px) rotate(0deg);
-            }
-            50% {
-                transform: translateY(-22px) rotate(3deg);
-            }
-            100% {
-                transform: translateY(12px) rotate(-3deg);
-            }
+        /* Full-Screen Trajectory 1 */
+        @keyframes bouncePath1 {
+            0% { top: 5vh; left: 5vw; }
+            25% { top: 70vh; left: 80vw; }
+            50% { top: 75vh; left: 5vw; }
+            75% { top: 5vh; left: 75vw; }
+            100% { top: 5vh; left: 5vw; }
         }
 
-        /* Login Card Frame (Wider Layout) */
+        /* Full-Screen Trajectory 2 */
+        @keyframes bouncePath2 {
+            0% { top: 65vh; left: 10vw; }
+            25% { top: 5vh; left: 70vw; }
+            50% { top: 70vh; left: 75vw; }
+            75% { top: 10vh; left: 5vw; }
+            100% { top: 65vh; left: 10vw; }
+        }
+
+        /* Full-Screen Trajectory 3 */
+        @keyframes bouncePath3 {
+            0% { top: 10vh; left: 75vw; }
+            25% { top: 68vh; left: 5vw; }
+            50% { top: 5vh; left: 10vw; }
+            75% { top: 72vh; left: 70vw; }
+            100% { top: 10vh; left: 75vw; }
+        }
+
+        /* Login Card Frame (1280px Desktop Content Width) */
         .login-card {
             background: #ffffff;
             width: 100%;
-            max-width: 580px; /* Increased width from 440px for a much wider view */
-            padding: 48px;     /* Roomier internal padding */
-            border-radius: 14px;
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
+            max-width: 1280px; /* Set directly to 1280px for desktop view */
+            padding: 60px 40px;     
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.45);
             text-align: left;
             position: relative;
-            z-index: 10; /* Higher z-index so form stays interactive above background images */
+            z-index: 10; /* Ensures form remains interactive above moving objects */
+        }
+
+        /* Inner Form Container (Keeps form structured and readable inside 1280px canvas) */
+        .card-inner {
+            max-width: 480px;
+            margin: 0 auto;
         }
 
         /* Branding Block inside form */
@@ -359,34 +367,36 @@
     </div>
 
     <div class="login-card">
-        <div class="brand-header">
-            <img class="brand-logo" src="logo.png" alt="JMP Logo">
-            <h2>JMP International Platform</h2>
-            <p>Internal Employee System Access</p>
-        </div>
-
-        <form onsubmit="handlePlatformLogin(event)">
-            <div class="form-group">
-                <label for="employeeUsername">Employee Username</label>
-                <input type="text" id="employeeUsername" required autocomplete="username" placeholder="e.g., jsmith2026">
+        <div class="card-inner">
+            <div class="brand-header">
+                <img class="brand-logo" src="logo.png" alt="JMP Logo">
+                <h2>JMP International Platform</h2>
+                <p>Internal Employee System Access</p>
             </div>
 
-            <div class="form-group">
-                <label for="employeePassword">Secure Token / Password</label>
-                <div class="password-wrapper">
-                    <input type="password" id="employeePassword" required autocomplete="current-password" placeholder="••••••••">
-                    <button type="button" class="toggle-password" id="togglePassBtn" onclick="togglePasswordVisibility()">SHOW</button>
+            <form onsubmit="handlePlatformLogin(event)">
+                <div class="form-group">
+                    <label for="employeeUsername">Employee Username</label>
+                    <input type="text" id="employeeUsername" required autocomplete="username" placeholder="e.g., jsmith2026">
                 </div>
+
+                <div class="form-group">
+                    <label for="employeePassword">Secure Token / Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="employeePassword" required autocomplete="current-password" placeholder="••••••••">
+                        <button type="button" class="toggle-password" id="togglePassBtn" onclick="togglePasswordVisibility()">SHOW</button>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="submit-btn">Verify & Enter System</button>
+            </form>
+
+            <div class="utilities">
+                <a href="index.html" class="back-home">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    Return to Public Website
+                </a>
             </div>
-
-            <button type="submit" id="submitBtn" class="submit-btn">Verify & Enter System</button>
-        </form>
-
-        <div class="utilities">
-            <a href="index.html" class="back-home">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                Return to Public Website
-            </a>
         </div>
     </div>
 
