@@ -9,7 +9,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
         body { background-color: #f1f5f9; color: #0f172a; min-height: 100vh; padding-bottom: 40px; }
         
-        /* --- Synchronized Navbar Layout Components (Identical to item-price.html) --- */
+        /* --- Synchronized Navbar Layout Components --- */
         .navbar { 
             background-color: #1e293b; 
             color: white; 
@@ -228,7 +228,6 @@
 </head>
 <body>
 
-    <!-- Notification Modal Block -->
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Control</h4>
@@ -237,7 +236,6 @@
         </div>
     </div>
 
-    <!-- Match structure and style of item-price.html navbar exactly -->
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
@@ -261,7 +259,6 @@
 
         <a href="item-price.html" class="back-link">⬅️ Back to Item Pricing</a>
 
-        <!-- Balance Upload Form -->
         <div class="card-panel">
             <form id="dispoBalanceForm" onsubmit="handleFormSubmission(event)">
                 <div class="form-grid">
@@ -285,7 +282,6 @@
             </form>
         </div>
 
-        <!-- Ledger View from imported_shipment_docs -->
         <div class="card-panel">
             <h3>SPSIC Master Shipment Balances</h3>
             <div class="table-responsive">
@@ -307,7 +303,6 @@
                 </table>
             </div>
 
-            <!-- Table Pagination UI -->
             <div class="pagination-container">
                 <div class="pagination-info" id="paginationInfo">Showing 0 to 0 of 0 logs</div>
                 <div class="pagination-buttons">
