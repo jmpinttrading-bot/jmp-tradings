@@ -2,18 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Updated with dashboard wide desktop viewport specs -->
     <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>Outbound Logistics Clearance Node - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
+        * { box-sizing: border-box; }
         
-        /* --- Synchronized Dashboard Navbar & Slide Animation --- */
+        /* Enforce Desktop Viewport across all devices */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            min-width: 1280px; 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #f8fafc; 
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        /* --- ANIMATED TOP NAVIGATION (Identical to dashboard.html) --- */
         @keyframes slideDownNavbar {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .navbar { 
@@ -22,47 +40,109 @@
             width: 100%; 
             display: flex; 
             flex-direction: column; 
-            padding: 12px 20px; 
-            gap: 10px; 
+            padding: 12px 24px; 
+            gap: 12px; 
             position: sticky; 
             top: 0; 
-            z-index: 1000; 
-            font-family: 'Inter', sans-serif;
-            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            /* Entrance Animation */
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.8rem; color: #f97316; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
-        .logout-btn:hover { background-color: #dc2626; }
-        
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 2px; }
+
+        .top-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+        }
+
+        .nav-title { 
+            font-size: 0.85rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            transition: color 0.3s ease;
+        }
+
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%; 
+            padding-bottom: 2px; 
+            flex-wrap: nowrap;
+        }
+
         .nav-btn { 
             background-color: #334155; 
             color: #cbd5e1; 
             text-decoration: none; 
-            padding: 7px 14px; 
+            padding: 8px 16px; 
             border-radius: 6px; 
             font-size: 0.8rem; 
             font-weight: 500; 
             cursor: pointer; 
             border: none; 
             white-space: nowrap; 
-            transition: all 0.2s ease-in-out; 
-        }
-        .nav-btn:hover { background-color: #475569; color: white; transform: translateY(-1px); }
-        .nav-btn.active { 
-            background-color: #2563eb; 
-            color: #ffffff; 
-            border-bottom: none; 
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35); 
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* --- Main Content Layout --- */
-        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: #ffffff; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-btn.active { 
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        /* --- MAIN CONTENT LAYOUT --- */
+        .main-content { 
+            flex: 1; 
+            padding: 40px; 
+            min-width: 1200px; 
+            overflow-y: auto; 
+        }
+
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         
-        #adminEmail { display: none !important; }
+        .admin-badge { display: none; background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .employee-badge { display: none; background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
         .back-link { 
             display: inline-flex; 
@@ -162,16 +242,75 @@
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; font-family: 'Inter', sans-serif; }
-        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .restriction-modal-card h4 { font-size: 1.25rem; color: #1e293b; margin-bottom: 10px; font-weight: 700; }
-        .restriction-modal-card p { color: #64748b; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
-        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; width: 100%; max-width: 150px; transition: background 0.2s; }
-        .modal-btn:hover { background: #153a66; }
+        /* Notification Modal Styles */
+        .restriction-modal-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(11, 37, 69, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 20000; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.2s ease-in-out;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .restriction-modal-container.is-visible { 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
+        .restriction-modal-card { 
+            background: white; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 440px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .restriction-modal-card h4 {
+            margin-bottom: 10px; 
+            color: #1e293b; 
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .restriction-modal-card p {
+            color: #64748b; 
+            font-size: 0.9rem; 
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        .modal-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 15px; 
+            width: 100%; 
+            max-width: 150px; 
+        }
+        .modal-btn:hover {
+            background: #11355e;
+        }
     </style>
 </head>
 <body>
+
+    <!-- Notification Modal UI -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="restrictionModalTitle">Notification</h4>
+            <p id="restrictionModalMessage">Execution status telemetry readout frame.</p>
+            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
 
     <nav class="navbar">
         <div class="top-row">
@@ -179,23 +318,15 @@
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'Dashboard')">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'My Profile')">My Profile</a>
-            <a href="import-docs.html" class="nav-btn" onclick="checkModuleAccess(event, 'Imports')">Imports</a>
-            <a href="inventory-management.html" class="nav-btn active">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn" onclick="checkModuleAccess(event, 'Sales')">Sales</a>
-            <a href="audit-report.html" class="nav-btn" onclick="checkModuleAccess(event, 'Audit Report')">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" id="settingsBtn" onclick="checkModuleAccess(event, 'Settings')">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
-
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage">Execution status telemetry readout frame.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
-    </div>
 
     <dialog id="cancelModal">
         <h3>Confirm Cancellation</h3>
@@ -212,8 +343,8 @@
         <div class="form-group">
             <label>Target Facility</label>
             <select id="targetFacility">
-                <option value="VVS COLD STORAGE & PROCESSING PLANT CORP.">VVS Cold Storage & Processing Plant Corp.</option>
                 <option value="HIGHTOWER STORAGE & TRADING CENTRE, INC.">Hightower Storage & Trading Centre, Inc.</option>
+                <option value="VVS COLD STORAGE & PROCESSING PLANT CORP.">VVS Cold Storage & Processing Plant Corp.</option>
                 <option value="EISBERG COLD LOGISTICS INC.">Eisberg Cold Logistics Inc.</option>
                 <option value="POLARIS COLD CHAIN SOLUTIONS">Polaris Cold Chain Solutions</option>
             </select>
@@ -227,7 +358,7 @@
     <div class="main-content">
         <div class="header">
             <h1>Outbound Inventory Management</h1>
-            <div id="adminEmail" style="display: none !important;">Connecting...</div>
+            <div class="admin-badge" id="adminEmail"></div>
         </div>
 
         <a href="inventory-management.html" class="back-link">⬅️ Back to Inventory Dashboard</a>
@@ -367,8 +498,6 @@
         let currentAdminId = null;
         let currentUserEmail = "";
         let bypassAuthListener = false;
-        let currentUserRole = "employee"; 
-        let userPermissions = {}; 
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
@@ -377,18 +506,11 @@
         let currentPage = 1;
         const rowsPerPage = 15;
         
-        let permissions = { isAdmin: false, hasMasterAccess: false };
-
-        function showAlert(msg, type) {
-            showSystemModal({
-                title: type === 'error' ? 'System Error' : 'Success',
-                message: msg
-            });
-        }
+        let currentUserPermissions = null;
 
         function showSystemModal(options = {}) {
-            document.getElementById('alertTitle').textContent = options.title || 'Notification';
-            document.getElementById('alertMessage').textContent = options.message || '';
+            document.getElementById('restrictionModalTitle').textContent = options.title || 'Notification';
+            document.getElementById('restrictionModalMessage').textContent = options.message || '';
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
@@ -396,28 +518,37 @@
             document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
-        function checkModuleAccess(event, moduleName) {
-            if (currentUserRole === 'admin') return; 
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
 
-            let permitted = true;
-            if (moduleName === 'Settings' || moduleName === 'Audit Report') {
-                permitted = false; 
-            } else if (moduleName === 'Imports' && userPermissions.import_access === false) {
-                permitted = false;
-            } else if (moduleName === 'Sales' && userPermissions.sales_access === false) {
-                permitted = false;
-            } else if (moduleName === 'Dashboard' && userPermissions.dashboard_access === false) {
-                permitted = false;
-            } else if (moduleName === 'My Profile' && userPermissions.profile_access === false) {
-                permitted = false;
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') {
+                window.location.href = url;
+                return;
             }
 
-            if (!permitted) {
-                event.preventDefault();
-                showSystemModal({ 
-                    title: 'Access Restricted', 
-                    message: `Your account profile does not possess authorization privileges to open the ${moduleName} module.` 
-                });
+            if (accessKey === 'admin_access') {
+                showSystemModal({ title: "Access Restricted", message: "Administrative level privileges are required to access System Settings." });
+                return;
+            }
+
+            if (accessKey === 'audit_access') {
+                window.location.href = url;
+                return;
+            }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
+            }
+
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                showSystemModal({ title: "Access Restricted", message: "You do not possess the dynamic authorization privileges needed for this module pipeline." });
+            } else {
+                window.location.href = url;
             }
         }
 
@@ -454,12 +585,12 @@
             const qtyPerPallet = baseQtyPerPallet > 0 ? baseQtyPerPallet : 1;
             
             if (!itemId || currentQty <= 0) {
-                showAlert("Please select an item and ensure a valid quantity is set.", "error");
+                showSystemModal({ title: "Validation Error", message: "Please select an item and ensure a valid quantity is set." });
                 return;
             }
 
             if (currentQty > maxQty) {
-                showAlert(`Transfer quantity (${currentQty}) cannot exceed current available quantity (${maxQty}).`, "error");
+                showSystemModal({ title: "Validation Error", message: `Transfer quantity (${currentQty}) cannot exceed current available quantity (${maxQty}).` });
                 return;
             }
 
@@ -525,9 +656,9 @@
             const { error } = await supabaseClient.from('transactions').insert(transferPayload);
 
             if (error) {
-                showAlert("Error during transfer: " + error.message, "error");
+                showSystemModal({ title: "System Error", message: "Error during transfer: " + error.message });
             } else {
-                showAlert("Transfer successful! Cargo moved to " + targetFacility, "success");
+                showSystemModal({ title: "Success", message: "Transfer successful! Cargo moved to " + targetFacility });
                 document.getElementById('transferModal').close();
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
@@ -569,7 +700,7 @@
                     document.getElementById('qtyPerPallet').value = stockItem.qty_per_pallet || 1;
                 }
 
-                showAlert(`Loaded ledger parameters for item code: ${stockItem.item_code}`, "success");
+                showSystemModal({ title: "Success", message: `Loaded ledger parameters for item code: ${stockItem.item_code}` });
             }
         }
 
@@ -586,7 +717,7 @@
             document.getElementById('salesOrderNo').value = '';
             document.getElementById('displayAvailableQty').value = '0 Units Available';
             document.getElementById('storageFacility').value = 'HIGHTOWER STORAGE & TRADING CENTRE, INC.';
-            document.getElementById('formTitle').textContent = "CREATE SALES ORDER";
+            document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
         }
 
         async function initLogisticsDashboard() {
@@ -595,28 +726,35 @@
             currentAdminId = user.id;
             currentUserEmail = user.email;
             
-            const { data: profile } = await supabaseClient
+            const { data: profile, error } = await supabaseClient
                 .from('profiles')
                 .select('*')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
-            if (profile) {
-                currentUserRole = (profile.role || 'employee').toLowerCase().trim();
-                userPermissions = profile; 
+            if (error || !profile) {
+                window.location.href = "login.html";
+                return;
             }
 
-            document.getElementById('adminEmail').style.setProperty('display', 'none', 'important');
+            currentUserPermissions = profile;
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
 
-            if (currentUserRole === 'admin') {
-                permissions.isAdmin = true;
-                permissions.hasMasterAccess = true;
+            const hasMasterAccess = roleClean === 'admin' || currentUserPermissions.inventory_access !== false;
+            if (!hasMasterAccess) {
+                showSystemModal({ title: "Access Restricted", message: "Unauthorized entry context: Account configuration prevents changing inventory metrics." });
+                setTimeout(() => { window.location.href = "employee-dashboard.html"; }, 2500);
+                return;
+            }
+
+            if (roleClean === 'admin') {
+                document.getElementById('adminEmail').className = "admin-badge";
+                document.getElementById('adminEmail').textContent = `⚙️ Admin: ${profile.username || user.email.split('@')[0]}`;
             } else {
-                const masterAccess = profile ? profile.inventory_access !== false : true;
-                if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
-                permissions.isAdmin = false;
-                permissions.hasMasterAccess = true;
+                document.getElementById('adminEmail').className = "employee-badge";
+                document.getElementById('adminEmail').textContent = `👤 Staff: ${profile.username || user.email.split('@')[0]}`;
             }
+
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
             setupSessionCrossCheckListener();
@@ -666,7 +804,7 @@
                 .select('*')
                 .eq('storage_facility', 'HIGHTOWER STORAGE & TRADING CENTRE, INC.')
                 .order('created_at', { ascending: false });
-            if (error) { showAlert("System error: " + error.message, "error"); return; }
+            if (error) { showSystemModal({ title: "System Error", message: error.message }); return; }
             globallyFetchedHistory = data || [];
             currentActiveFilteredList = [...globallyFetchedHistory];
             currentPage = 1; 
@@ -806,9 +944,9 @@
                 .update({ out_quantity: 0, remarks: "CANCELLED ORDER" })
                 .eq('id', item.id);
 
-            if (error) { showAlert("Error cancelling: " + error.message, "error"); }
+            if (error) { showSystemModal({ title: "System Error", message: error.message }); }
             else {
-                showAlert("Transaction successfully cancelled.", "success");
+                showSystemModal({ title: "Success", message: "Transaction successfully cancelled." });
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
             }
@@ -824,7 +962,7 @@
             const qtyPerPallet = baseQtyPerPallet > 0 ? baseQtyPerPallet : 1;
 
             if (targetDispatchQuantity > maxQty) {
-                showAlert(`Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).`, "error");
+                showSystemModal({ title: "Validation Error", message: `Outbound quantity (${targetDispatchQuantity}) exceeds available stock (${maxQty}).` });
                 return;
             }
 
@@ -872,11 +1010,11 @@
             try {
                 const { error } = await supabaseClient.from('transactions').upsert([payload]);
                 if (error) throw error;
-                showAlert("Success: Ledger updated.", "success");
+                showSystemModal({ title: "Success", message: "Ledger updated successfully." });
                 resetFormState();
                 await fetchDropdownInventoryPool();
                 await fetchTransactionsDataset();
-            } catch (err) { showAlert("Error: " + err.message, "error"); }
+            } catch (err) { showSystemModal({ title: "Error", message: err.message }); }
             finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = "Upload Outbound Transactions";
@@ -905,6 +1043,7 @@
                     await supabaseClient.auth.signOut();
                     window.location.href = "login.html";
                 }
+                if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
             });
         }
 
