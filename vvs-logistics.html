@@ -2,22 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>Outbound Logistics Clearance Node - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; }
         
-        /* --- Enforce Desktop Viewport Baseline --- */
-        body { 
+        /* Enforce Desktop Viewport across all devices */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            min-width: 1280px; 
+            font-family: 'Segoe UI', sans-serif; 
             background-color: #f8fafc; 
-            color: #1e293b; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         
-        /* --- Animated Navbar & Container Styles --- */
+        /* --- ANIMATED TOP NAVIGATION (Identical to dashboard.html) --- */
         @keyframes slideDownNavbar {
             from {
                 transform: translateY(-100%);
@@ -35,12 +40,13 @@
             width: 100%; 
             display: flex; 
             flex-direction: column; 
-            padding: 10px; 
-            gap: 10px; 
+            padding: 12px 24px; 
+            gap: 12px; 
             position: sticky; 
             top: 0; 
-            z-index: 1000; 
-            font-family: 'Inter', sans-serif;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            /* Entrance Animation */
             animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
@@ -49,75 +55,92 @@
             justify-content: space-between; 
             align-items: center; 
             width: 100%; 
-            gap: 10px; 
         }
 
         .nav-title { 
-            font-size: 0.75rem; 
+            font-size: 0.85rem; 
             color: #f97316; 
             font-weight: bold; 
             text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            transition: color 0.3s ease;
         }
 
         .logout-btn { 
             background-color: #ef4444; 
             color: white; 
             border: none; 
-            padding: 6px 10px; 
-            border-radius: 4px; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
             font-size: 0.75rem; 
             font-weight: bold; 
             cursor: pointer; 
-            transition: background-color 0.2s ease;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
         }
 
-        .logout-btn:hover { 
-            background-color: #dc2626; 
+        .logout-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
         }
 
         .nav-links { 
             display: flex; 
-            gap: 8px; 
-            overflow-x: auto; 
+            gap: 10px; 
             width: 100%; 
-            padding-bottom: 5px; 
+            padding-bottom: 2px; 
+            flex-wrap: nowrap;
         }
 
         .nav-btn { 
             background-color: #334155; 
             color: #cbd5e1; 
             text-decoration: none; 
-            padding: 6px 12px; 
-            border-radius: 4px; 
-            font-size: 0.75rem; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
             font-weight: 500; 
             cursor: pointer; 
             border: none; 
             white-space: nowrap; 
-            transition: all 0.2s ease; 
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .nav-btn:hover { 
             background-color: #475569; 
-            color: white; 
+            color: #ffffff; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
         }
 
         .nav-btn.active { 
-            background: #475569; 
-            color: white; 
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
         }
 
-        /* --- Main Content Layout --- */
+        /* --- MAIN CONTENT LAYOUT --- */
         .main-content { 
             flex: 1; 
             padding: 40px; 
-            min-width: 0; 
+            min-width: 1200px; 
             overflow-y: auto; 
         }
 
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         
-        /* Updated to hide badge visually while preserving background JS selectors */
         .admin-badge { display: none; background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
         .employee-badge { display: none; background: #e0f2fe; color: #0369a1; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
 
@@ -208,7 +231,6 @@
         .btn-action-cancel { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
         .btn-action-cancel:hover { background: #c9302c; }
         
-        /* --- Pagination Layout Styles --- */
         .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 20px; padding: 0 25px; }
         .pagination-info { font-size: 0.85rem; color: #64748b; font-weight: 600; }
         .pagination-btn { background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
@@ -220,7 +242,7 @@
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-        /* --- Standardized Notification Modal Styles --- */
+        /* Notification Modal Styles */
         .restriction-modal-container { 
             position: fixed; 
             top: 0; 
@@ -277,20 +299,11 @@
         .modal-btn:hover {
             background: #11355e;
         }
-
-        @media (max-width: 768px) {
-            .form-row { flex-direction: column; gap: 0; }
-            .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
-            .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .ledger-search-box { width: 100%; }
-            .ledger-search-box input { width: 100%; }
-            .pagination-container { justify-content: center; width: 100%; }
-        }
     </style>
 </head>
 <body>
 
-    <!-- Standardized Notification Modal UI -->
+    <!-- Notification Modal UI -->
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Notification</h4>
@@ -490,7 +503,6 @@
         let globallyFetchedHistory = [];
         let currentActiveFilteredList = []; 
         
-        // --- Pagination Global Trackers ---
         let currentPage = 1;
         const rowsPerPage = 15;
         
