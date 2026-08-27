@@ -2,30 +2,205 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>Outbound Logistics Clearance Node - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
+        * { box-sizing: border-box; }
         
-        /* --- Copied Dashboard Navbar Styles --- */
-        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; font-family: 'Inter', sans-serif; }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .logout-btn:hover { background-color: #dc2626; }
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background: #475569; color: white; }
+        /* Enforce Desktop Viewport across all devices (Identical to dashboard.html) */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            min-width: 1280px; 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #f8fafc; 
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
 
-        /* --- Main Content Layout --- */
-        .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        /* --- ANIMATED TOP NAVIGATION (Exact Match to dashboard.html) --- */
+        @keyframes slideDownNavbar {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .navbar { 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 12px 24px; 
+            gap: 12px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            /* Entrance Animation */
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .top-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+        }
+
+        .nav-title { 
+            font-size: 0.85rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            transition: color 0.3s ease;
+        }
+
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%; 
+            padding-bottom: 2px; 
+            flex-wrap: nowrap; /* Prevent wrapping for desktop layout */
+        }
+
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            position: relative;
+            overflow: hidden;
+            /* Smooth animations on hover/focus */
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: #ffffff; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-btn.active { 
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        /* --- RESTRICTION MODAL STYLES --- */
+        .restriction-modal-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(11, 37, 69, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 20000; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.2s ease-in-out;
+            backdrop-filter: blur(4px);
+        }
+        .restriction-modal-container.is-visible { 
+            opacity: 1; 
+            pointer-events: auto; 
+        }
+        .restriction-modal-card { 
+            background: white; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 440px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .restriction-modal-card h4 { 
+            font-size: 1.25rem; 
+            color: #1e293b; 
+            margin-bottom: 10px; 
+            font-weight: 700; 
+        }
+        .restriction-modal-card p { 
+            color: #64748b; 
+            font-size: 0.95rem; 
+            line-height: 1.5; 
+            margin-bottom: 20px; 
+        }
+        .modal-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin-top: 5px; 
+            width: 100%; 
+            max-width: 150px; 
+            transition: background 0.2s; 
+        }
+        .modal-btn:hover { background: #153a66; }
+
+        /* --- PAGE CONTENT LAYOUT --- */
+        .main-content { flex: 1; padding: 40px; min-width: 1200px; }
         
-        /* Hidden user badge elements completely for all roles */
-        .admin-badge, .employee-badge, #adminEmail { display: none !important; }
+        .header { 
+            margin-bottom: 25px; 
+            background: white; 
+            padding: 24px 30px; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        .header h1 { font-size: 1.6rem; color: #0f172a; font-weight: 700; margin: 0; }
 
         .back-link { 
             display: inline-flex; 
@@ -35,25 +210,20 @@
             color: #475569; 
             text-decoration: none; 
             font-weight: 700; 
-            font-size: 0.9rem; 
+            font-size: 0.85rem; 
             margin-bottom: 25px; 
             padding: 10px 18px; 
             border-radius: 8px; 
             border: 1px solid #cbd5e1; 
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            transition: all 0.2s ease-in-out; 
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); 
+            transition: all 0.2s ease;
         }
-        .back-link:hover { 
-            background-color: #f8fafc; 
-            color: #ee964b; 
-            border-color: #ee964b; 
-            transform: translateX(-2px);
-        }
+        .back-link:hover { color: #f97316; border-color: #f97316; transform: translateX(-2px); }
 
         .workspace-grid { display: flex; flex-direction: column; gap: 30px; }
         
-        .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); position: relative; }
-        .card-panel h3 { margin-bottom: 20px; font-size: 1.15rem; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
+        .card-panel { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); position: relative; }
+        .card-panel h3 { margin-bottom: 20px; font-size: 1.2rem; color: #1e293b; font-weight: 700; border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; }
         
         .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
         .form-row .form-group { flex: 1; margin-bottom: 0; }
@@ -61,115 +231,99 @@
         .form-row .flex-1 { flex: 1; }
         
         .form-group { margin-bottom: 16px; display: flex; flex-direction: column; }
-        .form-group label { margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; color: #1e293b; background: white; height: 42px; }
+        .form-group label { margin-bottom: 8px; font-weight: 700; font-size: 0.8rem; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 11px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; color: #1e293b; background: white; height: 42px; transition: all 0.2s ease; }
         .form-group textarea { height: 80px; resize: vertical; }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #ee964b; box-shadow: 0 0 0 3px rgba(238,150,75,0.1); }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
         
         .form-group input:disabled, .form-group select:disabled, .form-group textarea:disabled, .form-group input[readonly] { 
-            background: #cbd5e1; 
-            color: #475569; 
+            background: #f1f5f9; 
+            color: #64748b; 
             cursor: not-allowed; 
         }
 
         #storageFacility, #itemCode, #itemCommodity, #buyerName { text-transform: uppercase; }
 
         .form-actions { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-primary { flex: 1; background: #0f172a; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; text-align: center; transition: 0.2s; }
-        .btn-primary:hover { background: #ee964b; color: #0f172a; }
-        .btn-primary:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
-        .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
-        .btn-secondary:hover { background: #b8c5d6; }
-        .btn-danger { background: #d9534f; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; }
-        .btn-danger:hover { background: #c9302c; }
-        .btn-transfer { background: #6366f1; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: 0.2s; }
+        .btn-primary { flex: 1; background: #0b2545; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; text-align: center; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(11, 37, 69, 0.2); }
+        .btn-primary:hover { background: #134074; transform: translateY(-1px); }
+        .btn-primary:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secondary { background: #cbd5e1; color: #334155; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: all 0.2s ease; }
+        .btn-secondary:hover { background: #94a3b8; color: white; }
+        .btn-danger { background: #ef4444; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: all 0.2s ease; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-transfer { background: #6366f1; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 0.95rem; transition: all 0.2s ease; }
         .btn-transfer:hover { background: #4f46e5; }
 
-        .ledger-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 25px; flex-wrap: wrap; gap: 15px; }
+        .ledger-header-wrapper { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0; flex-wrap: nowrap; gap: 15px; }
         .ledger-header-wrapper h3 { border-bottom: none !important; padding-bottom: 0 !important; margin: 0 !important; }
         .ledger-search-box { display: flex; gap: 10px; align-items: center; }
-        .ledger-search-box input { height: 38px; width: 250px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
-        .ledger-search-box input:focus { outline: none; border-color: #ee964b; }
-        .ledger-search-box .btn-search { height: 38px; padding: 0 16px; font-size: 0.85rem; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .ledger-search-box .btn-search:hover { background: #1e293b; }
+        .ledger-search-box input { height: 38px; width: 250px; padding: 0 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; }
+        .ledger-search-box input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        .ledger-search-box .btn-search { height: 38px; padding: 0 16px; font-size: 0.85rem; background: #0b2545; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; transition: all 0.2s ease; }
+        .ledger-search-box .btn-search:hover { background: #134074; }
         .ledger-search-box .btn-search.clear-filter { background: #64748b; }
         .ledger-search-box .btn-search.clear-filter:hover { background: #475569; }
 
-        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; }
+        .table-responsive { overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 8px; width: 100%; margin-top: 10px; }
         
-        .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; table-layout: auto; }
-        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
-        .master-table td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        .master-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; table-layout: auto; }
+        .master-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 12px 14px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; white-space: nowrap; }
+        .master-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
         .master-table tr:hover td { background-color: #f8fafc; }
         
-        .qty-val { font-weight: 700; color: #d9534f; font-size: 0.95rem; }
-        .qty-in { font-weight: 700; color: #2e7d32; font-size: 0.95rem; }
-        .qty-bal { font-weight: 700; color: #0284c7; font-size: 0.95rem; }
-        .qty-pallet { font-weight: 700; color: #8b5cf6; font-size: 0.95rem; }
+        .qty-val { font-weight: 700; color: #ef4444; font-size: 0.85rem; }
+        .qty-in { font-weight: 700; color: #16a34a; font-size: 0.85rem; }
+        .qty-bal { font-weight: 700; color: #2563eb; font-size: 0.85rem; }
+        .qty-pallet { font-weight: 700; color: #8b5cf6; font-size: 0.85rem; }
 
         .action-btn-group { display: flex; gap: 6px; justify-content: center; }
         
-        .btn-action-return { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
+        .btn-action-return { background: #0284c7; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 700; transition: background 0.2s; }
         .btn-action-return:hover { background: #0369a1; }
-        .btn-action-cancel { background: #d9534f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 700; transition: background 0.2s; }
-        .btn-action-cancel:hover { background: #c9302c; }
+        .btn-action-cancel { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 700; transition: background 0.2s; }
+        .btn-action-cancel:hover { background: #dc2626; }
         
-        .pagination-container { display: flex; justify-content: flex-end; align-items: center; gap: 15px; margin-top: 20px; padding: 0 25px; }
-        .pagination-info { font-size: 0.85rem; color: #64748b; font-weight: 600; }
-        .pagination-btn { background: #ffffff; color: #1e293b; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
-        .pagination-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
-        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; background: #f8fafc; }
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 10px; }
+        .pagination-info { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+        .pagination-buttons { display: flex; gap: 10px; }
+        .btn-pagination { background-color: #ffffff; color: #334155; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .btn-pagination:hover:not(:disabled) { border-color: #f97316; color: #f97316; transform: translateY(-1px); }
+        .btn-pagination:disabled { opacity: 0.5; cursor: not-allowed; background-color: #f1f5f9; color: #94a3b8; }
 
         dialog { padding: 25px; border-radius: 12px; border: 1px solid #cbd5e1; width: 90%; max-width: 450px; margin: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
         dialog::backdrop { background: rgba(15, 23, 42, 0.6); }
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
-
-        /* Standardized Notification Modal Styles from inventory-management.html */
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; font-family: 'Inter', sans-serif; }
-        .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .restriction-modal-card h4 { font-size: 1.25rem; color: #1e293b; margin-bottom: 10px; font-weight: 700; }
-        .restriction-modal-card p { color: #64748b; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
-        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; width: 100%; max-width: 150px; transition: background 0.2s; }
-        .modal-btn:hover { background: #153a66; }
-
-        @media (max-width: 768px) {
-            .form-row { flex-direction: column; gap: 0; }
-            .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
-            .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .ledger-search-box { width: 100%; }
-            .ledger-search-box input { width: 100%; }
-            .pagination-container { justify-content: center; width: 100%; }
-        }
     </style>
 </head>
 <body>
 
+    <!-- Notification Modal Block -->
+    <div class="restriction-modal-container" id="accessBlockerModal">
+        <div class="restriction-modal-card">
+            <h4 id="alertTitle">Access Control</h4>
+            <p id="alertMessage">Checking credentials...</p>
+            <button class="modal-btn" id="restrictionModalBtn" onclick="closeRestrictionModal()">Acknowledge</button>
+        </div>
+    </div>
+
+    <!-- Top Animated Navigation Bar -->
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
         <div class="nav-links">
-            <a href="dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'Dashboard')">Dashboard</a>
-            <a href="employee-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'My Profile')">My Profile</a>
-            <a href="import-docs.html" class="nav-btn" onclick="checkModuleAccess(event, 'Imports')">Imports</a>
-            <a href="inventory-management.html" class="nav-btn">Inventory</a>
-            <a href="sales-invoice.html" class="nav-btn" onclick="checkModuleAccess(event, 'Sales')">Sales</a>
-            <a href="audit-report.html" class="nav-btn" onclick="checkModuleAccess(event, 'Audit Report')">Audit Report</a>
-            <a href="admin-dashboard.html" class="nav-btn" onclick="checkModuleAccess(event, 'Settings')">Settings</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('profile_access', 'dashboard.html')">Dashboard</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('employee_201_access', 'employee-dashboard.html')">My Profile</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('import_access', 'import-docs.html')">Imports</a>
+            <a href="#" class="nav-btn active" onclick="verifyNavigationPrivilege('inventory_access', 'inventory-management.html')">Inventory</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">Sales</a>
+            <a href="#" class="nav-btn" onclick="verifyNavigationPrivilege('audit_access', 'audit-report.html')">Audit Report</a>
+            <a href="#" class="nav-btn" id="settingsNavBtn" onclick="verifyNavigationPrivilege('admin_access', 'admin-dashboard.html')">Settings</a>
         </div>
     </nav>
-
-    <!-- Standardized Alert Modal Frame -->
-    <div class="restriction-modal-container" id="accessBlockerModal">
-        <div class="restriction-modal-card">
-            <h4 id="alertTitle">Notification</h4>
-            <p id="alertMessage">Execution status telemetry readout frame.</p>
-            <button class="modal-btn" onclick="closeRestrictionModal()">Acknowledge</button>
-        </div>
-    </div>
 
     <dialog id="cancelModal">
         <h3>Confirm Cancellation</h3>
@@ -201,7 +355,6 @@
     <div class="main-content">
         <div class="header">
             <h1>Outbound Inventory Management</h1>
-            <div id="adminEmail" style="display: none !important;">Connecting...</div>
         </div>
 
         <a href="inventory-management.html" class="back-link">⬅️ Back to Inventory Dashboard</a>
@@ -286,7 +439,7 @@
                 </form>
             </div>
 
-            <div class="card-panel" style="padding: 20px 0px;">
+            <div class="card-panel">
                 <div class="ledger-header-wrapper">
                     <h3>Transaction Running Ledger</h3>
                     <div class="ledger-search-box">
@@ -324,9 +477,11 @@
                 </div>
 
                 <div class="pagination-container">
-                    <span class="pagination-info" id="paginationInfo">Page 1 of 1</span>
-                    <button type="button" class="pagination-btn" id="prevPageBtn" onclick="changeLedgerPage(-1)" disabled>Previous</button>
-                    <button type="button" class="pagination-btn" id="nextPageBtn" onclick="changeLedgerPage(1)" disabled>Next</button>
+                    <div class="pagination-info" id="paginationInfo">Page 1 of 1</div>
+                    <div class="pagination-buttons">
+                        <button type="button" class="btn-pagination" id="prevPageBtn" onclick="changeLedgerPage(-1)" disabled>Previous</button>
+                        <button type="button" class="btn-pagination" id="nextPageBtn" onclick="changeLedgerPage(1)" disabled>Next</button>
+                    </div>
                 </div>
             </div>
 
@@ -341,8 +496,7 @@
         let currentAdminId = null;
         let currentUserEmail = "";
         let bypassAuthListener = false;
-        let currentUserRole = "employee"; 
-        let userPermissions = {}; 
+        let currentUserPermissions = null; 
         
         let globallyAvailableStock = [];
         let globallyFetchedHistory = [];
@@ -350,8 +504,17 @@
         
         let currentPage = 1;
         const rowsPerPage = 15;
-        
-        let permissions = { isAdmin: false, hasMasterAccess: false };
+
+        function checkAccessRestriction() {
+            const userRole = localStorage.getItem('userRole');
+            if (userRole === 'Viewer') {
+                showSystemModal({
+                    title: "Access Restriction",
+                    message: "You have read-only permissions. You cannot alter parameters on this panel."
+                });
+                document.querySelectorAll('input, select, textarea, button[type="submit"], .btn-transfer').forEach(elem => elem.disabled = true);
+            }
+        }
 
         function showAlert(msg, type) {
             showSystemModal({
@@ -370,29 +533,28 @@
             document.getElementById('accessBlockerModal').classList.remove('is-visible');
         }
 
-        function checkModuleAccess(event, moduleName) {
-            if (currentUserRole === 'admin') return; 
+        function verifyNavigationPrivilege(accessKey, url) {
+            if (!currentUserPermissions) return;
+            const roleClean = String(currentUserPermissions.role || '').toLowerCase().trim();
+            if (roleClean === 'admin') { window.location.href = url; return; }
 
-            let permitted = true;
-            if (moduleName === 'Settings' || moduleName === 'Audit Report') {
-                permitted = false; 
-            } else if (moduleName === 'Imports' && userPermissions.import_access === false) {
-                permitted = false;
-            } else if (moduleName === 'Sales' && userPermissions.sales_access === false) {
-                permitted = false;
-            } else if (moduleName === 'Dashboard' && userPermissions.dashboard_access === false) {
-                permitted = false;
-            } else if (moduleName === 'My Profile' && userPermissions.profile_access === false) {
-                permitted = false;
+            if (accessKey === 'admin_access') {
+                showSystemModal({ title: "Access Restricted", message: "Administrative level privileges are required to access System Settings." });
+                return;
+            }
+            if (accessKey === 'audit_access') { window.location.href = url; return; }
+
+            let val = currentUserPermissions[accessKey];
+            if (accessKey === 'employee_201_access' && (val === undefined || val === null || val === false)) {
+                val = currentUserPermissions['profile_access'];
             }
 
-            if (!permitted) {
-                event.preventDefault();
-                showSystemModal({ 
-                    title: 'Access Restricted', 
-                    message: `Your account profile does not possess authorization privileges to open the ${moduleName} module.` 
-                });
-            }
+            const cleanedValStr = String(val || '').replace(/['"]+/g, '').toLowerCase().trim();
+            const isRestricted = (val === false || cleanedValStr === 'false' || !val);
+
+            if (isRestricted) {
+                showSystemModal({ title: "Access Restricted", message: "You do not possess the dynamic authorization privileges needed for this module pipeline." });
+            } else { window.location.href = url; }
         }
 
         function generateSalesOrderNumber(isTransfer = false, direction = "", targetFacility = "") {
@@ -417,6 +579,11 @@
         }
 
         async function executeActualTransfer() {
+            if (localStorage.getItem('userRole') === 'Viewer') {
+                showSystemModal({ title: "Action Denied", message: "You do not have authorization parameters to alter data configurations." });
+                return;
+            }
+
             const targetFacility = document.getElementById('targetFacility').value;
             const itemId = document.getElementById('itemId').value;
             const currentQty = parseInt(document.getElementById('dispatchQuantity').value) || 0;
@@ -560,14 +727,12 @@
             document.getElementById('salesOrderNo').value = '';
             document.getElementById('displayAvailableQty').value = '0 Units Available';
             document.getElementById('storageFacility').value = 'POLARIS COLD CHAIN SOLUTIONS';
-            document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
+            document.getElementById('formTitle').textContent = "CREATE SALES ORDER";
+            checkAccessRestriction();
         }
 
         async function initLogisticsDashboard() {
-            const inventoryBtn = document.querySelector('.nav-links a[href="inventory-management.html"]');
-            if (inventoryBtn) {
-                inventoryBtn.classList.add('active');
-            }
+            checkAccessRestriction();
 
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) { window.location.href = "login.html"; return; }
@@ -578,25 +743,17 @@
                 .from('profiles')
                 .select('*')
                 .eq('id', user.id)
-                .single();
+                .maybeSingle();
             
             if (profile) {
-                currentUserRole = (profile.role || 'employee').toLowerCase().trim();
-                userPermissions = profile; 
+                currentUserPermissions = profile;
+                const roleClean = String(profile.role || '').toLowerCase().trim();
+                const settingsBtn = document.getElementById('settingsNavBtn');
+                if (roleClean === 'admin' && settingsBtn) {
+                    settingsBtn.style.display = "inline-block";
+                }
             }
 
-            // Explicitly force hide badge visually for all accounts
-            document.getElementById('adminEmail').style.setProperty('display', 'none', 'important');
-
-            if (currentUserRole === 'admin') {
-                permissions.isAdmin = true;
-                permissions.hasMasterAccess = true;
-            } else {
-                const masterAccess = profile ? profile.inventory_access !== false : true;
-                if (!masterAccess) { window.location.href = "employee-dashboard.html"; return; }
-                permissions.isAdmin = false;
-                permissions.hasMasterAccess = true;
-            }
             await fetchDropdownInventoryPool();
             await fetchTransactionsDataset();
             setupSessionCrossCheckListener();
@@ -665,7 +822,7 @@
             
             if (!items || items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #94a3b8;">No matching running history discovered.</td></tr>`;
-                document.getElementById('paginationInfo').textContent = "Page 1 of 1";
+                document.getElementById('paginationInfo').textContent = "Showing 0 to 0 of 0 logs";
                 document.getElementById('prevPageBtn').disabled = true;
                 document.getElementById('nextPageBtn').disabled = true;
                 return;
@@ -697,15 +854,16 @@
             });
 
             const totalRows = items.length;
-            const totalPages = Math.ceil(totalRows / rowsPerPage);
+            const totalPages = Math.ceil(totalRows / rowsPerPage) || 1;
             
-            if (currentPage > totalPages) currentPage = totalPages || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
             
             const startIdx = (currentPage - 1) * rowsPerPage;
-            const endIdx = startIdx + rowsPerPage;
+            const endIdx = Math.min(startIdx + rowsPerPage, totalRows);
             const paginatedItems = items.slice(startIdx, endIdx);
 
-            document.getElementById('paginationInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+            document.getElementById('paginationInfo').textContent = `Showing ${startIdx + 1} to ${endIdx} of ${totalRows} logs`;
             document.getElementById('prevPageBtn').disabled = currentPage === 1;
             document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
 
@@ -737,14 +895,16 @@
         }
         
         function changeLedgerPage(direction) {
-            const totalPages = Math.ceil(currentActiveFilteredList.length / rowsPerPage);
             currentPage += direction;
-            if (currentPage < 1) currentPage = 1;
-            if (currentPage > totalPages) currentPage = totalPages;
             renderLedgerTable(currentActiveFilteredList);
         }
 
         function prepareEdit(index) {
+            if (localStorage.getItem('userRole') === 'Viewer') {
+                showSystemModal({ title: "Action Denied", message: "You do not have authorization parameters to alter data configurations." });
+                return;
+            }
+
             const item = globallyFetchedHistory[index];
             document.getElementById('selectedTransactionRowId').value = item.id;
             document.getElementById('itemCode').value = item.item_code;
@@ -770,6 +930,11 @@
         }
 
         function showCancelDialog(index) {
+            if (localStorage.getItem('userRole') === 'Viewer') {
+                showSystemModal({ title: "Action Denied", message: "You do not have authorization parameters to alter data configurations." });
+                return;
+            }
+
             const modal = document.getElementById('cancelModal');
             const confirmBtn = document.getElementById('confirmCancelBtn');
             confirmBtn.onclick = () => {
@@ -796,6 +961,12 @@
 
         async function handleOutboundSubmit(e) {
             e.preventDefault();
+
+            if (localStorage.getItem('userRole') === 'Viewer') {
+                showSystemModal({ title: "Action Denied", message: "You do not have authorization parameters to alter data configurations." });
+                return;
+            }
+
             const submitBtn = document.getElementById('submitBtn');
             const targetDispatchQuantity = parseInt(document.getElementById('dispatchQuantity').value) || 0;
             const maxQty = parseInt(document.getElementById('maxAvailableQty').value) || 0;
@@ -885,6 +1056,7 @@
                     await supabaseClient.auth.signOut();
                     window.location.href = "login.html";
                 }
+                if (event === 'SIGNED_OUT') { window.location.href = "login.html"; }
             });
         }
 
