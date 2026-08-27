@@ -2,29 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Updated with dashboard wide desktop viewport specs -->
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>Outbound Logistics Clearance Node - JMP System</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* --- Copied Dashboard Navbar Styles --- */
-        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; font-family: 'Inter', sans-serif; }
+        /* --- Synchronized Dashboard Navbar & Slide Animation --- */
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .navbar { 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 12px 20px; 
+            gap: 10px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            font-family: 'Inter', sans-serif;
+            animation: slideDown 0.4s ease-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
         .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        .nav-title { font-size: 0.8rem; color: #f97316; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: background 0.2s; }
         .logout-btn:hover { background-color: #dc2626; }
-        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; transition: all 0.2s; }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background: #475569; color: white; }
+        
+        .nav-links { display: flex; gap: 8px; overflow-x: auto; width: 100%; padding-bottom: 2px; }
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            transition: all 0.2s ease-in-out; 
+        }
+        .nav-btn:hover { background-color: #475569; color: white; transform: translateY(-1px); }
+        .nav-btn.active { background: #475569; color: white; border-bottom: 2px solid #f97316; }
 
         /* --- Main Content Layout --- */
         .main-content { flex: 1; padding: 40px; min-width: 0; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
         
-        /* Hidden user badge elements completely for all roles */
         #adminEmail { display: none !important; }
 
         .back-link { 
@@ -125,7 +157,6 @@
         dialog h3 { margin-bottom: 15px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.15rem; }
         .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-        /* Standardized Notification Modal Styles from inventory-management.html */
         .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 20000; opacity: 0; pointer-events: none; transition: opacity 0.2s; font-family: 'Inter', sans-serif; }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
         .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -133,15 +164,6 @@
         .restriction-modal-card p { color: #64748b; font-size: 0.95rem; line-height: 1.5; margin-bottom: 20px; }
         .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 5px; width: 100%; max-width: 150px; transition: background 0.2s; }
         .modal-btn:hover { background: #153a66; }
-
-        @media (max-width: 768px) {
-            .form-row { flex-direction: column; gap: 0; }
-            .form-row .form-group { margin-bottom: 16px; width: 100% !important; flex: none !important; }
-            .ledger-header-wrapper { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .ledger-search-box { width: 100%; }
-            .ledger-search-box input { width: 100%; }
-            .pagination-container { justify-content: center; width: 100%; }
-        }
     </style>
 </head>
 <body>
@@ -162,7 +184,6 @@
         </div>
     </nav>
 
-    <!-- Standardized Alert Modal Frame -->
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="alertTitle">Notification</h4>
@@ -560,7 +581,7 @@
             document.getElementById('salesOrderNo').value = '';
             document.getElementById('displayAvailableQty').value = '0 Units Available';
             document.getElementById('storageFacility').value = 'HIGHTOWER STORAGE & TRADING CENTRE, INC.';
-            document.getElementById('formTitle').textContent = "Authorize Fleet Dispatch & Release Cargo";
+            document.getElementById('formTitle').textContent = "CREATE SALES ORDER";
         }
 
         async function initLogisticsDashboard() {
@@ -580,7 +601,6 @@
                 userPermissions = profile; 
             }
 
-            // Explicitly force hide badge visually for all accounts
             document.getElementById('adminEmail').style.setProperty('display', 'none', 'important');
 
             if (currentUserRole === 'admin') {
