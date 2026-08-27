@@ -16,14 +16,30 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
+        /* Animated Moving Background Setup */
         body {
-            background: linear-gradient(rgba(11, 37, 69, 0.9), rgba(11, 37, 69, 0.95)), 
-                        url('hero.png') no-repeat center center/cover;
+            background: linear-gradient(rgba(11, 37, 69, 0.85), rgba(11, 37, 69, 0.95)), 
+                        url('hero.png') no-repeat;
+            background-size: 120% 120%; /* Expanded to allow room for panning */
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            animation: moveBg 30s ease-in-out infinite alternate;
+        }
+
+        /* Keyframe to smoothly animate background position */
+        @keyframes moveBg {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         /* Login Card Frame */
@@ -35,6 +51,7 @@
             border-radius: 12px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
             text-align: left;
+            z-index: 1; /* Ensures card sits nicely above background */
         }
 
         /* Branding Block inside form */
@@ -258,7 +275,7 @@
     <div class="login-card">
         <div class="brand-header">
             <img class="brand-logo" src="logo.png" alt="JMP Logo">
-            <h2>JMP International Platform</h2>
+            <h2>JMP International Fish Trading</h2>
             <p>Internal Employee System Access</p>
         </div>
 
