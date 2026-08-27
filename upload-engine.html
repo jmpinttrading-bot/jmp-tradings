@@ -2,64 +2,302 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>Document Upload Engine | JMP HQ</title>
+    <link rel="icon" href="data:,">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; color: #1e293b; min-height: 100vh; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         
-        /* Navigation Styles */
-        .navbar { background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; position: sticky; top: 0; z-index: 1000; }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
-        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; padding-bottom: 5px; }
-        .nav-btn { background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; display: inline-block; }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background: #475569; color: white; }
+        /* Enforce Desktop Viewport across all devices */
+        html, body { 
+            width: 100%; 
+            min-width: 1280px; 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #f8fafc; 
+            color: #1e293b; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+        }
+        
+        /* --- ANIMATED TOP NAVIGATION --- */
+        @keyframes slideDownNavbar {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
 
-        /* Standardized Modal Styles from inventory-management.html */
-        .restriction-modal-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11, 37, 69, 0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; backdrop-filter: blur(4px); }
+        .navbar { 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 12px 24px; 
+            gap: 12px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); 
+            font-family: 'Segoe UI', sans-serif;
+            /* Entrance Animation */
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .top-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+        }
+
+        .nav-title { 
+            font-size: 0.85rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            transition: color 0.3s ease;
+        }
+
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn:hover { 
+            background-color: #dc2626; 
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%; 
+            padding-bottom: 2px; 
+            flex-wrap: nowrap;
+        }
+
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: #ffffff; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-btn.active { 
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Standardized Restriction Modal Styles */
+        .restriction-modal-container { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(11, 37, 69, 0.6); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 9999; 
+            opacity: 0; 
+            pointer-events: none; 
+            transition: opacity 0.2s ease; 
+            backdrop-filter: blur(4px); 
+        }
         .restriction-modal-container.is-visible { opacity: 1; pointer-events: auto; }
-        .restriction-modal-card { background: white; border-radius: 12px; width: 90%; max-width: 440px; padding: 30px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .restriction-modal-card { 
+            background: white; 
+            border-radius: 12px; 
+            width: 90%; 
+            max-width: 440px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            border-top: 6px solid #3b82f6;
+        }
         .restriction-modal-card h4 { margin-top: 0; margin-bottom: 10px; color: #1e293b; font-size: 1.25rem; font-weight: 700; }
-        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 5px; line-height: 1.5; }
-        .modal-btn { background: #0b2545; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 15px; width: 100%; max-width: 150px; transition: background 0.15s; }
+        .restriction-modal-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5; }
+        .modal-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            width: 100%; 
+            max-width: 150px; 
+            transition: background 0.15s; 
+        }
         .modal-btn:hover { opacity: 0.9; }
 
         /* Workspace Layouts */
-        .main-content { padding: 40px; max-width: 1000px; margin: 0 auto; display: none; } 
-        .header-panel { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .header-panel h1 { color: #0f172a; font-size: 1.75rem; margin: 0 0 5px 0; }
-        .back-link { background: #0f172a; color: white; text-decoration: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
+        .main-content { 
+            flex: 1; 
+            padding: 40px; 
+            min-width: 1200px; 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            width: 100%; 
+            display: none; 
+        } 
+        
+        .header-panel { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            margin-bottom: 30px; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .header-panel h1 { color: #0f172a; font-size: 1.5rem; font-weight: 700; margin: 0 0 5px 0; }
+        .header-panel p { color: #64748b; font-size: 0.9rem; margin: 0; }
+        
+        .back-link { 
+            background: #0f172a; 
+            color: white; 
+            text-decoration: none; 
+            padding: 9px 16px; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 0.85rem; 
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .back-link:hover { opacity: 0.9; }
 
-        .panel-card { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .panel-card h3 { color: #0b2545; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f4f6f9; }
+        .panel-card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); 
+        }
+        .panel-card h3 { 
+            color: #0b2545; 
+            margin-bottom: 20px; 
+            padding-bottom: 10px; 
+            border-bottom: 2px solid #f1f5f9; 
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
 
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 700; font-size: 0.8rem; color: #475569; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
-        .form-group input[type="file"] { background: #f8fafc; padding: 6px; cursor: pointer; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: #475569; }
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 10px 12px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 6px; 
+            font-size: 0.9rem; 
+            color: #1e293b;
+            background: white;
+            height: 42px;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        
+        .form-group input[type="file"] { 
+            background: #f8fafc; 
+            padding: 8px 12px; 
+            cursor: pointer; 
+            height: auto;
+        }
         
         .uppercase-input { text-transform: uppercase; }
         .form-group input[disabled], .form-group select[disabled] { background: #f1f5f9 !important; color: #64748b; cursor: not-allowed; opacity: 0.7; }
         
-        .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 500; }
-        .upload-progress-status { font-size: 0.75rem; font-weight: 500; margin-top: 4px; display: none; }
+        .lock-notice { font-size: 0.75rem; color: #ef4444; margin-top: 4px; display: none; font-weight: 600; }
+        .upload-progress-status { font-size: 0.75rem; font-weight: 600; margin-top: 4px; display: none; }
         .upload-progress-status.working { color: #2563eb; }
         .upload-progress-status.ready { color: #16a34a; }
-        .live-lock-banner { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
+        .live-lock-banner { display: none; background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-size: 0.85rem; line-height: 1.4; }
 
-        .submit-btn { background: #0b2545; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; transition: 0.2s; }
-        .submit-btn:hover { opacity: 0.9; }
-        .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .submit-btn { 
+            background: #0b2545; 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 0.9rem;
+            width: 100%; 
+            cursor: pointer; 
+            transition: all 0.2s ease; 
+        }
+        .submit-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+        .submit-btn:disabled { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; transform: none; }
+
+        .table-responsive {
+            overflow-x: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1000px; text-align: left; }
+        th { background: #f8fafc; color: #475569; font-weight: 700; padding: 12px 14px; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: middle; white-space: nowrap; }
+        tr:hover td { background-color: #f8fafc; }
     </style>
 </head>
 <body>
 
-    <!-- Standardized Restriction Modal Element from inventory-management.html -->
     <div class="restriction-modal-container" id="accessBlockerModal">
         <div class="restriction-modal-card">
             <h4 id="restrictionModalTitle">Access Restricted</h4>
@@ -174,8 +412,7 @@
                         <label>SUPPLIERS NAME</label>
                         <input type="text" id="clientName" list="supplierList" class="uppercase-input" placeholder="Type or Select Supplier...">
                         <datalist id="supplierList">
-                            <!-- Populated Dynamically via fetch from 'supplier' database table -->
-                        </datalist>
+                            </datalist>
                     </div>
                     <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
                         <label>CV NO.</label>
@@ -202,7 +439,7 @@
                     <label>1st Upload: SPSIC Document File (PDF / Image / Word / Excel)</label>
                     <input type="file" id="fileSpsic" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" onchange="handleFileSelection('fileSpsic', 'progressSpsic')">
                     <div id="progressSpsic" class="upload-progress-status"></div>
-                    <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
+                    <div id="statusSpsicUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none; font-weight: 600;">✓ Already saved in database</div>
                 </div>
                 
                 <div class="form-group">
@@ -210,7 +447,7 @@
                     <input type="file" id="fileArrival" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" onchange="handleFileSelection('fileArrival', 'progressArrival')">
                     <div id="progressArrival" class="upload-progress-status"></div>
                     <div id="noticeArrival" class="lock-notice">⚠️ Locked: Upload 1st File (SPSIC) first.</div>
-                    <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
+                    <div id="statusArrivalUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none; font-weight: 600;">✓ Already saved in database</div>
                 </div>
                 
                 <div class="form-group">
@@ -218,7 +455,7 @@
                     <input type="file" id="fileImportDocs" accept="application/pdf,image/*,.doc,.docx,.xls,.xlsx" onchange="handleFileSelection('fileImportDocs', 'progressImport')">
                     <div id="progressImport" class="upload-progress-status"></div>
                     <div id="noticeImport" class="lock-notice">⚠️ Locked: Upload 1st and 2nd Files first.</div>
-                    <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none;">✓ Already saved in database</div>
+                    <div id="statusImportUploaded" style="font-size:0.75rem; color:#22c55e; margin-top:4px; display:none; font-weight: 600;">✓ Already saved in database</div>
                 </div>
                 
                 <button type="submit" id="submitSyncPipelineBtn" class="submit-btn">Upload SPSIC Record</button>
@@ -229,33 +466,33 @@
             <h3>SPSIC Report Registry</h3>
             <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 150px;">
-                    <label style="font-size: 0.75rem; font-weight: 600; color: #475569;">FROM DATE</label>
-                    <input type="date" id="dateFrom" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">FROM DATE</label>
+                    <input type="date" id="dateFrom" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;">
                 </div>
                 <div style="flex: 1; min-width: 150px;">
-                    <label style="font-size: 0.75rem; font-weight: 600; color: #475569;">TO DATE</label>
-                    <input type="date" id="dateTo" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <label style="font-size: 0.75rem; font-weight: 600; color: #475569; display: block; margin-bottom: 6px;">TO DATE</label>
+                    <input type="date" id="dateTo" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem;">
                 </div>
                 <div style="display: flex; align-items: flex-end; gap: 10px;">
-                    <button onclick="fetchSpsicReports()" class="submit-btn" style="width: auto; padding: 10px 20px;">Generate Report</button>
-                    <button onclick="exportTableToExcel()" class="submit-btn" style="width: auto; padding: 10px 20px; background: #16a34a; color: white;">Download Excel</button>
+                    <button onclick="fetchSpsicReports()" class="submit-btn" style="width: auto; padding: 10px 20px; height: 42px;">Generate Report</button>
+                    <button onclick="exportTableToExcel()" class="submit-btn" style="width: auto; padding: 10px 20px; background: #16a34a; color: white; height: 42px;">Download Excel</button>
                 </div>
             </div>
             
-            <div style="overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding-bottom: 5px;">
-                <table id="reportTable" style="width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 1000px;">
+            <div class="table-responsive">
+                <table id="reportTable">
                     <thead>
-                        <tr style="background: #f1f5f9; text-align: left;">
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">SPSIC Number</th>
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Created Date</th>
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Approved Date</th>
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Expiration Date</th>
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Storage</th>
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Commodity</th>
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Storage Arrival Date</th>
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Client Name</th>
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">CV Number</th>
-                            <th style="padding: 12px; border-bottom: 2px solid #e2e8f0;">Documents Status</th>
+                        <tr>
+                            <th>SPSIC Number</th>
+                            <th>Created Date</th>
+                            <th>Approved Date</th>
+                            <th>Expiration Date</th>
+                            <th>Storage</th>
+                            <th>Commodity</th>
+                            <th>Storage Arrival Date</th>
+                            <th>Client Name</th>
+                            <th>CV Number</th>
+                            <th>Documents Status</th>
                         </tr>
                     </thead>
                     <tbody id="reportTableBody">
@@ -280,7 +517,7 @@
         let activeTrackingSpsic = null;
         let realTimePresenceChannel = null;
 
-        // Restriction Modal Handlers from inventory-management.html
+        // Restriction Modal Handlers
         function showRestrictionModal(title, message, btnText = "Acknowledge", clickAction = null) {
             document.getElementById('restrictionModalTitle').textContent = title;
             document.getElementById('restrictionModalMessage').textContent = message;
@@ -656,7 +893,7 @@
                 showRestrictionModal("Date Range Required", "Please select both a Start Date and an End Date.");
                 return;
             }
-            tableBody.innerHTML = '<tr><td colspan="10" style="padding:20px; text-align:center;">Filtering records...</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="10" style="padding:20px; text-align:center; color: #94a3b8;">Filtering records...</td></tr>';
             
             const { data, error } = await supabaseClient
                 .from('imported_shipment_docs')
@@ -666,19 +903,19 @@
                 .order('s_date', { ascending: false });
 
             if (error) { showRestrictionModal("Query Failed", error.message); return; }
-            if (!data || data.length === 0) { tableBody.innerHTML = '<tr><td colspan="10" style="padding:20px; text-align:center;">No records found for this period.</td></tr>'; return; }
+            if (!data || data.length === 0) { tableBody.innerHTML = '<tr><td colspan="10" style="padding:20px; text-align:center; color: #94a3b8;">No records found for this period.</td></tr>'; return; }
             tableBody.innerHTML = data.map(row => `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="padding: 10px; white-space: nowrap;">${row.spsic_number}</td>
-                    <td style="padding: 10px; white-space: nowrap;">${row.s_date}</td>
-                    <td style="padding: 10px; white-space: nowrap;">${row.approved_date || '-'}</td>
-                    <td style="padding: 10px; white-space: nowrap;">${row.expiration_date || '-'}</td>
-                    <td style="padding: 10px; white-space: nowrap;">${row.storage_location || '-'}</td>
-                    <td style="padding: 10px; white-space: nowrap;">${row.commodity || '-'}</td>
-                    <td style="padding: 10px; white-space: nowrap;">${row.storage_arrival_date || '-'}</td>
-                    <td style="padding: 10px; white-space: nowrap;">${row.client_name || '-'}</td>
-                    <td style="padding: 10px; white-space: nowrap;">${row.cv_number || '-'}</td>
-                    <td style="padding: 10px; white-space: nowrap; font-weight:bold;">${row.documents_status || '-'}</td>
+                <tr>
+                    <td style="font-weight: 600;">${row.spsic_number}</td>
+                    <td>${row.s_date}</td>
+                    <td>${row.approved_date || '-'}</td>
+                    <td>${row.expiration_date || '-'}</td>
+                    <td>${row.storage_location || '-'}</td>
+                    <td>${row.commodity || '-'}</td>
+                    <td>${row.storage_arrival_date || '-'}</td>
+                    <td>${row.client_name || '-'}</td>
+                    <td>${row.cv_number || '-'}</td>
+                    <td style="font-weight:bold;">${row.documents_status || '-'}</td>
                 </tr>
             `).join('');
         }
