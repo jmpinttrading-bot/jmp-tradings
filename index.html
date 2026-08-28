@@ -81,7 +81,6 @@
             padding: 0 20px;
         }
 
-        /* Container wrapping both the logo and the surrounding spinner ring */
         .logo-spinner-wrapper {
             position: relative;
             width: 220px;
@@ -102,7 +101,6 @@
             animation: pulseLogo 2s ease-in-out infinite alternate;
         }
 
-        /* Circular ring spinner encircling the logo */
         .intro-spinner-ring {
             position: absolute;
             top: -12px;
@@ -282,18 +280,14 @@
         }
 
         /* ==========================================================================
-           3. Hero Section (Updated Zoom & Brightness)
+           3. Hero Section
            ========================================================================== */
         .hero {
             position: relative;
-            /* Lightened overlay gradient */
             background: linear-gradient(rgba(11, 37, 69, 0.45), rgba(7, 22, 44, 0.55)), 
                         url('hero.png') no-repeat center center;
-            
-            /* Zoomed out background size */
             background-size: cover; 
             background-color: #0b2545; 
-            
             height: 65vh; 
             min-height: 480px;
             color: #fff;
@@ -412,7 +406,6 @@
             width: 90px;
         }
 
-        /* Shared Carousel Arrow Styles */
         .slider-arrow {
             position: absolute;
             top: 50%;
@@ -494,7 +487,6 @@
             transform: scale(1.05) rotate(2deg);
         }
 
-        /* Mission and Vision Grid Elements */
         .mv-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -524,8 +516,20 @@
             letter-spacing: 0.5px;
         }
 
+        /* Inline Chat Link Styling */
+        .chat-doc-link {
+            color: #0b2545;
+            font-weight: 700;
+            text-decoration: underline;
+            transition: color 0.2s ease;
+        }
+
+        .chat-doc-link:hover {
+            color: #ee964b;
+        }
+
         /* ==========================================================================
-           6. Core Competencies / Strengths Animated Carousel
+           6. Core Competencies / Strengths
            ========================================================================== */
         .strengths {
             background-color: #f4f8fb; 
@@ -873,7 +877,200 @@
         }
 
         /* ==========================================================================
-           8. Testimonials Section
+           8. Interactive FAQ & Automated Bot Flow
+           ========================================================================== */
+        .faq {
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .faq-container {
+            max-width: 850px;
+            margin: 40px auto 0;
+            text-align: left;
+        }
+
+        /* Interactive FAQ Bot Section */
+        .interactive-bot-card {
+            background: #ffffff;
+            border: 2px solid #0b2545;
+            border-radius: 14px;
+            box-shadow: 0 8px 30px rgba(11, 37, 69, 0.08);
+            margin-bottom: 35px;
+            overflow: hidden;
+        }
+
+        .bot-header {
+            background: linear-gradient(135deg, #0b2545 0%, #133a6f 100%);
+            color: #fff;
+            padding: 16px 22px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bot-header-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .bot-header-subtitle {
+            font-size: 0.8rem;
+            color: #f4d35e;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .bot-status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .bot-window {
+            padding: 24px;
+            height: 420px;
+            max-height: 420px;
+            background-color: #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar Styling for Chat Window */
+        .bot-window::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .bot-window::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+
+        .bot-window::-webkit-scrollbar-thumb {
+            background: #0b2545;
+            border-radius: 4px;
+        }
+
+        .bot-window::-webkit-scrollbar-thumb:hover {
+            background: #133a6f;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .chat-bubble.bot {
+            background: #ffffff;
+            color: #1e293b;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .chat-bubble.user {
+            background: #0b2545;
+            color: #ffffff;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+            box-shadow: 0 2px 8px rgba(11, 37, 69, 0.2);
+        }
+
+        /* Chatbot Embedded Product Image Styling */
+        .bot-product-preview {
+            width: 100%;
+            max-height: 180px;
+            object-fit: contain;
+            background: #ffffff;
+            border-radius: 8px;
+            margin: 8px 0 12px 0;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: block;
+        }
+
+        .bot-options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .bot-btn {
+            background: #ffffff;
+            border: 1.5px solid #0b2545;
+            color: #0b2545;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .bot-btn:hover {
+            background: #0b2545;
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        .bot-btn-primary {
+            background: linear-gradient(135deg, #f4d35e 0%, #ee964b 100%);
+            color: #0b2545;
+            border: none;
+            font-weight: 700;
+            text-align: center;
+            justify-content: center;
+            padding: 12px 18px;
+            box-shadow: 0 4px 12px rgba(238, 150, 75, 0.3);
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .bot-btn-primary:hover {
+            background: linear-gradient(135deg, #ee964b 0%, #f4d35e 100%);
+            color: #000;
+            transform: translateY(-2px);
+        }
+
+        .bot-btn-secondary {
+            background: #e2e8f0;
+            color: #334155;
+            border: none;
+            text-align: center;
+            justify-content: center;
+            padding: 10px 14px;
+            margin-top: 6px;
+            width: 100%;
+        }
+
+        .bot-btn-secondary:hover {
+            background: #cbd5e1;
+            color: #0f172a;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==========================================================================
+           9. Testimonials Section
            ========================================================================== */
         .testimonials {
             background-color: #fff;
@@ -978,72 +1175,6 @@
         @keyframes marqueeScroll {
             0% { transform: translateX(0); }
             100% { transform: translateX(-100%); }
-        }
-
-        /* ==========================================================================
-           9. FAQ Accordion Component
-           ========================================================================== */
-        .faq {
-            background-color: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .faq-container {
-            max-width: 800px;
-            margin: 40px auto 0;
-            text-align: left;
-        }
-
-        .faq-item {
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            overflow: hidden;
-            transition: box-shadow 0.3s ease, border-color 0.3s ease;
-        }
-
-        .faq-item:hover {
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-            border-color: #cbd5e1;
-        }
-
-        .faq-item details summary {
-            padding: 22px;
-            font-weight: 600;
-            color: #0b2545;
-            cursor: pointer;
-            list-style: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            user-select: none;
-            font-size: 1.05rem;
-        }
-
-        .faq-item details summary::-webkit-details-marker {
-            display: none;
-        }
-
-        .faq-item details summary::after {
-            content: '+';
-            font-size: 1.5rem;
-            color: #ee964b;
-            font-weight: 700;
-            transition: transform 0.3s ease;
-        }
-
-        .faq-item details[open] summary::after {
-            transform: rotate(45deg);
-        }
-
-        .faq-content {
-            padding: 0 22px 22px 22px;
-            color: #4a5568;
-            font-size: 0.98rem;
-            border-top: 1px solid #f1f5f9;
-            padding-top: 15px;
-            line-height: 1.7;
         }
 
         /* ==========================================================================
@@ -1304,6 +1435,9 @@
             }
             .intro-title {
                 font-size: 1.25rem;
+            }
+            .bot-options-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -1657,7 +1791,7 @@
                     <div class="product-card">
                         <img class="product-img" src="Frozen Bigeye Scad Whole (Selar crumenophthalmus).jpg" alt="Frozen Bigeye Scad Whole">
                         <div class="product-info">
-                            <h3>Bigeye Scad (Matangbaka)</h3>
+                            <h3>Bigeye Scad (Matangbaka Alt)</h3>
                             <p class="scientific-name">Selar crumenophthalmus</p>
                             <span class="product-tag">Whole Round</span>
                         </div>
@@ -1767,30 +1901,22 @@
     <section class="faq reveal" id="faq">
         <h2>Frequently Asked Questions</h2>
         <div class="faq-container">
-            <div class="faq-item">
-                <details>
-                    <summary>What are your minimum order quantities (MOQ)?</summary>
-                    <div class="faq-content">
-                        <p>We accommodate dynamic wholesale procurement requests. Orders are systematically tracked and fulfilled either <strong>per box</strong> or <strong>per plastic bundle format</strong> depending on the specific product type, target processing cut, and cold-storage distribution specs.</p>
+            
+            <!-- Interactive Multi-level FAQ Chatbot -->
+            <div class="interactive-bot-card">
+                <div class="bot-header">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
+                    <div>
+                        <div class="bot-header-title">JMP Automated Product &amp; Trade Assistant</div>
+                        <div class="bot-header-subtitle"><span class="bot-status-dot"></span> Instant FAQ &amp; Product Info Flow</div>
                     </div>
-                </details>
+                </div>
+                
+                <div class="bot-window" id="chatWindow">
+                    <!-- Dynamic chat responses render here -->
+                </div>
             </div>
-            <div class="faq-item">
-                <details>
-                    <summary>How does JMP verify trade regulatory compliance?</summary>
-                    <div class="faq-content">
-                        <p>JMP International operates with high-tier documentation verification. All inbound ocean shipments strictly conform to domestic guidelines (including food handling tracking codes) alongside standardized international hazard protocols.</p>
-                    </div>
-                </details>
-            </div>
-            <div class="faq-item">
-                <details>
-                    <summary>What freezing methodologies are applied to preserve inventory?</summary>
-                    <div class="faq-content">
-                        <p>Our global fishing assets implement Individual Quick Freezing (IQF) and block-frozen options immediately post-harvest. This process halts nutritional composition breakdown, preventing cell walls from rupturing during cold logistics phases.</p>
-                    </div>
-                </details>
-            </div>
+
         </div>
     </section>
 
@@ -1799,7 +1925,7 @@
         <p class="subtitle">Connect with our trading desk for container-load pricing, freight logistics options, and specifications sheet requests.</p>
         
         <div class="contact-container">
-            <form action="#" method="POST">
+            <form action="#" method="POST" id="inquiryForm">
                 <div class="form-group">
                     <label for="name">Customer Company Name / Full Name</label>
                     <input type="text" id="name" name="name" required placeholder="Enter your business name">
@@ -2100,6 +2226,175 @@
         });
 
         setupCardEvents();
+
+        /* ==========================================================================
+           Interactive Multi-level FAQ Chatbot Engine
+           ========================================================================== */
+        const productDatabase = [
+            { id: 1, name: "Golden Pomfret", image: "Frozen Golden Pomfret Whole Round (Trachinotus spp.).jpg", scientific: "Trachinotus spp.", tag: "Whole Round", desc: "Flash-frozen whole round Golden Pomfret with clean flavor, rich texture, and firm flesh ideal for roasting, steaming, or frying." },
+            { id: 2, name: "Common Scad (Lian)", image: "Frozen Lian - Common Scad Whole (Trachurus trachurus).jpg", scientific: "Trachurus trachurus", tag: "Whole", desc: "Whole fresh-caught Common Scad packed in commercial bulk. High oil content and rich pelagic flavor profile." },
+            { id: 3, name: "Nobashi Shrimp", image: "Frozen Nobashi Shrimp.jpg", scientific: "Penaeidae", tag: "Stretched / Peeled", desc: "Precisely stretched, peeled, and tail-on Nobashi Shrimp. Engineered specifically for seamless tempura prep and food service operations." },
+            { id: 4, name: "Pangasius Fillet", image: "Frozen Pangasius Fillet (Pangasianodon hypophtalmus).jpg", scientific: "Pangasianodon hypophthalmus", tag: "Fillet / Boneless", desc: "Skinless, boneless, well-trimmed Pangasius white fish fillets. High moisture lock, mild flavor, perfect for high-volume commercial frying." },
+            { id: 5, name: "Peeled Shrimp", image: "Frozen Peeled Shrimp (Penaeus vannamei).jpg", scientific: "Penaeus vannamei", tag: "PD / PUD", desc: "Peeled and deveined (PD / PUD) Pacific White Shrimp. Flash-frozen IQF to prevent clumping and retain natural sweetness." },
+            { id: 6, name: "Round Scad", image: "Frozen Round Scad (Trachurus trachurus).jpg", scientific: "Trachurus trachurus", tag: "Whole Round", desc: "Standard commercial grade whole round Scad. Sustained cold chain ensures whole structure integrity upon delivery." },
+            { id: 7, name: "Salmon Belly", image: "Frozen Salmon Belly (Salmo salar).jpg", scientific: "Salmo salar", tag: "Premium Cuts", desc: "Rich, fatty Atlantic Salmon belly strips. Exceptional omega-3 density and soft texture suitable for grilling, sushi, or broth." },
+            { id: 8, name: "Salmon Head", image: "Frozen Salmon Head (Salmo salar).jpg", scientific: "Salmo salar", tag: "Whole Head", desc: "Cleanly severed whole salmon heads. High collagen content, popular in Asian culinary applications, soups, and stocks." },
+            { id: 9, name: "Seabass", image: "Frozen Seabass Whole Round (Dicentrarchus spp.).jpg", scientific: "Dicentrarchus spp.", tag: "Whole Round", desc: "Premium wild/farmed whole round Seabass. Tender white meat with clean, mild taste profile favored in hotel dining." },
+            { id: 10, name: "Mitre Squid", image: "Frozen Squid Whole (Uroteusthis chinensis).jpg", scientific: "Uroteusthis chinensis", tag: "Whole", desc: "Whole Mitre Squid harvested at prime size. Retains tender muscular wall density without rubbery texture after processing." },
+            { id: 11, name: "Illex Squid", image: "Frozen Squid Whole Round (Illex illecebrosus).jpg", scientific: "Illex illecebrosus", tag: "Whole Round", desc: "Deep-sea Illex Squid whole round. High yield ratio, great for commercial ring extraction or whole grilling specs." },
+            { id: 12, name: "Japanese Flying Squid", image: "Frozen Squid Whole Round (Todarodes Pacificus).jpg", scientific: "Todarodes pacificus", tag: "Whole Round", desc: "High-grade Japanese Flying Squid whole round. Renowned for rich ink retention and thick muscular tissue." },
+            { id: 13, name: "Yellowfin Tuna Belly", image: "Frozen Tuna Belly (Thunnus Albacares).jpg", scientific: "Thunnus albacares", tag: "Premium Commercial", desc: "High-fat Yellowfin Tuna belly slabs. Vacuum-sealed to eliminate freezer burn and maintain dark red flesh color." },
+            { id: 14, name: "Tuna Cubes", image: "Frozen Tuna Cubes (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "Pre-Cut / Poke Ready", desc: "Uniform hand-cut Yellowfin Tuna cubes. Pre-portioned to speed up kitchen preparation for Poke bowls, skewers, or tartare." },
+            { id: 15, name: "Tuna Kama (Collar)", image: "Frozen Tuna Kama (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "Wholesale Cut", desc: "Succulent Yellowfin Tuna collar cut (Kama). Deeply flavorful juicy meat around the gill structure, excellent for grilling." },
+            { id: 16, name: "Tuna Portion Cut", image: "Frozen Tuna Portion Cut (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "Exact Spec Cuts", desc: "Customized weight-calibrated Yellowfin Tuna portions. Uniform thickness ensures predictable cooking times." },
+            { id: 17, name: "Tuna Saku Bar", image: "Frozen Tuna Saku Bar (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "AAA Grade / Sashimi Ready", desc: "AAA Grade center-cut Saku blocks. Carbon-monoxide treated or natural frozen to retain vibrant red hue, ready for sashimi slicing." },
+            { id: 18, name: "Yellowtail Scad (Marot)", image: "Frozen YellowTail Scad Whole (Atule Mate).jpg", scientific: "Atule mate", tag: "Whole", desc: "Whole Yellowtail Scad (Marot). Firm flesh and rich coastal flavor, processed to eliminate scale loss during shipping." },
+            { id: 19, name: "Smooth-Tailed Trevally", image: "Frozen Yellowtail Scad Whole (Selaroides leptolepis).jpg", scientific: "Selaroides leptolepis", tag: "Whole", desc: "Commercial whole Smooth-Tailed Trevally. Balanced fat content and sturdy body shape, ideal for bulk frying and smoking." },
+            { id: 20, name: "Japanese Amberjack (Buri)", image: "Frozen Yellowtail Whole Round (Seriola quinqeradiata).jpg", scientific: "Seriola quinqueradiata", tag: "Whole Round", desc: "Whole round Japanese Amberjack (Buri). High fat layer under skin, premium choice for winter culinary dishes and grilling." },
+            { id: 21, name: "Bigeye Scad (Matangbaka)", image: "Frozen Bigeye Scad Whole (Sela crumenophthalmus).jpg", scientific: "Selar crumenophthalmus", tag: "Whole Round", desc: "Popular Matangbaka species whole round. Fast-frozen post harvest to preserve pristine eye clarity and skin bloom." },
+            { id: 22, name: "Moonfish (Chabita)", image: "Frozen Moonfish Whole (Mene maculata).jpg", scientific: "Mene maculata", tag: "Whole", desc: "Whole Moonfish (Chabita). Flat laterally compressed body with delicate white meat for specialty seafood dishes." },
+            { id: 23, name: "Bigeye Scad (Matangbaka Alt)", image: "Frozen Bigeye Scad Whole (Selar crumenophthalmus).jpg", scientific: "Selar crumenophthalmus", tag: "Whole Round", desc: "Secondary size tier Bigeye Scad whole round tailored for specific catering budget brackets." },
+            { id: 24, name: "Tuna Steak", image: "Frozen Tuna Steak (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "Premium Bone-In", desc: "Cross-cut bone-in Yellowfin Tuna steaks. Excellent structural holding power during high-heat searing and pan grilling." }
+        ];
+
+        const chatWindow = document.getElementById('chatWindow');
+
+        function appendBotMessage(htmlContent) {
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble bot';
+            bubble.innerHTML = htmlContent;
+            chatWindow.appendChild(bubble);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function appendUserMessage(text) {
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble user';
+            bubble.innerText = text;
+            chatWindow.appendChild(bubble);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function renderMainMenu() {
+            appendBotMessage(`
+                👋 <strong>Hello! Welcome to JMP International Fish Trading!</strong><br>
+                How can we assist your business today? Click an option below:
+                <div class="bot-options-grid" style="grid-template-columns: 1fr; margin-top: 12px;">
+                    <button class="bot-btn" onclick="showProductList()">📦 View Our Product Catalog (24 Items)</button>
+                    <button class="bot-btn" onclick="showShippingInfo()">🚚 Cold Chain &amp; Delivery Logistics</button>
+                    <button class="bot-btn" onclick="showComplianceInfo()">🛡️ Import &amp; BFAR Compliance</button>
+                </div>
+            `);
+        }
+
+        function showProductList() {
+            appendUserMessage("📦 Our Products");
+            
+            let buttonsHtml = '<div class="bot-options-grid">';
+            productDatabase.forEach(item => {
+                buttonsHtml += `<button class="bot-btn" onclick="showProductDetails(${item.id})">🐟 ${item.name}</button>`;
+            });
+            buttonsHtml += '</div>';
+
+            appendBotMessage(`
+                Here is our current inventory lineup! Select any seafood item below to inspect specs and details:
+                ${buttonsHtml}
+            `);
+        }
+
+        function showProductDetails(id) {
+            const product = productDatabase.find(p => p.id === id);
+            if (!product) return;
+
+            appendUserMessage(`Selected: ${product.name}`);
+
+            appendBotMessage(`
+                📦 <strong>${product.name} Specifications</strong><br>
+                <img class="bot-product-preview" src="${product.image}" alt="${product.name}">
+                • <strong>Scientific Name:</strong> <em>${product.scientific}</em><br>
+                • <strong>Cut / Specification:</strong> <span class="product-tag" style="display:inline-block; margin-top:4px;">${product.tag}</span><br>
+                • <strong>Overview:</strong> ${product.desc}<br>
+                • <strong>Quality Guarantee:</strong> 100% Cold-Chain Maintained (-18°C or below)<br><br>
+                👇 <strong>What would you like to do next?</strong>
+                <button class="bot-btn bot-btn-primary" onclick="redirectToSalesAgent('${product.name}')">💬 Get Live Price &amp; Connect to Sales Desk</button>
+                <button class="bot-btn bot-btn-secondary" onclick="showProductList()">🔄 Back to Product List</button>
+            `);
+        }
+
+        function redirectToSalesAgent(productName) {
+            appendUserMessage(`Requesting pricing for: ${productName}`);
+
+            appendBotMessage(`
+                👤 <strong>Connecting you to a Real Sales Specialist...</strong><br>
+                Because wholesale container and bundle pricing fluctuates based on global market volume, freight rates, and size counts, our sales team handles pricing directly to guarantee maximum accuracy!
+                <br><br>
+                👇 <em>We are redirecting you down to our direct inquiry form...</em>
+            `);
+
+            setTimeout(() => {
+                const messageField = document.getElementById('message');
+                if (messageField) {
+                    messageField.value = `Hello JMP Sales Desk, I am requesting live container/bundle pricing and specs sheet for: ${productName}. Please get back to me.`;
+                }
+                const contactSection = document.getElementById('contact');
+                if (contactSection) {
+                    contactSection.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 1200);
+        }
+
+        function showShippingInfo() {
+            appendUserMessage("🚚 Cold Chain & Delivery Logistics");
+            appendBotMessage(`
+                🚚 <strong>Logistics & Distribution Information</strong><br>
+                • <strong>Office Address:</strong> Gov. Pascual Ave, Malabon, Metro Manila<br>
+                • <strong>Distribution Hubs:</strong> 4 Cold Storage Facilities<br>
+                • <strong>Cold Operations:</strong> 24 / 7 Fleet Dispatch & Temperature Monitoring<br>
+                • <strong>Contact Hotline:</strong> <a href="tel:09498610473" style="color:#0b2545; font-weight:700;">0949 861 0473</a><br>
+                • <strong>Packaging Formats:</strong> Supplied per <strong>Box</strong> or <strong>Plastic Bundle Format</strong>.<br><br>
+                👇 <strong>Select an FAQ topic below for details:</strong>
+                <div class="bot-options-grid" style="grid-template-columns: 1fr; margin-top: 10px;">
+                    <button class="bot-btn" onclick="showStorageFacilitiesInfo()">❄️ Storage Facilities</button>
+                    <button class="bot-btn bot-btn-secondary" onclick="resetBot()">🏠 Back to Main Menu</button>
+                </div>
+            `);
+        }
+
+        function showStorageFacilitiesInfo() {
+            appendUserMessage("❄️ Storage Facilities");
+            appendBotMessage(`
+                ❄️ <strong>Storage Infrastructure</strong><br>
+                
+               <br><strong>Where are your delivery hubs located?</strong><br>
+                While our main office is located in Malabon, Metro Manila, our product deliveries and order fulfillments are handled through our four strategic cold storage facilities:<br>
+                • VVS Cold Storage &amp; Processing Plant Corp.<br> - Address: 227 C3 Road Corner, N Bay Blvd, Navotas, Metro Manila<br><br>
+                • Hightower Storage &amp; Trading Centre, Inc.<br>- Address: 502-A Carlos Palanca St., Quiapo, Manila, 1001 Metro Manila<br><br>
+                • Polaris Cold Chain Solutions<br> - Address: 37, NBBS Kaunlaran, Navotas, 1485 Metro Manila<br><br>
+                • Eisberg Cold Storage<br> - Address: South Caloocan, Metro Manila<br><br>
+                <strong>Can I pick up my order directly from the delivery hubs?</strong><br>
+                Pickup availability depends on your order and which facility your items are located in. Please contact our support team before heading out so we can confirm item availability and direct you to the correct cold storage hub.<br><br>
+                <button class="bot-btn bot-btn-secondary" onclick="showShippingInfo()">⬅️ Back to Logistics FAQ</button>
+            `);
+        }
+
+        function showComplianceInfo() {
+            appendUserMessage("🛡️ Import & BFAR Compliance");
+            appendBotMessage(`
+                🛡️ <strong>Regulatory Standards</strong><br>
+                All JMP International shipments fully conform to domestic BFAR (Bureau of Fisheries and Aquatic Resources) and FDA rules alongside international HACCP protocols, ensuring hassle-free commercial processing.<br><br>
+                📄 <strong>Official Documentation:</strong><br>
+                <a href="document.pdf" target="_blank" class="chat-doc-link">Click here to open and download document.pdf</a><br><br>
+                <button class="bot-btn bot-btn-secondary" onclick="resetBot()">🏠 Back to Main Menu</button>
+            `);
+        }
+
+        function resetBot() {
+            chatWindow.innerHTML = '';
+            renderMainMenu();
+        }
+
+        // Initialize Bot on Page Load
+        renderMainMenu();
     </script>
 </body>
 </html>
