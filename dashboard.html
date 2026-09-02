@@ -161,9 +161,9 @@
         th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; white-space: nowrap; }
         .sub-header { font-size: 0.72rem; font-weight: bold; background: #f8fafc; color: #475569; text-transform: uppercase; }
 
-        /* Highlight Row for Single Pallet */
+        /* Highlight Row for Single Pallet (Background Only - Borders Stay Black) */
         tr.single-pallet-highlight { background-color: #fef2f2 !important; }
-        tr.single-pallet-highlight td { border-color: #fca5a5 !important; }
+        tr.single-pallet-highlight td { background-color: #fef2f2 !important; }
         .pallet-warning-badge { color: #dc2626 !important; font-weight: 800 !important; }
 
         /* Storage Summary Metrics Layout */
@@ -173,7 +173,6 @@
         
         /* Item Name Cell: Center Aligned without top border line to seamlessly merge with Item Code */
         .item-name-cell { 
-            background-color: #f8fafc; 
             color: #475569; 
             font-size: 0.78rem; 
             font-style: italic; 
@@ -200,6 +199,11 @@
         tr.item-block-row2 td:first-child {
             border-left: 2px solid #000000 !important;
             border-right: 2px solid #000000 !important;
+        }
+
+        /* Ensure bottom border of the last row in the table is explicitly bold black */
+        tbody tr:last-child td {
+            border-bottom: 2px solid #000000 !important;
         }
 
         /* Balance Cell: Right border separating Balance and Pallet */
