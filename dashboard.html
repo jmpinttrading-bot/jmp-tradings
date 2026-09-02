@@ -170,6 +170,8 @@
         .facility-summary-card { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 12px 18px; margin-top: 15px; border-radius: 8px; display: inline-flex; flex-direction: column; gap: 4px; min-width: 240px; }
         .facility-summary-card span:first-child { font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
         .facility-summary-card span:last-child { font-size: 1.35rem; font-weight: 800; color: #1e293b; }
+        
+        .item-desc-cell { background-color: #f8fafc; color: #475569; font-size: 0.78rem; font-style: italic; text-align: left; padding: 6px 10px; }
     </style>
 </head>
 <body>
@@ -361,7 +363,7 @@
             
             const { data, error } = await supabaseClient
                 .from('transactions')
-                .select('id, item_code, total_pallet, date, balance, storage_facility, sales_order_no')
+                .select('id, item_code, item_description, total_pallet, date, balance, storage_facility, sales_order_no')
                 .lte('date', end)
                 .order('date', { ascending: true });
 
@@ -420,15 +422,17 @@
                     return; 
                 }
 
+                const itemDesc = (activeMatch && activeMatch.item_description) ? activeMatch.item_description : 'N/A';
                 const activePallets = (activeMatch && activeMatch.total_pallet) ? String(activeMatch.total_pallet).trim() : '—';
                 const isSinglePallet = activePallets === '1' || activePallets === '1.0' || activePallets === '1.00';
                 
                 const rowClass = isSinglePallet ? 'class="single-pallet-highlight"' : '';
                 
-                let rowHtml = `<tr ${rowClass}>
-                                  <td style="font-weight: 700;">${code}</td>`;
+                // First Row: Item Code & Balance/Pallet merged 2 rows high
+                let row1Html = `<tr ${rowClass}>
+                                  <td style="font-weight: 700; vertical-align: middle;">${code}</td>`;
                 
-                let exportRowObj = { item_code: code, datesData: [] };
+                let exportRowObj = { item_code: code, item_description: itemDesc, datesData: [] };
 
                 dates.forEach((date, index) => {
                     const match = facilityData.filter(d => d.item_code === code && d.date <= date)
@@ -451,14 +455,20 @@
                     
                     const palletStyleClass = (index === 0 && isSinglePallet) ? 'class="pallet-warning-badge"' : '';
 
-                    rowHtml += `<td>${balance.toLocaleString()}</td>
-                                <td style="color: #64748b; font-weight: 600;" ${palletStyleClass}>${pallets}</td>`;
+                    row1Html += `<td rowspan="2" style="vertical-align: middle;">${balance.toLocaleString()}</td>
+                                <td rowspan="2" style="color: #64748b; font-weight: 600; vertical-align: middle;" ${palletStyleClass}>${pallets}</td>`;
                     
                     exportRowObj.datesData.push({ balance, pallets });
                 });
                 
-                rowHtml += `</tr>`;
-                tableRowsHtml += rowHtml;
+                row1Html += `</tr>`;
+
+                // Second Row: Item Description directly under Item Code
+                let row2Html = `<tr ${rowClass}>
+                                  <td class="item-desc-cell">${itemDesc}</td>
+                                </tr>`;
+
+                tableRowsHtml += row1Html + row2Html;
                 exportedRows.push(exportRowObj);
             });
 
@@ -481,7 +491,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle;">Item Code</th>`;
+                            <th rowspan="3" style="background-color: ${color}; color: white; vertical-align: middle;">Item Details</th>`;
             
             dates.forEach(d => {
                 const [y, m, day] = d.split('-');
@@ -534,13 +544,16 @@
             dataObj.rows.forEach(r => {
                 let rowDataCells = "";
                 r.datesData.forEach(dd => {
-                    rowDataCells += `<td>${dd.balance}</td><td>${dd.pallets}</td>`;
+                    rowDataCells += `<td rowspan="2">${dd.balance}</td><td rowspan="2">${dd.pallets}</td>`;
                 });
 
                 tableRowsHtml += `
                     <tr>
                         <td style="font-weight:bold;">${r.item_code}</td>
                         ${rowDataCells}
+                    </tr>
+                    <tr>
+                        <td style="font-style:italic; font-size:10px; color:#555;">${r.item_description || ''}</td>
                     </tr>
                 `;
             });
@@ -571,7 +584,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <th rowspan="2">Item Code</th>
+                                <th rowspan="2">Item Details</th>
                                 ${dateHeadersHtml}
                             </tr>
                             <tr>
