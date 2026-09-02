@@ -171,7 +171,7 @@
         .facility-summary-card span:first-child { font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
         .facility-summary-card span:last-child { font-size: 1.35rem; font-weight: 800; color: #1e293b; }
         
-        /* Item Name Cell: Center Aligned without top border line to seamlessly merge with Item Code */
+        /* Item Name Cell */
         .item-name-cell { 
             color: #475569; 
             font-size: 0.78rem; 
@@ -181,14 +181,14 @@
             border-top: none !important; 
         }
 
-        /* Item Code Cell: Removed bottom border to seamlessly merge with Item Name */
+        /* Item Code Cell */
         .item-code-cell {
             font-weight: 700;
             vertical-align: middle;
             border-bottom: none !important;
         }
 
-        /* Bold Black Outer Border for Item Block Rows & Date Separators */
+        /* Bold Black Outer Border for Item Block Rows */
         tr.item-block-row1 td {
             border-top: 2px solid #000000 !important;
         }
@@ -201,8 +201,9 @@
             border-right: 2px solid #000000 !important;
         }
 
-        /* Ensure bottom border of the last row in the table is explicitly bold black */
-        tbody tr:last-child td {
+        /* Force 2px Bold Black Bottom Border across ALL cells in the last table row block */
+        tbody tr:last-child td,
+        tbody tr:nth-last-child(2) td[rowspan] {
             border-bottom: 2px solid #000000 !important;
         }
 
@@ -550,7 +551,7 @@
             dates.forEach(() => {
                 html += `<th class="sub-header" style="border-top: 2px solid #000; border-bottom: 2px solid #000; border-left: 2px solid #000; border-right: 1px solid #000;">Bal</th><th class="sub-header" style="border-top: 2px solid #000; border-bottom: 2px solid #000; border-right: 2px solid #000;">Pallet</th>`;
             });
-            html += `</tr></thead><tbody>`;
+            html += `</tr><thead><tbody>`;
 
             html += tableRowsHtml;
 
