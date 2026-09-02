@@ -171,7 +171,7 @@
         .facility-summary-card span:first-child { font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
         .facility-summary-card span:last-child { font-size: 1.35rem; font-weight: 800; color: #1e293b; }
         
-        .item-desc-cell { background-color: #f8fafc; color: #475569; font-size: 0.78rem; font-style: italic; text-align: left; padding: 6px 10px; }
+        .item-name-cell { background-color: #f8fafc; color: #475569; font-size: 0.78rem; font-style: italic; text-align: left; padding: 6px 10px; }
     </style>
 </head>
 <body>
@@ -363,7 +363,7 @@
             
             const { data, error } = await supabaseClient
                 .from('transactions')
-                .select('id, item_code, item_description, total_pallet, date, balance, storage_facility, sales_order_no')
+                .select('id, item_code, item_name, total_pallet, date, balance, storage_facility, sales_order_no')
                 .lte('date', end)
                 .order('date', { ascending: true });
 
@@ -422,7 +422,7 @@
                     return; 
                 }
 
-                const itemDesc = (activeMatch && activeMatch.item_description) ? activeMatch.item_description : 'N/A';
+                const itemName = (activeMatch && activeMatch.item_name) ? activeMatch.item_name : 'N/A';
                 const activePallets = (activeMatch && activeMatch.total_pallet) ? String(activeMatch.total_pallet).trim() : '—';
                 const isSinglePallet = activePallets === '1' || activePallets === '1.0' || activePallets === '1.00';
                 
@@ -432,7 +432,7 @@
                 let row1Html = `<tr ${rowClass}>
                                   <td style="font-weight: 700; vertical-align: middle;">${code}</td>`;
                 
-                let exportRowObj = { item_code: code, item_description: itemDesc, datesData: [] };
+                let exportRowObj = { item_code: code, item_name: itemName, datesData: [] };
 
                 dates.forEach((date, index) => {
                     const match = facilityData.filter(d => d.item_code === code && d.date <= date)
@@ -463,9 +463,9 @@
                 
                 row1Html += `</tr>`;
 
-                // Second Row: Item Description directly under Item Code
+                // Second Row: Item Name directly under Item Code
                 let row2Html = `<tr ${rowClass}>
-                                  <td class="item-desc-cell">${itemDesc}</td>
+                                  <td class="item-name-cell">${itemName}</td>
                                 </tr>`;
 
                 tableRowsHtml += row1Html + row2Html;
@@ -553,7 +553,7 @@
                         ${rowDataCells}
                     </tr>
                     <tr>
-                        <td style="font-style:italic; font-size:10px; color:#555;">${r.item_description || ''}</td>
+                        <td style="font-style:italic; font-size:10px; color:#555;">${r.item_name || ''}</td>
                     </tr>
                 `;
             });
