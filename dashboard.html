@@ -171,7 +171,33 @@
         .facility-summary-card span:first-child { font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
         .facility-summary-card span:last-child { font-size: 1.35rem; font-weight: 800; color: #1e293b; }
         
-        .item-name-cell { background-color: #f8fafc; color: #475569; font-size: 0.78rem; font-style: italic; text-align: left; padding: 6px 10px; }
+        /* Item Name Cell: Center Aligned & Top Border Lightened to show seamless grouping */
+        .item-name-cell { 
+            background-color: #f8fafc; 
+            color: #475569; 
+            font-size: 0.78rem; 
+            font-style: italic; 
+            text-align: center; 
+            padding: 6px 10px; 
+            border-top: 1px dashed #cbd5e1 !important; 
+        }
+
+        /* Bold Black Border for Merged Rows / Item Blocks */
+        tr.item-block-row1 td {
+            border-top: 2px solid #000000 !important;
+            border-bottom: 2px solid #000000 !important;
+        }
+        tr.item-block-row2 td {
+            border-bottom: 2px solid #000000 !important;
+        }
+        tr.item-block-row1 td:first-child,
+        tr.item-block-row2 td:first-child {
+            border-left: 2px solid #000000 !important;
+            border-right: 2px solid #000000 !important;
+        }
+        tr.item-block-row1 td:last-child {
+            border-right: 2px solid #000000 !important;
+        }
     </style>
 </head>
 <body>
@@ -426,10 +452,10 @@
                 const activePallets = (activeMatch && activeMatch.total_pallet) ? String(activeMatch.total_pallet).trim() : '—';
                 const isSinglePallet = activePallets === '1' || activePallets === '1.0' || activePallets === '1.00';
                 
-                const rowClass = isSinglePallet ? 'class="single-pallet-highlight"' : '';
+                const rowClass = isSinglePallet ? 'single-pallet-highlight' : '';
                 
                 // First Row: Item Code & Balance/Pallet merged 2 rows high
-                let row1Html = `<tr ${rowClass}>
+                let row1Html = `<tr class="item-block-row1 ${rowClass}">
                                   <td style="font-weight: 700; vertical-align: middle;">${code}</td>`;
                 
                 let exportRowObj = { item_code: code, item_name: itemName, datesData: [] };
@@ -455,7 +481,7 @@
                     
                     const palletStyleClass = (index === 0 && isSinglePallet) ? 'class="pallet-warning-badge"' : '';
 
-                    row1Html += `<td rowspan="2" style="vertical-align: middle;">${balance.toLocaleString()}</td>
+                    row1Html += `<td rowspan="2" style="vertical-align: middle;" ${palletStyleClass}>${balance.toLocaleString()}</td>
                                 <td rowspan="2" style="color: #64748b; font-weight: 600; vertical-align: middle;" ${palletStyleClass}>${pallets}</td>`;
                     
                     exportRowObj.datesData.push({ balance, pallets });
@@ -463,8 +489,8 @@
                 
                 row1Html += `</tr>`;
 
-                // Second Row: Item Name directly under Item Code
-                let row2Html = `<tr ${rowClass}>
+                // Second Row: Item Name centered directly under Item Code
+                let row2Html = `<tr class="item-block-row2 ${rowClass}">
                                   <td class="item-name-cell">${itemName}</td>
                                 </tr>`;
 
@@ -491,17 +517,17 @@
                 <table>
                     <thead>
                         <tr>
-                            <th rowspan="3" style="background-color: ${color}; color: white; vertical-align: middle;">Item Details</th>`;
+                            <th rowspan="2" style="background-color: ${color}; color: white; vertical-align: middle; border: 2px solid #000;">Item Details</th>`;
             
             dates.forEach(d => {
                 const [y, m, day] = d.split('-');
                 const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                html += `<th colspan="2" style="background-color: ${color}; color: white;">${formatted}</th>`;
+                html += `<th colspan="2" style="background-color: ${color}; color: white; border: 2px solid #000;">${formatted}</th>`;
             });
             
             html += `</tr><tr>`;
             dates.forEach(() => {
-                html += `<th class="sub-header">Bal</th><th class="sub-header">Pallet</th>`;
+                html += `<th class="sub-header" style="border: 2px solid #000;">Bal</th><th class="sub-header" style="border: 2px solid #000;">Pallet</th>`;
             });
             html += `</tr></thead><tbody>`;
 
@@ -536,24 +562,24 @@
             dataObj.dates.forEach(d => {
                 const [y, m, day] = d.split('-');
                 const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                dateHeadersHtml += `<th colspan="2">${formatted}</th>`;
-                subHeadersHtml += `<th>Bal</th><th>Pallet</th>`;
+                dateHeadersHtml += `<th colspan="2" style="border: 2px solid #000000;">${formatted}</th>`;
+                subHeadersHtml += `<th style="border: 2px solid #000000;">Bal</th><th style="border: 2px solid #000000;">Pallet</th>`;
             });
 
             let tableRowsHtml = "";
             dataObj.rows.forEach(r => {
                 let rowDataCells = "";
                 r.datesData.forEach(dd => {
-                    rowDataCells += `<td rowspan="2">${dd.balance}</td><td rowspan="2">${dd.pallets}</td>`;
+                    rowDataCells += `<td rowspan="2" style="border: 2px solid #000000; vertical-align: middle;">${dd.balance}</td><td rowspan="2" style="border: 2px solid #000000; vertical-align: middle;">${dd.pallets}</td>`;
                 });
 
                 tableRowsHtml += `
                     <tr>
-                        <td style="font-weight:bold;">${r.item_code}</td>
+                        <td style="font-weight:bold; border-top: 2px solid #000000; border-left: 2px solid #000000; border-right: 2px solid #000000; text-align: center;">${r.item_code}</td>
                         ${rowDataCells}
                     </tr>
                     <tr>
-                        <td style="font-style:italic; font-size:10px; color:#555;">${r.item_name || ''}</td>
+                        <td style="font-style:italic; font-size:10px; color:#555; border-bottom: 2px solid #000000; border-left: 2px solid #000000; border-right: 2px solid #000000; text-align: center;">${r.item_name || ''}</td>
                     </tr>
                 `;
             });
@@ -584,7 +610,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <th rowspan="2">Item Details</th>
+                                <th rowspan="2" style="border: 2px solid #000000;">Item Details</th>
                                 ${dateHeadersHtml}
                             </tr>
                             <tr>
