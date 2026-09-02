@@ -171,7 +171,7 @@
         .facility-summary-card span:first-child { font-size: 0.72rem; text-transform: uppercase; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
         .facility-summary-card span:last-child { font-size: 1.35rem; font-weight: 800; color: #1e293b; }
         
-        /* Item Name Cell: Center Aligned & Top Border Lightened to show seamless grouping */
+        /* Item Name Cell: Center Aligned without top border line to seamlessly merge with Item Code */
         .item-name-cell { 
             background-color: #f8fafc; 
             color: #475569; 
@@ -179,13 +179,19 @@
             font-style: italic; 
             text-align: center; 
             padding: 6px 10px; 
-            border-top: 1px dashed #cbd5e1 !important; 
+            border-top: none !important; 
         }
 
-        /* Bold Black Border for Merged Rows / Item Blocks */
+        /* Item Code Cell: Removed bottom border to seamlessly merge with Item Name */
+        .item-code-cell {
+            font-weight: 700;
+            vertical-align: middle;
+            border-bottom: none !important;
+        }
+
+        /* Bold Black Outer Border for Item Block Rows & Date Separators */
         tr.item-block-row1 td {
             border-top: 2px solid #000000 !important;
-            border-bottom: 2px solid #000000 !important;
         }
         tr.item-block-row2 td {
             border-bottom: 2px solid #000000 !important;
@@ -195,8 +201,19 @@
             border-left: 2px solid #000000 !important;
             border-right: 2px solid #000000 !important;
         }
-        tr.item-block-row1 td:last-child {
+
+        /* Balance Cell: Right border separating Balance and Pallet */
+        .cell-bal {
+            border-right: 1px solid #000000 !important;
+            vertical-align: middle;
+        }
+
+        /* Pallet Cell: Bold 2px border separating different Dates */
+        .cell-pallet {
             border-right: 2px solid #000000 !important;
+            color: #64748b;
+            font-weight: 600;
+            vertical-align: middle;
         }
     </style>
 </head>
@@ -454,9 +471,9 @@
                 
                 const rowClass = isSinglePallet ? 'single-pallet-highlight' : '';
                 
-                // First Row: Item Code & Balance/Pallet merged 2 rows high
+                // First Row: Item Code
                 let row1Html = `<tr class="item-block-row1 ${rowClass}">
-                                  <td style="font-weight: 700; vertical-align: middle;">${code}</td>`;
+                                  <td class="item-code-cell">${code}</td>`;
                 
                 let exportRowObj = { item_code: code, item_name: itemName, datesData: [] };
 
@@ -481,15 +498,15 @@
                     
                     const palletStyleClass = (index === 0 && isSinglePallet) ? 'class="pallet-warning-badge"' : '';
 
-                    row1Html += `<td rowspan="2" style="vertical-align: middle;" ${palletStyleClass}>${balance.toLocaleString()}</td>
-                                <td rowspan="2" style="color: #64748b; font-weight: 600; vertical-align: middle;" ${palletStyleClass}>${pallets}</td>`;
+                    row1Html += `<td rowspan="2" class="cell-bal" ${palletStyleClass}>${balance.toLocaleString()}</td>
+                                <td rowspan="2" class="cell-pallet" ${palletStyleClass}>${pallets}</td>`;
                     
                     exportRowObj.datesData.push({ balance, pallets });
                 });
                 
                 row1Html += `</tr>`;
 
-                // Second Row: Item Name centered directly under Item Code
+                // Second Row: Item Name seamlessly below Item Code
                 let row2Html = `<tr class="item-block-row2 ${rowClass}">
                                   <td class="item-name-cell">${itemName}</td>
                                 </tr>`;
@@ -522,12 +539,12 @@
             dates.forEach(d => {
                 const [y, m, day] = d.split('-');
                 const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                html += `<th colspan="2" style="background-color: ${color}; color: white; border: 2px solid #000;">${formatted}</th>`;
+                html += `<th colspan="2" style="background-color: ${color}; color: white; border-top: 2px solid #000; border-bottom: 2px solid #000; border-left: 2px solid #000; border-right: 2px solid #000;">${formatted}</th>`;
             });
             
             html += `</tr><tr>`;
             dates.forEach(() => {
-                html += `<th class="sub-header" style="border: 2px solid #000;">Bal</th><th class="sub-header" style="border: 2px solid #000;">Pallet</th>`;
+                html += `<th class="sub-header" style="border-top: 2px solid #000; border-bottom: 2px solid #000; border-left: 2px solid #000; border-right: 1px solid #000;">Bal</th><th class="sub-header" style="border-top: 2px solid #000; border-bottom: 2px solid #000; border-right: 2px solid #000;">Pallet</th>`;
             });
             html += `</tr></thead><tbody>`;
 
@@ -563,14 +580,14 @@
                 const [y, m, day] = d.split('-');
                 const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 dateHeadersHtml += `<th colspan="2" style="border: 2px solid #000000;">${formatted}</th>`;
-                subHeadersHtml += `<th style="border: 2px solid #000000;">Bal</th><th style="border: 2px solid #000000;">Pallet</th>`;
+                subHeadersHtml += `<th style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-left: 2px solid #000000; border-right: 1px solid #000000;">Bal</th><th style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-right: 2px solid #000000;">Pallet</th>`;
             });
 
             let tableRowsHtml = "";
             dataObj.rows.forEach(r => {
                 let rowDataCells = "";
                 r.datesData.forEach(dd => {
-                    rowDataCells += `<td rowspan="2" style="border: 2px solid #000000; vertical-align: middle;">${dd.balance}</td><td rowspan="2" style="border: 2px solid #000000; vertical-align: middle;">${dd.pallets}</td>`;
+                    rowDataCells += `<td rowspan="2" style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-right: 1px solid #000000; vertical-align: middle;">${dd.balance}</td><td rowspan="2" style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-right: 2px solid #000000; vertical-align: middle;">${dd.pallets}</td>`;
                 });
 
                 tableRowsHtml += `
