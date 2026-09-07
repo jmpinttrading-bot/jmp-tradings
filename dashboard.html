@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>JMP Dashboard | Inventory View</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- jsPDF and AutoTable for Client-Side PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         
@@ -154,14 +157,16 @@
         .facility-container { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0; overflow-x: auto; }
         .facility-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: 6px; margin-bottom: 10px; }
         .facility-header h2 { font-size: 1rem; margin: 0; color: white; }
-        .btn-export-facility { background: #16a34a; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.78rem; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-export-facility:hover { background: #15803d; }
+        
+        /* Updated PDF Export Button Styling */
+        .btn-export-facility { background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.78rem; font-weight: bold; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-export-facility:hover { background: #b91c1c; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 0.85rem; }
         th, td { border: 1px solid #e2e8f0; padding: 10px; text-align: center; white-space: nowrap; }
         .sub-header { font-size: 0.72rem; font-weight: bold; background: #f8fafc; color: #475569; text-transform: uppercase; }
 
-        /* Highlight Row for Single Pallet (Background Only - Borders Stay Black) */
+        /* Highlight Row for Single Pallet */
         tr.single-pallet-highlight { background-color: #fef2f2 !important; }
         tr.single-pallet-highlight td { background-color: #fef2f2 !important; }
         .pallet-warning-badge { color: #dc2626 !important; font-weight: 800 !important; }
@@ -207,13 +212,13 @@
             border-bottom: 2px solid #000000 !important;
         }
 
-        /* Balance Cell: Right border separating Balance and Pallet */
+        /* Balance Cell */
         .cell-bal {
             border-right: 1px solid #000000 !important;
             vertical-align: middle;
         }
 
-        /* Pallet Cell: Bold 2px border separating different Dates */
+        /* Pallet Cell */
         .cell-pallet {
             border-right: 2px solid #000000 !important;
             color: #64748b;
@@ -528,13 +533,14 @@
             renderedFacilityData[safeFacilityId] = {
                 facilityName: name,
                 dates: dates,
-                rows: exportedRows
+                rows: exportedRows,
+                color: color
             };
 
             let html = `<div class="facility-container">
                 <div class="facility-header" style="background-color: ${color};">
                     <h2>${name}</h2>
-                    <button class="btn-export-facility" onclick="exportFacilityExcel('${safeFacilityId}')">📊 Export Excel</button>
+                    <button class="btn-export-facility" onclick="exportFacilityPDF('${safeFacilityId}')">📄 Export PDF</button>
                 </div>
                 <table>
                     <thead>
@@ -569,7 +575,8 @@
             document.getElementById('reportContainer').insertAdjacentHTML('beforeend', html);
         }
 
-        function exportFacilityExcel(facilityKey) {
+        // --- EXPORT TO PDF VIA JSPDF ---
+        function exportFacilityPDF(facilityKey) {
             const dataObj = renderedFacilityData[facilityKey];
             if (!dataObj || !dataObj.rows || dataObj.rows.length === 0) {
                 document.getElementById('restrictionModalTitle').textContent = "Export Ignored";
@@ -578,85 +585,78 @@
                 return;
             }
 
-            let dateHeadersHtml = "";
-            let subHeadersHtml = "";
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+            // Document Title & Metadata Header
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(30, 41, 59);
+            doc.text("JMP INTERNATIONAL FISH TRADING", 14, 15);
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(100, 116, 139);
+            doc.text(`Facility Inventory Report: ${dataObj.facilityName}`, 14, 21);
+            doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`, 14, 26);
+
+            // Construct Headers
+            const headerRow1 = [{ content: 'Item Details', rowSpan: 2, styles: { halign: 'center', valign: 'middle', fillColor: [30, 41, 59] } }];
+            const headerRow2 = [];
 
             dataObj.dates.forEach(d => {
                 const [y, m, day] = d.split('-');
-                const formatted = new Date(y, m-1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                dateHeadersHtml += `<th colspan="2" style="border: 2px solid #000000;">${formatted}</th>`;
-                subHeadersHtml += `<th style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-left: 2px solid #000000; border-right: 1px solid #000000;">Bal</th><th style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-right: 2px solid #000000;">Pallet</th>`;
+                const formatted = new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                headerRow1.push({ content: formatted, colSpan: 2, styles: { halign: 'center', fillColor: [30, 41, 59] } });
+                headerRow2.push({ content: 'Bal', styles: { halign: 'center', fillColor: [71, 85, 105] } });
+                headerRow2.push({ content: 'Pallet', styles: { halign: 'center', fillColor: [71, 85, 105] } });
             });
 
-            let tableRowsHtml = "";
+            // Construct Rows
+            const tableBody = [];
             dataObj.rows.forEach(r => {
-                let rowDataCells = "";
+                const row = [`${r.item_code}\n(${r.item_name || 'N/A'})`];
                 r.datesData.forEach(dd => {
-                    rowDataCells += `<td rowspan="2" style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-right: 1px solid #000000; vertical-align: middle;">${dd.balance}</td><td rowspan="2" style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; border-right: 2px solid #000000; vertical-align: middle;">${dd.pallets}</td>`;
+                    row.push(dd.balance.toLocaleString());
+                    row.push(String(dd.pallets));
                 });
-
-                tableRowsHtml += `
-                    <tr>
-                        <td style="font-weight:bold; border-top: 2px solid #000000; border-left: 2px solid #000000; border-right: 2px solid #000000; text-align: center;">${r.item_code}</td>
-                        ${rowDataCells}
-                    </tr>
-                    <tr>
-                        <td style="font-style:italic; font-size:10px; color:#555; border-bottom: 2px solid #000000; border-left: 2px solid #000000; border-right: 2px solid #000000; text-align: center;">${r.item_name || ''}</td>
-                    </tr>
-                `;
+                tableBody.push(row);
             });
 
-            let excelTemplate = `
-                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        table { border-collapse: collapse; width: 100%; }
-                        th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: center; font-family: Arial, sans-serif; font-size: 11px; }
-                        th { background-color: #1e293b; color: #ffffff; font-weight: bold; }
-                        .title-cell { font-size: 16px; font-weight: bold; text-align: left; padding: 10px 0; border: none; }
-                        .facility-cell { font-size: 13px; font-weight: bold; text-align: left; padding-bottom: 10px; color: #3b82f6; border: none; }
-                    </style>
-                </head>
-                <body>
-                    <table>
-                        <thead>
-                            <tr>
-                                <td colspan="${(dataObj.dates.length * 2) + 1}" class="title-cell">
-                                    JMP INTERNATIONAL FISH TRADING
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="${(dataObj.dates.length * 2) + 1}" class="facility-cell">
-                                    Facility: ${dataObj.facilityName}
-                                </td>
-                            </tr>
-                            <tr>
-                                <th rowspan="2" style="border: 2px solid #000000;">Item Details</th>
-                                ${dateHeadersHtml}
-                            </tr>
-                            <tr>
-                                ${subHeadersHtml}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tableRowsHtml}
-                        </tbody>
-                    </table>
-                </body>
-                </html>
-            `;
+            // AutoTable Rendering
+            doc.autoTable({
+                head: [headerRow1, headerRow2],
+                body: tableBody,
+                startY: 30,
+                theme: 'grid',
+                styles: {
+                    fontSize: 7.5,
+                    cellPadding: 2.5,
+                    valign: 'middle',
+                    overflow: 'linebreak'
+                },
+                headStyles: {
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold'
+                },
+                columnStyles: {
+                    0: { fontStyle: 'bold', halign: 'left', cellWidth: 45 }
+                },
+                didParseCell: function(data) {
+                    if (data.section === 'body' && data.column.index > 0) {
+                        data.cell.styles.halign = 'center';
+                    }
+                }
+            });
 
-            let blob = new Blob([excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-            let url = URL.createObjectURL(blob);
-            let link = document.createElement("a");
-            
-            const sanitizedFileName = dataObj.facilityName.replace(/[^a-zA-Z0-9]/g, '_');
-            link.setAttribute("href", url);
-            link.setAttribute("download", `${sanitizedFileName}_Inventory_${new Date().toISOString().split('T')[0]}.xls`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // Extract first word of storage facility and convert to Title Case (e.g., "VVS", "Hightower", "Eisberg", "Polaris")
+            const firstWord = dataObj.facilityName.trim().split(/\s+/)[0];
+            const primaryName = firstWord.toUpperCase() === 'VVS' 
+                ? 'VVS' 
+                : firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase();
+
+            const todayDateStr = new Date().toISOString().split('T')[0];
+            doc.save(`${primaryName}_Inventory_${todayDateStr}.pdf`);
         }
 
         function setupSessionCrossCheckListener() {
