@@ -2,42 +2,158 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=1280, initial-scale=1.0">
     <title>Employee 201 Personal Files | Admin Management</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; font-family: 'Segoe UI', sans-serif; background-color: #f8fafc; color: #1e293b; }
         
-        /* Navbar Styles */
-        .navbar { position: sticky; top: 0; z-index: 1000; background-color: #1e293b; color: white; width: 100%; display: flex; flex-direction: column; padding: 10px; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
-        .nav-title { font-size: 0.75rem; color: #f97316; font-weight: bold; text-transform: uppercase; }
-        .logout-btn { background-color: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; cursor: pointer; }
+        /* Enforce Desktop Viewport across all devices */
+        html, body { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            min-width: 1280px; 
+            font-family: 'Segoe UI', sans-serif; 
+            background-color: #f4f6f9; 
+            color: #1e293b;
+        }
         
-        /* ENFORCED: Forced line wrap with explicit visible overflow to ensure links never get clipped */
-        .nav-links { display: flex !important; gap: 8px !important; flex-wrap: wrap !important; width: 100% !important; padding-bottom: 5px !important; overflow: visible !important; }
-        .nav-btn { display: inline-block !important; background-color: #334155; color: #cbd5e1; text-decoration: none; padding: 6px 12px; border-radius: 4px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border: none; white-space: nowrap; }
-        .nav-btn:hover { background-color: #475569; color: white; }
-        .nav-btn.active { background-color: #ee964b; color: #0f172a; }
+        /* --- ANIMATED TOP NAVIGATION --- */
+        @keyframes slideDownNavbar {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
 
-        /* Content Styles */
-        .main-content { padding: 40px; }
-        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .search-container { background: white; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 30px; }
-        .search-box { width: 100%; max-width: 400px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 6px; }
-        
+        .navbar { 
+            background-color: #1e293b; 
+            color: white; 
+            width: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            padding: 12px 24px; 
+            gap: 12px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            /* Entrance Animation */
+            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .top-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            width: 100%; 
+        }
+
+        .nav-title { 
+            font-size: 0.85rem; 
+            color: #f97316; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px;
+            transition: color 0.3s ease;
+        }
+
+        .logout-btn { 
+            background-color: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 7px 14px; 
+            border-radius: 6px; 
+            font-size: 0.75rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .logout-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-links { 
+            display: flex; 
+            gap: 10px; 
+            width: 100%; 
+            padding-bottom: 2px; 
+            flex-wrap: nowrap; /* Prevent wrapping for desktop layout */
+        }
+
+        .nav-btn { 
+            background-color: #334155; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            font-weight: 500; 
+            cursor: pointer; 
+            border: none; 
+            white-space: nowrap; 
+            position: relative;
+            overflow: hidden;
+            /* Smooth animations on hover/focus */
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-btn:hover { 
+            background-color: #475569; 
+            color: #ffffff; 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        .nav-btn.active { 
+            background: #3b82f6; 
+            color: #ffffff; 
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        /* --- MAIN CONTENT LAYOUT --- */
+        .main-content { 
+            padding: 40px; 
+            min-width: 1200px; 
+        }
+
+        .header-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        .header-panel h1 { margin: 0; font-size: 1.8rem; color: #1e293b; }
+        .search-container { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 30px; }
+        .search-box { width: 100%; max-width: 400px; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; outline: none; }
+        .search-box:focus { border-color: #3b82f6; }
+
         .file-grid { display: grid; gap: 20px; }
-        .record-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        
+        .record-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .record-card h3 { margin: 0 0 4px 0; font-size: 1.1rem; color: #1e293b; }
+        .record-card p { margin: 0; font-size: 0.85rem; color: #64748b; }
+
         /* Inspect Button Emphasized */
-        .btn-inspect { background-color: #f97316; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: background 0.2s; }
-        .btn-inspect:hover { background-color: #ea580c; }
-        
+        .btn-inspect { background-color: #f97316; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.2s ease; }
+        .btn-inspect:hover { background-color: #ea580c; transform: translateY(-1px); }
+
         /* Modal Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
         .modal-card { background: white; width: 100%; max-width: 750px; max-height: 90vh; border-radius: 12px; padding: 35px; border-top: 6px solid #ee964b; display: flex; flex-direction: column; overflow-y: auto; }
-        
+
         /* Notification Modal Styles */
         .notify-card { background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 25px; text-align: center; border-top: 6px solid #f97316; }
         .notify-card h3 { margin-top: 0; color: #1e293b; }
@@ -62,6 +178,7 @@
         </div>
     </div>
 
+    <!-- Animated Navbar matching dashboard.html -->
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
@@ -74,14 +191,18 @@
             <a href="inventory-management.html" class="nav-btn">Inventory</a>
             <a href="sales-invoice.html" class="nav-btn">Sales</a>
             <a href="audit-report.html" class="nav-btn">Audit Report</a>
-            <!-- Active Highlighting Styled Manually to stay persistence within Settings Workspace -->
-            <a href="admin-dashboard.html" class="nav-btn" style="background: #475569 !important; color: white !important;">Settings</a>
+            <a href="admin-dashboard.html" class="nav-btn active">Settings</a>
         </div>
     </nav>
 
+    <!-- Main Content aligned to min-width: 1200px / padding: 40px -->
     <div class="main-content">
-        <div class="header-panel"><h1>Corporate 201 File Management</h1></div>
-        <div class="search-container"><input type="text" id="searchBar" class="search-box" placeholder="Filter by username..."></div>
+        <div class="header-panel">
+            <h1>Corporate 201 File Management</h1>
+        </div>
+        <div class="search-container">
+            <input type="text" id="searchBar" class="search-box" placeholder="Filter by username...">
+        </div>
         <div class="file-grid" id="recordsContainer"></div>
     </div>
 
@@ -144,6 +265,7 @@
         async function load201Files() {
             const { data } = await supabaseClient.from('profiles').select('*');
             const container = document.getElementById('recordsContainer');
+            if (!data) return;
             container.innerHTML = data.map(p => `
                 <div class="record-card">
                     <div><h3>${p.username}</h3><p>${p.id}</p></div>
@@ -211,7 +333,11 @@
             }
         }
 
-        function handleLogout() { supabaseClient.auth.signOut(); window.location.href = "login.html"; }
+        async function handleLogout() { 
+            await supabaseClient.auth.signOut(); 
+            window.location.href = "login.html"; 
+        }
+
         load201Files();
     </script>
 </body>
