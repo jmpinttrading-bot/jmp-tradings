@@ -595,7 +595,6 @@
         let bypassAuthListener = false;
         let globallyFetchedItems = [];
         let filteredItems = [];
-        let fetchedDescriptions = [];
         let currentUserPermissions = null;
 
         // Pagination State
@@ -658,22 +657,7 @@
             if (activeRow) activeRow.classList.add('selected-row');
         }
 
-        // Fetch directory definitions from "Descriptions" table with "item_description" column key
-        async function fetchDescriptionsDirectory() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('Descriptions')
-                    .select('item_description, sizes')
-                    .order('item_description', { ascending: true });
-
-                if (error) throw error;
-                fetchedDescriptions = data || [];
-            } catch (err) {
-                console.error("Error fetching descriptions registry system data:", err.message);
-            }
-        }
-
-        // Automatically map Sizes and calculate dynamic SKUs when Item Description changes
+        // Format Item Description input to Uppercase
         function handleItemDescriptionChange() {
             const inputField = document.getElementById('itemName');
             
@@ -685,14 +669,6 @@
             
             // Restore selection index tracking
             inputField.setSelectionRange(cursorPosition, cursorPosition);
-            
-            // Extract clean values solely for the directory structural cross-check lookup
-            const selectedDesc = inputField.value.trim();
-            const matchedRow = fetchedDescriptions.find(d => (d.item_description || '').toUpperCase().trim() === selectedDesc);
-            
-            if (matchedRow) {
-                document.getElementById('itemSizes').value = matchedRow.sizes || '';
-            }
         }
 
         // Neutralized to support manual input entry
@@ -794,7 +770,6 @@
             }
             
             applyFormUIRestrictions(hasRegistryAccess);
-            await fetchDescriptionsDirectory();
             fetchLedgerDataset();
             
             // Listen for typing events to immediately convert input to Upper Case
@@ -1007,7 +982,7 @@
             const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
             const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
             const item_name = document.getElementById('itemName').value.trim().toUpperCase();
-            const sizes = document.getElementById('itemSizes').value.trim().toUpperCase(); // Saved clean manual uppercase sizes
+            const sizes = document.getElementById('itemSizes').value.trim().toUpperCase();
             const commodity = document.getElementById('itemCommodity').value.toUpperCase();
             const storage_facility = document.getElementById('storageFacility').value.toUpperCase();
             const chosen_date = document.getElementById('dateReceived').value;
@@ -1080,7 +1055,7 @@
             const spsic_number = document.getElementById('activeSpsicNumber').value.trim().toUpperCase();
             const item_code = document.getElementById('itemCode').value.trim().toUpperCase();
             const item_name = document.getElementById('itemName').value.trim().toUpperCase();
-            const sizes = document.getElementById('itemSizes').value.trim().toUpperCase(); // Manual uppercase value
+            const sizes = document.getElementById('itemSizes').value.trim().toUpperCase();
             const commodity = document.getElementById('itemCommodity').value.toUpperCase();
             const storage_facility = document.getElementById('storageFacility').value.toUpperCase();
             const chosen_date = document.getElementById('dateReceived').value;
