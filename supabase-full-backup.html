@@ -2,177 +2,233 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Database Backup Utility - JMP Console</title>
-    <!-- Load Supabase JS Client & SheetJS -->
+    <!-- Supabase JS & SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
+        :root {
+            --bg-main: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --border-color: #e2e8f0;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --accent-orange: #f97316;
+            --danger: #dc2626;
+            --success: #16a34a;
+            --radius: 10px;
+        }
+
         * { box-sizing: border-box; }
         
-        /* Enforce Desktop Viewport across all devices */
-        html, body { 
+        body { 
             margin: 0; 
             padding: 0; 
-            width: 100%; 
-            min-width: 1280px; 
-            font-family: 'Segoe UI', sans-serif; 
-            background-color: #f4f6f9; 
-            color: #1e293b; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg-main); 
+            color: var(--text-primary); 
+            line-height: 1.5;
         }
         
-        /* Modal Overlay Styles */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 9999; padding: 20px; }
-        .notify-card { background: white; width: 100%; max-width: 400px; border-radius: 12px; padding: 25px; text-align: center; border-top: 6px solid #f97316; }
-        .notify-card h3 { margin-top: 0; color: #1e293b; }
-        .btn-close { background: #334155; color: white; border: none; padding: 8px 24px; border-radius: 6px; cursor: pointer; margin-top: 20px; }
+        /* Modal Overlay */
+        .modal-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(15, 23, 42, 0.6); 
+            backdrop-filter: blur(4px);
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 9999; 
+            padding: 20px; 
+        }
+        .notify-card { 
+            background: var(--surface); 
+            width: 100%; 
+            max-width: 420px; 
+            border-radius: var(--radius); 
+            padding: 28px; 
+            text-align: center; 
+            border-top: 5px solid var(--accent-orange); 
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .notify-card h3 { margin-top: 0; color: var(--text-primary); font-size: 1.25rem; }
+        .btn-close { 
+            background: #334155; 
+            color: white; 
+            border: none; 
+            padding: 10px 24px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            margin-top: 20px; 
+            font-weight: 600;
+        }
 
-        /* --- ANIMATED TOP NAVIGATION --- */
+        /* --- NAVBAR --- */
         @keyframes slideDownNavbar {
-            from {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .navbar { 
-            background-color: #1e293b; 
+            background-color: #0f172a; 
             color: white; 
             width: 100%; 
             display: flex; 
             flex-direction: column; 
-            padding: 12px 24px; 
+            padding: 14px 28px; 
             gap: 12px; 
             position: sticky; 
             top: 0; 
             z-index: 1000;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-            /* Entrance Animation */
-            animation: slideDownNavbar 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            animation: slideDownNavbar 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        .top-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            width: 100%; 
-        }
-
-        .nav-title { 
-            font-size: 0.85rem; 
-            color: #f97316; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            letter-spacing: 0.8px;
-            transition: color 0.3s ease;
-        }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .nav-title { font-size: 0.9rem; color: var(--accent-orange); font-weight: 700; letter-spacing: 0.05em; }
 
         .logout-btn { 
             background-color: #ef4444; 
             color: white; 
             border: none; 
-            padding: 7px 14px; 
-            border-radius: 6px; 
-            font-size: 0.75rem; 
-            font-weight: bold; 
-            cursor: pointer; 
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
-        }
-
-        .logout-btn:hover {
-            background-color: #dc2626;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
-        }
-
-        .logout-btn:active {
-            transform: translateY(0);
-        }
-
-        .nav-links { 
-            display: flex; 
-            gap: 10px; 
-            width: 100%; 
-            padding-bottom: 2px; 
-            flex-wrap: nowrap; /* Prevent wrapping for desktop layout */
-        }
-
-        .nav-btn { 
-            background-color: #334155; 
-            color: #cbd5e1; 
-            text-decoration: none; 
             padding: 8px 16px; 
             border-radius: 6px; 
             font-size: 0.8rem; 
-            font-weight: 500; 
+            font-weight: 600; 
             cursor: pointer; 
-            border: none; 
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover { background-color: var(--danger); transform: translateY(-1px); }
+
+        .nav-links { display: flex; gap: 8px; width: 100%; overflow-x: auto; padding-bottom: 2px; }
+        .nav-btn { 
+            background-color: #1e293b; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 0.85rem; 
+            font-weight: 500; 
             white-space: nowrap; 
-            position: relative;
-            overflow: hidden;
-            /* Smooth animations on hover/focus */
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
+        .nav-btn:hover { background-color: #334155; color: #ffffff; }
+        .nav-btn.active { background: var(--primary); color: #ffffff; font-weight: 600; }
 
-        .nav-btn:hover { 
-            background-color: #475569; 
-            color: #ffffff; 
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        }
-
-        .nav-btn:active {
-            transform: translateY(0);
-        }
-
-        .nav-btn.active { 
-            background: #3b82f6; 
-            color: #ffffff; 
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-        }
-
-        /* --- MAIN CONTENT AREA LAYOUT --- */
+        /* --- LAYOUT --- */
         .main-content { 
-            padding: 40px; 
-            min-width: 1200px; 
+            padding: 32px 24px; 
             max-width: 1400px;
             margin: 0 auto;
         }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
-        .header h1 { margin: 0; font-size: 1.8rem; color: #1e293b; }
-        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 15px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 24px; 
+            background: var(--surface); 
+            padding: 20px 28px; 
+            border-radius: var(--radius); 
+            border: 1px solid var(--border-color); 
+        }
+        .header h1 { margin: 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+        .admin-badge { background: #fef3c7; color: #b45309; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 30px; }
-        .card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-        .card h3 { margin-top: 0; margin-bottom: 20px; color: #0f172a; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; font-size: 1.1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; margin-bottom: 24px; }
+        .card { 
+            background: var(--surface); 
+            padding: 24px; 
+            border-radius: var(--radius); 
+            border: 1px solid var(--border-color); 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); 
+        }
+        .card h3 { 
+            margin-top: 0; 
+            margin-bottom: 18px; 
+            color: var(--text-primary); 
+            border-bottom: 2px solid var(--bg-main); 
+            padding-bottom: 10px; 
+            font-size: 1.05rem; 
+            font-weight: 600;
+        }
         
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem; color: #334155; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.9rem; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); }
+        .input-group { display: flex; gap: 8px; }
+        .form-group input[type="text"],
+        .form-group input[type="password"] { 
+            width: 100%; 
+            padding: 10px 12px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 6px; 
+            font-size: 0.9rem; 
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus { border-color: var(--primary); }
 
-        /* Action Buttons */
-        .btn { background: #ee964b; color: #0f172a; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; text-align: center; display: block; text-decoration: none; margin-bottom: 10px; font-size: 0.9rem; transition: all 0.2s ease; }
-        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-restore { background: #0284c7; color: white; }
-        .btn-excel { background: #16a34a; color: white; }
-        .btn-file { background: #334155; color: white; width: auto; font-weight: normal; margin-top: 8px; }
-        .btn-small { padding: 4px 10px; font-size: 0.75rem; background: #e2e8f0; border: 1px solid #cbd5e1; border-radius: 4px; cursor: pointer; margin-bottom: 10px; }
+        /* Buttons & Utility UI */
+        .btn { 
+            background: var(--accent-orange); 
+            color: #ffffff; 
+            border: none; 
+            padding: 12px 18px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            width: 100%; 
+            text-align: center; 
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none; 
+            font-size: 0.9rem; 
+            transition: all 0.2s ease; 
+        }
+        .btn:hover { opacity: 0.95; transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        .btn-restore { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-excel { background: var(--success); color: white; }
+        .btn-secondary { background: #334155; color: white; width: auto; font-weight: 500; font-size: 0.8rem; padding: 8px 12px; }
+        .btn-small { padding: 4px 10px; font-size: 0.75rem; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer; }
 
-        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 10px; }
-        .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; background: #f8fafc; padding: 6px 10px; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 12px; }
+        .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; background: var(--bg-main); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); transition: border-color 0.2s; }
+        .checkbox-label:hover { border-color: #cbd5e1; }
 
-        .file-input-wrapper { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
-        .note { background: #fffbe3; border-left: 4px solid #f59e0b; padding: 10px; margin-top: 8px; font-size: 0.85em; color: #78350f; border-radius: 0 4px 4px 0; }
+        .file-input-wrapper { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+        .note { background: #fffbe3; border-left: 4px solid #f59e0b; padding: 12px; margin-top: 8px; font-size: 0.85rem; color: #78350f; border-radius: 0 6px 6px 0; }
 
         /* Console Output Box */
-        #status { padding: 15px; background: #0f172a; color: #38bdf8; border-radius: 6px; white-space: pre-wrap; font-family: 'Consolas', monospace; min-height: 120px; max-height: 300px; overflow-y: auto; font-size: 0.85rem; border: 1px solid #1e293b; }
+        .console-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .status-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; background: #e2e8f0; color: #475569; }
+        .status-badge.running { background: #dbeafe; color: #1e40af; }
+        .status-badge.success { background: #dcfce7; color: #166534; }
+        
+        #status { 
+            padding: 16px; 
+            background: #0f172a; 
+            color: #38bdf8; 
+            border-radius: 6px; 
+            white-space: pre-wrap; 
+            font-family: 'Consolas', 'Courier New', monospace; 
+            min-height: 140px; 
+            max-height: 320px; 
+            overflow-y: auto; 
+            font-size: 0.85rem; 
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
@@ -181,12 +237,12 @@
     <div class="modal-overlay" id="notificationModal">
         <div class="notify-card">
             <h3>System Notification</h3>
-            <p id="notifyMessage"></p>
+            <p id="notifyMessage" style="color: var(--text-secondary); margin-top: 10px;"></p>
             <button class="btn-close" onclick="document.getElementById('notificationModal').style.display='none'">Dismiss</button>
         </div>
     </div>
 
-    <!-- Animated Navigation Bar matching dashboard.html -->
+    <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
@@ -203,11 +259,14 @@
         </div>
     </nav>
 
-    <!-- Main Content Area aligned to min-width: 1200px / padding: 40px -->
+    <!-- Main Content Area -->
     <div class="main-content">
         <div class="header">
-            <h1>Database & Storage Backup Console</h1>
-            <div class="admin-badge" id="adminEmail">Admin System</div>
+            <div>
+                <h1>Database & Storage Backup Console</h1>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">Backup structure, data schemas, and storage buckets safely.</div>
+            </div>
+            <div class="admin-badge" id="adminEmail">⚙️ Authenticating...</div>
         </div>
 
         <div class="grid">
@@ -220,11 +279,14 @@
                 </div>
                 <div class="form-group">
                     <label>API Key (service_role recommended)</label>
-                    <input type="password" id="supabaseKey" placeholder="Paste your key or upload file">
+                    <div class="input-group">
+                        <input type="password" id="supabaseKey" placeholder="Paste service_role key">
+                        <button type="button" class="btn btn-secondary" onclick="toggleKeyVisibility()" id="toggleKeyBtn">Show</button>
+                    </div>
                     <div class="file-input-wrapper">
                         <input type="file" id="keyFileInput" accept=".txt,.key" style="display: none;" onchange="handleKeyFileUpload(event)">
-                        <button type="button" class="btn btn-file" onclick="document.getElementById('keyFileInput').click()">📁 Load Key File (.txt)</button>
-                        <span id="fileNameDisplay" style="font-size: 0.8rem; color: #64748b;">No key file loaded</span>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('keyFileInput').click()">📁 Load Key File</button>
+                        <span id="fileNameDisplay" style="font-size: 0.8rem; color: var(--text-secondary);">No file loaded</span>
                     </div>
                 </div>
             </div>
@@ -234,58 +296,70 @@
                 <h3>2. Select System Targets</h3>
                 
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <label style="font-weight: 700; font-size: 0.9rem;">Database Tables:</label>
+                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Database Tables:</label>
                     <div>
-                        <button class="btn-small" onclick="toggleSelectAll('table-cb', true)">All</button>
-                        <button class="btn-small" onclick="toggleSelectAll('table-cb', false)">None</button>
+                        <button class="btn-small" onclick="toggleSelectAll('table-cb', true)">Select All</button>
+                        <button class="btn-small" onclick="toggleSelectAll('table-cb', false)">Clear</button>
                     </div>
                 </div>
                 <div class="checkbox-grid" id="tablesCheckboxContainer"></div>
 
-                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 16px 0;">
 
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <label style="font-weight: 700; font-size: 0.9rem;">Storage Buckets:</label>
+                    <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Storage Buckets:</label>
                     <div>
-                        <button class="btn-small" onclick="toggleSelectAll('bucket-cb', true)">All</button>
-                        <button class="btn-small" onclick="toggleSelectAll('bucket-cb', false)">None</button>
+                        <button class="btn-small" onclick="toggleSelectAll('bucket-cb', true)">Select All</button>
+                        <button class="btn-small" onclick="toggleSelectAll('bucket-cb', false)">Clear</button>
                     </div>
                 </div>
                 <div class="checkbox-grid" id="bucketsCheckboxContainer"></div>
             </div>
         </div>
 
-        <!-- 3. Backup Execution Card -->
-        <div class="card" style="margin-bottom: 25px;">
+        <!-- 3. Action Strategy Card -->
+        <div class="card" style="margin-bottom: 24px;">
             <h3>3. Choose Action Strategy</h3>
             
             <div style="margin-bottom: 20px;">
-                <button class="btn btn-restore" onclick="backupRestorePackage(false)">1. Download SQL Restoration Package (.sql + Selected Buckets)</button>
-                <div class="note">Generates a SQL script containing structure, schemas, RLS enabling queries, and row insertions for <b>selected tables only</b>. (Safe for recreating missing or deleted tables).</div>
+                <button class="btn btn-restore action-btn" onclick="backupRestorePackage(false)">
+                    📦 Download Standard SQL Restoration Package (.sql + Buckets)
+                </button>
+                <div class="note">Generates a SQL script containing structure, schemas, row insertions, and row-level security policy triggers for <b>selected tables</b>.</div>
             </div>
 
             <div style="margin-bottom: 20px;">
-                <button class="btn btn-restore" style="background: #dc2626;" onclick="backupRestorePackage(true)">⚠️ Single/Selected Table Replacement Package (DROP / TRUNCATE SQL)</button>
-                <div class="note"><b>Single-Table Recovery Mode:</b> Includes <code>DROP TABLE IF EXISTS...</code> to completely wipe and recreate selected missing/corrupted tables before re-inserting records.</div>
+                <button class="btn btn-danger action-btn" onclick="backupRestorePackage(true)">
+                    ⚠️ Replacement Package (Includes DROP / TRUNCATE SQL)
+                </button>
+                <div class="note"><b>Single-Table Recovery Mode:</b> Prepends <code>DROP TABLE IF EXISTS...</code> statements to reset and recreate selected tables prior to record insertion.</div>
             </div>
 
-            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
 
             <div>
-                <button class="btn btn-excel" onclick="backupExcelPackage()">2. Download Excel Package (.xlsx + Selected Buckets)</button>
-                <div class="note">Generates an Excel workbook containing worksheet tabs for <b>selected tables only</b> and downloads selected bucket files.</div>
+                <button class="btn btn-excel action-btn" onclick="backupExcelPackage()">
+                    📊 Download Excel Data Package (.xlsx + Buckets)
+                </button>
+                <div class="note">Generates an Excel workbook containing worksheets for each <b>selected table</b> and downloads bucket objects.</div>
             </div>
         </div>
 
         <!-- Console Log Output -->
         <div class="card">
-            <h3>Execution Status Console</h3>
-            <div id="status">Ready. Select targets and choose an action strategy to begin...</div>
+            <div class="console-header">
+                <h3 style="margin: 0; border: none; padding: 0;">Execution Status Console</h3>
+                <span class="status-badge" id="statusBadge">IDLE</span>
+            </div>
+            <div id="status">Ready. Select targets and choose an action strategy above to begin...</div>
         </div>
     </div>
 
     <script>
-        const supabaseClient = supabase.createClient("https://ebicabxnzeexucggrmbo.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8");
+        const supabaseClient = supabase.createClient(
+            "https://ebicabxnzeexucggrmbo.supabase.co", 
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8"
+        );
 
         const ALL_TABLES = [
             "Descriptions", "active_document_locks", "employee_201_docs",
@@ -295,12 +369,29 @@
         
         const ALL_BUCKETS = ["avatars", "shipment-documents"];
 
+        function setStatusBadge(text, stateClass = '') {
+            const badge = document.getElementById('statusBadge');
+            badge.textContent = text;
+            badge.className = `status-badge ${stateClass}`;
+        }
+
+        function toggleKeyVisibility() {
+            const keyInput = document.getElementById('supabaseKey');
+            const toggleBtn = document.getElementById('toggleKeyBtn');
+            if (keyInput.type === "password") {
+                keyInput.type = "text";
+                toggleBtn.textContent = "Hide";
+            } else {
+                keyInput.type = "password";
+                toggleBtn.textContent = "Show";
+            }
+        }
+
         function showNotification(msg) {
             document.getElementById('notifyMessage').textContent = msg;
             document.getElementById('notificationModal').style.display = 'flex';
         }
 
-        // Render target checkboxes
         function renderCheckboxes() {
             const tableContainer = document.getElementById('tablesCheckboxContainer');
             tableContainer.innerHTML = ALL_TABLES.map(table => `
@@ -368,7 +459,7 @@
             const url = document.getElementById('supabaseUrl').value.trim();
             const key = document.getElementById('supabaseKey').value.trim();
             if (!url || !key) {
-                showNotification("Please enter or upload an API key first.");
+                showNotification("Please supply an API key first.");
                 return null;
             }
             return supabase.createClient(url, key);
@@ -383,15 +474,28 @@
             document.body.removeChild(a);
         }
 
-        // --- SQL RESTORATION PACKAGE GENERATOR ---
+        function toggleActionButtons(disabled) {
+            document.querySelectorAll('.action-btn').forEach(btn => btn.disabled = disabled);
+        }
+
+        /* --- RESTORATION PACKAGE GENERATOR --- */
         async function backupRestorePackage(includeDropTable = false) {
-            resetLog("Initializing Database SQL Restore Export...");
+            resetLog("Initializing SQL Backup Task...");
+            setStatusBadge('RUNNING', 'running');
+            toggleActionButtons(true);
+
             const client = getActiveClient();
-            if (!client) return;
+            if (!client) {
+                setStatusBadge('IDLE');
+                toggleActionButtons(false);
+                return;
+            }
 
             const { tables, buckets } = getSelectedTargets();
             if (tables.length === 0 && buckets.length === 0) {
-                showNotification("Please select at least one table or bucket.");
+                showNotification("Please select at least one table or storage bucket.");
+                setStatusBadge('IDLE');
+                toggleActionButtons(false);
                 return;
             }
 
@@ -402,11 +506,11 @@
             masterSql += `-- ====================================================\n\n`;
 
             for (const table of tables) {
-                log(`Processing structure & records for table: '${table}'...`);
+                log(`Processing '${table}'...`);
                 const { data: rows, error } = await client.from(table).select('*');
 
                 if (error) {
-                    log(`⚠️ Error fetching '${table}': ${error.message}`);
+                    log(`⚠️ Error reading '${table}': ${error.message}`);
                     continue;
                 }
 
@@ -442,33 +546,45 @@
                     });
                     masterSql += `\n`;
                 } else {
-                    masterSql += `-- Table was empty. No records inserted.\n\n`;
+                    masterSql += `-- Table empty. No records inserted.\n\n`;
                 }
 
-                log(`✔ Extracted ${rows.length} rows for '${table}'`);
+                log(`✔ Extracted ${rows.length} row(s) from '${table}'`);
             }
 
             if (tables.length > 0) {
                 const blob = new Blob([masterSql], { type: 'text/plain' });
                 const prefix = includeDropTable ? "Targeted_Table_Recovery" : "Database_Restore";
                 triggerDownload(blob, `${prefix}_${Date.now()}.sql`);
-                log(`\n✔ RESTORE SQL FILE DOWNLOADED!`);
+                log(`\n✔ SQL Restoration Package created successfully.`);
             }
 
             if (buckets.length > 0) {
                 await downloadSelectedBuckets(client, buckets);
             }
+
+            setStatusBadge('COMPLETED', 'success');
+            toggleActionButtons(false);
         }
 
-        // --- EXCEL WORKBOOK PACKAGE GENERATOR ---
+        /* --- EXCEL PACKAGE GENERATOR --- */
         async function backupExcelPackage() {
-            resetLog("Initializing Excel & Storage Backup...");
+            resetLog("Initializing Excel & Storage Backup Task...");
+            setStatusBadge('RUNNING', 'running');
+            toggleActionButtons(true);
+
             const client = getActiveClient();
-            if (!client) return;
+            if (!client) {
+                setStatusBadge('IDLE');
+                toggleActionButtons(false);
+                return;
+            }
 
             const { tables, buckets } = getSelectedTargets();
             if (tables.length === 0 && buckets.length === 0) {
                 showNotification("Please select at least one table or bucket.");
+                setStatusBadge('IDLE');
+                toggleActionButtons(false);
                 return;
             }
 
@@ -476,7 +592,7 @@
             let tablesAdded = 0;
 
             for (const table of tables) {
-                log(`Exporting '${table}' to Excel worksheet...`);
+                log(`Exporting table '${table}'...`);
                 const { data, error } = await client.from(table).select('*');
 
                 if (error) {
@@ -493,15 +609,18 @@
 
             if (tablesAdded > 0) {
                 XLSX.writeFile(workbook, `Selected_Database_Export_${Date.now()}.xlsx`);
-                log(`\n✔ EXCEL WORKBOOK DOWNLOADED!`);
+                log(`\n✔ Excel Workbook downloaded.`);
             }
 
             if (buckets.length > 0) {
                 await downloadSelectedBuckets(client, buckets);
             }
+
+            setStatusBadge('COMPLETED', 'success');
+            toggleActionButtons(false);
         }
 
-        // Helper: Download Selected Storage Buckets
+        /* --- BUCKET DOWNLOAD HELPER --- */
         async function downloadSelectedBuckets(client, selectedBuckets) {
             log(`\n====================================`);
             log(`Processing Storage Buckets...`);
@@ -517,24 +636,24 @@
                 }
 
                 if (!files || files.length === 0) {
-                    log(`Bucket '${bucket}' is empty.`);
+                    log(`Bucket '${bucket}' contains no files.`);
                     continue;
                 }
 
-                log(`Found ${files.length} file(s) in '${bucket}'. Downloading...`);
+                log(`Found ${files.length} file(s) in '${bucket}'.`);
                 for (const file of files) {
                     if (!file.name || file.id === null) continue;
 
                     const { data, error: downloadErr } = await client.storage.from(bucket).download(file.name);
                     if (!downloadErr) {
                         triggerDownload(data, `${bucket}_${file.name}`);
-                        log(`✔ Downloaded file: ${bucket}/${file.name}`);
+                        log(`✔ Downloaded: ${bucket}/${file.name}`);
                     } else {
-                        log(`❌ Failed download '${file.name}': ${downloadErr.message}`);
+                        log(`❌ Failed '${file.name}': ${downloadErr.message}`);
                     }
                 }
             }
-            log(`\n✔ ALL SELECTED TASKS COMPLETED SUCCESSFULLY!`);
+            log(`\n✔ Storage sync complete.`);
         }
 
         initAdmin();
