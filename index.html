@@ -2,372 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280, initial-scale=1.0">
-    <title>JMP International Fish Trading | Premium Frozen Seafood Platform</title>
-
-    <link rel="icon" type="image/png" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JMCY Web Solutions | Custom Frontend & Supabase Web Applications</title>
     <style>
-        /* ==========================================================================
-           1. Global Styles & Reset
-           ========================================================================== */
+        /* CSS RESET & VARIABLES */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
-        
+
         html {
             scroll-behavior: smooth;
         }
 
+        :root {
+            --sidebar-width: 270px;
+            --bg-color: #090d16;
+            --sidebar-bg: #030712;
+            --card-bg: #111827;
+            --card-border: #1f2937;
+            --accent-color: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.2);
+            --supabase-green: #3ecf8e;
+            --github-gray: #e6edf3;
+            --text-color: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+
         body {
-            color: #223344;
-            line-height: 1.6;
-            background-color: #f4f8fb;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
             overflow-x: hidden;
         }
 
-        /* Scroll Reveal Animations */
-        .reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-            will-change: opacity, transform;
-        }
-
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .reveal-delay-1 { transition-delay: 0.15s; }
-        .reveal-delay-2 { transition-delay: 0.3s; }
-        .reveal-delay-3 { transition-delay: 0.45s; }
-
-        /* ==========================================================================
-           1.1 Opening Intro Animation Overlay
-           ========================================================================== */
-        #intro-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: radial-gradient(circle at center, #0b2545 0%, #07162c 100%);
-            z-index: 99999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.8s ease, visibility 0.8s ease;
-        }
-
-        #intro-overlay.fade-out {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .intro-content {
-            text-align: center;
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 24px;
-            animation: zoomInIntro 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            padding: 0 20px;
-        }
-
-        .logo-spinner-wrapper {
-            position: relative;
-            width: 220px;
-            height: 220px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .intro-logo {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: #ffffff;
-            border-radius: 50%;
-            padding: 10px;
-            box-shadow: 0 0 35px rgba(244, 211, 94, 0.35);
-            animation: pulseLogo 2s ease-in-out infinite alternate;
-        }
-
-        .intro-spinner-ring {
-            position: absolute;
-            top: -12px;
-            left: -12px;
-            right: -12px;
-            bottom: -12px;
-            border: 4px solid rgba(255, 255, 255, 0.15);
-            border-top: 4px solid #f4d35e;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            pointer-events: none;
-        }
-
-        .intro-title {
-            font-size: 1.6rem;
-            font-weight: 800;
-            letter-spacing: 2px;
-            color: #ffffff;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            margin-top: 8px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @keyframes pulseLogo {
-            0% { transform: scale(0.98); box-shadow: 0 0 20px rgba(244, 211, 94, 0.2); }
-            100% { transform: scale(1.03); box-shadow: 0 0 45px rgba(244, 211, 94, 0.6); }
-        }
-
-        @keyframes zoomInIntro {
+        /* KEYFRAME ANIMATIONS */
+        @keyframes fadeUp {
             from {
                 opacity: 0;
-                transform: scale(0.85);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* ==========================================================================
-           2. Navigation Header
-           ========================================================================== */
-        header {
-            background-color: rgba(11, 37, 69, 0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            color: #fff;
-            padding: 0.9rem 5%;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        header.scrolled {
-            padding: 0.5rem 5%;
-            background-color: rgba(7, 22, 44, 0.98);
-            box-shadow: 0 6px 25px rgba(0,0,0,0.25);
-        }
-
-        header .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-shrink: 0;
-        }
-
-        header .logo-img {
-            height: 52px;
-            width: 52px;
-            object-fit: contain;
-            background: #fff;
-            border-radius: 50%;
-            padding: 2px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
-        }
-
-        header .logo-container:hover .logo-img {
-            transform: rotate(5deg) scale(1.05);
-        }
-
-        header .logo-text {
-            font-size: 1.15rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: #fff;
-            white-space: nowrap;
-        }
-
-        header .nav-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            width: auto;
-        }
-
-        header nav {
-            display: flex;
-            gap: 25px;
-        }
-
-        header nav a {
-            color: #e0eaf4;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.95rem;
-            position: relative;
-            padding: 4px 0;
-            transition: color 0.3s ease;
-        }
-
-        header nav a::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0%;
-            height: 2px;
-            background-color: #f4d35e;
-            transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        header nav a:hover {
-            color: #f4d35e;
-        }
-
-        header nav a:hover::after {
-            width: 100%;
-        }
-
-        .login-btn {
-            background: linear-gradient(135deg, #f4d35e 0%, #ee964b 100%);
-            color: #0b2545;
-            text-decoration: none;
-            padding: 6px 18px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 0.8rem;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 3px 10px rgba(244, 211, 94, 0.3);
-            white-space: nowrap;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-btn::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .login-btn:hover::before {
-            left: 100%;
-        }
-
-        .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 18px rgba(238, 150, 75, 0.5);
-            color: #07162c;
-        }
-
-        /* ==========================================================================
-           3. Hero Section
-           ========================================================================== */
-        .hero {
-            position: relative;
-            background: linear-gradient(rgba(11, 37, 69, 0.35), rgba(7, 22, 44, 0.45)), 
-                        url('hero.png') no-repeat center center;
-            background-size: cover; 
-            background-color: #0b2545; 
-            height: 85vh; 
-            min-height: 650px;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 0 20px;
-            margin-top: 75px; 
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(244,211,94,0.08) 0%, transparent 60%);
-            animation: pulseGlow 8s ease-in-out infinite alternate;
-            pointer-events: none;
-        }
-
-        @keyframes pulseGlow {
-            0% { transform: scale(0.9); opacity: 0.5; }
-            100% { transform: scale(1.1); opacity: 1; }
-        }
-
-        .hero h1 {
-            font-size: 3.2rem; 
-            margin-bottom: 15px;
-            text-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            animation: fadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            position: relative;
-            z-index: 2;
-        }
-
-        .hero p {
-            font-size: 1.45rem; 
-            margin-bottom: 32px;
-            max-width: 750px;
-            text-shadow: 0 2px 6px rgba(0,0,0,0.5);
-            font-weight: 300;
-            line-height: 1.6;
-            animation: fadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
-            opacity: 0;
-            position: relative;
-            z-index: 2;
-        }
-
-        .btn {
-            background: linear-gradient(135deg, #f4d35e 0%, #ee964b 100%);
-            color: #0b2545;
-            padding: 14px 38px; 
-            text-decoration: none;
-            font-weight: 700;
-            border-radius: 30px;
-            box-shadow: 0 4px 20px rgba(244, 211, 94, 0.35);
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            animation: fadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
-            opacity: 0;
-            position: relative;
-            z-index: 2;
-            display: inline-block;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 8px 25px rgba(238, 150, 75, 0.5);
-            color: #000;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(25px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -375,1069 +52,942 @@
             }
         }
 
-        /* ==========================================================================
-           4. Global Section Layout
-           ========================================================================== */
-        section {
-            padding: 90px 8% 70px;
-            text-align: center;
+        @keyframes logoPulse {
+            0% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
+            50% { box-shadow: 0 0 22px rgba(56, 189, 248, 0.5); }
+            100% { box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
         }
 
-        section h2 {
-            font-size: 2.3rem;
-            color: #0b2545;
-            margin-bottom: 15px;
-            font-weight: 700;
-            position: relative;
-        }
-
-        section h2::after {
-            content: '';
-            display: block;
-            width: 60px;
-            height: 4px;
-            background: linear-gradient(90deg, #f4d35e, #ee964b);
-            margin: 12px auto 0;
-            border-radius: 2px;
-            transition: width 0.4s ease;
-        }
-
-        section:hover h2::after {
-            width: 90px;
-        }
-
-        .slider-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: #0b2545;
-            color: #fff;
-            border: none;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 10;
-            transition: all 0.3s ease;
-        }
-
-        .slider-arrow:hover {
-            background-color: #ee964b;
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .slider-arrow:active {
-            transform: translateY(-50%) scale(0.95);
-        }
-
-        .arrow-left { left: -5px; }
-        .arrow-right { right: -5px; }
-
-        /* ==========================================================================
-           5. About Section
-           ========================================================================== */
-        .about {
-            background-color: #fff;
-        }
-
-        .about-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 50px;
-            max-width: 1100px;
-            margin: 40px auto 0;
-            text-align: left;
-            flex-wrap: wrap;
-        }
-
-        .about-content {
-            flex: 1;
-            min-width: 300px;
-        }
-
-        .about-content p {
-            font-size: 1.1rem;
-            color: #4a5568;
-            margin-bottom: 20px;
-            line-height: 1.8;
-        }
-
-        .about-logo-display {
-            flex: 0 0 340px; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .about-logo-display img {
-            width: 100%;
-            max-width: 320px; 
-            height: auto;
-            object-fit: contain;
-            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.08));
-            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .about-logo-display:hover img {
-            transform: scale(1.05) rotate(2deg);
-        }
-
-        .mv-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 30px;
-        }
-
-        .mv-item {
-            background: #f8fafc;
-            padding: 24px;
-            border-top: 4px solid #0b2545;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .mv-item:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(11, 37, 69, 0.08);
-        }
-
-        .mv-item h4 {
-            color: #ee964b;
-            font-size: 1.2rem;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        /* Inline Chat Link Styling */
-        .chat-doc-link {
-            color: #0b2545;
-            font-weight: 700;
-            text-decoration: underline;
-            transition: color 0.2s ease;
-        }
-
-        .chat-doc-link:hover {
-            color: #ee964b;
-        }
-
-        /* ==========================================================================
-           6. Core Competencies / Strengths
-           ========================================================================== */
-        .strengths {
-            background-color: #f4f8fb; 
-            border-top: 1px solid #e2e8f0;
-            position: relative;
-        }
-        
-        .strengths-slider-wrapper {
-            max-width: 1200px;
-            margin: 45px auto 0;
-            position: relative;
-            padding: 0 40px;
-        }
-
-        .strengths-slider-container {
-            overflow: hidden;
-            cursor: grab;
-            user-select: none;
-            padding: 15px 0;
-            border-radius: 12px;
-        }
-
-        .strengths-slider-container:active {
-            cursor: grabbing;
-        }
-
-        .strengths-grid-track {
-            display: flex;
-            gap: 25px;
-            transition: transform 0.1s linear;
-            will-change: transform;
-        }
-
-        .strength-card {
-            background: #ffffff; 
-            padding: 35px 28px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            text-align: center;
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
-            position: relative;
-            overflow: hidden;
-            flex: 0 0 calc(33.333% - 17px);
-            min-width: 300px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .strength-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 4px;
-            background: linear-gradient(90deg, #0b2545, #ee964b);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .strength-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 30px rgba(11, 37, 69, 0.12);
-            border-color: transparent;
-        }
-
-        .strength-card:hover::before {
-            opacity: 1;
-        }
-
-        .strength-icon {
-            color: #0b2545;
-            margin-bottom: 20px;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            width: 68px;
-            height: 68px;
-            background-color: #e0eaf4;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        .strength-card:hover .strength-icon {
-            background-color: #0b2545;
-            color: #f4d35e;
-            transform: scale(1.1);
-        }
-
-        .strength-card h3 {
-            font-size: 1.25rem;
-            color: #0b2545;
-            margin-bottom: 12px;
-            font-weight: 700;
-        }
-
-        .strength-card p {
-            font-size: 0.95rem;
-            color: #64748b;
-            line-height: 1.7;
-        }
-
-        .compliance-logo-group {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 16px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-
-        .compliance-logo {
-            height: 42px;
-            width: auto;
-            object-fit: contain;
-            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.08));
-            transition: transform 0.3s ease, filter 0.3s ease;
-        }
-
-        .compliance-logo:hover {
-            transform: scale(1.12);
-            filter: drop-shadow(0px 4px 8px rgba(0,0,0,0.15));
-        }
-
-        /* ==========================================================================
-           7. Product Carousel & Portfolio
-           ========================================================================== */
-        .products {
-            background-color: #f0f4f8;
-            position: relative;
-            padding-bottom: 60px;
-        }
-
-        .product-context-container {
-            max-width: 850px;
-            margin: 30px auto 40px;
-            text-align: center;
-            padding: 0 20px;
-        }
-
-        .product-context-block h3 {
-            font-size: 1.5rem;
-            color: #0b2545;
-            margin-bottom: 15px;
-            font-weight: 700;
-        }
-
-        .product-context-block p {
-            color: #4a5568;
-            font-size: 1.05rem;
-            line-height: 1.7;
-            margin-bottom: 15px;
-        }
-
-        .slider-wrapper {
-            max-width: 1200px;
-            margin: 45px auto 0;
-            position: relative;
-            padding: 0 40px;
-        }
-
-        .product-slider-container {
-            overflow: hidden;
-            cursor: grab;
-            user-select: none;
-            border-radius: 12px;
-            padding: 10px 0;
-        }
-
-        .product-slider-container:active {
-            cursor: grabbing;
-        }
-
-        .product-grid-track {
-            display: flex;
-            gap: 20px;
-            transition: transform 0.1s linear; 
-            will-change: transform;
-        }
-
-        .product-card {
-            background: #fff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e1e8ed;
-            flex: 0 0 calc(25% - 15px);
-            min-width: 260px;
-            cursor: pointer;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding: 18px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-        }
-
-        .product-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 25px rgba(11, 37, 69, 0.12);
-            border-color: #cbd5e1;
-        }
-
-        .product-card::after {
-            content: "Double Click / Tap to View";
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%) translateY(10px);
-            background: rgba(11, 37, 69, 0.9);
-            color: #fff;
-            padding: 4px 12px;
-            font-size: 0.75rem;
-            border-radius: 15px;
-            opacity: 0;
-            transition: all 0.3s ease;
-            pointer-events: none;
-            font-weight: 500;
-            z-index: 5;
-            white-space: nowrap;
-        }
-
-        .product-card:hover::after {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        .product-img {
-            width: 100%;
-            height: 170px; 
-            object-fit: contain;
-            background-color: #ffffff; 
-            border-radius: 8px;
-            pointer-events: none;
-            margin-bottom: 12px;
-            transition: transform 0.4s ease;
-        }
-
-        .product-card:hover .product-img {
-            transform: scale(1.06);
-        }
-
-        .product-info {
-            width: 100%;
-            padding-top: 12px;
-            text-align: left;
-            border-top: 1px solid #f1f5f9;
-        }
-
-        .product-info h3 {
-            font-size: 1.05rem;
-            color: #0b2545;
-            font-weight: 700;
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .product-info .scientific-name {
-            font-size: 0.82rem;
-            color: #64748b;
-            font-style: italic;
-            margin-bottom: 8px;
-        }
-
-        .product-tag {
-            display: inline-block;
-            background-color: #e0eaf4;
-            color: #0b2545;
-            font-size: 0.72rem;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        /* Lightbox Modal */
-        .lightbox-modal {
+        /* MOBILE HEADER BAR */
+        .mobile-header {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(7, 22, 44, 0.92);
-            backdrop-filter: blur(8px);
-            z-index: 2000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .lightbox-modal.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .lightbox-img {
-            max-width: 90%;
-            max-height: 85vh;
-            object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-            transform: scale(0.92);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            user-select: none;
-            background-color: #fff;
-            padding: 10px;
-        }
-
-        .lightbox-modal.active .lightbox-img {
-            transform: scale(1);
-        }
-
-        .lightbox-close {
-            position: absolute;
-            top: 25px;
-            right: 35px;
-            color: #fff;
-            font-size: 2.5rem;
-            font-weight: 300;
-            cursor: pointer;
-            transition: color 0.2s;
-            user-select: none;
-            line-height: 1;
-        }
-
-        .lightbox-close:hover {
-            color: #f4d35e;
-        }
-
-        .lightbox-hint {
-            position: absolute;
-            bottom: 25px;
-            color: #94a3b8;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            pointer-events: none;
-        }
-
-        /* ==========================================================================
-           8. Interactive FAQ & Automated Bot Flow
-           ========================================================================== */
-        .faq {
-            background-color: #f8fafc;
-            border-top: 1px solid #e2e8f0;
-        }
-
-        .faq-container {
-            max-width: 850px;
-            margin: 40px auto 0;
-            text-align: left;
-        }
-
-        /* Interactive FAQ Bot Section */
-        .interactive-bot-card {
-            background: #ffffff;
-            border: 2px solid #0b2545;
-            border-radius: 14px;
-            box-shadow: 0 8px 30px rgba(11, 37, 69, 0.08);
-            margin-bottom: 35px;
-            overflow: hidden;
-        }
-
-        .bot-header {
-            background: linear-gradient(135deg, #0b2545 0%, #133a6f 100%);
-            color: #fff;
-            padding: 16px 22px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .bot-header-title {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-
-        .bot-header-subtitle {
-            font-size: 0.8rem;
-            color: #f4d35e;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .bot-status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #22c55e;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .bot-window {
-            padding: 24px;
-            height: 420px;
-            max-height: 420px;
-            background-color: #f1f5f9;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-        }
-
-        /* Custom Scrollbar Styling for Chat Window */
-        .bot-window::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .bot-window::-webkit-scrollbar-track {
-            background: #e2e8f0;
-            border-radius: 4px;
-        }
-
-        .bot-window::-webkit-scrollbar-thumb {
-            background: #0b2545;
-            border-radius: 4px;
-        }
-
-        .bot-window::-webkit-scrollbar-thumb:hover {
-            background: #133a6f;
-        }
-
-        .chat-bubble {
-            max-width: 85%;
-            padding: 14px 18px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        .chat-bubble.bot {
-            background: #ffffff;
-            color: #1e293b;
-            align-self: flex-start;
-            border-bottom-left-radius: 2px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            border: 1px solid #e2e8f0;
-        }
-
-        .chat-bubble.user {
-            background: #0b2545;
-            color: #ffffff;
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-            box-shadow: 0 2px 8px rgba(11, 37, 69, 0.2);
-        }
-
-        /* Chatbot Embedded Product Image Styling */
-        .bot-product-preview {
-            width: 100%;
-            max-height: 180px;
-            object-fit: contain;
-            background: #ffffff;
-            border-radius: 8px;
-            margin: 8px 0 12px 0;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            display: block;
-        }
-
-        .bot-options-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .bot-btn {
-            background: #ffffff;
-            border: 1.5px solid #0b2545;
-            color: #0b2545;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: left;
-            transition: all 0.2s ease;
-            display: flex;
+            right: 0;
+            height: 70px;
+            background-color: var(--sidebar-bg);
+            border-bottom: 1px solid var(--card-border);
+            padding: 0 1.5rem;
             align-items: center;
             justify-content: space-between;
+            z-index: 1000;
+            transition: transform 0.3s ease-in-out;
         }
 
-        .bot-btn:hover {
-            background: #0b2545;
-            color: #ffffff;
-            transform: translateY(-2px);
+        .mobile-header.nav-hidden {
+            transform: translateY(-100%);
         }
 
-        .bot-btn-primary {
-            background: linear-gradient(135deg, #f4d35e 0%, #ee964b 100%);
-            color: #0b2545;
-            border: none;
-            font-weight: 700;
-            text-align: center;
+        .mobile-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+        }
+
+        .mobile-brand img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--card-border);
+        }
+
+        .mobile-brand span {
+            color: var(--accent-color);
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            font-size: 1.4rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            padding: 12px 18px;
-            box-shadow: 0 4px 12px rgba(238, 150, 75, 0.3);
-            margin-top: 10px;
+            background-color: var(--card-bg);
+        }
+
+        /* DESKTOP RIGHT-SIDE NAVIGATION PANEL */
+        aside {
+            width: var(--sidebar-width);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            background-color: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding: 2.5rem 1.5rem;
+            border-left: 1px solid var(--card-border);
+            z-index: 900;
+            transition: transform 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+
+        .brand-logo {
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--card-border);
+            animation: logoPulse 4s infinite ease-in-out;
+            transition: transform 0.3s ease;
+        }
+
+        .brand-logo:hover {
+            transform: scale(1.05) rotate(5deg);
+        }
+
+        .brand h1 {
+            color: var(--accent-color);
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            line-height: 1.1;
+        }
+
+        .brand p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* NAVIGATION MENU */
+        nav {
+            margin-top: 2rem;
             width: 100%;
         }
 
-        .bot-btn-primary:hover {
-            background: linear-gradient(135deg, #ee964b 0%, #f4d35e 100%);
-            color: #000;
-            transform: translateY(-2px);
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
         }
 
-        .bot-btn-secondary {
-            background: #e2e8f0;
-            color: #334155;
-            border: none;
-            text-align: center;
-            justify-content: center;
-            padding: 10px 14px;
-            margin-top: 6px;
+        nav li {
             width: 100%;
-        }
-
-        .bot-btn-secondary:hover {
-            background: #cbd5e1;
-            color: #0f172a;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ==========================================================================
-           9. Testimonials Section
-           ========================================================================== */
-        .testimonials {
-            background-color: #fff;
-            border-top: 1px solid #e2e8f0;
-            padding: 80px 0 70px;
-            overflow: hidden;
-            width: 100%;
-        }
-
-        .testimonials-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 40px;
-            overflow: hidden;
             position: relative;
         }
 
-        .testimonials-container::before,
-        .testimonials-container::after {
-            content: "";
-            height: 100%;
-            width: 100px;
+        nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.8rem 1.2rem;
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: transparent;
+            position: relative;
+        }
+
+        nav a::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover, nav a.active {
+            color: #ffffff;
+            background-color: var(--card-bg);
+            transform: translateX(-6px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        nav a:hover::before, nav a.active::before {
+            background-color: var(--accent-color);
+            box-shadow: 0 0 8px var(--accent-color);
+            transform: scale(1.4);
+        }
+
+        nav a::after {
+            content: '';
             position: absolute;
-            top: 0;
-            z-index: 2;
-            pointer-events: none;
-        }
-        .testimonials-container::before {
-            left: 0;
-            background: linear-gradient(to right, #fff, transparent);
-        }
-        .testimonials-container::after {
             right: 0;
-            background: linear-gradient(to left, #fff, transparent);
+            top: 15%;
+            height: 70%;
+            width: 3px;
+            background-color: var(--accent-color);
+            border-radius: 4px 0 0 4px;
+            opacity: 0;
+            transform: scaleY(0);
+            transition: all 0.3s ease;
         }
 
-        .marquee-wrapper {
+        nav a:hover::after, nav a.active::after {
+            opacity: 1;
+            transform: scaleY(1);
+        }
+
+        /* SOCIAL MEDIA LINKS SECTION */
+        .social-nav {
+            margin-top: 1.5rem;
+            margin-bottom: auto;
+            padding-top: 1.2rem;
+            border-top: 1px solid var(--card-border);
+            width: 100%;
+        }
+
+        .social-nav span {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+        }
+
+        .social-icons {
             display: flex;
-            width: max-content;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
         }
 
-        .marquee-track {
+        .social-btn {
             display: flex;
-            gap: 25px;
-            padding: 20px 0;
-            margin-right: 25px;
-            animation: marqueeScroll 45s linear infinite;
-            user-select: none;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .marquee-wrapper:hover .marquee-track {
-            animation-play-state: paused;
+        .social-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+            transition: transform 0.3s ease;
         }
 
-        .testimonial-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+        .social-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .social-btn.facebook:hover { color: #1877f2; border-color: #1877f2; background-color: rgba(24, 119, 242, 0.1); }
+        .social-btn.instagram:hover { color: #e4405f; border-color: #e4405f; background-color: rgba(228, 64, 95, 0.1); }
+        .social-btn.messenger:hover { color: #0084ff; border-color: #0084ff; background-color: rgba(0, 132, 255, 0.1); }
+        .social-btn.whatsapp:hover { color: #25d366; border-color: #25d366; background-color: rgba(37, 211, 102, 0.1); }
+
+        .sidebar-footer {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--card-border);
+            padding-top: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .sidebar-footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+
+        .github-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--github-gray) !important;
+            font-weight: 600;
+            margin-top: 0.4rem;
+            transition: color 0.3s ease;
+        }
+
+        .github-link:hover {
+            color: var(--accent-color) !important;
+        }
+
+        /* MAIN CONTENT AREA */
+        main {
+            margin-right: var(--sidebar-width);
+            flex: 1;
+            padding: 3rem 4rem;
+            width: calc(100% - var(--sidebar-width));
+        }
+
+        section {
+            margin-bottom: 4.5rem;
+            scroll-margin-top: 2rem;
+            animation: fadeUp 0.8s ease-out forwards;
+        }
+
+        /* HERO SECTION */
+        .hero-container {
+            background-color: var(--card-bg);
+            padding: 3rem;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2.5rem;
+            align-items: center;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.3s ease;
+        }
+
+        .hero-container:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        .badge {
+            display: inline-block;
+            background-color: var(--accent-glow);
+            color: var(--accent-color);
+            padding: 0.35rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+            font-weight: 800;
+        }
+
+        .hero h2 span {
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.hero-text {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .hero-action-btns {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .hero-image-wrap {
+            overflow: hidden;
             border-radius: 12px;
-            padding: 28px;
-            width: 320px;
+            border: 1px solid var(--card-border);
+        }
+
+        .hero-image-wrap img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .hero-image-wrap:hover img {
+            transform: scale(1.05);
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--card-border);
+        }
+
+        .stat-item h4 {
+            font-size: 1.4rem;
+            color: var(--accent-color);
+            font-weight: 800;
+        }
+
+        .stat-item p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        h2.section-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        h2.section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background-color: var(--card-border);
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+            color: #ffffff;
+            padding: 0.85rem 1.8rem;
+            font-weight: 700;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.5);
+        }
+
+        .btn-messenger {
+            background: linear-gradient(135deg, #0084ff 0%, #0066cc 100%);
+            box-shadow: 0 4px 14px rgba(0, 132, 255, 0.3);
+        }
+
+        .btn-messenger:hover {
+            box-shadow: 0 8px 25px rgba(0, 132, 255, 0.5);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--card-border);
+            color: var(--github-gray);
+            box-shadow: none;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--github-gray);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        /* TECH STACK SECTION */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+        }
+
+        .tech-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .tech-card:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-4px);
+        }
+
+        .tech-card.supabase-card:hover {
+            border-color: var(--supabase-green);
+            box-shadow: 0 0 15px rgba(62, 207, 142, 0.2);
+        }
+
+        .tech-card.github-card:hover {
+            border-color: var(--github-gray);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+        }
+
+        .tech-icon {
+            font-size: 2rem;
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        .tech-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+            color: var(--text-color);
+        }
+
+        .tech-card p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* FILTERABLE PORTFOLIO */
+        .portfolio-filters {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 1.8rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background-color: var(--card-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--card-border);
+            padding: 0.6rem 1.2rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--accent-color);
+            color: #030712;
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 12px var(--accent-glow);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.8rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .card.hide {
+            display: none;
+        }
+
+        .card-image-wrap {
+            overflow: hidden;
+            height: 180px;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-6px);
+            box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.6);
+        }
+
+        .card:hover .card-image {
+            transform: scale(1.08);
+        }
+
+        .card-body {
+            padding: 1.8rem;
+        }
+
+        .card h3 {
+            color: var(--text-color);
+            margin-bottom: 0.6rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            transition: color 0.3s ease;
+        }
+
+        .card:hover h3 {
+            color: var(--accent-color);
+        }
+
+        .card p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 0.9rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .card-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background-color: #1f2937;
+            color: var(--accent-color);
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tag.tag-frontend { color: #38bdf8; background-color: rgba(56, 189, 248, 0.1); }
+        .tag.tag-fullstack { color: #a855f7; background-color: rgba(168, 85, 247, 0.1); }
+        .tag.tag-supabase { color: var(--supabase-green); background-color: rgba(62, 207, 142, 0.1); }
+        .tag.tag-github { color: var(--github-gray); background-color: rgba(255, 255, 255, 0.1); }
+
+        /* ESTIMATOR DETAILS & BACKEND SCOPE STYLES */
+        .estimator-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .estimator-info-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1.8rem;
+        }
+
+        .estimator-info-card h3 {
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            margin-bottom: 0.8rem;
+        }
+
+        .estimator-info-card p {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        .backend-scope-card h3 {
+            color: var(--supabase-green);
+        }
+
+        .backend-scope-card ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+
+        .backend-scope-card li {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            position: relative;
+            padding-left: 1.2rem;
+        }
+
+        .backend-scope-card li::before {
+            content: "▹";
+            position: absolute;
+            left: 0;
+            color: var(--supabase-green);
+        }
+
+        .backend-scope-card strong {
+            color: var(--text-color);
+        }
+
+        /* COST CALCULATOR STYLING */
+        .calculator-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 2.5rem;
+        }
+
+        .calc-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .calc-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: var(--text-color);
+        }
+
+        .calc-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+        }
+
+        .calc-checkbox, .calc-radio {
+            display: none;
+        }
+
+        .option-label {
+            background-color: #0b1120;
+            border: 1px solid var(--card-border);
+            padding: 0.88rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
             text-align: left;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            font-weight: 600;
+            display: block;
+        }
+
+        .option-label small {
+            display: block;
+            font-weight: normal;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+            line-height: 1.3;
+        }
+
+        .calc-checkbox:checked + .option-label,
+        .calc-radio:checked + .option-label {
+            border-color: var(--accent-color);
+            background-color: var(--accent-glow);
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+
+        .calc-checkbox:checked + .option-label small,
+        .calc-radio:checked + .option-label small {
+            color: #d1d5db;
+        }
+
+        .calc-summary {
+            background-color: #0b1120;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 2rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            flex-shrink: 0;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
         }
 
-        .testimonial-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-            border-color: #cbd5e1;
+        .calc-summary h3 {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
         }
 
-        .testimonial-card p {
-            font-size: 0.95rem;
-            color: #4a5568;
-            font-style: italic;
-            line-height: 1.6;
-            margin-bottom: 18px;
+        .calc-price {
+            font-size: 2.4rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            margin: 1rem 0;
         }
 
-        .testimonial-author {
+        .calc-summary p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        /* CONTACT SECTION */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 0.8fr) minmax(300px, 1.2fr);
+            gap: 2rem;
+            width: 100%;
+            align-items: start;
+        }
+
+        .contact-info-card {
+            background-color: var(--card-bg);
+            padding: 2.2rem;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
             display: flex;
             flex-direction: column;
+            gap: 1.5rem;
+            min-width: 0;
         }
 
-        .testimonial-author span.name {
-            font-weight: 700;
-            color: #0b2545;
-            font-size: 0.95rem;
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
         }
 
-        .testimonial-author span.company {
-            font-size: 0.8rem;
-            color: #ee964b;
+        .info-item h4 {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+
+        .info-item a, .info-item p {
+            color: var(--text-color);
+            font-size: 1rem;
             font-weight: 600;
-            margin-top: 2px;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
 
-        @keyframes marqueeScroll {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); }
-        }
-
-        /* ==========================================================================
-           10. Contact Section
-           ========================================================================== */
-        .contact {
-            background-color: #fff;
-        }
-
-        .contact p.subtitle {
-            margin-bottom: 40px;
-            color: #657786;
-            font-size: 1.1rem;
+        .info-item a:hover {
+            color: var(--accent-color);
         }
 
         .contact-container {
-            max-width: 650px;
-            margin: 0 auto;
-            background: #f8fafc;
-            padding: 40px;
-            border-radius: 14px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
-            border: 1px solid #e2e8f0;
-            text-align: left;
-        }
-
-        .form-group {
-            margin-bottom: 22px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #0b2545;
-            font-size: 0.95rem;
-        }
-
-        .form-group input, .form-group textarea {
+            background-color: var(--card-bg);
+            padding: 2.2rem;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            transition: border-color 0.3s ease;
+            min-width: 0;
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 1rem;
-            color: #334155;
-            transition: border-color 0.3s, box-shadow 0.3s;
-            background-color: #fff;
         }
 
-        .form-group input:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #0b2545;
-            box-shadow: 0 0 0 3px rgba(11, 37, 69, 0.12);
+        .contact-container:hover {
+            border-color: var(--accent-color);
         }
 
-        .contact button {
-            background: linear-gradient(135deg, #0b2545 0%, #133a6f 100%);
-            color: white;
-            border: none;
-            padding: 15px 24px;
-            cursor: pointer;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            width: 100%;
-            font-weight: 700;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(11, 37, 69, 0.2);
-        }
-
-        .contact button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(11, 37, 69, 0.3);
-            background: linear-gradient(135deg, #133a6f 0%, #0b2545 100%);
-        }
-
-        /* ==========================================================================
-           11. Footer
-           ========================================================================== */
-        footer {
-            background-color: #07162c;
-            color: #cbd5e1;
-            padding: 60px 5% 30px;
-            font-size: 0.9rem;
-            border-top: 3px solid #ee964b;
-            text-align: left;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 40px;
-            max-width: 1200px;
-            margin: 0 auto 40px;
-        }
-
-        .footer-col h3 {
-            color: #fff;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            font-weight: 600;
-            position: relative;
-        }
-
-        .footer-col h3::after {
-            content: '';
-            display: block;
-            width: 30px;
-            height: 2px;
-            background-color: #f4d35e;
-            margin-top: 8px;
-        }
-
-        .footer-col p {
-            line-height: 1.7;
-            color: #94a3b8;
-            margin-bottom: 10px;
-        }
-
-        .footer-col ul {
-            list-style: none;
-        }
-
-        .footer-col ul li {
-            margin-bottom: 12px;
-        }
-
-        .footer-col ul li a {
-            color: #94a3b8;
-            text-decoration: none;
-            transition: color 0.2s ease, padding-left 0.2s ease;
-            display: inline-block;
-        }
-
-        .footer-col ul li a:hover {
-            color: #f4d35e;
-            padding-left: 4px;
-        }
-
-        .footer-contact-item {
+        form {
             display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 15px;
-            color: #94a3b8;
+            flex-direction: column;
+            gap: 1.2rem;
+            width: 100%;
         }
 
-        .footer-contact-item svg {
-            color: #f4d35e;
-            flex-shrink: 0;
-            margin-top: 3px;
+        form > div {
+            width: 100%;
         }
 
-        .footer-contact-item a {
-            color: #94a3b8;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .footer-contact-item a:hover {
-            color: #f4d35e;
-        }
-
-        .hours-sub-item {
-            margin-bottom: 10px;
-            line-height: 1.4;
-        }
-
-        .hours-label {
+        input, textarea, select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.9rem 1.1rem;
+            background-color: #0b1120;
+            border: 1px solid var(--card-border);
+            color: var(--text-color);
+            border-radius: 8px;
+            outline: none;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
             display: block;
-            font-size: 0.78rem;
-            color: #f4d35e;
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            margin-bottom: 1px;
         }
 
-        .hours-value {
-            font-size: 0.88rem;
-            color: #e2e8f0;
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
         }
 
-        .footer-bottom {
-            border-top: 1px solid #1e293b;
-            padding-top: 25px;
-            text-align: center;
-            color: #64748b;
-        }
-
-        .footer-bottom p {
-            color: #94a3b8;
-            margin-bottom: 6px;
-        }
-
-        /* Responsive Mobile Styles */
-        @media (max-width: 900px) {
-            header {
-                flex-direction: column;
-                padding: 12px;
-                gap: 12px;
+        /* STRICT VIEWPORT-WIDTH MEDIA QUERIES FOR MOBILE DEVICES */
+        @media screen and (max-width: 768px) {
+            .mobile-header {
+                display: flex;
             }
-            header.scrolled {
-                padding: 10px;
+
+            aside {
+                position: fixed;
+                top: 70px;
+                right: 0;
+                bottom: 0;
+                width: var(--sidebar-width);
+                transform: translateX(100%);
+                padding-top: 1.5rem;
             }
-            header .logo-text {
-                white-space: normal;
+
+            aside.open {
+                transform: translateX(0);
+            }
+
+            aside.nav-hidden {
+                transform: translateX(100%) !important;
+            }
+
+            main {
+                margin-right: 0;
+                width: 100%;
+                padding: 5.5rem 1rem 3rem 1rem;
+            }
+
+            /* HERO SECTION MOBILE CENTERING & RESPONSIVE FIXES */
+            .hero-container {
+                grid-template-columns: 1fr !important;
                 text-align: center;
+                padding: 1.8rem 1.2rem;
+                width: 100%;
+                margin: 0 auto;
+                box-sizing: border-box;
             }
-            header .nav-container {
-                flex-direction: column;
-                gap: 12px;
+
+            .hero .badge {
+                margin: 0 auto 1rem auto;
+            }
+
+            .hero h2 {
+                font-size: 1.8rem;
+            }
+
+            .hero-action-btns {
+                justify-content: center;
+            }
+
+            .hero .btn {
+                display: block;
                 width: 100%;
             }
-            header nav {
-                gap: 18px;
+
+            .hero-image-wrap {
+                width: 100%;
+                max-width: 100%;
+                margin: 1.5rem auto 0 auto;
             }
-            .hero {
-                margin-top: 150px;
-                height: 65vh; 
-                min-height: 500px;
+
+            .hero-image-wrap img {
+                width: 100%;
+                height: auto;
+                max-height: 220px;
+                object-fit: cover;
             }
-            .hero h1 {
-                font-size: 2.1rem;
+
+            .hero-stats {
+                justify-content: center;
+                gap: 1rem;
             }
-            .hero p {
-                font-size: 1rem;
+
+            .calculator-container,
+            .contact-grid,
+            .estimator-details,
+            .grid,
+            .tech-grid {
+                grid-template-columns: 1fr !important;
             }
-            section {
-                padding: 60px 5% 40px;
-            }
-            .about-container {
-                flex-direction: column-reverse;
-                text-align: center;
-                gap: 30px;
-            }
-            .product-context-container {
-                padding: 0 15px;
-            }
-            .slider-wrapper, .strengths-slider-wrapper {
-                padding: 0 10px;
-            }
-            .product-card, .strength-card {
-                flex: 0 0 100%; 
-            }
-            .slider-arrow {
-                display: none; 
-            }
-            .contact-container {
-                padding: 25px;
-            }
-            .testimonials-container {
-                padding: 0 15px;
-            }
-            .testimonials-container::before { left: 0; }
-            .testimonials-container::after { right: 0; }
-            .logo-spinner-wrapper {
-                width: 160px;
-                height: 160px;
-            }
-            .intro-title {
-                font-size: 1.25rem;
-            }
-            .bot-options-grid {
+
+            .calc-options {
                 grid-template-columns: 1fr;
             }
         }
@@ -1445,958 +995,505 @@
 </head>
 <body>
 
-    <div id="intro-overlay">
-        <div class="intro-content">
-            <div class="logo-spinner-wrapper">
-                <img src="logo.png" alt="JMP International Logo" class="intro-logo">
-                <div class="intro-spinner-ring"></div>
-            </div>
-            <h1 class="intro-title">JMP INTERNATIONAL FISH TRADING</h1>
-        </div>
-    </div>
-
-    <header id="header">
-        <div class="logo-container">
-            <img class="logo-img" src="logo.png" alt="JMP International Logo">
-            <span class="logo-text">JMP INTERNATIONAL FISH TRADING</span>
-        </div>
-        <div class="nav-container">
-            <nav>
-                <a href="#home">Home</a>
-                <a href="#about">About</a>
-                <a href="#strengths">Capabilities</a>
-                <a href="#products">Products</a>
-                <a href="#faq">FAQ</a>
-            </nav>
-            <a href="login.html" class="login-btn">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                Employee Portal
-            </a>
-        </div>
+    <!-- MOBILE TOP HEADER BAR -->
+    <header class="mobile-header" id="mobileHeader">
+        <a href="#about" class="mobile-brand">
+            <img src="logo.png" alt="JMCY Logo">
+            <span>JMCY WEB SOLUTIONS</span>
+        </a>
+        <button class="menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle Menu">
+            ☰
+        </button>
     </header>
 
-    <div class="hero" id="home">
-        <h1>JMP INTERNATIONAL FISH TRADING</h1>
-        <p>Quality seafood. Trusted trade. Proven compliance. Flash-frozen at peak freshness and delivered with absolute cold-chain integrity.</p>
-        <a href="#contact" class="btn">Submit Product Inquiry</a>
-    </div>
+    <!-- RIGHT SIDEBAR PANEL -->
+    <aside id="sidebarNav">
+        <div class="brand">
+            <img src="logo.png" alt="JMCY Logo" class="brand-logo">
+            <div>
+                <h1>JMCY</h1>
+                <p>WEB SOLUTIONS</p>
+            </div>
+        </div>
 
-    <section class="about reveal" id="about">
-        <h2>About JMP International Fish Trading</h2>
-        <div class="about-container">
-            <div class="about-content">
-                <p>
-                    JMP International Fish Trading was established on January 26, 2022, as a sole proprietorship dedicated to the importation and distribution of high-quality fish and seafood products, including frozen seafood and processed products. In just under four years, the company has built a reputation for reliability, compliance, and excellence in the seafood industry, supplying a wide range of clients with products that meet national and international standards.
-                </p>
-                <p>
-                    Driven by a commitment to food safety, traceability, and efficient logistics, JMP International Fish Trading continues to expand its operations, strengthen supplier partnerships, and provide consistent, high-quality seafood solutions, ensuring clients have access to a broad range of products that meet the evolving needs of the market.
-                </p>
-                
-                <div class="mv-grid">
-                    <div class="mv-item reveal reveal-delay-1">
-                        <h4>Our Mission</h4>
-                        <p style="font-size:0.95rem; color:#4a5568;">Delivering fresh and processed fish and seafood that clients trust, backed by compliance, quality, and efficiency.</p>
+        <nav>
+            <ul>
+                <li><a href="#about" class="active" onclick="closeMobileMenu()">About</a></li>
+                <li><a href="#tech" onclick="closeMobileMenu()">Tech Stack</a></li>
+                <li><a href="#services" onclick="closeMobileMenu()">Services</a></li>
+                <li><a href="#projects" onclick="closeMobileMenu()">Projects</a></li>
+                <li><a href="#calculator" onclick="closeMobileMenu()">Estimator</a></li>
+                <li><a href="#contact" onclick="closeMobileMenu()">Contact</a></li>
+            </ul>
+        </nav>
+
+        <!-- SOCIAL MEDIA LINKS -->
+        <div class="social-nav">
+            <span>Connect With Us</span>
+            <div class="social-icons">
+                <a href="https://www.facebook.com/share/1F1MPHFTPg/" target="_blank" class="social-btn facebook" title="Facebook Page">
+                    <svg viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </a>
+                <a href="https://www.instagram.com/jmcy.websolutions" target="_blank" class="social-btn instagram" title="Instagram (jmcy.websolutions)">
+                    <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                </a>
+                <a href="https://m.me/jmcywebsolutions2026" target="_blank" rel="noopener noreferrer" class="social-btn messenger" title="Messenger (jmcywebsolutions2026)">
+                    <svg viewBox="0 0 24 24"><path d="M12 0C5.373 0 0 4.974 0 11.111c0 3.498 1.744 6.614 4.469 8.654V24l4.088-2.242c1.092.302 2.246.466 3.443.466 6.627 0 12-4.975 12-11.113C24 4.974 18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26 6.559-6.96 3.125 3.26 5.893-3.26-6.559 6.96z"/></svg>
+                </a>
+                <a href="https://wa.me/639091297422" target="_blank" class="social-btn whatsapp" title="WhatsApp (0909 129 7422)">
+                    <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                </a>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <p><a href="http://www.jmcywebsolutions.com" target="_blank">www.jmcywebsolutions.com</a></p>
+            <p><a href="about-me.html" class="github-link">
+                Learn More About Us &rarr;
+            </a></p>
+            <p style="margin-top:0.4rem;">&copy; 2026 JMCY Web Solutions.</p>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        <!-- ABOUT / HERO SECTION -->
+        <section id="about" class="hero">
+            <div class="hero-container">
+                <div>
+                    <span class="badge">Custom Frontend & Supabase Architecture</span>
+                    <h2>Engineered Web Solutions: <span>Frontend & Full-Stack ERP</span></h2>
+                    <p class="hero-text">We build two distinct tiers of web platforms: lightweight, lightning-fast <strong>Frontend-Only Websites</strong> and powerful <strong>Full-Stack Applications</strong> driven by Supabase cloud databases and Higher ERP backends.</p>
+                    
+                    <div class="hero-action-btns">
+                        <a href="#calculator" class="btn">Calculate Project Cost</a>
+                        <a href="https://m.me/jmcywebsolutions2026" target="_blank" rel="noopener noreferrer" class="btn btn-messenger">
+                            Direct PM on Messenger
+                        </a>
+                        <a href="about-me.html" class="btn btn-outline">Learn More About Us</a>
                     </div>
-                    <div class="mv-item reveal reveal-delay-2">
-                        <h4>Our Vision</h4>
-                        <p style="font-size:0.95rem; color:#4a5568;">To lead the seafood industry as a trusted gateway between global sources and local markets, delivering fresh, frozen, and processed seafood with uncompromising quality, safety, and sustainability.</p>
+
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <h4>Frontend</h4>
+                            <p>Pure HTML / CSS / JS</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4>Full-Stack</h4>
+                            <p>Supabase + ERP</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4>Version Control</h4>
+                            <p>Managed via GitHub</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="about-logo-display reveal reveal-delay-2">
-                <img src="logo.png" alt="JMP International Fish Trading Profile Logo">
-            </div>
-        </div>
-    </section>
-
-    <section class="strengths reveal" id="strengths">
-        <h2>Why Partner With JMP International</h2>
-        
-        <div class="strengths-slider-wrapper">
-            <button class="slider-arrow arrow-left" id="prevStrength" aria-label="Previous Strength">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
-            <button class="slider-arrow arrow-right" id="nextStrength" aria-label="Next Strength">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
-
-            <div class="strengths-slider-container" id="strengthsContainer">
-                <div class="strengths-grid-track" id="strengthsTrack">
-                    
-                    <div class="strength-card">
-                        <div class="strength-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                        </div>
-                        <h3>Strict Regulatory Compliance</h3>
-                        <p>End-to-end conformance with national and international trade regulations. We streamline imports through meticulous health certification and full hazard control traceability.</p>
-                        <div class="compliance-logo-group">
-                            <img class="compliance-logo" src="bfar-logo.png" alt="BFAR Logo">
-                            <img class="compliance-logo" src="fda-logo.png" alt="FDA Logo">
-                            <img class="compliance-logo" src="haccp-logo.png" alt="HACCP Logo">
-                        </div>
-                    </div>
-
-                    <div class="strength-card">
-                        <div class="strength-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                        </div>
-                        <h3>Cold Chain Integrity</h3>
-                        <p>Precision temperature management from ocean vessel harvest to final delivery. Our flash-freezing technology locks in cellular moisture and natural nutrients without micro-crystallization.</p>
-                    </div>
-
-                    <div class="strength-card">
-                        <div class="strength-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                        </div>
-                        <h3>Global Sourcing Infrastructure</h3>
-                        <p>Direct supply partnerships with certified global fisheries ensure volume scalability, competitive wholesale pricing, and consistent inventory availability year-round.</p>
-                    </div>
-
-                    <div class="strength-card">
-                        <div class="strength-icon">
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                        </div>
-                        <h3>Customizable Processing Specs</h3>
-                        <p>Tailored processing options including exact portion cuts, specialized vacuum seals, and custom packaging sizes engineered to minimize kitchen prep waste and optimize profitability.</p>
-                    </div>
-
+                <div class="hero-image-wrap">
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80" alt="Web Development Architecture">
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section class="products reveal" id="products">
-        <h2>Our Seafood Product Portfolio</h2>
-        
-        <div class="product-context-container">
-            <div class="product-context-block">
-                <h3>Wholesale Supply &amp; Processing Excellence</h3>
-                <p>
-                    JMP International Fish Trading provides a comprehensive line of premium marine imports processed immediately at source to lock in peak freshness. Our inventory spans high-demand pelagic species, premium loin cuts, cephalopods, and processed seafood tailored for large-scale distribution, food service groups, and processing plants.
-                </p>
-                <p>
-                    By working closely with trusted vessel networks and global processing facilities, we maintain stable volume scalability throughout the year, ensuring your supply pipeline remains uninterrupted even during strict regional fishing off-seasons.
-                </p>
+        <!-- TECH STACK SECTION -->
+        <section id="tech">
+            <h2 class="section-title">Tech Stack & Infrastructure</h2>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <span class="tech-icon">🌐</span>
+                    <h4>Frontend Web</h4>
+                    <p>Clean HTML5, CSS3, & JS without heavy frameworks or template bloat.</p>
+                </div>
+                <div class="tech-card supabase-card">
+                    <span class="tech-icon">⚡</span>
+                    <h4>Supabase Database</h4>
+                    <p>Cloud PostgreSQL database for ERP data, real-time sync, and user access.</p>
+                </div>
+                <div class="tech-card github-card">
+                    <span class="tech-icon">🐱</span>      
+                    <h4>GitHub Management</h4>
+                    <p>Version control, automated deployments, and continuous integration.</p>
+                </div>
+                <div class="tech-card supabase-card">
+                    <span class="tech-icon">🔒</span>
+                    <h4>Supabase Auth & RLS</h4>
+                    <p>Secure authentication with fine-grained Row Level Security policies.</p>
+                </div>
             </div>
-        </div>
-        
-        <div class="slider-wrapper">
-            <button class="slider-arrow arrow-left" id="prevSlide" aria-label="Previous Slide">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            </button>
-            <button class="slider-arrow arrow-right" id="nextSlide" aria-label="Next Slide">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-            </button>
+        </section>
 
-            <div class="product-slider-container" id="sliderContainer">
-                <div class="product-grid-track" id="sliderTrack">
-                    
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Golden Pomfret Whole Round (Trachinotus spp.).jpg" alt="Frozen Golden Pomfret">
-                        <div class="product-info">
-                            <h3>Golden Pomfret</h3>
-                            <p class="scientific-name">Trachinotus spp.</p>
-                            <span class="product-tag">Whole Round</span>
+        <!-- TWO SERVICE TYPES SECTION -->
+        <section id="services">
+            <h2 class="section-title">Our 2 Website Solution Types</h2>
+            <div class="grid">
+                <div class="card">
+                    <div class="card-image-wrap">
+                        <img src="https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?auto=format&fit=crop&w=600&q=80" alt="Frontend Only Website" class="card-image">
+                    </div>
+                    <div class="card-body">
+                        <h3>1. Frontend-Only Websites</h3>
+                        <p>Perfect for corporate portfolios, landing pages, and business showcases. Built entirely on clean HTML/CSS/JS for ultra-fast load times, SEO optimization, and smooth mobile UI.</p>
+                        <div class="card-tags">
+                            <span class="tag tag-frontend">Frontend Only</span>
+                            <span class="tag">Semantic HTML5</span>
+                            <span class="tag">Custom CSS</span>
+                            <span class="tag tag-github">GitHub Hosted</span>
                         </div>
                     </div>
+                </div>
 
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Lian - Common Scad Whole (Trachurus trachurus).jpg" alt="Frozen Common Scad">
-                        <div class="product-info">
-                            <h3>Common Scad (Lian)</h3>
-                            <p class="scientific-name">Trachurus trachurus</p>
-                            <span class="product-tag">Whole</span>
-                        </div>
+                <div class="card">
+                    <div class="card-image-wrap">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80" alt="Full-Stack Web App" class="card-image">
                     </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Nobashi Shrimp.jpg" alt="Frozen Nobashi Shrimp">
-                        <div class="product-info">
-                            <h3>Nobashi Shrimp</h3>
-                            <p class="scientific-name">Penaeidae</p>
-                            <span class="product-tag">Stretched / Peeled</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Pangasius Fillet (Pangasianodon hypophtalmus).jpg" alt="Frozen Pangasius Fillet">
-                        <div class="product-info">
-                            <h3>Pangasius Fillet</h3>
-                            <p class="scientific-name">Pangasianodon hypophthalmus</p>
-                            <span class="product-tag">Fillet / Boneless</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Peeled Shrimp (Penaeus vannamei).jpg" alt="Frozen Peeled Shrimp">
-                        <div class="product-info">
-                            <h3>Peeled Shrimp</h3>
-                            <p class="scientific-name">Penaeus vannamei</p>
-                            <span class="product-tag">PD / PUD</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Round Scad (Trachurus trachurus).jpg" alt="Frozen Round Scad">
-                        <div class="product-info">
-                            <h3>Round Scad</h3>
-                            <p class="scientific-name">Trachurus trachurus</p>
-                            <span class="product-tag">Whole Round</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Salmon Belly (Salmo salar).jpg" alt="Frozen Salmon Belly">
-                        <div class="product-info">
-                            <h3>Salmon Belly</h3>
-                            <p class="scientific-name">Salmo salar</p>
-                            <span class="product-tag">Premium Cuts</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Salmon Head (Salmo salar).jpg" alt="Frozen Salmon Head">
-                        <div class="product-info">
-                            <h3>Salmon Head</h3>
-                            <p class="scientific-name">Salmo salar</p>
-                            <span class="product-tag">Whole Head</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Seabass Whole Round (Dicentrarchus spp.).jpg" alt="Frozen Seabass Whole Round">
-                        <div class="product-info">
-                            <h3>Seabass</h3>
-                            <p class="scientific-name">Dicentrarchus spp.</p>
-                            <span class="product-tag">Whole Round</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Squid Whole (Uroteusthis chinensis).jpg" alt="Frozen Squid Whole">
-                        <div class="product-info">
-                            <h3>Mitre Squid</h3>
-                            <p class="scientific-name">Uroteusthis chinensis</p>
-                            <span class="product-tag">Whole</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Squid Whole Round (Illex illecebrosus).jpg" alt="Frozen Squid Whole Round">
-                        <div class="product-info">
-                            <h3>Illex Squid</h3>
-                            <p class="scientific-name">Illex illecebrosus</p>
-                            <span class="product-tag">Whole Round</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Squid Whole Round (Todarodes Pacificus).jpg" alt="Frozen Squid Whole Round">
-                        <div class="product-info">
-                            <h3>Japanese Flying Squid</h3>
-                            <p class="scientific-name">Todarodes pacificus</p>
-                            <span class="product-tag">Whole Round</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Tuna Belly (Thunnus Albacares).jpg" alt="Frozen Tuna Belly">
-                        <div class="product-info">
-                            <h3>Yellowfin Tuna Belly</h3>
-                            <p class="scientific-name">Thunnus albacares</p>
-                            <span class="product-tag">Premium Commercial</span>
-                        </div>
-                    </div>
-                                        
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Tuna Cubes (Thunnus albacares).jpg" alt="Frozen Tuna Cubes">
-                        <div class="product-info">
-                            <h3>Tuna Cubes</h3>
-                            <p class="scientific-name">Thunnus albacares</p>
-                            <span class="product-tag">Pre-Cut / Poke Ready</span>
-                        </div>
-                    </div>
-                    
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Tuna Kama (Thunnus albacares).jpg" alt="Frozen Tuna Kama">
-                        <div class="product-info">
-                            <h3>Tuna Kama (Collar)</h3>
-                            <p class="scientific-name">Thunnus albacares</p>
-                            <span class="product-tag">Wholesale Cut</span>
-                        </div>
-                    </div>
-                    
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Tuna Portion Cut (Thunnus albacares).jpg" alt="Frozen Tuna Portion Cut">
-                        <div class="product-info">
-                            <h3>Tuna Portion Cut</h3>
-                            <p class="scientific-name">Thunnus albacares</p>
-                            <span class="product-tag">Exact Spec Cuts</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Tuna Saku Bar (Thunnus albacares).jpg" alt="Frozen Tuna Saku Bar">
-                        <div class="product-info">
-                            <h3>Tuna Saku Bar</h3>
-                            <p class="scientific-name">Thunnus albacares</p>
-                            <span class="product-tag">AAA Grade / Sashimi Ready</span>
-                        </div>
-                    </div>
-                                        
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen YellowTail Scad Whole (Atule Mate).jpg" alt="Frozen YellowTail Scad Whole">
-                        <div class="product-info">
-                            <h3>Yellowtail Scad (Marot)</h3>
-                            <p class="scientific-name">Atule mate</p>
-                            <span class="product-tag">Whole</span>
-                        </div>
-                    </div>
-                    
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Yellowtail Scad Whole (Selaroides leptolepis).jpg" alt="Frozen Yellowtail Scad Whole">
-                        <div class="product-info">
-                            <h3>Smooth-Tailed Trevally</h3>
-                            <p class="scientific-name">Selaroides leptolepis</p>
-                            <span class="product-tag">Whole</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Yellowtail Whole Round (Seriola quinqeradiata).jpg" alt="Frozen Yellowtail Whole Round">
-                        <div class="product-info">
-                            <h3>Japanese Amberjack (Buri)</h3>
-                            <p class="scientific-name">Seriola quinqueradiata</p>
-                            <span class="product-tag">Whole Round</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Bigeye Scad Whole (Sela crumenophthalmus).jpg" alt="Frozen Bigeye Scad Whole">
-                        <div class="product-info">
-                            <h3>Bigeye Scad (Matangbaka)</h3>
-                            <p class="scientific-name">Selar crumenophthalmus</p>
-                            <span class="product-tag">Whole Round</span>
-                        </div>
-                    </div>
-                                        
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Moonfish Whole (Mene maculata).jpg" alt="Frozen Moonfish Whole">
-                        <div class="product-info">
-                            <h3>Moonfish (Chabita)</h3>
-                            <p class="scientific-name">Mene maculata</p>
-                            <span class="product-tag">Whole</span>
-                        </div>
-                    </div>
-                    
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Bigeye Scad Whole (Selar crumenophthalmus).jpg" alt="Frozen Bigeye Scad Whole">
-                        <div class="product-info">
-                            <h3>Bigeye Scad (Matangbaka Alt)</h3>
-                            <p class="scientific-name">Selar crumenophthalmus</p>
-                            <span class="product-tag">Whole Round</span>
-                        </div>
-                    </div>
-
-                    <div class="product-card">
-                        <img class="product-img" src="Frozen Tuna Steak (Thunnus albacares).jpg" alt="Frozen Tuna Steak">
-                        <div class="product-info">
-                            <h3>Tuna Steak</h3>
-                            <p class="scientific-name">Thunnus albacares</p>
-                            <span class="product-tag">Premium Bone-In</span>
+                    <div class="card-body">
+                        <h3>2. Full-Stack Websites (Frontend + Supabase)</h3>
+                        <p>Engineered for complex business operations, portals, and Higher ERP applications. Integrates custom frontend UI with Supabase PostgreSQL, Authentication, and dynamic API flows.</p>
+                        <div class="card-tags">
+                            <span class="tag tag-fullstack">Frontend + Backend</span>
+                            <span class="tag tag-supabase">Supabase ERP</span>
+                            <span class="tag tag-supabase">PostgreSQL</span>
+                            <span class="tag">Realtime Sync</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <div class="lightbox-modal" id="lightboxModal">
-        <span class="lightbox-close" id="lightboxClose">&times;</span>
-        <img class="lightbox-img" id="lightboxImg" src="" alt="Zoomed Seafood Asset View">
-        <div class="lightbox-hint">Double click anywhere or hit Esc to exit zoom</div>
-    </div>
-
-    <section class="testimonials reveal" id="testimonials">
-        <h2 style="margin-bottom: 35px;">What Our Partners Say</h2>
-        <div class="testimonials-container">
-            <div class="marquee-wrapper">
-                <div class="marquee-track">
-                    <div class="testimonial-card">
-                        <p>"The cold chain consistency is unmatched. Our salmon shipments arrive with absolutely zero micro-crystallization tissue breakdown."</p>
-                        <div class="testimonial-author">
-                            <span class="name">David Lim</span>
-                            <span class="company">Seafood Logistics Director, Apex Foods</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p>"JMP International has been our primary source for Golden Pomfret. Volume scalability is exceptional even during tough off-seasons."</p>
-                        <div class="testimonial-author">
-                            <span class="name">Maria Santos</span>
-                            <span class="company">Procurement Head, Hyatt Catering Group</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p>"Their adherence to BFAR and FDA legalities takes the compliance headache completely off our hands. Highly professional firm."</p>
-                        <div class="testimonial-author">
-                            <span class="name">Jonathan Vance</span>
-                            <span class="company">Compliance Officer, Global Maritime Imports</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p>"The Tuna Saku bars and portion cuts match exact weight specs perfectly. Minimizes processing waste in our kitchens significantly."</p>
-                        <div class="testimonial-author">
-                            <span class="name">Chef Kenji Sato</span>
-                            <span class="company">Executive Chef, Izakaya Hospitality</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p>"We purchase by the plastic bundle format monthly. Sizing counts are strictly uniform, and tracking numbers are always real-time."</p>
-                        <div class="testimonial-author">
-                            <span class="name">Elena Rostova</span>
-                            <span class="company">Supply Chain Manager, Nord Seafoods Wholesale</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="marquee-track" aria-hidden="true">
-                    <div class="testimonial-card">
-                        <p>"The cold chain consistency is unmatched. Our salmon shipments arrive with absolutely zero micro-crystallization tissue breakdown."</p>
-                        <div class="testimonial-author">
-                            <span class="name">David Lim</span>
-                            <span class="company">Seafood Logistics Director, Apex Foods</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p>"JMP International has been our primary source for Golden Pomfret. Volume scalability is exceptional even during tough off-seasons."</p>
-                        <div class="testimonial-author">
-                            <span class="name">Maria Santos</span>
-                            <span class="company">Procurement Head, Hyatt Catering Group</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p>"Their adherence to BFAR and FDA legalities takes the compliance headache completely off our hands. Highly professional firm."</p>
-                        <div class="testimonial-author">
-                            <span class="name">Jonathan Vance</span>
-                            <span class="company">Compliance Officer, Global Maritime Imports</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p>"The Tuna Saku bars and portion cuts match exact weight specs perfectly. Minimizes processing waste in our kitchens significantly."</p>
-                        <div class="testimonial-author">
-                            <span class="name">Chef Kenji Sato</span>
-                            <span class="company">Executive Chef, Izakaya Hospitality</span>
-                        </div>
-                    </div>
-                    <div class="testimonial-card">
-                        <p>"We purchase by the plastic bundle format monthly. Sizing counts are strictly uniform, and tracking numbers are always real-time."</p>
-                        <div class="testimonial-author">
-                            <span class="name">Elena Rostova</span>
-                            <span class="company">Supply Chain Manager, Nord Seafoods Wholesale</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="faq reveal" id="faq">
-        <h2>Frequently Asked Questions</h2>
-        <div class="faq-container">
+        <!-- FILTERABLE PROJECTS PORTFOLIO SECTION -->
+        <section id="projects">
+            <h2 class="section-title">Featured Projects & Repositories</h2>
             
-            <!-- Interactive Multi-level FAQ Chatbot -->
-            <div class="interactive-bot-card">
-                <div class="bot-header">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></svg>
-                    <div>
-                        <div class="bot-header-title">JMP Automated Product &amp; Trade Assistant</div>
-                        <div class="bot-header-subtitle"><span class="bot-status-dot"></span> Instant FAQ &amp; Product Info Flow</div>
+            <div class="portfolio-filters">
+                <button class="filter-btn active" onclick="filterProjects('all')">All Solutions</button>
+                <button class="filter-btn" onclick="filterProjects('frontend-type')">Frontend Only</button>
+                <button class="filter-btn" onclick="filterProjects('fullstack-type')">Full-Stack (Supabase)</button>
+            </div>
+
+            <div class="grid">
+                <div class="card project-item fullstack-type">
+                    <div class="card-image-wrap">
+                        <img src="https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=600&q=80" alt="Enterprise Operations ERP" class="card-image">
+                    </div>
+                    <div class="card-body">
+                        <h3>Enterprise Operations ERP Portal</h3>
+                        <p>Full-stack business portal integrated with Supabase PostgreSQL for employee records, analytics, and role permissions.</p>
+                        <div class="card-tags">
+                            <span class="tag tag-fullstack">Frontend + Backend</span>
+                            <span class="tag tag-supabase">Supabase PostgreSQL</span>
+                            <span class="tag tag-github">GitHub Repo</span>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="bot-window" id="chatWindow">
-                    <!-- Dynamic chat responses render here -->
-                </div>
-            </div>
 
-        </div>
-    </section>
-
-    <section class="contact reveal" id="contact">
-        <h2>Product Inquiries</h2>
-        <p class="subtitle">Connect with our trading desk for container-load pricing, freight logistics options, and specifications sheet requests.</p>
-        
-        <div class="contact-container">
-            <form action="#" method="POST" id="inquiryForm">
-                <div class="form-group">
-                    <label for="name">Customer Company Name / Full Name</label>
-                    <input type="text" id="name" name="name" required placeholder="Enter your business name">
-                </div>
-                <div class="form-group">
-                    <label for="email">Customer Business Email</label>
-                    <input type="email" id="email" name="email" required placeholder="buyer@company.com">
-                </div>
-                <div class="form-group">
-                    <label for="message">Frozen Inventory Volume Requirements (Per Box / Plastic Bundles)</label>
-                    <textarea id="message" name="message" rows="5" required placeholder="Specify preferred fish species, packing formats (e.g., individual box counts, grouped plastic wraps), requested target box/plastic totals, and delivery details..."></textarea>
-                </div>
-                <button type="submit">Submit Product Inquiry</button>
-            </form>
-        </div>
-    </section>
-
-    <footer>
-        <div class="footer-grid">
-            <div class="footer-col">
-                <h3>JMP International</h3>
-                <p>Est. 2022. Reliable international trading infrastructure specializing in premium frozen seafood logistics and scalable supply distribution channels.</p>
-            </div>
-            <div class="footer-col">
-                <h3>Trading Portfolio</h3>
-                <ul>
-                    <li><a href="#products">Premium Frozen Fish</a></li>
-                    <li><a href="#products">Crustaceans &amp; Cephalopods</a></li>
-                    <li><a href="#products">Tuna &amp; Salmon Selection</a></li>
-                    <li><a href="#products">Processed &amp; Dried Seafood</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h3>Corporate Links</h3>
-                <ul>
-                    <li><a href="#about">About Our Firm</a></li>
-                    <li><a href="#strengths">Core Infrastructure</a></li>
-                    <li><a href="#faq">Procurement Help / FAQ</a></li>
-                    <li><a href="login.html">Internal Employee Portal</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h3>Contact &amp; Hours</h3>
-                <div class="footer-contact-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                    <span>Gov. Pascual Ave, Malabon, 1485 Metro Manila</span>
-                </div>
-                <div class="footer-contact-item">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                    <a href="tel:09498610473">0949 861 0473</a>
-                </div>
-                <div class="footer-contact-item" style="margin-top: 18px; align-items: flex-start;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                    <div>
-                        <div class="hours-sub-item">
-                            <span class="hours-label">Office Hours</span>
-                            <span class="hours-value">Monday to Friday, 9:00 AM – 5:00 PM<br><span style="color:#64748b; font-size:0.8rem;">(Closed Weekends)</span></span>
+                <div class="card project-item frontend-type">
+                    <div class="card-image-wrap">
+                        <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=600&q=80" alt="Corporate Showcase Website" class="card-image">
+                    </div>
+                    <div class="card-body">
+                        <h3>Corporate Showcase Website</h3>
+                        <p>High-speed, frontend-only marketing website engineered with pure HTML/CSS and interactive JavaScript components.</p>
+                        <div class="card-tags">
+                            <span class="tag tag-frontend">Frontend Only</span>
+                            <span class="tag">Pure HTML/CSS</span>
+                            <span class="tag tag-github">GitHub Pages</span>
                         </div>
-                        <div class="hours-sub-item" style="margin-bottom: 0;">
-                            <span class="hours-label">Cold-Chain Operations</span>
-                            <span class="hours-value" style="color: #4ade80; font-weight: 600;">Open 24 / 7</span>
+                    </div>
+                </div>
+
+                <div class="card project-item fullstack-type">
+                    <div class="card-image-wrap">
+                        <img src="https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=600&q=80" alt="E-Commerce Supabase Web App" class="card-image">
+                    </div>
+                    <div class="card-body">
+                        <h3>Custom E-Commerce Store & Portal</h3>
+                        <p>High-speed custom storefront connected to cloud inventory tracking, user auth, and automated webhook workflows.</p>
+                        <div class="card-tags">
+                            <span class="tag tag-fullstack">Frontend + Backend</span>
+                            <span class="tag tag-supabase">Supabase DB</span>
+                            <span class="tag tag-github">GitHub Code</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 JMP INTERNATIONAL FISH TRADING. All Rights Reserved.</p>
-            <small>Global Cold-Chain Integrity • Monitored Customs Compliance Standards • Premium Wholesale Solutions</small>
-        </div>
-    </footer>
+        </section>
 
+        <!-- INTERACTIVE COST ESTIMATOR SECTION -->
+        <section id="calculator">
+            <h2 class="section-title">Interactive Scope & Cost Estimator</h2>
+
+            <div class="estimator-details">
+                <div class="estimator-info-card">
+                    <h3>💡 How The Estimator Works</h3>
+                    <p>Our real-time cost calculator calculates an investment baseline using your preferred website tier and selected functional modules. As you toggle choices, the price dynamically recalculates in real-time. Submitting the estimate auto-populates your selected scope directly into our inquiry form for a seamless consultation workflow.</p>
+                </div>
+
+                <div class="estimator-info-card backend-scope-card">
+                    <h3>⚙️ Backend Architecture Scope (Supabase + ERP)</h3>
+                    <ul>
+                        <li><strong>PostgreSQL Database Architecture:</strong> Schema design, relational tables, indexed foreign keys, and optimized query execution for enterprise records.</li>
+                        <li><strong>Authentication & Security (RLS):</strong> Secure user login/signup flows, JWT session handling, and granular Row Level Security (RLS) policies.</li>
+                        <li><strong>Higher ERP Sync & Edge Functions:</strong> Cloud serverless functions to process business logic, real-time data webhooks, and third-party API endpoints.</li>
+                        <li><strong>Cloud Storage & Asset Buckets:</strong> Managed Supabase Storage buckets with restricted access policies for user document uploads and media hosting.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="calculator-container">
+                <div>
+                    <div class="calc-group">
+                        <label>1. Choose Architecture Tier & Scope:</label>
+                        <div class="calc-options">
+                            <input type="radio" id="type1" name="projectType" value="15000" class="calc-radio" checked onchange="handleTypeChange()">
+                            <label for="type1" class="option-label">
+                                <strong>Frontend-Only Website</strong>
+                                <small>Pure HTML/CSS/JS, fast static layout & UI</small>
+                            </label>
+
+                            <input type="radio" id="type2" name="projectType" value="35000" class="calc-radio" onchange="handleTypeChange()">
+                            <label for="type2" class="option-label">
+                                <strong>Frontend + Supabase Backend</strong>
+                                <small>Full-Stack ERP application & cloud database</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- DYNAMIC MODULE GROUP -->
+                    <div class="calc-group" id="backendModulesGroup" style="display: none;">
+                        <label>2. Add Backend & Custom Feature Modules:</label>
+                        <div class="calc-options">
+                            <input type="checkbox" id="feat1" value="10000" class="calc-checkbox" onchange="calculateTotal()">
+                            <label for="feat1" class="option-label">
+                                <strong>Supabase Auth & RLS</strong>
+                                <small>User logins & security policies</small>
+                            </label>
+
+                            <input type="checkbox" id="feat2" value="12000" class="calc-checkbox" onchange="calculateTotal()">
+                            <label for="feat2" class="option-label">
+                                <strong>Higher ERP Relational Sync</strong>
+                                <small>PostgreSQL database tables & indexes</small>
+                            </label>
+
+                            <input type="checkbox" id="feat3" value="8000" class="calc-checkbox" onchange="calculateTotal()">
+                            <label for="feat3" class="option-label">
+                                <strong>Admin Management UI</strong>
+                                <small>CRUD interfaces & data tables</small>
+                            </label>
+
+                            <input type="checkbox" id="feat4" value="6000" class="calc-checkbox" onchange="calculateTotal()">
+                            <label for="feat4" class="option-label">
+                                <strong>Supabase Edge & Webhooks</strong>
+                                <small>Serverless functions & APIs</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="calc-summary">
+                    <div>
+                        <h3>Estimated Investment</h3>
+                        <div class="calc-price" id="totalPrice">₱15,000</div>
+                        <p>Includes complete source code, responsive mobile optimization, GitHub version control, and initial deployment setup.</p>
+                    </div>
+                    <button type="button" class="btn" onclick="applyEstimateToForm()">Inquire With This Estimate</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT SECTION -->
+        <section id="contact">
+            <h2 class="section-title">Contact Us</h2>
+            
+            <div class="contact-grid">
+                <div class="contact-info-card">
+                    <div class="info-item">
+                        <h4>Website & Domain</h4>
+                        <a href="http://www.jmcywebsolutions.com" target="_blank">www.jmcywebsolutions.com</a>
+                    </div>
+                    <div class="info-item">
+                        <h4>Company Details</h4>
+                        <a href="about-me.html">Learn More About Us &rarr;</a>
+                    </div>
+                    <div class="info-item">
+                        <h4>Direct Email</h4>
+                        <a href="mailto:jhamcyd@gmail.com">jhamcyd@gmail.com</a>
+                    </div>
+                    <div class="info-item">
+                        <h4>WhatsApp</h4>
+                        <a href="https://wa.me/639091297422" target="_blank">+63 909 129 7422</a>
+                    </div>
+                    <div class="info-item">
+                        <h4>Messenger Direct PM</h4>
+                        <a href="https://m.me/jmcywebsolutions2026" target="_blank" rel="noopener noreferrer">m.me/jmcywebsolutions2026 &rarr;</a>
+                    </div>
+                </div>
+
+                <div class="contact-container">
+                    <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">Ready to launch your frontend or full-stack web application? Send us your details below:</p>
+                    
+                    <form action="#" method="post" onsubmit="event.preventDefault(); alert('Thank you! Your inquiry has been sent to jhamcyd@gmail.com.');">
+                        <div>
+                            <input type="text" placeholder="Full Name" required>
+                        </div>
+                        <div>
+                            <input type="email" placeholder="Email Address" required>
+                        </div>
+                        <div>
+                            <select id="architectureSelect" required>
+                                <option value="">Select Website Type</option>
+                                <option value="Frontend-Only Website">1. Frontend-Only Website (Static HTML/CSS/JS)</option>
+                                <option value="Full-Stack Website">2. Full-Stack Website (Frontend + Supabase Backend)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <textarea id="messageInput" rows="5" placeholder="Tell us about your web project requirements..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn">Send Consultation Request</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- INTERACTIVE JAVASCRIPT LOGIC -->
     <script>
-        // Opening Intro Animation Dismissal
-        window.addEventListener('load', () => {
-            const introOverlay = document.getElementById('intro-overlay');
-            setTimeout(() => {
-                introOverlay.classList.add('fade-out');
-            }, 1000);
-        });
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebarNav');
+            sidebar.classList.toggle('open');
+            sidebar.classList.remove('nav-hidden');
+        }
 
-        // Header Shrink on Scroll Behavior
-        const header = document.getElementById('header');
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebarNav');
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+            }
+        }
+
+        /* AUTO HIDE NAVIGATION ON MOBILE WHEN SCROLLING DOWN */
+        let lastScrollTop = 0;
+        const mobileHeader = document.getElementById('mobileHeader');
+        const sidebarNav = document.getElementById('sidebarNav');
+
+        function handleMobileScroll() {
+            if (window.innerWidth > 768) return;
+
+            let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (currentScroll > lastScrollTop && currentScroll > 60) {
+                sidebarNav.classList.remove('open');
+                mobileHeader.classList.add('nav-hidden');
+                sidebarNav.classList.add('nav-hidden');
             } else {
-                header.classList.remove('scrolled');
+                mobileHeader.classList.remove('nav-hidden');
+                sidebarNav.classList.remove('nav-hidden');
             }
-        });
+            lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+        }
 
-        // IntersectionObserver for Reveal Animations on Scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+        window.addEventListener('scroll', handleMobileScroll);
+        window.addEventListener('touchmove', handleMobileScroll);
 
-        const observer = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('active');
+        function filterProjects(category) {
+            const buttons = document.querySelectorAll('.filter-btn');
+            const items = document.querySelectorAll('.project-item');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            items.forEach(item => {
+                if (category === 'all' || item.classList.contains(category)) {
+                    item.classList.remove('hide');
+                } else {
+                    item.classList.add('hide');
                 }
             });
-        }, observerOptions);
+        }
 
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        /* TOGGLE VISIBILITY OF BACKEND MODULES BASED ON ARCHITECTURE TIER */
+        function handleTypeChange() {
+            const isFrontendOnly = document.getElementById('type1').checked;
+            const backendGroup = document.getElementById('backendModulesGroup');
+            const checkboxes = document.querySelectorAll('.calc-checkbox');
 
-        // Reusable Carousel Helper Function
-        function createCarousel({ containerId, trackId, prevBtnId, nextBtnId, speed = 1.2 }) {
-            const container = document.getElementById(containerId);
-            const track = document.getElementById(trackId);
-            const prevBtn = document.getElementById(prevBtnId);
-            const nextBtn = document.getElementById(nextBtnId);
-
-            if (!container || !track) return;
-
-            let isDragging = false;
-            let startX;
-            let currentTranslate = 0;
-            let prevTranslate = 0;
-            let autoPlayInterval;
-
-            const getMaxScroll = () => container.clientWidth - track.scrollWidth;
-
-            function applyTranslate(withTransition = true) {
-                track.style.transition = withTransition ? 'transform 0.4s ease-out' : 'none';
-                track.style.transform = `translateX(${currentTranslate}px)`;
+            if (isFrontendOnly) {
+                backendGroup.style.display = 'none';
+                checkboxes.forEach(cb => {
+                    cb.checked = false;
+                });
+            } else {
+                backendGroup.style.display = 'block';
             }
 
-            function startAutoPlay() {
-                const modal = document.getElementById('lightboxModal');
-                if (modal && modal.classList.contains('active')) return;
-                stopAutoPlay();
-                autoPlayInterval = setInterval(() => {
-                    if (isDragging) return;
-                    currentTranslate -= speed;
-                    const maxScroll = getMaxScroll();
-                    if (currentTranslate <= maxScroll) {
-                        currentTranslate = 0;
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let total = 0;
+
+            const selectedType = document.querySelector('input[name="projectType"]:checked');
+            if (selectedType) {
+                total += parseInt(selectedType.value);
+            }
+
+            const checkboxes = document.querySelectorAll('.calc-checkbox:checked');
+            checkboxes.forEach(cb => {
+                total += parseInt(cb.value);
+            });
+
+            document.getElementById('totalPrice').innerText = '₱' + total.toLocaleString();
+            return total;
+        }
+
+        function applyEstimateToForm() {
+            const total = calculateTotal();
+            const selectedType = document.querySelector('input[name="projectType"]:checked');
+            const typeLabel = selectedType ? selectedType.nextElementSibling.querySelector('strong').innerText : "Custom Project";
+
+            const archSelect = document.getElementById('architectureSelect');
+            if (typeLabel.includes("Frontend-Only")) {
+                archSelect.value = "Frontend-Only Website";
+            } else {
+                archSelect.value = "Full-Stack Website";
+            }
+
+            document.getElementById('messageInput').value = `Hello JMCY Web Solutions,\n\nI calculated an estimated quote of ₱${total.toLocaleString()} for a ${typeLabel}. I would like to discuss implementing this project using your custom HTML frontend and Supabase backend services.`;
+
+            document.querySelector('#contact').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('nav a');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const fullHeight = document.documentElement.scrollHeight;
+
+            if (scrollPosition < 100) {
+                current = 'about';
+            } else if (scrollPosition + windowHeight >= fullHeight - 50) {
+                current = sections[sections.length - 1].getAttribute('id');
+            } else {
+                sections.forEach(section => {
+                    const rect = section.getBoundingClientRect();
+                    if (rect.top <= windowHeight * 0.35 && rect.bottom >= 100) {
+                        current = section.getAttribute('id');
                     }
-                    applyTranslate(false);
-                    prevTranslate = currentTranslate;
-                }, 30);
-            }
-
-            function stopAutoPlay() {
-                clearInterval(autoPlayInterval);
-            }
-
-            if (nextBtn) {
-                nextBtn.addEventListener('click', () => {
-                    let step = container.clientWidth * 0.4;
-                    currentTranslate = Math.max(prevTranslate - step, getMaxScroll());
-                    prevTranslate = currentTranslate;
-                    applyTranslate(true);
                 });
             }
 
-            if (prevBtn) {
-                prevBtn.addEventListener('click', () => {
-                    let step = container.clientWidth * 0.4;
-                    currentTranslate = Math.min(prevTranslate + step, 0);
-                    prevTranslate = currentTranslate;
-                    applyTranslate(true);
-                });
-            }
-
-            container.addEventListener('mouseenter', stopAutoPlay);
-            container.addEventListener('mouseleave', startAutoPlay);
-
-            container.addEventListener('mousedown', (e) => {
-                isDragging = true;
-                startX = e.pageX - currentTranslate;
-                stopAutoPlay();
-            });
-
-            window.addEventListener('mouseup', () => {
-                if (!isDragging) return;
-                isDragging = false;
-                if (currentTranslate > 0) currentTranslate = 0;
-                const maxScroll = getMaxScroll();
-                if (currentTranslate < maxScroll) currentTranslate = maxScroll;
-                prevTranslate = currentTranslate;
-                applyTranslate(true);
-                startAutoPlay();
-            });
-
-            container.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                const x = e.pageX;
-                currentTranslate = x - startX;
-                applyTranslate(false);
-            });
-
-            container.addEventListener('touchstart', (e) => {
-                isDragging = true;
-                startX = e.touches[0].pageX - currentTranslate;
-                stopAutoPlay();
-            }, {passive: true});
-
-            container.addEventListener('touchend', () => {
-                isDragging = false;
-                if (currentTranslate > 0) currentTranslate = 0;
-                const maxScroll = getMaxScroll();
-                if (currentTranslate < maxScroll) currentTranslate = maxScroll;
-                prevTranslate = currentTranslate;
-                applyTranslate(true);
-                startAutoPlay();
-            });
-
-            container.addEventListener('touchmove', (e) => {
-                if (!isDragging) return;
-                const x = e.touches[0].pageX;
-                currentTranslate = x - startX;
-                applyTranslate(false);
-            }, {passive: true});
-
-            startAutoPlay();
-
-            return { stopAutoPlay, startAutoPlay };
-        }
-
-        // Initialize Strengths Capabilities Carousel
-        const strengthsCarousel = createCarousel({
-            containerId: 'strengthsContainer',
-            trackId: 'strengthsTrack',
-            prevBtnId: 'prevStrength',
-            nextBtnId: 'nextStrength',
-            speed: 1.0
-        });
-
-        // Initialize Product Portfolio Carousel
-        const productCarousel = createCarousel({
-            containerId: 'sliderContainer',
-            trackId: 'sliderTrack',
-            prevBtnId: 'prevSlide',
-            nextBtnId: 'nextSlide',
-            speed: 1.2
-        });
-
-        // Lightbox Zoom Handler
-        const lightboxModal = document.getElementById('lightboxModal');
-        const lightboxImg = document.getElementById('lightboxImg');
-        const lightboxClose = document.getElementById('lightboxClose');
-        let lastTap = 0;
-
-        function openZoom(card) {
-            const imgElement = card.querySelector('.product-img');
-            if (imgElement) {
-                if (productCarousel) productCarousel.stopAutoPlay();
-                lightboxImg.src = imgElement.src;
-                lightboxModal.classList.add('active');
-            }
-        }
-
-        function setupCardEvents() {
-            const productCards = document.querySelectorAll('.product-card');
-            productCards.forEach(card => {
-                card.addEventListener('mouseenter', () => {
-                    if (productCarousel) productCarousel.stopAutoPlay();
-                });
-                
-                card.addEventListener('dblclick', (e) => {
-                    e.preventDefault();
-                    openZoom(card);
-                });
-
-                card.addEventListener('touchend', (e) => {
-                    const currentTime = new Date().getTime();
-                    const tapLength = currentTime - lastTap;
-                    if (tapLength < 300 && tapLength > 0) {
-                        e.preventDefault();
-                        openZoom(card);
+            if (current) {
+                navLinks.forEach(a => {
+                    a.classList.remove('active');
+                    if (a.getAttribute('href') === `#${current}`) {
+                        a.classList.add('active');
                     }
-                    lastTap = currentTime;
                 });
-            });
-        }
-
-        function closeZoom() {
-            lightboxModal.classList.remove('active');
-            if (productCarousel) productCarousel.startAutoPlay();
-        }
-
-        lightboxClose.addEventListener('click', closeZoom);
-        lightboxModal.addEventListener('click', (e) => {
-            if (e.target !== lightboxImg) {
-                closeZoom();
-            }
-        });
-        lightboxModal.addEventListener('dblclick', closeZoom);
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && lightboxModal.classList.contains('active')) {
-                closeZoom();
             }
         });
 
-        setupCardEvents();
-
-        /* ==========================================================================
-           Interactive Multi-level FAQ Chatbot Engine
-           ========================================================================== */
-        const productDatabase = [
-            { id: 1, name: "Golden Pomfret", image: "Frozen Golden Pomfret Whole Round (Trachinotus spp.).jpg", scientific: "Trachinotus spp.", tag: "Whole Round", desc: "Flash-frozen whole round Golden Pomfret with clean flavor, rich texture, and firm flesh ideal for roasting, steaming, or frying." },
-            { id: 2, name: "Common Scad (Lian)", image: "Frozen Lian - Common Scad Whole (Trachurus trachurus).jpg", scientific: "Trachurus trachurus", tag: "Whole", desc: "Whole fresh-caught Common Scad packed in commercial bulk. High oil content and rich pelagic flavor profile." },
-            { id: 3, name: "Nobashi Shrimp", image: "Frozen Nobashi Shrimp.jpg", scientific: "Penaeidae", tag: "Stretched / Peeled", desc: "Precisely stretched, peeled, and tail-on Nobashi Shrimp. Engineered specifically for seamless tempura prep and food service operations." },
-            { id: 4, name: "Pangasius Fillet", image: "Frozen Pangasius Fillet (Pangasianodon hypophtalmus).jpg", scientific: "Pangasianodon hypophthalmus", tag: "Fillet / Boneless", desc: "Skinless, boneless, well-trimmed Pangasius white fish fillets. High moisture lock, mild flavor, perfect for high-volume commercial frying." },
-            { id: 5, name: "Peeled Shrimp", image: "Frozen Peeled Shrimp (Penaeus vannamei).jpg", scientific: "Penaeus vannamei", tag: "PD / PUD", desc: "Peeled and deveined (PD / PUD) Pacific White Shrimp. Flash-frozen IQF to prevent clumping and retain natural sweetness." },
-            { id: 6, name: "Round Scad", image: "Frozen Round Scad (Trachurus trachurus).jpg", scientific: "Trachurus trachurus", tag: "Whole Round", desc: "Standard commercial grade whole round Scad. Sustained cold chain ensures whole structure integrity upon delivery." },
-            { id: 7, name: "Salmon Belly", image: "Frozen Salmon Belly (Salmo salar).jpg", scientific: "Salmo salar", tag: "Premium Cuts", desc: "Rich, fatty Atlantic Salmon belly strips. Exceptional omega-3 density and soft texture suitable for grilling, sushi, or broth." },
-            { id: 8, name: "Salmon Head", image: "Frozen Salmon Head (Salmo salar).jpg", scientific: "Salmo salar", tag: "Whole Head", desc: "Cleanly severed whole salmon heads. High collagen content, popular in Asian culinary applications, soups, and stocks." },
-            { id: 9, name: "Seabass", image: "Frozen Seabass Whole Round (Dicentrarchus spp.).jpg", scientific: "Dicentrarchus spp.", tag: "Whole Round", desc: "Premium wild/farmed whole round Seabass. Tender white meat with clean, mild taste profile favored in hotel dining." },
-            { id: 10, name: "Mitre Squid", image: "Frozen Squid Whole (Uroteusthis chinensis).jpg", scientific: "Uroteusthis chinensis", tag: "Whole", desc: "Whole Mitre Squid harvested at prime size. Retains tender muscular wall density without rubbery texture after processing." },
-            { id: 11, name: "Illex Squid", image: "Frozen Squid Whole Round (Illex illecebrosus).jpg", scientific: "Illex illecebrosus", tag: "Whole Round", desc: "Deep-sea Illex Squid whole round. High yield ratio, great for commercial ring extraction or whole grilling specs." },
-            { id: 12, name: "Japanese Flying Squid", image: "Frozen Squid Whole Round (Todarodes Pacificus).jpg", scientific: "Todarodes pacificus", tag: "Whole Round", desc: "High-grade Japanese Flying Squid whole round. Renowned for rich ink retention and thick muscular tissue." },
-            { id: 13, name: "Yellowfin Tuna Belly", image: "Frozen Tuna Belly (Thunnus Albacares).jpg", scientific: "Thunnus albacares", tag: "Premium Commercial", desc: "High-fat Yellowfin Tuna belly slabs. Vacuum-sealed to eliminate freezer burn and maintain dark red flesh color." },
-            { id: 14, name: "Tuna Cubes", image: "Frozen Tuna Cubes (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "Pre-Cut / Poke Ready", desc: "Uniform hand-cut Yellowfin Tuna cubes. Pre-portioned to speed up kitchen preparation for Poke bowls, skewers, or tartare." },
-            { id: 15, name: "Tuna Kama (Collar)", image: "Frozen Tuna Kama (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "Wholesale Cut", desc: "Succulent Yellowfin Tuna collar cut (Kama). Deeply flavorful juicy meat around the gill structure, excellent for grilling." },
-            { id: 16, name: "Tuna Portion Cut", image: "Frozen Tuna Portion Cut (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "Exact Spec Cuts", desc: "Customized weight-calibrated Yellowfin Tuna portions. Uniform thickness ensures predictable cooking times." },
-            { id: 17, name: "Tuna Saku Bar", image: "Frozen Tuna Saku Bar (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "AAA Grade / Sashimi Ready", desc: "AAA Grade center-cut Saku blocks. Carbon-monoxide treated or natural frozen to retain vibrant red hue, ready for sashimi slicing." },
-            { id: 18, name: "Yellowtail Scad (Marot)", image: "Frozen YellowTail Scad Whole (Atule Mate).jpg", scientific: "Atule mate", tag: "Whole", desc: "Whole Yellowtail Scad (Marot). Firm flesh and rich coastal flavor, processed to eliminate scale loss during shipping." },
-            { id: 19, name: "Smooth-Tailed Trevally", image: "Frozen Yellowtail Scad Whole (Selaroides leptolepis).jpg", scientific: "Selaroides leptolepis", tag: "Whole", desc: "Commercial whole Smooth-Tailed Trevally. Balanced fat content and sturdy body shape, ideal for bulk frying and smoking." },
-            { id: 20, name: "Japanese Amberjack (Buri)", image: "Frozen Yellowtail Whole Round (Seriola quinqeradiata).jpg", scientific: "Seriola quinqueradiata", tag: "Whole Round", desc: "Whole round Japanese Amberjack (Buri). High fat layer under skin, premium choice for winter culinary dishes and grilling." },
-            { id: 21, name: "Bigeye Scad (Matangbaka)", image: "Frozen Bigeye Scad Whole (Sela crumenophthalmus).jpg", scientific: "Selar crumenophthalmus", tag: "Whole Round", desc: "Popular Matangbaka species whole round. Fast-frozen post harvest to preserve pristine eye clarity and skin bloom." },
-            { id: 22, name: "Moonfish (Chabita)", image: "Frozen Moonfish Whole (Mene maculata).jpg", scientific: "Mene maculata", tag: "Whole", desc: "Whole Moonfish (Chabita). Flat laterally compressed body with delicate white meat for specialty seafood dishes." },
-            { id: 23, name: "Bigeye Scad (Matangbaka Alt)", image: "Frozen Bigeye Scad Whole (Selar crumenophthalmus).jpg", scientific: "Selar crumenophthalmus", tag: "Whole Round", desc: "Secondary size tier Bigeye Scad whole round tailored for specific catering budget brackets." },
-            { id: 24, name: "Tuna Steak", image: "Frozen Tuna Steak (Thunnus albacares).jpg", scientific: "Thunnus albacares", tag: "Premium Bone-In", desc: "Cross-cut bone-in Yellowfin Tuna steaks. Excellent structural holding power during high-heat searing and pan grilling." }
-        ];
-
-        const chatWindow = document.getElementById('chatWindow');
-
-        function appendBotMessage(htmlContent) {
-            const bubble = document.createElement('div');
-            bubble.className = 'chat-bubble bot';
-            bubble.innerHTML = htmlContent;
-            chatWindow.appendChild(bubble);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        function appendUserMessage(text) {
-            const bubble = document.createElement('div');
-            bubble.className = 'chat-bubble user';
-            bubble.innerText = text;
-            chatWindow.appendChild(bubble);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        function renderMainMenu() {
-            appendBotMessage(`
-                👋 <strong>Hello! Welcome to JMP International Fish Trading!</strong><br>
-                How can we assist your business today? Click an option below:
-                <div class="bot-options-grid" style="grid-template-columns: 1fr; margin-top: 12px;">
-                    <button class="bot-btn" onclick="showProductList()">📦 View Our Product Catalog (24 Items)</button>
-                    <button class="bot-btn" onclick="showShippingInfo()">🚚 Cold Chain &amp; Delivery Logistics</button>
-                    <button class="bot-btn" onclick="showComplianceInfo()">🛡️ Import &amp; BFAR Compliance</button>
-                </div>
-            `);
-        }
-
-        function showProductList() {
-            appendUserMessage("📦 Our Products");
-            
-            let buttonsHtml = '<div class="bot-options-grid">';
-            productDatabase.forEach(item => {
-                buttonsHtml += `<button class="bot-btn" onclick="showProductDetails(${item.id})">🐟 ${item.name}</button>`;
-            });
-            buttonsHtml += '</div>';
-
-            appendBotMessage(`
-                Here is our current inventory lineup! Select any seafood item below to inspect specs and details:
-                ${buttonsHtml}
-            `);
-        }
-
-        function showProductDetails(id) {
-            const product = productDatabase.find(p => p.id === id);
-            if (!product) return;
-
-            appendUserMessage(`Selected: ${product.name}`);
-
-            appendBotMessage(`
-                📦 <strong>${product.name} Specifications</strong><br>
-                <img class="bot-product-preview" src="${product.image}" alt="${product.name}">
-                • <strong>Scientific Name:</strong> <em>${product.scientific}</em><br>
-                • <strong>Cut / Specification:</strong> <span class="product-tag" style="display:inline-block; margin-top:4px;">${product.tag}</span><br>
-                • <strong>Overview:</strong> ${product.desc}<br>
-                • <strong>Quality Guarantee:</strong> 100% Cold-Chain Maintained (-18°C or below)<br><br>
-                👇 <strong>What would you like to do next?</strong>
-                <button class="bot-btn bot-btn-primary" onclick="redirectToSalesAgent('${product.name}')">💬 Get Live Price &amp; Connect to Sales Desk</button>
-                <button class="bot-btn bot-btn-secondary" onclick="showProductList()">🔄 Back to Product List</button>
-            `);
-        }
-
-        function redirectToSalesAgent(productName) {
-            appendUserMessage(`Requesting pricing for: ${productName}`);
-
-            appendBotMessage(`
-                👤 <strong>Connecting you to a Real Sales Specialist...</strong><br>
-                Because wholesale container and bundle pricing fluctuates based on global market volume, freight rates, and size counts, our sales team handles pricing directly to guarantee maximum accuracy!
-                <br><br>
-                👇 <em>We are redirecting you down to our direct inquiry form...</em>
-            `);
-
-            setTimeout(() => {
-                const messageField = document.getElementById('message');
-                if (messageField) {
-                    messageField.value = `Hello JMP Sales Desk, I am requesting live container/bundle pricing and specs sheet for: ${productName}. Please get back to me.`;
-                }
-                const contactSection = document.getElementById('contact');
-                if (contactSection) {
-                    contactSection.scrollIntoView({ behavior: 'smooth' });
-                }
-            }, 1200);
-        }
-
-        function showShippingInfo() {
-            appendUserMessage("🚚 Cold Chain & Delivery Logistics");
-            appendBotMessage(`
-                🚚 <strong>Logistics & Distribution Information</strong><br>
-                • <strong>Office Address:</strong> Gov. Pascual Ave, Malabon, Metro Manila<br>
-                • <strong>Distribution Hubs:</strong> 4 Cold Storage Facilities<br>
-                • <strong>Cold Operations:</strong> 24 / 7 Fleet Dispatch & Temperature Monitoring<br>
-                • <strong>Contact Hotline:</strong> <a href="tel:09498610473" style="color:#0b2545; font-weight:700;">0949 861 0473</a><br>
-                • <strong>Packaging Formats:</strong> Supplied per <strong>Box</strong> or <strong>Plastic Bundle Format</strong>.<br><br>
-                👇 <strong>Select an FAQ topic below for details:</strong>
-                <div class="bot-options-grid" style="grid-template-columns: 1fr; margin-top: 10px;">
-                    <button class="bot-btn" onclick="showStorageFacilitiesInfo()">❄️ Storage Facilities</button>
-                    <button class="bot-btn bot-btn-secondary" onclick="resetBot()">🏠 Back to Main Menu</button>
-                </div>
-            `);
-        }
-
-        function showStorageFacilitiesInfo() {
-            appendUserMessage("❄️ Storage Facilities");
-            appendBotMessage(`
-                ❄️ <strong>Storage Infrastructure</strong><br>
-                
-               <br><strong>Where are your delivery hubs located?</strong><br>
-                While our main office is located in Malabon, Metro Manila, our product deliveries and order fulfillments are handled through our four strategic cold storage facilities:<br>
-                • VVS Cold Storage &amp; Processing Plant Corp.<br> - Address: 227 C3 Road Corner, N Bay Blvd, Navotas, Metro Manila<br><br>
-                • Hightower Storage &amp; Trading Centre, Inc.<br>- Address: 502-A Carlos Palanca St., Quiapo, Manila, 1001 Metro Manila<br><br>
-                • Polaris Cold Chain Solutions<br> - Address: 37, NBBS Kaunlaran, Navotas, 1485 Metro Manila<br><br>
-                • Eisberg Cold Storage<br> - Address: South Caloocan, Metro Manila<br><br>
-                <strong>Can I pick up my order directly from the delivery hubs?</strong><br>
-                Pickup availability depends on your order and which facility your items are located in. Please contact our support team before heading out so we can confirm item availability and direct you to the correct cold storage hub.<br><br>
-                <button class="bot-btn bot-btn-secondary" onclick="showShippingInfo()">⬅️ Back to Logistics FAQ</button>
-            `);
-        }
-
-        function showComplianceInfo() {
-            appendUserMessage("🛡️ Import & BFAR Compliance");
-            appendBotMessage(`
-                🛡️ <strong>Regulatory Standards &amp; BFAR Accreditation</strong><br>
-                All JMP International shipments fully conform to domestic BFAR (Bureau of Fisheries and Aquatic Resources) and FDA rules alongside international HACCP protocols.<br><br>
-                <strong>Official BFAR Accredited Importers List (Including JMP International Fish Trading):</strong><br>
-                <img class="bot-product-preview" src="1000018477.jpg" alt="BFAR Accredited Importers Document"><br>
-                📄 <a href="https://www.bfar.da.gov.ph/wp-content/uploads/2025/12/List-of-Accredited-Importers-under-FAOs-195-221-and-233-as-of-November-30-2025.pdf" target="_blank" class="chat-doc-link">Click here to open the full official BFAR Accredited Importers PDF</a><br><br>
-                <button class="bot-btn bot-btn-secondary" onclick="resetBot()">🏠 Back to Main Menu</button>
-            `);
-        }
-
-        function resetBot() {
-            chatWindow.innerHTML = '';
-            renderMainMenu();
-        }
-
-        // Initialize Bot on Page Load
-        renderMainMenu();
+        document.addEventListener('DOMContentLoaded', handleTypeChange);
     </script>
 </body>
 </html>
