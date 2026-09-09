@@ -361,7 +361,6 @@
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8"
         );
 
-        // "Descriptions" table removed
         const ALL_TABLES = [
             "active_document_locks", "employee_201_docs",
             "imported_shipment_docs", "inventory", "profiles",
@@ -479,6 +478,37 @@
             document.querySelectorAll('.action-btn').forEach(btn => btn.disabled = disabled);
         }
 
+        /* --- HELPER: PAGINATED FETCH FOR UNLIMITED ROWS --- */
+        async function fetchAllRows(client, table) {
+            let allRows = [];
+            let page = 0;
+            const pageSize = 1000;
+            let keepFetching = true;
+
+            while (keepFetching) {
+                const { data, error } = await client
+                    .from(table)
+                    .select('*')
+                    .range(page * pageSize, (page + 1) * pageSize - 1);
+
+                if (error) {
+                    log(`⚠️ Error reading '${table}': ${error.message}`);
+                    break;
+                }
+
+                if (data && data.length > 0) {
+                    allRows = allRows.concat(data);
+                }
+
+                if (!data || data.length < pageSize) {
+                    keepFetching = false;
+                } else {
+                    page++;
+                }
+            }
+            return allRows;
+        }
+
         /* --- RESTORATION PACKAGE GENERATOR --- */
         async function backupRestorePackage(includeDropTable = false) {
             resetLog("Initializing SQL Backup Task...");
@@ -509,20 +539,15 @@
             for (const table of tables) {
                 log(`Processing '${table}'...`);
 
-                // Fetch table metadata (columns, data types, and default values) from PostgreSQL schema view
-                const { data: columnsInfo, error: colError } = await client
+                // Fetch table metadata
+                const { data: columnsInfo } = await client
                     .from('information_schema.columns')
                     .select('column_name, data_type, column_default, is_nullable')
                     .eq('table_schema', 'public')
                     .eq('table_name', table);
 
-                // Fetch table rows
-                const { data: rows, error } = await client.from(table).select('*');
-
-                if (error) {
-                    log(`⚠️ Error reading '${table}': ${error.message}`);
-                    continue;
-                }
+                // Fetch all table rows using pagination helper
+                const rows = await fetchAllRows(client, table);
 
                 masterSql += `-- ----------------------------------------------------\n`;
                 masterSql += `-- TABLE: public."${table}"\n`;
@@ -535,20 +560,14 @@
                 masterSql += `CREATE TABLE IF NOT EXISTS public."${table}" (\n`;
 
                 if (columnsInfo && columnsInfo.length > 0) {
-                    // Generates schema with column name, data type, and default value if present
                     const columnDefs = columnsInfo.map(col => {
                         let def = `  "${col.column_name}" ${col.data_type.toUpperCase()}`;
-                        if (col.column_default !== null) {
-                            def += ` DEFAULT ${col.column_default}`;
-                        }
-                        if (col.is_nullable === 'NO') {
-                            def += ` NOT NULL`;
-                        }
+                        if (col.column_default !== null) def += ` DEFAULT ${col.column_default}`;
+                        if (col.is_nullable === 'NO') def += ` NOT NULL`;
                         return def;
                     });
                     masterSql += columnDefs.join(',\n');
                 } else if (rows.length > 0) {
-                    // Fallback inferring types from data rows if information_schema access is restricted
                     const cols = Object.keys(rows[0]);
                     masterSql += cols.map(c => {
                         const sampleVal = rows[0][c];
@@ -573,7 +592,7 @@
                         const values = Object.values(row).map(v => {
                             if (v === null) return 'NULL';
                             if (typeof v === 'boolean' || typeof v === 'number') return v;
-                            if (typeof v === 'object') return `'${JSON.stringify(v).replace(/'/g, "''")}'`;
+                            if (typeof v === 'object') return `'${JSON.stringify(v).replace(/'/g, "''")}'::jsonb`;
                             return `'${String(v).replace(/'/g, "''")}'`;
                         }).join(', ');
                         masterSql += `INSERT INTO public."${table}" (${columns}) VALUES (${values});\n`;
@@ -627,12 +646,7 @@
 
             for (const table of tables) {
                 log(`Exporting table '${table}'...`);
-                const { data, error } = await client.from(table).select('*');
-
-                if (error) {
-                    log(`⚠️ Error reading '${table}': ${error.message}`);
-                    continue;
-                }
+                const data = await fetchAllRows(client, table);
 
                 const sheetName = table.length > 30 ? table.substring(0, 30) : table;
                 const worksheet = data.length > 0 ? XLSX.utils.json_to_sheet(data) : XLSX.utils.json_to_sheet([{ status: "Table is empty" }]);
