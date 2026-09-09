@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Uploaded Invoices Viewer | JMP HQ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- SheetJS Library for Excel exporting capability -->
@@ -83,7 +83,7 @@
             gap: 10px; 
             width: 100%; 
             padding-bottom: 2px; 
-            flex-wrap: nowrap; /* Prevent wrapping for desktop layout */
+            flex-wrap: nowrap;
             overflow-x: auto;
         }
 
@@ -100,7 +100,6 @@
             white-space: nowrap; 
             position: relative;
             overflow: hidden;
-            /* Smooth animations on hover/focus */
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -122,9 +121,25 @@
             box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
         }
 
-        /* Content Workspace Layout */
-        .main-content { padding: 40px; max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px; }
-        .content-card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        /* --- DASHBOARD CONTENT CONTAINER WIDTH MATCH --- */
+        .main-content { 
+            padding: 30px 24px; 
+            max-width: 1400px; 
+            width: 100%;
+            margin: 0 auto; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 25px; 
+        }
+
+        .content-card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); 
+            width: 100%;
+        }
         
         .content-card h3 { font-size: 1.25rem; color: #0f172a; font-weight: 700; margin-bottom: 6px; }
         .content-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 15px; }
@@ -203,6 +218,7 @@
         .modal-btn:hover { background: #11355e; }
 
         @media (max-width: 768px) {
+            .main-content { padding: 16px 12px; }
             .table-header-wrapper { flex-direction: column; align-items: flex-start; gap: 12px; }
             .search-box-container { width: 100%; flex-wrap: wrap; }
             .combobox-container { width: 100%; }
@@ -219,7 +235,7 @@
         </div>
     </div>
 
-    <!-- UPDATED NAVBAR MATCHING DASHBOARD.HTML -->
+    <!-- NAVBAR MATCHING DASHBOARD.HTML -->
     <nav class="navbar">
         <div class="top-row">
             <div class="nav-title">JMP INTERNATIONAL FISH TRADING</div>
@@ -248,7 +264,6 @@
             <div class="table-header-wrapper">
                 <h4>Uploaded Invoice Ledger Data</h4>
                 <div class="search-box-container">
-                    <!-- Searchable Combobox Element Structure Replace Native Selection -->
                     <div class="combobox-container" id="spsicComboboxWrapper">
                         <input type="text" id="comboboxInputField" class="combobox-input" placeholder="-- Select SPSIC Number --" autocomplete="off" onclick="toggleComboboxDropdown(true)" oninput="filterComboboxOptions()">
                         <button type="button" class="combobox-toggle-btn">▼</button>
@@ -257,10 +272,8 @@
                     
                     <button type="button" class="btn-action clear-filter" onclick="resetSearchFilter()">Reset</button>
                     
-                    <!-- Added Excel Export Button Component -->
                     <button type="button" id="exportExcelBtn" class="btn-action export-excel" onclick="exportToExcel()" disabled>Export Excel</button>
                     
-                    <!-- Back navigation button embedded seamlessly into local toolbar container -->
                     <button type="button" class="btn-action" style="background-color: #475569;" onclick="verifyNavigationPrivilege('sales_invoice_access', 'sales-invoice.html')">← Back to Processing</button>
                 </div>
             </div>
@@ -322,8 +335,8 @@
         let workingFilteredDataset = [];
         let isSearchPerformed = false; 
         
-        let uniqueSpsicList = []; // Array tracking available choices inside Combobox
-        let activeComboboxValue = ""; // State tracking actual validated selection value
+        let uniqueSpsicList = []; 
+        let activeComboboxValue = ""; 
         
         let selectedRecordIds = new Set();
         
@@ -365,21 +378,18 @@
                 return;
             }
 
-            await fetchLedgerDataset(true); // Awaited dataset fetch
+            await fetchLedgerDataset(true);
             populateSpsicComboboxData(); 
             
-            // Handle close action on click out of workspace combobox container boundaries
             document.addEventListener('click', function(e) {
                 const container = document.getElementById('spsicComboboxWrapper');
                 if (!container.contains(e.target)) {
                     toggleComboboxDropdown(false);
-                    // Reset input view if user typed something but left without explicit option selection
                     const inputField = document.getElementById('comboboxInputField');
                     inputField.value = activeComboboxValue || "";
                 }
             });
 
-            // Check for passed SPSIC via URL parameters from sales-invoice.html
             const urlParams = new URLSearchParams(window.location.search);
             const incomingSpsic = urlParams.get('spsic');
             if (incomingSpsic) {
@@ -387,7 +397,6 @@
             }
         }
 
-        // Extracts unique spsic numbers and updates cache array values
         function populateSpsicComboboxData() {
             const filteredForCompleted = originalLedgerDataset.filter(item => {
                 return String(item.status || '').toUpperCase().trim() === 'DONE / COMPLETE';
@@ -401,7 +410,6 @@
             renderComboboxDropdownOptions(uniqueSpsicList);
         }
 
-        // Renders visual option list within custom combobox dropdown block
         function renderComboboxDropdownOptions(itemsList) {
             const dropdown = document.getElementById('comboboxDropdownList');
             dropdown.innerHTML = '';
@@ -465,7 +473,6 @@
                 renderInvoiceTable();
             } else {
                 if (isSearchPerformed && activeComboboxValue) {
-                    // Filter match data entries and apply natural numeric alphanumeric sort sequencing onto "REF NUMBER"
                     workingFilteredDataset = originalLedgerDataset
                         .filter(item => 
                             (item.spsic_number || '') === activeComboboxValue && (String(item.status || '').toUpperCase().trim() === 'DONE / COMPLETE')
@@ -482,7 +489,6 @@
             document.getElementById('accessBlockerModal').classList.add('is-visible');
         }
 
-        /* --- Row Highlight Controls --- */
         function handleRowClick(event, recordId) {
             if (!selectedRecordIds.has(recordId)) {
                 selectedRecordIds.add(recordId);
@@ -590,7 +596,6 @@
                 isSearchPerformed = false;
             } else {
                 isSearchPerformed = true;
-                // Applies natural numeric alphanumeric sorting sequence structures based directly onto "REF NUMBER"
                 workingFilteredDataset = originalLedgerDataset
                     .filter(item => 
                         (item.spsic_number || '') === activeComboboxValue && (String(item.status || '').toUpperCase().trim() === 'DONE / COMPLETE')
@@ -620,7 +625,6 @@
             }
         }
 
-        /* --- Custom Excel Export Logic --- */
         function exportToExcel() {
             if (!workingFilteredDataset || workingFilteredDataset.length === 0) {
                 alert("No data available to export.");
@@ -630,16 +634,14 @@
             const currentSpsic = workingFilteredDataset[0].spsic_number || 'N/A';
             const currentCommodity = workingFilteredDataset[0].commodity || 'N/A';
 
-            // Constructing row matrix manually to respect rows 1, 3, 4, 5 structures perfectly
             const matrixData = [
-                ["JMP INTERNATIONAL FISH TRADING"],                      // Row 1
-                [],                                                     // Row 2 (Blank space line)
-                ["SPSIC Reference:", currentSpsic],                     // Row 3
-                ["Commodity Reference:", currentCommodity],             // Row 4
-                ["#", "Customer", "Date", "Quantity", "Price (PHP)", "Amount (PHP)", "Ref Number", "Remarks"] // Row 5 (Headers)
+                ["JMP INTERNATIONAL FISH TRADING"],
+                [],
+                ["SPSIC Reference:", currentSpsic],
+                ["Commodity Reference:", currentCommodity],
+                ["#", "Customer", "Date", "Quantity", "Price (PHP)", "Amount (PHP)", "Ref Number", "Remarks"]
             ];
 
-            // Loop and add database ledger values starting from structural dynamic Row 6
             workingFilteredDataset.forEach((item, index) => {
                 matrixData.push([
                     index + 1,
@@ -653,14 +655,11 @@
                 ]);
             });
 
-            // Workbook generation construction using SheetJS library
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(matrixData);
 
-            // Append structured sheet into execution instance
             XLSX.utils.book_append_sheet(wb, ws, "Invoice Ledger");
 
-            // Format dynamic file naming syntax
             const fileName = `JMP_Invoice_Ledger_${currentSpsic.replace(/[^a-aZ-Z0-9]/g, "_")}.xlsx`;
             XLSX.writeFile(wb, fileName);
         }
