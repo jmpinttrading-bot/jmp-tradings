@@ -1472,79 +1472,6 @@
         }
 
         /* ==========================================================================
-           10. Contact Section
-           ========================================================================== */
-        .contact {
-            background-color: #fff;
-        }
-
-        .contact p.subtitle {
-            margin-bottom: 40px;
-            color: #657786;
-            font-size: 1.1rem;
-        }
-
-        .contact-container {
-            max-width: 650px;
-            margin: 0 auto;
-            background: #f8fafc;
-            padding: 40px;
-            border-radius: 14px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.04);
-            border: 1px solid #e2e8f0;
-            text-align: left;
-        }
-
-        .form-group {
-            margin-bottom: 22px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #0b2545;
-            font-size: 0.95rem;
-        }
-
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            font-size: 1rem;
-            color: #334155;
-            transition: border-color 0.3s, box-shadow 0.3s;
-            background-color: #fff;
-        }
-
-        .form-group input:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #0b2545;
-            box-shadow: 0 0 0 3px rgba(11, 37, 69, 0.12);
-        }
-
-        .contact button {
-            background: linear-gradient(135deg, #0b2545 0%, #133a6f 100%);
-            color: white;
-            border: none;
-            padding: 15px 24px;
-            cursor: pointer;
-            font-size: 1.1rem;
-            border-radius: 8px;
-            width: 100%;
-            font-weight: 700;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(11, 37, 69, 0.2);
-        }
-
-        .contact button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(11, 37, 69, 0.3);
-            background: linear-gradient(135deg, #133a6f 0%, #0b2545 100%);
-        }
-
-        /* ==========================================================================
            11. Footer
            ========================================================================== */
         footer {
@@ -1724,9 +1651,6 @@
             .slider-arrow {
                 display: none; 
             }
-            .contact-container {
-                padding: 25px;
-            }
             .testimonials-container {
                 padding: 0 15px;
             }
@@ -1800,7 +1724,7 @@
 
         <h1>JMP INTERNATIONAL FISH TRADING</h1>
         <p>Quality seafood. Trusted trade. Proven compliance. Flash-frozen at peak freshness and delivered with absolute cold-chain integrity.</p>
-        <a href="#contact" class="btn">Submit Product Inquiry</a>
+        <a href="#faq" class="btn">Chat With Our Trade Assistant</a>
     </div>
 
     <!-- Live Animated Performance Counter -->
@@ -2307,30 +2231,7 @@
         </div>
     </section>
 
-    <section class="contact reveal" id="contact">
-        <h2>Product Inquiries</h2>
-        <p class="subtitle">Connect with our trading desk for container-load pricing, freight logistics options, and specifications sheet requests.</p>
-        
-        <div class="contact-container">
-            <form action="#" method="POST" id="inquiryForm">
-                <div class="form-group">
-                    <label for="name">Customer Company Name / Full Name</label>
-                    <input type="text" id="name" name="name" required placeholder="Enter your business name">
-                </div>
-                <div class="form-group">
-                    <label for="email">Customer Business Email</label>
-                    <input type="email" id="email" name="email" required placeholder="buyer@company.com">
-                </div>
-                <div class="form-group">
-                    <label for="message">Frozen Inventory Volume Requirements (Per Box / Plastic Bundles)</label>
-                    <textarea id="message" name="message" rows="5" required placeholder="Specify preferred fish species, packing formats (e.g., individual box counts, grouped plastic wraps), requested target box/plastic totals, and delivery details..."></textarea>
-                </div>
-                <button type="submit">Submit Product Inquiry</button>
-            </form>
-        </div>
-    </section>
-
-    <footer>
+    <footer id="contact">
         <div class="footer-grid">
             <div class="footer-col">
                 <h3>JMP International</h3>
@@ -2442,7 +2343,7 @@
         }
 
         // Button Ripple Animation Handler
-        document.querySelectorAll('.btn, .login-btn, .contact button').forEach(button => {
+        document.querySelectorAll('.btn, .login-btn').forEach(button => {
             button.addEventListener('click', function (e) {
                 const circle = document.createElement('span');
                 const diameter = Math.max(this.clientWidth, this.clientHeight);
@@ -2849,8 +2750,12 @@
                 How can we assist your business today? Click an option below:
                 <div class="bot-options-grid" style="grid-template-columns: 1fr; margin-top: 12px;">
                     <button class="bot-btn" onclick="showProductList()">📦 View Our Product Catalog (24 Items)</button>
+                    <button class="bot-btn" onclick="showPricingInfo()">💰 Pricing &amp; Minimum Order Quantity</button>
                     <button class="bot-btn" onclick="showShippingInfo()">🚚 Cold Chain &amp; Delivery Logistics</button>
                     <button class="bot-btn" onclick="showComplianceInfo()">🛡️ Import &amp; BFAR Compliance</button>
+                    <button class="bot-btn" onclick="showPaymentInfo()">💳 Payment Terms &amp; Methods</button>
+                    <button class="bot-btn" onclick="showCompanyInfo()">🏢 About JMP International</button>
+                    <button class="bot-btn" onclick="showContactInfo()">📍 Contact &amp; Business Hours</button>
                 </div>
             `);
         }
@@ -2895,16 +2800,77 @@
 
             appendBotMessage(`
                 👤 <strong>Connecting you to a Real Sales Specialist...</strong><br>
-                Because wholesale container and bundle pricing fluctuates based on global market volume, freight rates, and size counts, our sales team handles pricing directly to guarantee maximum accuracy!
-                <br><br>
-                👇 <em>We are redirecting you down to our direct inquiry form...</em>
+                Because wholesale container and bundle pricing fluctuates based on global market volume, freight rates, and size counts, our sales team handles pricing directly to guarantee maximum accuracy for <strong>${productName}</strong>.<br><br>
+                📞 <strong>Call / Text:</strong> <a href="tel:09498610473" style="color:#0b2545; font-weight:700;">0949 861 0473</a><br>
+                📍 <strong>Office Address:</strong> Gov. Pascual Ave, Malabon, 1485 Metro Manila<br>
+                🕒 <strong>Sales Hours:</strong> Monday to Friday, 9:00 AM – 5:00 PM<br><br>
+                👇 <em>Scrolling you down to our full Contact &amp; Hours panel...</em>
+                <button class="bot-btn bot-btn-secondary" onclick="showProductList()">🔄 Back to Product List</button>
             `);
 
             setTimeout(() => {
-                const messageField = document.getElementById('message');
-                if (messageField) {
-                    messageField.value = `Hello JMP Sales Desk, I am requesting live container/bundle pricing and specs sheet for: ${productName}. Please get back to me.`;
+                const contactSection = document.getElementById('contact');
+                if (contactSection) {
+                    contactSection.scrollIntoView({ behavior: 'smooth' });
                 }
+            }, 1200);
+        }
+
+        function showPricingInfo() {
+            appendUserMessage("💰 Pricing & Minimum Order Quantity");
+            appendBotMessage(`
+                💰 <strong>Pricing &amp; Minimum Order Quantity (MOQ)</strong><br>
+                Wholesale pricing is quoted per Box or Plastic Bundle Format and depends on current market rates, freight costs, and order volume — so we don't publish fixed prices online.<br><br>
+                • <strong>Minimum Order:</strong> Varies per species and packing format<br>
+                • <strong>Quotations:</strong> Issued directly by our trading desk for accuracy<br>
+                • <strong>Bulk / Container Orders:</strong> Custom freight and volume pricing available<br><br>
+                👇 <strong>For an accurate quote, please reach our team directly:</strong>
+                <div class="bot-options-grid" style="grid-template-columns: 1fr; margin-top: 10px;">
+                    <button class="bot-btn bot-btn-primary" onclick="showContactInfo()">📍 Get Contact &amp; Address Details</button>
+                    <button class="bot-btn bot-btn-secondary" onclick="resetBot()">🏠 Back to Main Menu</button>
+                </div>
+            `);
+        }
+
+        function showPaymentInfo() {
+            appendUserMessage("💳 Payment Terms & Methods");
+            appendBotMessage(`
+                💳 <strong>Payment Terms &amp; Methods</strong><br>
+                • <strong>Accepted Methods:</strong> Bank transfer, company check, or cash on delivery (per arrangement)<br>
+                • <strong>Terms:</strong> Confirmed directly with our sales desk based on order volume and client relationship<br>
+                • <strong>Invoicing:</strong> Official receipts and invoices issued per transaction<br><br>
+                👇 <strong>Need terms confirmed for your order?</strong>
+                <div class="bot-options-grid" style="grid-template-columns: 1fr; margin-top: 10px;">
+                    <button class="bot-btn bot-btn-primary" onclick="showContactInfo()">📍 Get Contact &amp; Address Details</button>
+                    <button class="bot-btn bot-btn-secondary" onclick="resetBot()">🏠 Back to Main Menu</button>
+                </div>
+            `);
+        }
+
+        function showCompanyInfo() {
+            appendUserMessage("🏢 About JMP International");
+            appendBotMessage(`
+                🏢 <strong>About JMP International Fish Trading</strong><br>
+                Established 2022, JMP International is a trusted wholesale supplier of premium flash-frozen seafood — including fish, shrimp, squid, tuna, and salmon — serving hotels, restaurants, and distributors across Metro Manila.<br><br>
+                • <strong>Compliance:</strong> BFAR, FDA &amp; HACCP accredited<br>
+                • <strong>Cold Chain:</strong> 24/7 monitored logistics across 4 storage facilities<br>
+                • <strong>Product Range:</strong> 24 seafood items across whole, fillet, and portion-cut formats<br><br>
+                <button class="bot-btn bot-btn-secondary" onclick="resetBot()">🏠 Back to Main Menu</button>
+            `);
+        }
+
+        function showContactInfo() {
+            appendUserMessage("📍 Contact & Business Hours");
+            appendBotMessage(`
+                📍 <strong>Contact &amp; Business Hours</strong><br>
+                • <strong>Office Address:</strong> Gov. Pascual Ave, Malabon, 1485 Metro Manila<br>
+                • <strong>Hotline:</strong> <a href="tel:09498610473" style="color:#0b2545; font-weight:700;">0949 861 0473</a><br>
+                • <strong>Sales &amp; Inquiries:</strong> Monday to Friday, 9:00 AM – 5:00 PM<br>
+                • <strong>Cold-Chain Dispatch:</strong> Open 24/7<br><br>
+                👇 <em>Scrolling you down to our full contact panel...</em>
+                <button class="bot-btn bot-btn-secondary" onclick="resetBot()">🏠 Back to Main Menu</button>
+            `);
+            setTimeout(() => {
                 const contactSection = document.getElementById('contact');
                 if (contactSection) {
                     contactSection.scrollIntoView({ behavior: 'smooth' });
