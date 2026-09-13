@@ -552,6 +552,40 @@
         .arrow-left { left: -5px; }
         .arrow-right { right: -5px; }
 
+        /* Carousel Pagination Dots */
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 22px;
+            flex-wrap: wrap;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .carousel-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background-color: #cbd5e1;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .carousel-dot:hover {
+            background-color: #ee964b;
+        }
+
+        .carousel-dot.active {
+            width: 26px;
+            border-radius: 5px;
+            background: linear-gradient(90deg, #0b2545, #133a6f);
+        }
+
         /* ==========================================================================
            5. About Section
            ========================================================================== */
@@ -652,10 +686,10 @@
         }
         
         .strengths-slider-wrapper {
-            max-width: 1200px;
+            max-width: 1340px;
             margin: 45px auto 0;
             position: relative;
-            padding: 0 40px;
+            padding: 0 44px;
         }
 
         .strengths-slider-container {
@@ -679,8 +713,8 @@
 
         .strength-card {
             background: #ffffff; 
-            padding: 35px 28px;
-            border-radius: 12px;
+            padding: 42px 34px;
+            border-radius: 14px;
             border: 1px solid #e2e8f0;
             text-align: center;
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -688,7 +722,7 @@
             position: relative;
             overflow: hidden;
             flex: 0 0 calc(33.333% - 17px);
-            min-width: 300px;
+            min-width: 330px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -800,10 +834,10 @@
         }
 
         .slider-wrapper {
-            max-width: 1200px;
+            max-width: 1440px;
             margin: 45px auto 0;
             position: relative;
-            padding: 0 40px;
+            padding: 0 44px;
         }
 
         .product-slider-container {
@@ -828,19 +862,19 @@
 
         .product-card {
             background: #fff;
-            border-radius: 12px;
+            border-radius: 14px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             border: 1px solid #e1e8ed;
-            flex: 0 0 calc(25% - 15px);
-            min-width: 260px;
+            flex: 0 0 calc(25% - 16px);
+            min-width: 300px;
             cursor: pointer;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding: 18px;
+            padding: 22px;
             transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
             transform-style: preserve-3d;
         }
@@ -876,12 +910,12 @@
 
         .product-img {
             width: 100%;
-            height: 170px; 
+            height: 210px; 
             object-fit: contain;
             background-color: #ffffff; 
             border-radius: 8px;
             pointer-events: none;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             transition: transform 0.4s ease;
         }
 
@@ -897,20 +931,20 @@
         }
 
         .product-info h3 {
-            font-size: 1.05rem;
+            font-size: 1.15rem;
             color: #0b2545;
             font-weight: 700;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .product-info .scientific-name {
-            font-size: 0.82rem;
+            font-size: 0.86rem;
             color: #64748b;
             font-style: italic;
-            margin-bottom: 8px;
+            margin-bottom: 9px;
         }
 
         .product-tag {
@@ -1737,6 +1771,7 @@
 
                 </div>
             </div>
+            <div class="carousel-dots" id="strengthDots"></div>
         </div>
     </section>
 
@@ -1983,6 +2018,7 @@
                     </div>
                 </div>
             </div>
+            <div class="carousel-dots" id="productDots"></div>
         </div>
     </section>
 
@@ -2292,11 +2328,12 @@
         });
 
         // Reusable Carousel Helper Function
-        function createCarousel({ containerId, trackId, prevBtnId, nextBtnId, speed = 1.2 }) {
+        function createCarousel({ containerId, trackId, prevBtnId, nextBtnId, dotsId, speed = 1.2 }) {
             const container = document.getElementById(containerId);
             const track = document.getElementById(trackId);
             const prevBtn = document.getElementById(prevBtnId);
             const nextBtn = document.getElementById(nextBtnId);
+            const dotsContainer = dotsId ? document.getElementById(dotsId) : null;
 
             if (!container || !track) return;
 
@@ -2305,12 +2342,54 @@
             let currentTranslate = 0;
             let prevTranslate = 0;
             let autoPlayInterval;
+            let dots = [];
 
             const getMaxScroll = () => container.clientWidth - track.scrollWidth;
+
+            // Build one dot per card; clicking a dot scrolls that card to the start
+            function buildDots() {
+                if (!dotsContainer) return;
+                dotsContainer.innerHTML = '';
+                dots = Array.from(track.children).map((card, index) => {
+                    const dot = document.createElement('button');
+                    dot.className = 'carousel-dot';
+                    dot.setAttribute('aria-label', `Go to item ${index + 1}`);
+                    dot.addEventListener('click', () => {
+                        stopAutoPlay();
+                        const targetTranslate = -card.offsetLeft;
+                        const maxScroll = getMaxScroll();
+                        currentTranslate = Math.max(Math.min(targetTranslate, 0), maxScroll);
+                        prevTranslate = currentTranslate;
+                        applyTranslate(true);
+                        updateActiveDot();
+                        startAutoPlay();
+                    });
+                    dotsContainer.appendChild(dot);
+                    return dot;
+                });
+                updateActiveDot();
+            }
+
+            // Highlight whichever card sits closest to the left edge of the viewport
+            function updateActiveDot() {
+                if (!dots.length) return;
+                const cards = Array.from(track.children);
+                let closestIndex = 0;
+                let closestDistance = Infinity;
+                cards.forEach((card, index) => {
+                    const distance = Math.abs(card.offsetLeft + currentTranslate);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestIndex = index;
+                    }
+                });
+                dots.forEach((dot, index) => dot.classList.toggle('active', index === closestIndex));
+            }
 
             function applyTranslate(withTransition = true) {
                 track.style.transition = withTransition ? 'transform 0.4s ease-out' : 'none';
                 track.style.transform = `translateX(${currentTranslate}px)`;
+                updateActiveDot();
             }
 
             function startAutoPlay() {
@@ -2402,6 +2481,11 @@
                 applyTranslate(false);
             }, {passive: true});
 
+            buildDots();
+            window.addEventListener('resize', () => {
+                buildDots();
+            });
+
             startAutoPlay();
 
             return { stopAutoPlay, startAutoPlay };
@@ -2413,6 +2497,7 @@
             trackId: 'strengthsTrack',
             prevBtnId: 'prevStrength',
             nextBtnId: 'nextStrength',
+            dotsId: 'strengthDots',
             speed: 1.0
         });
 
@@ -2422,6 +2507,7 @@
             trackId: 'sliderTrack',
             prevBtnId: 'prevSlide',
             nextBtnId: 'nextSlide',
+            dotsId: 'productDots',
             speed: 1.2
         });
 
@@ -2617,7 +2703,7 @@
         function showShippingInfo() {
             appendUserMessage("🚚 Cold Chain & Delivery Logistics");
             appendBotMessage(`
-                🚚 <strong>Logistics & Distribution Information</strong><br>
+                🚚 <strong>Logistics & Delivery Information</strong><br>
                 • <strong>Office Address:</strong> Gov. Pascual Ave, Malabon, Metro Manila<br>
                 • <strong>Distribution Hubs:</strong> 4 Cold Storage Facilities<br>
                 • <strong>Cold Operations:</strong> 24 / 7 Fleet Dispatch & Temperature Monitoring<br>
