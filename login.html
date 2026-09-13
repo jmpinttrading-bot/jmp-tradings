@@ -53,8 +53,10 @@
                 linear-gradient(180deg, rgba(10, 32, 54, 0.82), rgba(10, 32, 54, 0.9)),
                 url('hero.png');
             background-repeat: no-repeat;
-            background-position: center;
-            background-size: cover, contain;
+            /* Zoomed in and centered on the circular emblem so only the mark shows,
+               cropping out the wordmark text band and grid margin beneath it */
+            background-position: center, 44% 40%;
+            background-size: cover, 300%;
             color: #eef2f6;
             display: flex;
             flex-direction: column;
@@ -122,7 +124,6 @@
             display: flex;
             align-items: center;
             gap: 22px;
-            margin-top: 36px;
         }
 
         .carousel-frame {
@@ -502,20 +503,20 @@
                 </div>
                 <h1 class="visual-headline">One system, from import to sale.</h1>
                 <p class="visual-sub">Internal access for JMP employees — track every unit through import, inbound receiving, outbound fulfillment, and sales.</p>
+            </div>
 
-                <div class="visual-carousel">
-                    <div class="carousel-frame">
-                        <img class="carousel-slide is-active" src="1000018456.png" alt="Fishing port logistics">
-                        <img class="carousel-slide" src="1000018453.png" alt="Office workstation">
-                        <img class="carousel-slide" src="1000018455.png" alt="Team collaboration">
-                    </div>
-                    <div class="carousel-meta">
-                        <span class="carousel-caption" id="carouselCaption">Fishing Port Logistics</span>
-                        <div class="carousel-dots">
-                            <span class="dot is-active"></span>
-                            <span class="dot"></span>
-                            <span class="dot"></span>
-                        </div>
+            <div class="visual-carousel">
+                <div class="carousel-frame">
+                    <img class="carousel-slide is-active" src="1000018456.png" alt="Fishing port logistics">
+                    <img class="carousel-slide" src="1000018453.png" alt="Office workstation">
+                    <img class="carousel-slide" src="1000018455.png" alt="Team collaboration">
+                </div>
+                <div class="carousel-meta">
+                    <span class="carousel-caption" id="carouselCaption">Fishing Port Logistics</span>
+                    <div class="carousel-dots">
+                        <span class="dot is-active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
                     </div>
                 </div>
             </div>
