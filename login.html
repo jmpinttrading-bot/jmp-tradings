@@ -123,20 +123,16 @@
         /* Auto-crossfading photo carousel — one deliberate motion moment, not scattered bouncing */
         .visual-carousel {
             display: flex;
-            align-items: center;
-            gap: 22px;
-            margin-bottom: 32px;
+            flex-direction: column;
+            gap: 14px;
+            margin: -40px -40px 32px;
         }
 
         .carousel-frame {
             position: relative;
-            width: 168px;
-            height: 168px;
-            flex-shrink: 0;
-            border-radius: 14px;
+            width: 100%;
+            height: 320px;
             overflow: hidden;
-            border: 3px solid rgba(22, 35, 58, 0.12);
-            box-shadow: 0 10px 22px rgba(16, 32, 54, 0.18);
         }
 
         .carousel-slide {
@@ -155,8 +151,9 @@
 
         .carousel-meta {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
         }
 
         .carousel-caption {
@@ -252,9 +249,15 @@
         .form-panel {
             background: var(--paper);
             display: flex;
+            flex-direction: column;
+            padding: 40px;
+        }
+
+        .form-content-wrap {
+            flex: 1;
+            display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px;
         }
 
         .form-content {
@@ -490,7 +493,9 @@
             .visual-bottom { display: none; }
             .visual-sub { display: none; }
             .form-panel { padding: 32px 24px 48px; }
-            .carousel-frame { width: 110px; height: 110px; }
+            .visual-carousel { margin: -32px -24px 28px; }
+            .carousel-frame { height: 200px; }
+            .carousel-meta { padding: 0 24px; }
         }
     </style>
 </head>
@@ -530,23 +535,24 @@
         </div>
 
         <div class="form-panel">
-            <div class="form-content">
-                <div class="visual-carousel">
-                    <div class="carousel-frame">
-                        <img class="carousel-slide is-active" src="1000018456.png" alt="Fishing port logistics">
-                        <img class="carousel-slide" src="1000018453.png" alt="Office workstation">
-                        <img class="carousel-slide" src="1000018455.png" alt="Team collaboration">
-                    </div>
-                    <div class="carousel-meta">
-                        <span class="carousel-caption" id="carouselCaption">Fishing Port Logistics</span>
-                        <div class="carousel-dots">
-                            <span class="dot is-active"></span>
-                            <span class="dot"></span>
-                            <span class="dot"></span>
-                        </div>
+            <div class="visual-carousel">
+                <div class="carousel-frame">
+                    <img class="carousel-slide is-active" src="1000018456.png" alt="Fishing port logistics">
+                    <img class="carousel-slide" src="1000018453.png" alt="Office workstation">
+                    <img class="carousel-slide" src="1000018455.png" alt="Team collaboration">
+                </div>
+                <div class="carousel-meta">
+                    <span class="carousel-caption" id="carouselCaption">Fishing Port Logistics</span>
+                    <div class="carousel-dots">
+                        <span class="dot is-active"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
                     </div>
                 </div>
+            </div>
 
+            <div class="form-content-wrap">
+            <div class="form-content">
                 <p class="form-eyebrow">Employee access</p>
                 <h2 class="form-title">Sign in to JMP Inventory</h2>
 
@@ -573,6 +579,7 @@
                         Return to public website
                     </a>
                 </div>
+            </div>
             </div>
         </div>
     </div>
