@@ -4,199 +4,319 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JMP System Login | Internal Corporate Platform</title>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 
     <style>
-        /* Global Reset */
+        :root {
+            --navy-950: #0a2036;
+            --navy-900: #0d2b47;
+            --navy-800: #123a5e;
+            --paper: #f4f5f1;
+            --paper-line: #e2e4dd;
+            --ink: #16233a;
+            --slate: #5b6b7c;
+            --slate-soft: #8695a3;
+            --brass: #b8843c;
+            --brass-dark: #96692b;
+            --brick: #a63d2f;
+            --brick-dark: #8a3226;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            color: var(--ink);
+        }
+
+        /* ============ PAGE SHELL ============ */
+        .shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+        }
+
+        /* ============ VISUAL PANEL ============ */
+        .visual-panel {
             position: relative;
-            overflow: hidden; /* Prevents scrollbars during movement */
+            background:
+                linear-gradient(180deg, rgba(10, 32, 54, 0.88), rgba(10, 32, 54, 0.94)),
+                url('hero.png') center / cover no-repeat;
+            background-color: var(--navy-950);
+            color: #eef2f6;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 56px 48px;
+            overflow: hidden;
         }
 
-        /* Fixed Background Wrapper to display image in full view with animation */
-        .bg-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(11, 37, 69, 0.85), rgba(11, 37, 69, 0.95)), 
-                        url('hero.png') no-repeat center center / cover;
-            z-index: -1;
-            animation: fullViewMotion 20s ease-in-out infinite alternate;
+        /* Chart-grid texture, evokes a nautical chart rather than decoration for its own sake */
+        .visual-panel::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                repeating-linear-gradient(0deg, rgba(238, 242, 246, 0.055) 0px, rgba(238, 242, 246, 0.055) 1px, transparent 1px, transparent 64px),
+                repeating-linear-gradient(90deg, rgba(238, 242, 246, 0.055) 0px, rgba(238, 242, 246, 0.055) 1px, transparent 1px, transparent 64px);
+            pointer-events: none;
         }
 
-        /* Gentle zoom-and-pan animation for full background image view */
-        @keyframes fullViewMotion {
-            0% {
-                transform: scale(1) translate(0, 0);
-            }
-            50% {
-                transform: scale(1.08) translate(-1%, -1%);
-            }
-            100% {
-                transform: scale(1.03) translate(1%, 1%);
-            }
+        .visual-top {
+            position: relative;
+            z-index: 1;
         }
 
-        /* Base Floating Circle Setup */
-        .floating-circle {
-            position: fixed;
+        .visual-mark {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 64px;
+        }
+
+        .visual-mark img {
+            height: 40px;
+            width: 40px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .visual-mark span {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.06em;
+            color: var(--slate-soft);
+        }
+
+        .visual-headline {
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: clamp(2rem, 3.4vw, 2.75rem);
+            line-height: 1.15;
+            max-width: 13ch;
+            color: #ffffff;
+        }
+
+        .visual-sub {
+            margin-top: 20px;
+            font-size: 1rem;
+            line-height: 1.6;
+            max-width: 34ch;
+            color: #c3ccd4;
+        }
+
+        /* Auto-crossfading photo carousel — one deliberate motion moment, not scattered bouncing */
+        .visual-carousel {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 36px;
+        }
+
+        .carousel-frame {
+            position: relative;
+            width: 92px;
+            height: 92px;
+            flex-shrink: 0;
             border-radius: 50%;
             overflow: hidden;
-            border: 4px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-            z-index: 2; /* Visual layer between background and card */
-            pointer-events: none; /* Allows click-through to login form controls */
-            will-change: transform, top, left;
+            border: 3px solid rgba(238, 242, 246, 0.35);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
         }
 
-        .floating-circle img {
+        .carousel-slide {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            display: block;
+            opacity: 0;
+            transition: opacity 1s ease;
         }
 
-        /* Floating Circle Sizes & Trajectories */
-        .circle-1 {
-            width: 200px;
-            height: 200px;
-            animation: bouncePath1 20s linear infinite;
+        .carousel-slide.is-active {
+            opacity: 1;
         }
 
-        .circle-2 {
-            width: 220px;
-            height: 220px;
-            animation: bouncePath2 24s linear infinite;
+        .carousel-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .circle-3 {
-            width: 210px;
-            height: 210px;
-            animation: bouncePath3 18s linear infinite;
-        }
-
-        /* Full-Screen Trajectory 1 */
-        @keyframes bouncePath1 {
-            0% { top: 5vh; left: 5vw; }
-            25% { top: 70vh; left: 80vw; }
-            50% { top: 75vh; left: 5vw; }
-            75% { top: 5vh; left: 75vw; }
-            100% { top: 5vh; left: 5vw; }
-        }
-
-        /* Full-Screen Trajectory 2 */
-        @keyframes bouncePath2 {
-            0% { top: 65vh; left: 10vw; }
-            25% { top: 5vh; left: 70vw; }
-            50% { top: 70vh; left: 75vw; }
-            75% { top: 10vh; left: 5vw; }
-            100% { top: 65vh; left: 10vw; }
-        }
-
-        /* Full-Screen Trajectory 3 */
-        @keyframes bouncePath3 {
-            0% { top: 10vh; left: 75vw; }
-            25% { top: 68vh; left: 5vw; }
-            50% { top: 5vh; left: 10vw; }
-            75% { top: 72vh; left: 70vw; }
-            100% { top: 10vh; left: 75vw; }
-        }
-
-        /* Compact Centered Login Card Frame */
-        .login-card {
-            background: #ffffff;
-            width: 100%;
-            max-width: 450px; /* Reduced frame size for a focused, compact look */
-            padding: 40px;     
-            border-radius: 14px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.45);
-            text-align: left;
-            position: relative;
-            z-index: 10; /* Ensures form remains interactive above moving objects */
-        }
-
-        /* Branding Block inside form */
-        .brand-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .brand-logo {
-            height: 85px;
-            width: 85px;
-            object-fit: contain;
-            background: #f4f8fb;
-            border-radius: 50%;
-            padding: 4px;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-            border: 1px solid #e2e8f0;
-        }
-
-        .brand-header h2 {
-            color: #0b2545; 
-            font-size: 1.5rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        .brand-header p {
+        .carousel-caption {
             font-size: 0.85rem;
-            color: #ee964b; 
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            margin-top: 4px;
+            color: #c3ccd4;
         }
 
-        /* Input Controls */
-        .form-group {
-            margin-bottom: 22px;
+        .carousel-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .carousel-dots .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(238, 242, 246, 0.3);
+            transition: background-color 0.3s ease;
+        }
+
+        .carousel-dots .dot.is-active {
+            background-color: var(--brass);
+        }
+
+        .visual-bottom {
             position: relative;
+            z-index: 1;
+            border-top: 1px solid rgba(238, 242, 246, 0.16);
+            padding-top: 28px;
+        }
+
+        .pipeline-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            color: var(--slate-soft);
+            margin-bottom: 18px;
+        }
+
+        .pipeline {
+            display: flex;
+            position: relative;
+        }
+
+        .pipeline::before {
+            content: "";
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            height: 1px;
+            background: rgba(238, 242, 246, 0.22);
+        }
+
+        .pipeline-step {
+            flex: 1;
+            position: relative;
+            padding-right: 12px;
+        }
+
+        .pipeline-step::before {
+            content: "";
+            position: relative;
+            display: block;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: var(--navy-950);
+            border: 1px solid var(--brass);
+            margin-bottom: 14px;
+            z-index: 1;
+        }
+
+        .pipeline-step.is-current::before {
+            background: var(--brass);
+        }
+
+        .pipeline-step .step-no {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--slate-soft);
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .pipeline-step .step-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #eef2f6;
+        }
+
+        /* ============ FORM PANEL ============ */
+        .form-panel {
+            background: var(--paper);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .form-content {
+            width: 100%;
+            max-width: 380px;
+            opacity: 0;
+            transform: translateY(16px);
+            animation: settleIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+        }
+
+        @keyframes settleIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-eyebrow {
+            font-size: 0.9rem;
+            color: var(--slate);
+            margin-bottom: 6px;
+        }
+
+        .form-title {
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 1.7rem;
+            color: var(--navy-950);
+            margin-bottom: 36px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #334155;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            color: var(--navy-900);
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
+            padding: 13px 14px;
+            border: 1px solid #cdd2c8;
+            border-radius: 4px;
             font-size: 1rem;
-            color: #1e293b;
-            transition: all 0.3s ease;
-            background-color: #f8fafc;
+            font-family: inherit;
+            color: var(--ink);
+            background-color: #ffffff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        #employeeUsername {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.95rem;
+            letter-spacing: 0.01em;
+        }
+
+        .form-group input::placeholder {
+            color: #a7ada3;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #0b2545;
-            background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(11, 37, 69, 0.15);
+            border-color: var(--brass);
+            box-shadow: 0 0 0 3px rgba(184, 132, 60, 0.18);
         }
 
-        /* Password Wrapper for Show/Hide Button */
         .password-wrapper {
             position: relative;
             display: flex;
@@ -204,82 +324,81 @@
         }
 
         .password-wrapper input {
-            padding-right: 50px; 
+            padding-right: 56px;
         }
 
         .toggle-password {
             position: absolute;
-            right: 15px;
+            right: 14px;
             background: none;
             border: none;
-            color: #64748b;
-            font-size: 0.85rem;
+            color: var(--slate);
+            font-size: 0.75rem;
             font-weight: 600;
+            letter-spacing: 0.04em;
             cursor: pointer;
-            user-select: none;
-            transition: color 0.2s;
+            padding: 4px 6px;
+            transition: color 0.2s ease;
         }
 
         .toggle-password:hover {
-            color: #0b2545;
+            color: var(--navy-950);
         }
 
-        /* Action Buttons */
         .submit-btn {
-            background-color: #0b2545;
+            background-color: var(--navy-950);
             color: #ffffff;
             border: none;
             padding: 14px;
             width: 100%;
-            border-radius: 6px;
-            font-weight: 700;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.95rem;
             cursor: pointer;
-            font-size: 1rem;
-            transition: background 0.3s;
-            box-shadow: 0 4px 12px rgba(11, 37, 69, 0.2);
-            margin-top: 8px;
+            transition: background-color 0.2s ease, transform 0.15s ease;
+            margin-top: 6px;
         }
 
         .submit-btn:hover {
-            background-color: #133a6f;
+            background-color: var(--navy-800);
+        }
+
+        .submit-btn:active {
+            transform: translateY(1px);
         }
 
         .submit-btn:disabled {
-            background-color: #64748b;
+            background-color: var(--slate-soft);
             cursor: not-allowed;
         }
 
-        /* Auxiliary Utilities link */
         .utilities {
-            margin-top: 25px;
-            text-align: center;
-            border-top: 1px solid #edf2f7;
+            margin-top: 28px;
             padding-top: 20px;
+            border-top: 1px solid var(--paper-line);
         }
 
         .back-home {
-            color: #64748b;
+            color: var(--slate);
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: color 0.2s;
+            transition: color 0.2s ease, transform 0.2s ease;
         }
 
         .back-home:hover {
-            color: #ee964b;
+            color: var(--brass-dark);
+            transform: translateX(-3px);
         }
 
-        /* Error Modal Alert Notification Setup */
+        /* ============ ERROR MODAL ============ */
         .error-modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(11, 37, 69, 0.4);
-            backdrop-filter: blur(4px);
+            inset: 0;
+            background: rgba(10, 32, 54, 0.45);
+            backdrop-filter: blur(3px);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -298,103 +417,162 @@
             background: #ffffff;
             width: 90%;
             max-width: 400px;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
-            text-align: center;
-            transform: scale(0.9);
+            padding: 32px;
+            border-radius: 6px;
+            box-shadow: 0 24px 48px rgba(10, 32, 54, 0.25);
+            text-align: left;
+            transform: scale(0.96);
             transition: transform 0.2s ease;
-            border-top: 5px solid #d9534f; 
+            border-top: 3px solid var(--brick);
         }
 
         .error-modal-overlay.visible .error-modal {
             transform: scale(1);
         }
 
-        .error-icon {
-            color: #d9534f;
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-        }
-
         .error-modal h3 {
-            color: #0b2545;
+            font-family: 'Fraunces', serif;
+            color: var(--navy-950);
             margin-bottom: 10px;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
         }
 
         .error-modal p {
-            color: #4a5568;
-            font-size: 0.95rem;
-            line-height: 1.5;
+            color: var(--slate);
+            font-size: 0.92rem;
+            line-height: 1.55;
             margin-bottom: 22px;
         }
 
         .close-alert-btn {
-            background-color: #d9534f;
+            background-color: var(--navy-950);
             color: white;
             border: none;
-            padding: 10px 25px;
-            font-weight: 700;
-            border-radius: 5px;
+            padding: 10px 22px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 4px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background-color 0.2s ease;
         }
 
         .close-alert-btn:hover {
-            background-color: #c9302c;
+            background-color: var(--navy-800);
+        }
+
+        /* ============ ACCESSIBILITY & RESPONSIVE ============ */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--brass);
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .form-content { animation: none; opacity: 1; transform: none; }
+        }
+
+        @media (max-width: 860px) {
+            .shell {
+                grid-template-columns: 1fr;
+            }
+            .visual-panel {
+                padding: 36px 28px;
+                min-height: 260px;
+            }
+            .visual-mark { margin-bottom: 28px; }
+            .visual-bottom { display: none; }
+            .visual-sub { display: none; }
+            .visual-carousel { display: none; }
+            .form-panel { padding: 32px 24px 48px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="bg-animation"></div>
+    <div class="shell">
+        <div class="visual-panel">
+            <div class="visual-top">
+                <div class="visual-mark">
+                    <img src="logo.png" alt="JMP Logo">
+                    <span>JMP INTERNATIONAL</span>
+                </div>
+                <h1 class="visual-headline">JMP International Inventory System</h1>
+                <p class="visual-sub">Internal access for JMP employees — track every unit through import, inbound receiving, outbound fulfillment, and sales.</p>
 
-    <div class="floating-circle circle-1">
-        <img src="1000018456.png" alt="Fishing Port Logistics">
-    </div>
-    <div class="floating-circle circle-2">
-        <img src="1000018453.png" alt="Office Workstation">
-    </div>
-    <div class="floating-circle circle-3">
-        <img src="1000018455.png" alt="Team Collaboration">
-    </div>
-
-    <div class="login-card">
-        <div class="brand-header">
-            <img class="brand-logo" src="logo.png" alt="JMP Logo">
-            <h2>JMP International Platform</h2>
-            <p>Internal Employee System Access</p>
-        </div>
-
-        <form onsubmit="handlePlatformLogin(event)">
-            <div class="form-group">
-                <label for="employeeUsername">Employee Username</label>
-                <input type="text" id="employeeUsername" required autocomplete="username" placeholder="e.g., jsmith2026">
-            </div>
-
-            <div class="form-group">
-                <label for="employeePassword">Secure Token / Password</label>
-                <div class="password-wrapper">
-                    <input type="password" id="employeePassword" required autocomplete="current-password" placeholder="••••••••">
-                    <button type="button" class="toggle-password" id="togglePassBtn" onclick="togglePasswordVisibility()">SHOW</button>
+                <div class="visual-carousel">
+                    <div class="carousel-frame">
+                        <img class="carousel-slide is-active" src="1000018456.png" alt="Fishing port logistics">
+                        <img class="carousel-slide" src="1000018453.png" alt="Office workstation">
+                        <img class="carousel-slide" src="1000018455.png" alt="Team collaboration">
+                    </div>
+                    <div class="carousel-meta">
+                        <span class="carousel-caption" id="carouselCaption">Fishing Port Logistics</span>
+                        <div class="carousel-dots">
+                            <span class="dot is-active"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
+            <div class="visual-bottom">
+                <p class="pipeline-label">INVENTORY FLOW</p>
+                <div class="pipeline">
+                    <div class="pipeline-step">
+                        <span class="step-no">01</span>
+                        <span class="step-name">Import</span>
+                    </div>
+                    <div class="pipeline-step">
+                        <span class="step-no">02</span>
+                        <span class="step-name">Inbound</span>
+                    </div>
+                    <div class="pipeline-step">
+                        <span class="step-no">03</span>
+                        <span class="step-name">Outbound</span>
+                    </div>
+                    <div class="pipeline-step is-current">
+                        <span class="step-no">04</span>
+                        <span class="step-name">Sales</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <button type="submit" id="submitBtn" class="submit-btn">Verify & Enter System</button>
-        </form>
+        <div class="form-panel">
+            <div class="form-content">
+                <p class="form-eyebrow">Employee access</p>
+                <h2 class="form-title">Sign in to JMP Inventory</h2>
 
-        <div class="utilities">
-            <a href="index.html" class="back-home">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                Return to Public Website
-            </a>
+                <form onsubmit="handlePlatformLogin(event)">
+                    <div class="form-group">
+                        <label for="employeeUsername">Employee username</label>
+                        <input type="text" id="employeeUsername" required autocomplete="username" placeholder="jsmith2026">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="employeePassword">Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="employeePassword" required autocomplete="current-password" placeholder="••••••••">
+                            <button type="button" class="toggle-password" id="togglePassBtn" onclick="togglePasswordVisibility()">SHOW</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="submit-btn">Verify & enter system</button>
+                </form>
+
+                <div class="utilities">
+                    <a href="index.html" class="back-home">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        Return to public website
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="error-modal-overlay" id="errorAlertModal">
         <div class="error-modal">
-            <div class="error-icon">⚠️</div>
             <h3 id="errorTitle">Invalid Username Format</h3>
             <p id="errorMessage">Something went wrong with your input entry configuration layout.</p>
             <button class="close-alert-btn" onclick="closeErrorModal()">Acknowledge</button>
@@ -402,13 +580,13 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";         
-        const CORPORATE_DOMAIN = "@jmp-corporate.local"; 
+        const SUPABASE_URL = "https://ebicabxnzeexucggrmbo.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImViaWNhYnhuemVleHVjZ2dybWJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MjM4MjgsImV4cCI6MjA5NzI5OTgyOH0.VJaMTAtCe0CclxlyzMMa0R3J9Pv6hZhPQaQV-RxrFK8";
+        const CORPORATE_DOMAIN = "@jmp-corporate.local";
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Clear password whenever the username field layout is modified or re-typed
+        // Clear password whenever the username field is modified or re-typed
         document.getElementById('employeeUsername').addEventListener('input', function() {
             document.getElementById('employeePassword').value = '';
         });
@@ -436,13 +614,37 @@
             document.getElementById('employeeUsername').focus();
         }
 
+        // Auto-advancing photo carousel in the visual panel
+        (function initVisualCarousel() {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const dots = document.querySelectorAll('.carousel-dots .dot');
+            const captionEl = document.getElementById('carouselCaption');
+            const captions = ['Fishing Port Logistics', 'Office Workstation', 'Team Collaboration'];
+            if (slides.length < 2) return;
+
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (prefersReducedMotion) return;
+
+            let activeIndex = 0;
+            setInterval(() => {
+                slides[activeIndex].classList.remove('is-active');
+                if (dots[activeIndex]) dots[activeIndex].classList.remove('is-active');
+
+                activeIndex = (activeIndex + 1) % slides.length;
+
+                slides[activeIndex].classList.add('is-active');
+                if (dots[activeIndex]) dots[activeIndex].classList.add('is-active');
+                if (captionEl) captionEl.textContent = captions[activeIndex] || '';
+            }, 4000);
+        })();
+
         async function handlePlatformLogin(event) {
             event.preventDefault();
-            
+
             const usernameInput = document.getElementById('employeeUsername').value.trim();
             const passwordInput = document.getElementById('employeePassword').value;
             const submitBtn = document.getElementById('submitBtn');
-            
+
             if (usernameInput.includes('@')) {
                 openErrorModal("Email Detected", "Please enter your assigned System Username only.");
                 return;
@@ -455,7 +657,7 @@
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = "Verifying Credentials...";
+            submitBtn.textContent = "Verifying credentials...";
 
             const generatedEmail = usernameInput.toLowerCase() + CORPORATE_DOMAIN;
 
@@ -466,9 +668,9 @@
                 });
 
                 if (error) {
-                    openErrorModal("Access Denied", error.message + ` (Attempted email target: ${generatedEmail})`);
+                    openErrorModal("Access Denied", "The username or password you entered is incorrect.");
                     submitBtn.disabled = false;
-                    submitBtn.textContent = "Verify & Enter System";
+                    submitBtn.textContent = "Verify & enter system";
                     return;
                 }
 
@@ -483,9 +685,9 @@
                         .maybeSingle();
 
                     if (profileError || !profile) {
-                        openErrorModal("Profile Missing", "Access cleared, but no internal profiles record exists for user ID: " + data.user.id);
+                        openErrorModal("Profile Missing", "Access cleared, but no internal profile record exists for this account. Contact IT support.");
                         submitBtn.disabled = false;
-                        submitBtn.textContent = "Verify & Enter System";
+                        submitBtn.textContent = "Verify & enter system";
                         return;
                     }
 
@@ -496,7 +698,7 @@
             } catch (err) {
                 openErrorModal("Connection Failed", "Unable to establish contact with the JMP Authentication server.");
                 submitBtn.disabled = false;
-                submitBtn.textContent = "Verify & Enter System";
+                submitBtn.textContent = "Verify & enter system";
             }
         }
     </script>
