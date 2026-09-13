@@ -53,10 +53,11 @@
                 linear-gradient(180deg, rgba(10, 32, 54, 0.82), rgba(10, 32, 54, 0.9)),
                 url('hero.png');
             background-repeat: no-repeat;
-            /* Zoomed in and centered on the circular emblem so only the mark shows,
-               cropping out the wordmark text band and grid margin beneath it */
-            background-position: center, 44% 40%;
-            background-size: cover, 300%;
+            /* Measured from the source file: the circular badge is centered at
+               ~50.4%/50.1% of the image, so a straight center-zoom isolates it
+               and crops the warehouse/truck photo around it */
+            background-position: center;
+            background-size: cover, 270%;
             color: #eef2f6;
             display: flex;
             flex-direction: column;
@@ -124,6 +125,7 @@
             display: flex;
             align-items: center;
             gap: 22px;
+            margin-bottom: 32px;
         }
 
         .carousel-frame {
@@ -133,8 +135,8 @@
             flex-shrink: 0;
             border-radius: 14px;
             overflow: hidden;
-            border: 3px solid rgba(238, 242, 246, 0.35);
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+            border: 3px solid rgba(22, 35, 58, 0.12);
+            box-shadow: 0 10px 22px rgba(16, 32, 54, 0.18);
         }
 
         .carousel-slide {
@@ -159,7 +161,7 @@
 
         .carousel-caption {
             font-size: 0.95rem;
-            color: #c3ccd4;
+            color: var(--slate);
         }
 
         .carousel-dots {
@@ -171,7 +173,7 @@
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background: rgba(238, 242, 246, 0.3);
+            background: rgba(22, 35, 58, 0.18);
             transition: background-color 0.3s ease;
         }
 
@@ -487,8 +489,8 @@
             .visual-mark { margin-bottom: 28px; }
             .visual-bottom { display: none; }
             .visual-sub { display: none; }
-            .visual-carousel { display: none; }
             .form-panel { padding: 32px 24px 48px; }
+            .carousel-frame { width: 110px; height: 110px; }
         }
     </style>
 </head>
@@ -503,22 +505,6 @@
                 </div>
                 <h1 class="visual-headline">One system, from import to sale.</h1>
                 <p class="visual-sub">Internal access for JMP employees — track every unit through import, inbound receiving, outbound fulfillment, and sales.</p>
-            </div>
-
-            <div class="visual-carousel">
-                <div class="carousel-frame">
-                    <img class="carousel-slide is-active" src="1000018456.png" alt="Fishing port logistics">
-                    <img class="carousel-slide" src="1000018453.png" alt="Office workstation">
-                    <img class="carousel-slide" src="1000018455.png" alt="Team collaboration">
-                </div>
-                <div class="carousel-meta">
-                    <span class="carousel-caption" id="carouselCaption">Fishing Port Logistics</span>
-                    <div class="carousel-dots">
-                        <span class="dot is-active"></span>
-                        <span class="dot"></span>
-                        <span class="dot"></span>
-                    </div>
-                </div>
             </div>
             <div class="visual-bottom">
                 <p class="pipeline-label">INVENTORY FLOW</p>
@@ -545,6 +531,22 @@
 
         <div class="form-panel">
             <div class="form-content">
+                <div class="visual-carousel">
+                    <div class="carousel-frame">
+                        <img class="carousel-slide is-active" src="1000018456.png" alt="Fishing port logistics">
+                        <img class="carousel-slide" src="1000018453.png" alt="Office workstation">
+                        <img class="carousel-slide" src="1000018455.png" alt="Team collaboration">
+                    </div>
+                    <div class="carousel-meta">
+                        <span class="carousel-caption" id="carouselCaption">Fishing Port Logistics</span>
+                        <div class="carousel-dots">
+                            <span class="dot is-active"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                    </div>
+                </div>
+
                 <p class="form-eyebrow">Employee access</p>
                 <h2 class="form-title">Sign in to JMP Inventory</h2>
 
